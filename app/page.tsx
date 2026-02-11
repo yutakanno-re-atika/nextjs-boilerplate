@@ -2,145 +2,158 @@
 
 import React, { useState, useEffect } from 'react';
 
-// 数字のフォーマット用
-const fmt = (num: number | string) => Number(num || 0).toLocaleString();
+// ==========================================
+// 資産再利用: SVG Icons & Components
+// ==========================================
+const IconChart = () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>;
+const IconArrowUp = () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>;
+const IconCalculator = () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2" strokeWidth="2" /><line x1="8" y1="6" x2="16" y2="6" strokeWidth="2" /><path d="M16 14v4M12 14v4M8 14v4M16 10h.01M12 10h.01M8 10h.01" strokeWidth="2" /></svg>;
 
-export default function WireMasterPortal() {
-  // 画面遷移管理: 'LP' | 'CLIENT_LOGIN' | 'ADMIN_LOGIN' | 'MEMBER' | 'ADMIN'
+// 資産再利用: RealChart
+const RealChart = ({ data, color = "#ef4444" }) => {
+  const [activePoint, setActivePoint] = useState<any>(null);
+  if (!data || data.length === 0) return null;
+  const maxVal = Math.max(...data.map((d:any) => d.value));
+  const minVal = Math.min(...data.map((d:any) => d.value));
+  const yMax = maxVal + (maxVal - minVal) * 0.2;
+  const yMin = minVal - (maxVal - minVal) * 0.2;
+  const getX = (i:number) => (i / (data.length - 1)) * 100;
+  const getY = (v:number) => 100 - ((v - yMin) / (yMax - yMin)) * 100;
+  const points = data.map((d:any, i:number) => `${getX(i)},${getY(d.value)}`).join(' ');
+
+  return (
+    <div className="w-full" onMouseLeave={() => setActivePoint(null)}>
+      <div className="flex justify-between items-end mb-4">
+        <div>
+          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{activePoint ? activePoint.date : 'Market Trend'}</p>
+          <p className="text-2xl font-mono font-black text-white">¥{activePoint ? activePoint.value.toLocaleString() : data[data.length-1].value.toLocaleString()}</p>
+        </div>
+        <div className="text-right text-green-500 font-bold text-xs flex items-center gap-1"><IconArrowUp /> LME-Sync</div>
+      </div>
+      <div className="h-32 w-full relative border-b border-white/10">
+        <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible" preserveAspectRatio="none">
+          <path d={`M ${points} L 100,100 L 0,100 Z`} fill="url(#grad)" opacity="0.2" />
+          <path d={`M ${points}`} fill="none" stroke={color} strokeWidth="2" vectorEffect="non-scaling-stroke" />
+          <defs><linearGradient id="grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color}/><stop offset="100%" stopColor="transparent"/></linearGradient></defs>
+          {data.map((d:any, i:number) => (
+            <rect key={i} x={getX(i)-2} y="0" width="4" height="100" fill="transparent" onMouseEnter={() => setActivePoint(d)} />
+          ))}
+        </svg>
+      </div>
+    </div>
+  );
+};
+
+export default function WireMasterCloud() {
   const [view, setView] = useState<'LP' | 'CLIENT_LOGIN' | 'ADMIN_LOGIN' | 'MEMBER' | 'ADMIN'>('LP');
-  const [user, setUser] = useState<any>(null);
   const [data, setData] = useState<any>(null);
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  
+  // POS用State
+  const [calcValue, setCalcValue] = useState('0');
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [cart, setCart] = useState<any[]>([]);
 
-  // 初期データ取得（建値など）
   useEffect(() => {
-    fetch('/api/gas')
-      .then(res => res.json())
-      .then(d => { if (d.status === 'success') setData(d); });
+    fetch('/api/gas').then(res => res.json()).then(d => { if(d.status === 'success') setData(d); });
   }, []);
 
-  // 認証処理
-  const handleAuth = async (e: any, targetRole: 'ADMIN' | 'MEMBER') => {
+  const handleLogin = async (e: any, target: 'ADMIN' | 'MEMBER') => {
     e.preventDefault();
     setLoading(true);
-    try {
-      const res = await fetch('/api/gas', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'AUTH_LOGIN',
-          loginId: e.target.loginId.value,
-          password: e.target.password.value
-        })
-      });
-      const result = await res.json();
-      if (result.status === 'success') {
-        // ログイン画面の種別と、DB上の権限が一致するかチェック
-        if (targetRole === 'ADMIN' && result.user.role !== 'ADMIN') {
-          alert("管理者権限がありません。");
-          return;
-        }
-        setUser(result.user);
-        setView(result.user.role === 'ADMIN' ? 'ADMIN' : 'MEMBER');
-      } else {
-        alert(result.message);
-      }
-    } catch (err) {
-      alert("通信エラー");
-    } finally {
-      setLoading(false);
-    }
+    const res = await fetch('/api/gas', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'AUTH_LOGIN', loginId: e.target.loginId.value, password: e.target.password.value })
+    });
+    const result = await res.json();
+    if (result.status === 'success') {
+      if (target === 'ADMIN' && result.user.role !== 'ADMIN') { alert("管理者権限が必要です"); }
+      else { setUser(result.user); setView(target === 'ADMIN' ? 'ADMIN' : 'MEMBER'); }
+    } else { alert(result.message); }
+    setLoading(false);
   };
 
-  const marketPrice = data?.config?.market_price ? fmt(data.config.market_price) : '---';
+  const marketPrice = data?.config?.market_price || 0;
 
   // ----------------------------------------------------------------
-  // 1. LP (Landing Page)
+  // 1. Landing Page (LP)
   // ----------------------------------------------------------------
   if (view === 'LP') {
     return (
-      <div className="min-h-screen bg-[#0d1117] text-white font-sans">
-        {/* Hero Section */}
-        <nav className="p-6 flex justify-between items-center border-b border-white/5 bg-[#0d1117]/50 backdrop-blur-md sticky top-0 z-50">
-          <div className="flex items-center gap-2">
-            <div className="bg-red-600 px-2 py-1 rounded font-black italic">W</div>
-            <span className="font-black text-xl tracking-tighter uppercase">Wire Master <span className="text-red-500">Cloud</span></span>
+      <div className="min-h-screen bg-[#0d1117] text-white">
+        <nav className="p-6 flex justify-between items-center border-b border-white/5 sticky top-0 bg-[#0d1117]/80 backdrop-blur-md z-50">
+          <div className="flex items-center gap-2 font-black text-xl italic uppercase tracking-tighter">
+            <span className="text-red-600">Wire</span>Master Cloud
           </div>
-          <button onClick={() => setView('CLIENT_LOGIN')} className="text-xs font-bold border border-white/20 px-4 py-2 rounded-full hover:bg-white hover:text-black transition">MEMBER LOGIN</button>
+          <button onClick={() => setView('CLIENT_LOGIN')} className="bg-red-600 px-6 py-2 rounded-full font-bold text-xs hover:bg-red-700 transition shadow-lg shadow-red-900/20">MEMBER LOGIN</button>
         </nav>
 
-        <main>
-          {/* Hero */}
-          <section className="py-24 px-6 text-center max-w-4xl mx-auto">
-            <div className="inline-block px-4 py-1.5 bg-red-950/30 border border-red-500/30 rounded-full text-red-500 text-[10px] font-black tracking-[0.3em] mb-6 uppercase">Tomakomai Factory Official</div>
-            <h1 className="text-5xl md:text-7xl font-black mb-8 italic tracking-tighter leading-none">
-              その電線、<br />
-              <span className="text-red-600">透明な価値</span>に変える。
-            </h1>
-            <p className="text-gray-400 text-sm md:text-lg mb-12 font-medium max-w-2xl mx-auto leading-relaxed">
-              LME銅相場に完全連動した適正査定。最新の湿式プラント「WNシリーズ」による高精度な歩留まり解析が、あなたの取引を次のステージへ導きます。
-            </p>
-            
-            <div className="flex flex-col md:flex-row gap-4 justify-center items-center">
-              <div className="bg-[#161b22] border border-white/10 p-6 rounded-2xl w-full md:w-64 text-center shadow-2xl">
-                <span className="text-[10px] text-gray-500 font-bold block mb-2 uppercase tracking-widest">Copper Base Price</span>
-                <span className="text-3xl font-mono font-black text-red-500">¥{marketPrice}</span>
+        <main className="max-w-6xl mx-auto px-6 py-20 grid lg:grid-cols-2 gap-16 items-center">
+          <div className="space-y-8">
+            <div className="inline-block px-3 py-1 bg-red-950/30 border border-red-500/30 text-red-500 text-[10px] font-black tracking-widest uppercase rounded">Tomakomai Factory Official</div>
+            <h1 className="text-6xl font-black leading-none italic tracking-tighter">その電線に、<br/><span className="text-red-600">適正な光</span>を。</h1>
+            <p className="text-gray-400 leading-relaxed max-w-md">LME銅相場に完全連動。ナゲットプラント「WNシリーズ」による高精度解析が、廃電線の価値を最大化します。</p>
+            <div className="flex gap-4">
+              <button onClick={() => setView('CLIENT_LOGIN')} className="bg-white text-black px-8 py-4 rounded-xl font-black hover:bg-gray-200 transition shadow-xl">今すぐ査定を開始</button>
+            </div>
+          </div>
+          <div className="bg-[#161b22] border border-white/10 p-8 rounded-3xl shadow-2xl">
+            <RealChart data={data?.history} />
+            <div className="mt-8 grid grid-cols-2 gap-4">
+              <div className="bg-[#0d1117] p-4 rounded-2xl border border-white/5">
+                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Current Copper</p>
+                <p className="text-2xl font-mono font-black text-white">¥{Number(marketPrice).toLocaleString()}<small className="text-xs">/kg</small></p>
               </div>
-              <button onClick={() => setView('CLIENT_LOGIN')} className="w-full md:w-auto bg-red-600 hover:bg-red-700 text-white px-10 py-5 rounded-2xl font-black text-lg shadow-xl shadow-red-900/20 transition-all">
-                マイページへ
-              </button>
+              <div className="bg-[#0d1117] p-4 rounded-2xl border border-white/5">
+                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Factory Status</p>
+                <p className="text-2xl font-mono font-black text-green-500">ACTIVE</p>
+              </div>
             </div>
-          </section>
-
-          {/* Features */}
-          <section className="bg-white/5 py-24 px-6">
-            <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-12">
-              {[
-                { t: "透明な査定", d: "最新のナゲット加工機による実測歩留まりをフィードバック。根拠のある買取価格を提示します。" },
-                { t: "会員ランク特典", d: "取引量と品質に応じてランクアップ。継続的なお取引に最大級のベネフィットを。" },
-                { t: "24h クラウド管理", d: "スマホひとつで過去の取引履歴、保有ポイント、品質評価をいつでも確認可能です。" }
-              ].map((f, i) => (
-                <div key={i} className="space-y-4">
-                  <div className="text-red-600 font-black text-2xl italic">0{i+1}</div>
-                  <h3 className="text-xl font-black text-white">{f.t}</h3>
-                  <p className="text-gray-400 text-sm leading-relaxed">{f.d}</p>
-                </div>
-              ))}
-            </div>
-          </section>
+          </div>
         </main>
 
-        <footer className="p-12 border-t border-white/5 flex flex-col items-center gap-6">
-          <p className="text-gray-600 text-[10px] font-bold tracking-widest uppercase">© 2026 Wire Master Cloud / Tsukisamu Seisakusho</p>
-          <button onClick={() => setView('ADMIN_LOGIN')} className="text-gray-700 hover:text-gray-400 text-[10px] font-bold uppercase underline tracking-tighter transition">Admin Console</button>
+        <section className="bg-white/5 py-20 px-6 border-y border-white/5">
+          <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-12">
+            {[
+              { t: "透明な歩留まり解析", d: "加工後の実測データをフィードバック。根拠のある高価買取を実現します。" },
+              { t: "会員ランクシステム", d: "取引量に応じたポイント付与と単価優遇。パートナーと共に成長します。" },
+              { t: "即日現金決済", d: "検収完了後、その場で決済。インボイス制度にも完全対応しております。" }
+            ].map((f, i) => (
+              <div key={i} className="space-y-3">
+                <div className="text-red-600 text-3xl font-black italic">0{i+1}</div>
+                <h3 className="text-xl font-bold">{f.t}</h3>
+                <p className="text-sm text-gray-500 leading-relaxed">{f.d}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <footer className="p-12 text-center text-gray-600 text-[10px] font-bold uppercase tracking-widest border-t border-white/5">
+          © 2026 Wire Master Cloud / Tsukisamu Seisakusho 
+          <button onClick={() => setView('ADMIN_LOGIN')} className="ml-4 hover:text-white underline">Admin Access</button>
         </footer>
       </div>
     );
   }
 
   // ----------------------------------------------------------------
-  // 2. LOGIN VIEWS
+  // 2. Login Screens
   // ----------------------------------------------------------------
   if (view === 'CLIENT_LOGIN' || view === 'ADMIN_LOGIN') {
     const isAdmin = view === 'ADMIN_LOGIN';
     return (
       <div className="min-h-screen bg-[#0d1117] flex items-center justify-center p-6">
-        <div className="max-w-md w-full bg-[#161b22] border border-white/10 p-10 rounded-3xl shadow-2xl relative">
-          <button onClick={() => setView('LP')} className="absolute top-6 left-6 text-gray-500 hover:text-white flex items-center gap-1 text-xs font-bold uppercase">
-            ← Back
-          </button>
+        <div className="max-w-sm w-full bg-[#161b22] border border-white/10 p-10 rounded-[2.5rem] shadow-2xl relative">
+          <button onClick={() => setView('LP')} className="absolute top-8 left-8 text-gray-500 text-xs font-bold hover:text-white">← BACK</button>
           <div className="text-center mb-10">
-             <div className={`w-12 h-12 ${isAdmin ? 'bg-cyan-600' : 'bg-red-600'} mx-auto rounded-xl flex items-center justify-center font-black text-xl mb-4 italic text-white shadow-lg`}>
-              {isAdmin ? 'A' : 'M'}
-             </div>
-             <h2 className="text-2xl font-black text-white tracking-tighter uppercase">{isAdmin ? 'Admin Console' : 'Member Portal'}</h2>
-             <p className="text-gray-500 text-[10px] font-bold mt-2 uppercase tracking-widest">Authorized Access Only</p>
+            <h2 className="text-2xl font-black text-white italic tracking-tighter uppercase">{isAdmin ? 'Factory Admin' : 'Member Portal'}</h2>
           </div>
-          <form onSubmit={(e) => handleAuth(e, isAdmin ? 'ADMIN' : 'MEMBER')} className="space-y-6">
-            <input name="loginId" className="w-full bg-[#0d1117] border border-white/10 p-4 rounded-xl text-white outline-none focus:border-red-600 transition-all font-bold" placeholder="ID" required />
-            <input name="password" type="password" className="w-full bg-[#0d1117] border border-white/10 p-4 rounded-xl text-white outline-none focus:border-red-600 transition-all font-bold" placeholder="Password" required />
-            <button disabled={loading} className={`w-full ${isAdmin ? 'bg-cyan-600' : 'bg-red-600'} text-white py-5 rounded-xl font-black text-sm uppercase tracking-widest hover:brightness-110 transition-all shadow-xl`}>
-              {loading ? 'Authenticating...' : 'Sign In'}
+          <form onSubmit={(e) => handleAuth(e, isAdmin ? 'ADMIN' : 'MEMBER')} className="space-y-4">
+            <input name="loginId" className="w-full bg-black border border-white/10 p-4 rounded-2xl text-white outline-none focus:border-red-600 transition-all font-bold" placeholder="ID" required />
+            <input name="password" type="password" className="w-full bg-black border border-white/10 p-4 rounded-2xl text-white outline-none focus:border-red-600 transition-all font-bold" placeholder="PASS" required />
+            <button disabled={loading} className={`w-full py-5 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl transition-all ${isAdmin ? 'bg-cyan-600' : 'bg-red-600'} hover:brightness-125`}>
+              {loading ? 'Authorizing...' : 'Enter System'}
             </button>
           </form>
         </div>
@@ -149,54 +162,45 @@ export default function WireMasterPortal() {
   }
 
   // ----------------------------------------------------------------
-  // 3. MEMBER DASHBOARD (v2.1)
+  // 3. Member Dashboard (Nurturing UI)
   // ----------------------------------------------------------------
   if (view === 'MEMBER') {
     return (
       <div className="min-h-screen bg-[#0d1117] text-white">
-        <header className="p-6 border-b border-white/5 flex justify-between items-center bg-[#0d1117]/80 backdrop-blur-md sticky top-0 z-50">
-          <div className="font-black text-lg italic tracking-tighter">MEMBER <span className="text-red-500">PORTAL</span></div>
-          <button onClick={() => setView('LP')} className="text-[10px] font-black text-gray-500 hover:text-white uppercase tracking-widest border border-white/10 px-4 py-2 rounded-lg">Logout</button>
+        <header className="p-6 border-b border-white/5 flex justify-between items-center">
+          <span className="font-black italic text-xl">MEMBER <span className="text-red-600">PORTAL</span></span>
+          <button onClick={() => setView('LP')} className="text-[10px] font-bold text-gray-500 hover:text-white border border-white/10 px-4 py-2 rounded-lg">LOGOUT</button>
         </header>
-
-        <main className="max-w-4xl mx-auto py-12 px-6 space-y-8 animate-in slide-in-from-bottom-4 duration-500">
-          <div className="bg-gradient-to-br from-[#161b22] to-[#0d1117] border border-white/10 p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden">
-            <div className="relative z-10 flex flex-col md:flex-row justify-between gap-6">
+        <main className="max-w-4xl mx-auto p-6 space-y-6">
+          <div className="bg-gradient-to-br from-[#161b22] to-black border border-white/10 p-10 rounded-[3rem] shadow-2xl relative overflow-hidden">
+            <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
               <div>
-                <span className="bg-cyan-500/10 text-cyan-500 px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase mb-4 inline-block border border-cyan-500/30">{user.role} RANK</span>
-                <h2 className="text-4xl font-black italic tracking-tight">{user.companyName} 様</h2>
-                <p className="text-xs text-cyan-400 font-bold mt-4 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span> {user.benefitMsg}
-                </p>
+                <span className="bg-red-600/10 text-red-500 border border-red-500/20 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-4 inline-block">{user.role} RANK</span>
+                <h2 className="text-5xl font-black italic tracking-tighter">{user.companyName} 様</h2>
+                <p className="text-gray-500 font-bold text-xs mt-4 uppercase">{user.benefitMsg}</p>
               </div>
-              <div className="bg-black/40 p-6 rounded-3xl border border-white/5 text-right min-w-[200px]">
-                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Available Points</p>
-                <p className="text-4xl font-mono font-black text-white">{fmt(user.points)} <span className="text-sm text-gray-500">PT</span></p>
+              <div className="bg-white/5 backdrop-blur-md p-8 rounded-[2rem] border border-white/10 text-right min-w-[220px]">
+                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Points Balance</p>
+                <p className="text-5xl font-mono font-black text-white">{(user.points || 0).toLocaleString()} <small className="text-sm">PT</small></p>
               </div>
             </div>
+            <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-red-600 rounded-full blur-[100px] opacity-10"></div>
           </div>
-
+          
           <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-[#161b22] border border-white/10 p-6 rounded-2xl">
-              <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-6">Last Quality Assessment</h3>
-              <div className="flex items-baseline gap-4 mb-4">
-                <span className="text-5xl font-mono font-black text-white">{user.lastYield}</span>
-                <span className="bg-green-500/10 text-green-500 px-2 py-1 rounded text-[10px] font-black uppercase">Excellent</span>
+            <div className="bg-[#161b22] border border-white/10 p-8 rounded-3xl">
+              <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-6 flex items-center gap-2"><span className="w-1.5 h-3 bg-red-600"></span>Quality Feedback</h3>
+              <div className="flex items-baseline gap-3 mb-2">
+                <span className="text-5xl font-mono font-black text-white">64.2%</span>
+                <span className="text-green-500 font-black text-xs uppercase">Excellent</span>
               </div>
-              <p className="text-xs text-gray-500 leading-relaxed">
-                丁寧な分別により高純度のナゲット回収に成功しました。次回の買取単価に品質ボーナスが加算されます。
-              </p>
+              <p className="text-xs text-gray-500 leading-relaxed">前回の持ち込み分は分別が非常に丁寧で、ナゲット加工の効率化に貢献いただきました。次回ボーナス付与対象です。</p>
             </div>
-            <div className="bg-[#161b22] border border-white/10 p-6 rounded-2xl">
-              <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-6">Next Rank Up</h3>
-              <div className="flex justify-between text-[10px] font-black mb-2 uppercase tracking-tighter">
-                <span>{user.role}</span>
-                <span className="text-red-500">Next Level</span>
-              </div>
-              <div className="w-full bg-black h-2 rounded-full overflow-hidden">
-                <div className="bg-red-600 h-full w-[65%] shadow-[0_0_15px_rgba(220,38,38,0.5)]"></div>
-              </div>
-              <p className="text-[9px] text-right mt-3 text-gray-500 font-bold uppercase tracking-widest">あと 250kg の取引でランクアップ</p>
+            <div className="bg-[#161b22] border border-white/10 p-8 rounded-3xl">
+              <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-6 flex items-center gap-2"><span className="w-1.5 h-3 bg-cyan-500"></span>Next Rank Status</h3>
+              <div className="flex justify-between text-[10px] font-bold mb-3 uppercase tracking-tighter text-gray-400"><span>Current</span><span>Next Level</span></div>
+              <div className="w-full bg-black h-2 rounded-full overflow-hidden mb-4"><div className="bg-cyan-500 h-full w-[72%] shadow-[0_0_15px_rgba(6,182,212,0.5)]"></div></div>
+              <p className="text-[10px] text-right text-gray-500 font-bold uppercase">あと 245kg の取引で昇格</p>
             </div>
           </div>
         </main>
@@ -205,65 +209,95 @@ export default function WireMasterPortal() {
   }
 
   // ----------------------------------------------------------------
-  // 4. ADMIN DASHBOARD (FACTORY OS v2.1)
+  // 4. Admin Dashboard (Factory OS v2.1 + POS Simulator)
   // ----------------------------------------------------------------
   if (view === 'ADMIN') {
     const monthlyTotal = data?.stats?.monthlyTotal || 0;
     const progress = Math.min(Math.round((monthlyTotal / 30000) * 100), 100);
 
     return (
-      <div className="min-h-screen bg-[#0d1117] text-[#c9d1d9] font-sans">
-        <header className="border-b border-white/5 bg-[#0d1117]/90 backdrop-blur-md px-6 py-4 flex justify-between items-center sticky top-0 z-50 shadow-2xl">
-          <div className="flex items-center gap-2">
-            <div className="bg-cyan-600 text-white w-8 h-8 flex items-center justify-center font-black rounded shadow-lg">A</div>
-            <h1 className="text-lg font-bold tracking-tighter text-white uppercase italic">Factory OS <span className="text-cyan-500">v2.1</span></h1>
+      <div className="min-h-screen bg-[#0d1117] text-[#c9d1d9] flex flex-col md:flex-row">
+        {/* Sidebar / Stats */}
+        <aside className="w-full md:w-80 border-r border-white/5 bg-black/20 p-6 space-y-6 shrink-0">
+          <div className="font-black italic text-xl mb-12">FACTORY <span className="text-cyan-500">OS</span></div>
+          <div className="bg-[#161b22] p-6 rounded-2xl border border-white/5 space-y-4 shadow-xl">
+             <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block">Monthly Progress</span>
+             <div className="text-5xl font-mono font-black text-white">{progress}%</div>
+             <div className="w-full bg-black h-1 rounded-full overflow-hidden"><div className="bg-cyan-500 h-full" style={{width: `${progress}%`}}></div></div>
           </div>
-          <button onClick={() => setView('LP')} className="bg-white/5 text-gray-400 border border-white/10 px-4 py-2 rounded font-bold text-[10px] hover:bg-red-600 hover:text-white transition-all uppercase tracking-widest">System Logout</button>
-        </header>
+          <div className="bg-[#161b22] p-6 rounded-2xl border border-white/5 space-y-4">
+             <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block">LME Copper Base</span>
+             <div className="text-3xl font-mono font-black text-red-500 italic">¥{Number(marketPrice).toLocaleString()}</div>
+          </div>
+          <button onClick={() => setView('LP')} className="w-full py-4 text-[10px] font-black uppercase text-gray-500 border border-white/10 rounded-xl hover:text-white transition">Exit System</button>
+        </aside>
 
-        <main className="p-6 max-w-[1600px] mx-auto space-y-6 animate-in fade-in duration-500">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-[#161b22] border border-white/5 p-8 rounded-3xl relative overflow-hidden group shadow-xl">
-              <span className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-4 block">Monthly Progress (30t)</span>
-              <div className="text-5xl font-mono font-black text-white mb-6">{progress}%</div>
-              <div className="w-full bg-black h-1.5 rounded-full overflow-hidden">
-                <div className="bg-cyan-500 h-full transition-all duration-1000" style={{width: `${progress}%`}}></div>
+        {/* Main Console */}
+        <main className="flex-1 p-6 space-y-6 overflow-y-auto">
+          <div className="grid lg:grid-cols-2 gap-6">
+            {/* POS 買取エントランス (資産再利用) */}
+            <section className="bg-[#161b22] rounded-[2rem] border border-white/10 overflow-hidden flex flex-col shadow-2xl">
+              <div className="px-8 py-6 bg-white/5 flex justify-between items-center border-b border-white/5">
+                <h3 className="text-xs font-black uppercase tracking-widest text-white flex items-center gap-2"><IconCalculator /> Entrance POS</h3>
+                <span className="text-[10px] font-bold text-cyan-500">READY TO EVALUATE</span>
               </div>
-            </div>
-            <div className="bg-[#161b22] border border-white/5 p-8 rounded-3xl shadow-xl">
-              <span className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-4 block">Current LME Copper</span>
-              <div className="text-5xl font-mono font-black text-red-500 italic">¥{marketPrice}</div>
-              <p className="text-[9px] text-gray-500 mt-4 font-bold uppercase">Real-time Data Synchronized</p>
-            </div>
-            <div className="bg-[#161b22] border border-green-500/20 p-8 rounded-3xl shadow-xl">
-              <span className="text-[10px] font-bold text-green-500 uppercase tracking-[0.2em] mb-4 block">Est. Profit (Feb)</span>
-              <div className="text-5xl font-mono font-black text-white">¥1.82M</div>
-            </div>
-          </div>
-
-          <div className="bg-[#161b22] border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
-            <div className="px-8 py-5 bg-white/5 border-b border-white/5 flex justify-between items-center">
-              <h3 className="text-xs font-black uppercase tracking-widest text-white flex items-center gap-2">
-                <span className="w-2 h-2 bg-red-600 rounded-full animate-pulse"></span>
-                Processing Queue
-              </h3>
-              <span className="text-[10px] font-bold text-gray-500">{data?.pending?.length || 0} Batches Wait</span>
-            </div>
-            <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {data?.pending?.map((t: any) => (
-                <div key={t.id} className="bg-[#0d1117] border border-white/5 p-6 rounded-2xl hover:border-cyan-500/50 transition-all group">
-                  <div className="mb-6">
-                    <span className="text-[9px] font-mono text-gray-600 uppercase tracking-widest block mb-1">TXN_{t.id}</span>
-                    <p className="text-lg font-bold text-white tracking-tight">{t.client}</p>
-                    <p className="text-sm font-mono text-cyan-500">{fmt(t.weight)} kg</p>
+              <div className="p-8 flex-1 grid grid-cols-2 gap-3 overflow-y-auto max-h-[400px]">
+                {data?.products?.map((p:any) => (
+                  <button key={p.id} onClick={() => { setSelectedProduct(p); setCalcValue('0'); }} className={`p-5 rounded-2xl border transition-all text-left ${selectedProduct?.id === p.id ? 'bg-cyan-600 border-cyan-500 shadow-lg shadow-cyan-900/20' : 'bg-black border-white/5 hover:border-white/20'}`}>
+                    <span className="text-[9px] text-gray-500 font-bold block mb-1 uppercase tracking-tighter">{p.category}</span>
+                    <p className="font-bold text-white text-sm leading-tight">{p.name}</p>
+                    <p className="text-xs font-mono font-black mt-2">¥{Math.floor(marketPrice * (p.ratio/100)).toLocaleString()}</p>
+                  </button>
+                ))}
+              </div>
+              {/* POS Calculator Overlay (電卓) */}
+              {selectedProduct && (
+                <div className="p-8 bg-black/80 backdrop-blur-md border-t border-white/10 animate-in slide-in-from-bottom-4">
+                  <div className="flex justify-between items-center mb-6">
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-500 uppercase">Input Weight (kg)</p>
+                      <p className="text-4xl font-mono font-black text-white">{calcValue}<span className="text-sm text-gray-500 ml-2">kg</span></p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] font-bold text-gray-500 uppercase">Subtotal</p>
+                      <p className="text-4xl font-mono font-black text-cyan-500">¥{Math.floor(Number(calcValue) * Math.floor(marketPrice * (selectedProduct.ratio/100))).toLocaleString()}</p>
+                    </div>
                   </div>
-                  <button className="w-full bg-white/5 border border-white/10 text-gray-400 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest group-hover:bg-cyan-600 group-hover:text-white group-hover:border-cyan-600 transition-all">Start Processing</button>
+                  <div className="grid grid-cols-4 gap-2 mb-6">
+                    {[7,8,9,4,5,6,1,2,3,0,'.'].map(n => (
+                      <button key={n} onClick={() => setCalcValue(prev => prev === '0' ? String(n) : prev + n)} className="py-4 bg-white/5 rounded-xl font-bold text-white hover:bg-white/10 transition">{n}</button>
+                    ))}
+                    <button onClick={() => setCalcValue('0')} className="py-4 bg-red-950/30 text-red-500 rounded-xl font-bold">C</button>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => setSelectedProduct(null)} className="flex-1 py-4 bg-white/5 rounded-xl font-bold text-gray-500">CANCEL</button>
+                    <button onClick={() => alert("取引を記録しました")} className="flex-[2] py-4 bg-cyan-600 rounded-xl font-black text-white shadow-xl shadow-cyan-900/40 uppercase tracking-widest">Confirm & Print ID</button>
+                  </div>
                 </div>
-              ))}
-              {(!data?.pending || data.pending.length === 0) && (
-                <div className="col-span-full py-20 text-center text-gray-600 font-black uppercase tracking-[0.2em] italic">No active tasks in queue</div>
               )}
-            </div>
+            </section>
+
+            {/* 加工キュー管理 */}
+            <section className="bg-[#161b22] rounded-[2rem] border border-white/10 overflow-hidden flex flex-col shadow-2xl">
+              <div className="px-8 py-6 bg-white/5 border-b border-white/5">
+                <h3 className="text-xs font-black uppercase tracking-widest text-white">Processing Queue (Pending)</h3>
+              </div>
+              <div className="p-6 space-y-3 overflow-y-auto max-h-[600px]">
+                {data?.pending?.map((t:any) => (
+                  <div key={t.id} className="bg-black/40 p-5 rounded-2xl border border-white/5 flex justify-between items-center group">
+                    <div>
+                      <span className="text-[9px] font-mono text-gray-600 uppercase tracking-widest block mb-1">ID: {t.id}</span>
+                      <p className="font-bold text-white tracking-tight">{t.client}</p>
+                      <p className="text-xs text-gray-500 mt-1">{t.weight} kg / {t.date}</p>
+                    </div>
+                    <button className="bg-white/5 text-gray-400 px-5 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all shadow-lg">Start Batch</button>
+                  </div>
+                ))}
+                {(!data?.pending || data.pending.length === 0) && (
+                   <div className="py-20 text-center font-black text-gray-700 uppercase italic tracking-widest">No active batches</div>
+                )}
+              </div>
+            </section>
           </div>
         </main>
       </div>
