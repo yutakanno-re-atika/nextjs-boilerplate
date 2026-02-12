@@ -43,13 +43,13 @@ const Icons = {
   Check: () => <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>,
   Box: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>,
   Users: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
-  Dashboard: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>,
+  Dashboard: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>,
   History: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   Calc: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
 };
 
 // ==========================================
-// RealChart (Synchronized)
+// RealChart
 // ==========================================
 const RealChart = ({ data, currentPrice }: {data: any[], currentPrice: number}) => {
   const [activePoint, setActivePoint] = useState<any>(null);
@@ -69,7 +69,6 @@ const RealChart = ({ data, currentPrice }: {data: any[], currentPrice: number}) 
   }).join(' ');
 
   const displayDate = activePoint ? activePoint.date : 'NOW';
-  // チャートが非アクティブ時は、Configの現在価格を優先表示
   const displayValue = activePoint ? activePoint.value : currentPrice;
 
   return (
@@ -101,7 +100,6 @@ const RealChart = ({ data, currentPrice }: {data: any[], currentPrice: number}) 
 // ==========================================
 export default function WireMasterCloud() {
   const [view, setView] = useState<'LP' | 'LOGIN' | 'ADMIN' | 'MEMBER'>('LP');
-  // サイドバーナビゲーション用ステート
   const [adminTab, setAdminTab] = useState<'POS' | 'STOCK' | 'MEMBERS'>('POS');
   const [memberTab, setMemberTab] = useState<'DASHBOARD' | 'HISTORY' | 'SETTINGS'>('DASHBOARD');
 
@@ -110,12 +108,10 @@ export default function WireMasterCloud() {
   const [activeTab, setActiveTab] = useState('pika');
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
   
-  // シミュレーター用
   const [simType, setSimType] = useState('');
   const [simWeight, setSimWeight] = useState('');
   const [simResult, setSimResult] = useState<any>(null);
 
-  // POS State (Admin)
   const [posUser, setPosUser] = useState<string>('');
   const [posProduct, setPosProduct] = useState<string>('');
   const [posWeight, setPosWeight] = useState<string>('');
@@ -154,23 +150,33 @@ export default function WireMasterCloud() {
     setSimResult({ label: labels[simType], weight: w, unit: estimatedUnit, total: total });
   };
 
-  // POS計算 (Admin)
+  // ==============================================
+  // POS計算ロジック (haisen_master思想導入)
+  // ==============================================
   const handlePosCalculate = () => {
-    if (!posProduct || !posWeight) {
-      alert("商品と重量を入力してください");
-      return;
-    }
-    if (!data || !marketPrice) {
-      alert("市場価格データをロード中です");
-      return;
-    }
+    if (!posProduct || !posWeight) { alert("商品と重量を入力してください"); return; }
+    if (!data) { alert("データ読み込み中..."); return; }
+
     const product = data.products.find(p => p.id === posProduct);
     if (!product) return;
     
+    // データが0の場合はフォールバック値を使用
+    const currentMarketPrice = marketPrice > 0 ? marketPrice : 1450; 
     const weight = parseFloat(posWeight);
+    
+    // 1. ランク補正
     const rankBonus = posRank === 'A' ? 1.02 : posRank === 'C' ? 0.95 : 1.0;
-    const unitPrice = Math.floor(marketPrice * (product.ratio / 100) * rankBonus);
-    setPosResult(Math.floor(unitPrice * weight));
+    // 2. 市場係数 (安全マージン 90%)
+    const marketFactor = 0.90; 
+    // 3. 加工コスト (15円/kg)
+    const processingCost = 15;
+
+    // 計算式: (建値 * 銅率% * ランク * 市場係数) - コスト
+    const rawPrice = currentMarketPrice * (product.ratio / 100);
+    const adjustedPrice = (rawPrice * rankBonus * marketFactor) - processingCost;
+    const finalUnitPrice = Math.max(0, Math.floor(adjustedPrice)); // マイナス防止
+    
+    setPosResult(Math.floor(finalUnitPrice * weight));
     setCompleteTxId(null);
   };
 
@@ -204,9 +210,6 @@ export default function WireMasterCloud() {
     { q: "出張買取のエリアについて", a: "基本的に北海道全域に対応しております。数量によって条件が異なりますので、まずはお気軽にお問い合わせください。" }
   ];
 
-  // ----------------------------------------------------------------
-  // 1. PUBLIC LANDING PAGE
-  // ----------------------------------------------------------------
   if (view === 'LP' || view === 'LOGIN') {
     return (
       <div className="min-h-screen bg-white text-[#111] font-sans selection:bg-[#D32F2F] selection:text-white">
@@ -254,7 +257,6 @@ export default function WireMasterCloud() {
             <div className="lg:col-span-5 animate-in fade-in slide-in-from-right-8 duration-1000 delay-300">
               <div className="backdrop-blur-sm bg-white/10 border border-white/20 p-8 md:p-12 shadow-2xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-2xl"></div>
-                {/* 修正: Config価格を渡して強制同期 */}
                 <RealChart data={data?.history || []} currentPrice={marketPrice} />
                 <div className="mt-8 pt-6 border-t border-white/20 flex justify-between items-center"><div><p className="text-[9px] text-white/70 uppercase tracking-widest mb-1">Factory Status</p><p className="text-xs font-medium tracking-wider flex items-center gap-2 text-white"><span className="w-2 h-2 bg-green-400 rounded-full shadow-[0_0_10px_#4ade80]"></span> Accepting</p></div><div className="text-right"><p className="text-xs font-serif italic text-white/80">Tomakomai, Hokkaido</p></div></div>
               </div>
@@ -262,8 +264,6 @@ export default function WireMasterCloud() {
           </div>
         </section>
 
-        {/* ... Concept, Service, Membership, Simulator, Price, FAQ, Access, Footer ... */}
-        {/* 長さ省略のため割愛しますが、以前のコードと同じ内容が入ります。必ず残してください。 */}
         <section id="about" className="py-32 px-6 bg-white relative">
           <div className="absolute right-6 top-32 text-[#f0f0f0] text-9xl font-serif font-bold opacity-50 select-none z-0" style={{writingMode: 'vertical-rl'}}>一貫処理</div>
           <div className="max-w-[1200px] mx-auto grid md:grid-cols-2 gap-20 items-center relative z-10">
@@ -359,7 +359,7 @@ export default function WireMasterCloud() {
   }
 
   // =================================================================
-  // 2. ADMIN DASHBOARD (機能強化版)
+  // ADMIN DASHBOARD
   // =================================================================
   if (view === 'ADMIN') {
     return (
@@ -368,7 +368,6 @@ export default function WireMasterCloud() {
           <div className="mb-12"><h1 className="text-2xl font-serif font-bold text-white">FACTORY<span className="text-[#D32F2F]">OS</span></h1><p className="text-[10px] text-gray-500 uppercase tracking-widest">Admin Control</p></div>
           <nav className="space-y-4">
              <div className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Module</div>
-             {/* タブ切り替えボタン */}
              <button onClick={()=>setAdminTab('POS')} className={`w-full text-left p-4 rounded text-sm font-bold transition flex items-center gap-3 ${adminTab==='POS' ? 'bg-white/5 border border-white/10 text-white' : 'text-gray-500 hover:text-white'}`}><Icons.Calc /> 買取POSレジ</button>
              <button onClick={()=>setAdminTab('STOCK')} className={`w-full text-left p-4 rounded text-sm font-bold transition flex items-center gap-3 ${adminTab==='STOCK' ? 'bg-white/5 border border-white/10 text-white' : 'text-gray-500 hover:text-white'}`}><Icons.Box /> 在庫管理</button>
              <button onClick={()=>setAdminTab('MEMBERS')} className={`w-full text-left p-4 rounded text-sm font-bold transition flex items-center gap-3 ${adminTab==='MEMBERS' ? 'bg-white/5 border border-white/10 text-white' : 'text-gray-500 hover:text-white'}`}><Icons.Users /> 会員管理</button>
@@ -383,7 +382,6 @@ export default function WireMasterCloud() {
         </aside>
 
         <main className="flex-1 p-8 overflow-y-auto">
-           {/* === POS VIEW === */}
            {adminTab === 'POS' && (
              <div className="max-w-4xl mx-auto animate-in fade-in zoom-in duration-300">
                 <header className="flex justify-between items-end mb-12">
@@ -393,7 +391,6 @@ export default function WireMasterCloud() {
 
                 <div className="grid grid-cols-12 gap-8">
                    <div className="col-span-12 lg:col-span-8 space-y-8">
-                      {/* Customer */}
                       <div className="bg-[#1a1a1a] p-8 rounded-xl border border-white/10">
                          <h3 className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-4 flex items-center gap-2"><span className="w-2 h-2 bg-[#D32F2F] rounded-full"></span> 1. Customer</h3>
                          <div className="flex gap-4">
@@ -402,7 +399,6 @@ export default function WireMasterCloud() {
                          </div>
                       </div>
 
-                      {/* Product */}
                       <div className="bg-[#1a1a1a] p-8 rounded-xl border border-white/10">
                          <h3 className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-4 flex items-center gap-2"><span className="w-2 h-2 bg-[#D32F2F] rounded-full"></span> 2. Product (DB)</h3>
                          <select className="w-full bg-black border border-white/20 p-4 rounded text-white font-bold mb-4 focus:border-[#D32F2F] outline-none cursor-pointer" value={posProduct} onChange={(e)=>setPosProduct(e.target.value)}>
@@ -432,7 +428,6 @@ export default function WireMasterCloud() {
                       </button>
                    </div>
 
-                   {/* Receipt & Action */}
                    <div className="col-span-12 lg:col-span-4">
                       <div className="bg-white text-black p-8 rounded-xl shadow-2xl relative h-full flex flex-col">
                          {completeTxId ? (
@@ -465,7 +460,6 @@ export default function WireMasterCloud() {
                                    <span className="font-bold text-gray-600">TOTAL</span>
                                    <span className="text-3xl font-black tracking-tighter">¥{posResult ? posResult.toLocaleString() : '0'}</span>
                                 </div>
-                                {/* 確定ボタン (金額がある時のみ表示) */}
                                 {posResult !== null && (
                                   <button 
                                     onClick={handlePosSubmit} 
@@ -484,7 +478,6 @@ export default function WireMasterCloud() {
              </div>
            )}
 
-           {/* === STOCK VIEW (Placeholder) === */}
            {adminTab === 'STOCK' && (
              <div className="max-w-4xl mx-auto text-center py-20 animate-in fade-in">
                 <div className="inline-block p-8 bg-white/5 rounded-full mb-6"><Icons.Box /></div>
@@ -497,7 +490,6 @@ export default function WireMasterCloud() {
              </div>
            )}
 
-           {/* === MEMBERS VIEW (Placeholder) === */}
            {adminTab === 'MEMBERS' && (
              <div className="max-w-4xl mx-auto text-center py-20 animate-in fade-in">
                 <div className="inline-block p-8 bg-white/5 rounded-full mb-6"><Icons.Users /></div>
@@ -510,9 +502,6 @@ export default function WireMasterCloud() {
     );
   }
 
-  // =================================================================
-  // 3. MEMBER DASHBOARD (機能強化版)
-  // =================================================================
   if (view === 'MEMBER') {
     return (
       <div className="min-h-screen bg-[#F5F5F7] text-[#111] font-sans flex flex-col md:flex-row">
@@ -528,7 +517,6 @@ export default function WireMasterCloud() {
         </aside>
 
         <main className="flex-1 p-8 overflow-y-auto">
-           {/* === DASHBOARD VIEW === */}
            {memberTab === 'DASHBOARD' && (
              <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4">
                 <div className="bg-[#111] text-white rounded-3xl p-10 relative overflow-hidden shadow-2xl">
@@ -546,7 +534,6 @@ export default function WireMasterCloud() {
              </div>
            )}
 
-           {/* === HISTORY VIEW === */}
            {memberTab === 'HISTORY' && (
              <div className="max-w-5xl mx-auto animate-in fade-in">
                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -556,7 +543,6 @@ export default function WireMasterCloud() {
              </div>
            )}
 
-           {/* === SETTINGS VIEW (Placeholder) === */}
            {memberTab === 'SETTINGS' && (
              <div className="max-w-xl mx-auto text-center py-20 animate-in fade-in">
                <Icons.Users />
