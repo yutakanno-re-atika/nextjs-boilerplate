@@ -1,28 +1,40 @@
-// app/api/gas/route.ts
 import { NextResponse } from 'next/server';
 
+// ★ここにあなたのGASのURLを貼り付けてください（引用符 ' ' を忘れずに！）
+const HARDCODED_GAS_URL = 'https://script.google.com/macros/s/AKfycbxuE0iPCEruoQLretA8R0cmSnRyZPYT9qd6YqDGVCCCY1h0wRVJX8P-MZF20I1whF7Z/exec'; 
+
 export async function GET() {
-  const GAS_URL = process.env.GAS_API_URL;
+  // 環境変数がなくても、直書きURLがあれば動きます
+  const GAS_URL = process.env.GAS_API_URL || HARDCODED_GAS_URL;
   
   if (!GAS_URL) {
-    return NextResponse.json({ status: 'error', message: 'GAS_API_URL is not defined' }, { status: 500 });
+    return NextResponse.json({ status: 'error', message: 'URL is missing' }, { status: 500 });
   }
 
   try {
-    const res = await fetch(GAS_URL, { next: { revalidate: 0 } }); // 常に最新を取得
+    // タイムアウト対策とキャッシュ無効化を追加
+    const res = await fetch(GAS_URL, { 
+      next: { revalidate: 0 },
+      signal: AbortSignal.timeout(10000) // 10秒でタイムアウト
+    });
+    
+    if (!res.ok) {
+        // GAS側がエラー（404や401）を返した場合
+        const text = await res.text();
+        console.error("GAS Error Response:", text);
+        return NextResponse.json({ status: 'error', message: `GAS responded with ${res.status}: ${text}` }, { status: 500 });
+    }
+
     const data = await res.json();
     return NextResponse.json(data);
-  } catch (error) {
-    return NextResponse.json({ status: 'error', message: 'Failed to fetch from GAS' }, { status: 500 });
+  } catch (error: any) {
+    console.error("Fetch failed:", error);
+    return NextResponse.json({ status: 'error', message: error.message }, { status: 500 });
   }
 }
 
 export async function POST(req: Request) {
-  const GAS_URL = process.env.GAS_API_URL;
-
-  if (!GAS_URL) {
-    return NextResponse.json({ status: 'error', message: 'GAS_API_URL is not defined' }, { status: 500 });
-  }
+  const GAS_URL = process.env.GAS_API_URL || HARDCODED_GAS_URL;
 
   try {
     const body = await req.json();
@@ -32,7 +44,7 @@ export async function POST(req: Request) {
     });
     const data = await res.json();
     return NextResponse.json(data);
-  } catch (error) {
-    return NextResponse.json({ status: 'error', message: 'Failed to post to GAS' }, { status: 500 });
+  } catch (error: any) {
+    return NextResponse.json({ status: 'error', message: error.message }, { status: 500 });
   }
 }
