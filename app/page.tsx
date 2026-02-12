@@ -3,33 +3,35 @@
 import React, { useState, useEffect } from 'react';
 
 // ==========================================
-// 画像パス定義 (現実の拡張子に完全準拠)
+// 画像パス定義
 // ==========================================
 const IMAGES = {
-  hero: "/images/factory_floor.png",      // PNG
-  pika: "/images/pika_wire.png",          // PNG
-  cv: "/images/cv_cable.png",             // PNG
-  iv: "/images/iv_cable.png",             // PNG
-  vvf: "/images/vvf_cable.png",           // PNG
-  mixed: "/images/mixed_wire.png",        // PNG
-  cabtire: "/images/cabtire_cable.png",   // PNG
-  weight: "/images/weighing_station.jpg", // JPG
-  nugget: "/images/copper_nugget.png",    // PNG
-  factory: "/images/factory_floor.png"    // PNG
+  hero: "/images/factory_floor.png",
+  pika: "/images/pika_wire.png",
+  cv: "/images/cv_cable.png",
+  iv: "/images/iv_cable.png",
+  vvf: "/images/vvf_cable.png",
+  mixed: "/images/mixed_wire.png",
+  cabtire: "/images/cabtire_cable.png",
+  weight: "/images/weighing_station.jpg",
+  nugget: "/images/copper_nugget.png",
+  factory: "/images/factory_floor.png"
 };
 
 // ==========================================
-// アイコン類 (Minimalist)
+// アイコン類
 // ==========================================
 const Icons = {
   ArrowRight: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>,
   ArrowUp: () => <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>,
-  // ★追加: FAQ用アイコン
   ChevronDown: ({className}:{className?:string}) => <svg className={className} width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/></svg>,
+  // ★追加: ランク用アイコン
+  Crown: () => <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>,
+  Star: () => <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
 };
 
 // ==========================================
-// リアルタイムチャート (Hero Red Ver.)
+// リアルタイムチャート
 // ==========================================
 const RealChart = ({ data }: {data: any[]}) => {
   const [activePoint, setActivePoint] = useState<any>(null);
@@ -88,7 +90,7 @@ export default function WireMasterCloud() {
   const [data, setData] = useState<any>(null);
   const [user, setUser] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('pika');
-  const [activeFaq, setActiveFaq] = useState<number | null>(null); // FAQ State
+  const [activeFaq, setActiveFaq] = useState<number | null>(null);
   
   // シミュレーター
   const [simType, setSimType] = useState('');
@@ -340,6 +342,93 @@ export default function WireMasterCloud() {
           </div>
         </section>
 
+        {/* ★新設: PARTNERSHIP RANK SYSTEM (Dark & Intellectual) */}
+        <section id="membership" className="py-32 px-6 bg-[#1a1a1a] text-white relative overflow-hidden">
+          {/* 背景装飾 */}
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#1a1a1a] via-[#D32F2F] to-[#1a1a1a]"></div>
+          <div className="absolute -right-20 top-40 text-white/5 text-9xl font-serif font-bold select-none z-0" style={{writingMode: 'vertical-rl'}}>
+            会員制度
+          </div>
+
+          <div className="max-w-[1200px] mx-auto relative z-10">
+            <div className="text-center mb-20">
+               <span className="text-[#D32F2F] text-xs font-bold tracking-[0.3em] uppercase block mb-4">Partnership Program</span>
+               <h2 className="text-4xl md:text-5xl font-serif font-medium mb-6">アカウントを育てる。<br/>価値を最大化する。</h2>
+               <p className="text-gray-400 text-sm font-light tracking-wide leading-loose">
+                 取引量と品質に応じて、あなたの会員ランクは進化します。<br/>
+                 ランクアップに伴い、買取単価や待遇が優遇されるパートナーシップ制度です。
+               </p>
+            </div>
+
+            {/* 方程式の可視化 */}
+            <div className="flex flex-col md:flex-row justify-center items-center gap-8 mb-20 text-center md:text-left">
+               <div className="bg-white/5 border border-white/10 px-8 py-6 rounded-xl">
+                 <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-2">Volume</p>
+                 <p className="text-xl font-serif">取引数量</p>
+               </div>
+               <div className="text-2xl text-gray-600 font-serif">×</div>
+               <div className="bg-white/5 border border-white/10 px-8 py-6 rounded-xl">
+                 <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-2">Quality</p>
+                 <p className="text-xl font-serif">分別品質</p>
+               </div>
+               <div className="text-2xl text-[#D32F2F] font-bold">＝</div>
+               <div className="flex items-center gap-4">
+                 <Icons.Crown />
+                 <div>
+                   <p className="text-[10px] text-[#D32F2F] uppercase tracking-widest mb-1">Rank Up</p>
+                   <p className="text-2xl font-serif font-bold text-white">高価買取・優遇</p>
+                 </div>
+               </div>
+            </div>
+
+            {/* ランクカード */}
+            <div className="grid md:grid-cols-3 gap-6">
+               {/* COPPER RANK */}
+               <div className="bg-[#222] border border-white/10 p-8 rounded-lg relative group hover:border-[#b87333] transition-colors duration-500">
+                  <div className="absolute top-0 left-0 w-full h-1 bg-[#b87333]"></div>
+                  <div className="flex justify-between items-start mb-6">
+                    <h3 className="text-2xl font-serif text-[#b87333]">COPPER</h3>
+                    <span className="text-[10px] bg-[#b87333]/20 text-[#b87333] px-2 py-1 rounded">一般会員</span>
+                  </div>
+                  <p className="text-xs text-gray-400 mb-8 h-12">初回取引後に発行されるスタンダードプラン。全ての基本機能をご利用いただけます。</p>
+                  <ul className="space-y-3 text-sm text-gray-300">
+                    <li className="flex items-center gap-3"><span className="text-[#b87333] text-lg">●</span> ポイント付与 <span className="font-bold">1.0倍</span></li>
+                    <li className="flex items-center gap-3"><span className="text-[#b87333] text-lg">●</span> Web明細確認</li>
+                  </ul>
+               </div>
+
+               {/* SILVER RANK */}
+               <div className="bg-[#222] border border-white/10 p-8 rounded-lg relative group hover:border-gray-400 transition-colors duration-500">
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gray-400"></div>
+                  <div className="flex justify-between items-start mb-6">
+                    <h3 className="text-2xl font-serif text-gray-300">SILVER</h3>
+                    <span className="text-[10px] bg-gray-400/20 text-gray-300 px-2 py-1 rounded">優良会員</span>
+                  </div>
+                  <p className="text-xs text-gray-400 mb-8 h-12">継続的なお取引と、安定した品質の荷込みをいただけるお客様向けのプラン。</p>
+                  <ul className="space-y-3 text-sm text-gray-300">
+                    <li className="flex items-center gap-3"><span className="text-gray-400 text-lg">●</span> ポイント付与 <span className="font-bold text-white">1.2倍</span></li>
+                    <li className="flex items-center gap-3"><span className="text-gray-400 text-lg">●</span> 優先荷下ろしレーン</li>
+                  </ul>
+               </div>
+
+               {/* GOLD RANK */}
+               <div className="bg-gradient-to-b from-[#2a2a2a] to-[#222] border border-yellow-600/30 p-8 rounded-lg relative group transform md:-translate-y-4 shadow-xl shadow-yellow-900/10">
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-600 via-yellow-400 to-yellow-600 animate-pulse"></div>
+                  <div className="flex justify-between items-start mb-6">
+                    <h3 className="text-2xl font-serif text-yellow-500 flex items-center gap-2"><Icons.Star /> GOLD</h3>
+                    <span className="text-[10px] bg-yellow-500/20 text-yellow-500 px-2 py-1 rounded border border-yellow-500/30">特別会員</span>
+                  </div>
+                  <p className="text-xs text-gray-400 mb-8 h-12">大口取引、かつ分別品質が極めて高いプロフェッショナルなパートナー様へ。</p>
+                  <ul className="space-y-4 text-sm text-white">
+                    <li className="flex items-center gap-3"><span className="text-yellow-500 text-lg">★</span> ポイント付与 <span className="font-bold text-yellow-400 text-lg">1.5倍</span></li>
+                    <li className="flex items-center gap-3"><span className="text-yellow-500 text-lg">★</span> 買取単価 <span className="font-bold text-yellow-400 text-lg">特別優遇</span></li>
+                    <li className="flex items-center gap-3"><span className="text-yellow-500 text-lg">★</span> 専用キャンペーン招待</li>
+                  </ul>
+               </div>
+            </div>
+          </div>
+        </section>
+
         {/* SIMULATOR */}
         <section id="simulator" className="py-32 px-6 bg-white relative">
           <div className="max-w-[900px] mx-auto relative z-10">
@@ -439,7 +528,7 @@ export default function WireMasterCloud() {
           </div>
         </section>
 
-        {/* ★追加: FAQ SECTION (Clean List Design) */}
+        {/* FAQ SECTION */}
         <section id="faq" className="py-32 px-6 bg-[#F9F9F9] border-t border-gray-200">
           <div className="max-w-[800px] mx-auto">
             <div className="text-center mb-16">
@@ -474,7 +563,7 @@ export default function WireMasterCloud() {
           </div>
         </section>
 
-        {/* ACCESS - Split Layout */}
+        {/* ACCESS */}
         <section id="access" className="border-t border-gray-200">
            <div className="grid md:grid-cols-2">
               <div className="bg-[#1a1a1a] text-white p-16 md:p-24 flex flex-col justify-center">
