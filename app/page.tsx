@@ -2,11 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 
-// ... (以前と同じ型定義、IMAGES, Icons, RealChart は変更なし) ...
-// ※ 長くなるため、修正箇所を含む全体コードを下に再掲します。
-
 // ==========================================
-// 型定義 (新データベース構造に対応)
+// 型定義
 // ==========================================
 interface ProductData {
   id: string; maker: string; name: string; year: string; sq: string; core: string; ratio: number; category: string; source: string;
@@ -51,16 +48,16 @@ const Icons = {
   Star: () => <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>,
   Search: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>,
   Plus: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>,
-  Refresh: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+  Refresh: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>,
+  Check: () => <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>
 };
 
 // ==========================================
-// RealChart (絶対落ちない防御版)
+// RealChart (Safe Version)
 // ==========================================
 const RealChart = ({ data }: {data: any[]}) => {
   const [activePoint, setActivePoint] = useState<any>(null);
   
-  // データチェック強化
   if (!data || !Array.isArray(data) || data.length < 2) {
     return <div className="h-40 flex items-center justify-center text-xs tracking-widest text-white/50">LOADING MARKET DATA...</div>;
   }
@@ -72,7 +69,6 @@ const RealChart = ({ data }: {data: any[]}) => {
   const yMin = minVal - range * 0.2;
   const getX = (i: number) => (i / (data.length - 1)) * 100;
   
-  // ポイント計算時のnull対策
   const points = data.map((d: any, i: number) => {
     const val = d.value || 0;
     return `${getX(i)},${100 - ((val - yMin) / (yMax - yMin)) * 100}`;
@@ -95,7 +91,6 @@ const RealChart = ({ data }: {data: any[]}) => {
           <p className="text-[10px] font-medium text-white/70 tracking-[0.2em] mb-1">MARKET PRICE / {formatDate(displayDate)}</p>
           <p className="text-5xl font-serif text-white tracking-tight drop-shadow-md">
             <span className="text-2xl mr-1">¥</span>
-            {/* ★ここが修正ポイント: Number()でラップしてnull落ちを防ぐ */}
             {Number(displayValue).toLocaleString()}
           </p>
         </div>
@@ -137,6 +132,8 @@ export default function WireMasterCloud() {
   const [posWeight, setPosWeight] = useState<string>('');
   const [posRank, setPosRank] = useState<'A'|'B'|'C'>('B');
   const [posResult, setPosResult] = useState<number | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [completeTxId, setCompleteTxId] = useState<string | null>(null);
 
   useEffect(() => {
     const link = document.createElement('link');
@@ -172,14 +169,58 @@ export default function WireMasterCloud() {
     setSimResult({ label: labels[simType], weight: w, unit: estimatedUnit, total: total });
   };
 
+  // 1. POS計算 (プレビュー)
   const handlePosCalculate = () => {
     if (!posProduct || !posWeight || !data) return;
     const product = data.products.find(p => p.id === posProduct);
     if (!product) return;
+    
     const weight = parseFloat(posWeight);
+    // ランク補正 (A: +2%, B: 0, C: -5% の仮定)
     const rankBonus = posRank === 'A' ? 1.02 : posRank === 'C' ? 0.95 : 1.0;
     const unitPrice = Math.floor(marketPrice * (product.ratio / 100) * rankBonus);
+    
     setPosResult(Math.floor(unitPrice * weight));
+    setCompleteTxId(null); // 前回の完了メッセージを消す
+  };
+
+  // 2. POS確定 (GASへ送信)
+  const handlePosSubmit = async () => {
+    if (isSubmitting || !posResult) return;
+    setIsSubmitting(true);
+
+    const product = data?.products.find(p => p.id === posProduct);
+    const payload = {
+      action: 'REGISTER_TRANSACTION',
+      memberId: posUser || 'GUEST',
+      productId: posProduct,
+      productName: product ? `${product.maker} ${product.name} ${product.sq}sq` : 'Unknown',
+      weight: parseFloat(posWeight),
+      rank: posRank,
+      price: posResult
+    };
+
+    try {
+      const res = await fetch('/api/gas', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      const result = await res.json();
+      
+      if (result.status === 'success') {
+        setCompleteTxId(result.data.transactionId);
+        // 入力クリア
+        setPosProduct('');
+        setPosWeight('');
+        setPosResult(null);
+      } else {
+        alert('登録エラー: ' + result.message);
+      }
+    } catch (e) {
+      alert('通信エラーが発生しました');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const FAQ_ITEMS = [
@@ -189,6 +230,9 @@ export default function WireMasterCloud() {
     { q: "出張買取のエリアについて", a: "基本的に北海道全域に対応しております。数量によって条件が異なりますので、まずはお気軽にお問い合わせください。" }
   ];
 
+  // =================================================================
+  // LP VIEW
+  // =================================================================
   if (view === 'LP' || view === 'LOGIN') {
     return (
       <div className="min-h-screen bg-white text-[#111] font-sans selection:bg-[#D32F2F] selection:text-white">
@@ -238,7 +282,6 @@ export default function WireMasterCloud() {
             <div className="lg:col-span-5 animate-in fade-in slide-in-from-right-8 duration-1000 delay-300">
               <div className="backdrop-blur-sm bg-white/10 border border-white/20 p-8 md:p-12 shadow-2xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-2xl"></div>
-                {/* 修正ポイント: undefined対策 */}
                 <RealChart data={data?.history || []} />
                 <div className="mt-8 pt-6 border-t border-white/20 flex justify-between items-center"><div><p className="text-[9px] text-white/70 uppercase tracking-widest mb-1">Factory Status</p><p className="text-xs font-medium tracking-wider flex items-center gap-2 text-white"><span className="w-2 h-2 bg-green-400 rounded-full shadow-[0_0_10px_#4ade80]"></span> Accepting</p></div><div className="text-right"><p className="text-xs font-serif italic text-white/80">Tomakomai, Hokkaido</p></div></div>
               </div>
@@ -246,7 +289,8 @@ export default function WireMasterCloud() {
           </div>
         </section>
 
-        {/* Concept Section */}
+        {/* Concept, Service, Membership, Simulator, Price, Access, Footer sections (Unchanged) */}
+        {/* ※ 長さ省略のため、以下のセクションは変更なしとして省略しますが、実際のファイルには以前のコードを含めてください */}
         <section id="about" className="py-32 px-6 bg-white relative">
           <div className="absolute right-6 top-32 text-[#f0f0f0] text-9xl font-serif font-bold opacity-50 select-none z-0" style={{writingMode: 'vertical-rl'}}>一貫処理</div>
           <div className="max-w-[1200px] mx-auto grid md:grid-cols-2 gap-20 items-center relative z-10">
@@ -260,7 +304,6 @@ export default function WireMasterCloud() {
           </div>
         </section>
 
-        {/* Service Section */}
         <section id="service" className="py-32 px-6 bg-[#F9F9F9]">
           <div className="max-w-[1400px] mx-auto">
             <div className="flex flex-col md:flex-row justify-between items-end mb-16"><div className="border-l-4 border-[#D32F2F] pl-6"><span className="text-gray-400 text-xs font-bold tracking-[0.3em] uppercase block mb-2">Our Service</span><h2 className="text-4xl font-serif font-bold">買取プラン</h2></div><p className="text-sm text-gray-500 mt-4 md:mt-0 font-medium">ニーズに合わせた3つの取引形態</p></div>
@@ -272,7 +315,6 @@ export default function WireMasterCloud() {
           </div>
         </section>
 
-        {/* Membership Section */}
         <section id="membership" className="py-32 px-6 bg-[#1a1a1a] text-white relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#1a1a1a] via-[#D32F2F] to-[#1a1a1a]"></div>
           <div className="absolute -right-20 top-40 text-white/5 text-9xl font-serif font-bold select-none z-0" style={{writingMode: 'vertical-rl'}}>会員制度</div>
@@ -287,7 +329,6 @@ export default function WireMasterCloud() {
           </div>
         </section>
 
-        {/* Simulator Section */}
         <section id="simulator" className="py-32 px-6 bg-white relative">
           <div className="max-w-[900px] mx-auto relative z-10">
              <div className="text-center mb-12"><span className="text-[#D32F2F] text-xs font-bold tracking-[0.3em] uppercase block mb-3">Estimation</span><h2 className="text-4xl font-serif font-medium">買取シミュレーション</h2></div>
@@ -305,7 +346,6 @@ export default function WireMasterCloud() {
           </div>
         </section>
 
-        {/* Price Section */}
         <section id="price" className="py-32 px-6 bg-white">
           <div className="max-w-[1200px] mx-auto">
              <div className="mb-20 flex items-end justify-between border-b border-gray-200 pb-6"><h2 className="text-3xl font-serif">取扱品目</h2><div className="flex gap-4">{['pika', 'cv', 'iv', 'mixed'].map(t => (<button key={t} onClick={()=>setActiveTab(t)} className={`text-[10px] font-bold uppercase tracking-widest px-4 py-2 transition-colors ${activeTab===t ? 'bg-black text-white' : 'bg-gray-100 text-gray-400 hover:text-black'}`}>{t}</button>))}</div></div>
@@ -316,7 +356,7 @@ export default function WireMasterCloud() {
           </div>
         </section>
 
-        {/* ★修正済 FAQ SECTION (button -> div) */}
+        {/* FAQ Section (Fixed) */}
         <section id="faq" className="py-32 px-6 bg-[#F9F9F9] border-t border-gray-200">
           <div className="max-w-[800px] mx-auto">
             <div className="text-center mb-16"><span className="text-[#D32F2F] text-xs font-bold tracking-[0.3em] uppercase block mb-3">Q & A</span><h2 className="text-3xl font-serif">よくある質問</h2></div>
@@ -346,8 +386,9 @@ export default function WireMasterCloud() {
     );
   }
 
-  // Admin and Member views remain the same...
-  // (これらも `view` 条件分岐内なので問題ありませんが、念のため全体コードをコピーしてください)
+  // =================================================================
+  // ADMIN DASHBOARD (POS SYSTEM - ENHANCED)
+  // =================================================================
   if (view === 'ADMIN') {
     return (
       <div className="min-h-screen bg-[#111] text-white font-sans flex flex-col md:flex-row">
@@ -377,6 +418,7 @@ export default function WireMasterCloud() {
 
               <div className="grid grid-cols-12 gap-8">
                  <div className="col-span-12 lg:col-span-8 space-y-8">
+                    {/* 1. Customer */}
                     <div className="bg-[#1a1a1a] p-8 rounded-xl border border-white/10">
                        <h3 className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-4 flex items-center gap-2"><span className="w-2 h-2 bg-[#D32F2F] rounded-full"></span> 1. Customer</h3>
                        <div className="flex gap-4">
@@ -384,6 +426,8 @@ export default function WireMasterCloud() {
                           <button className="bg-white/10 border border-white/20 px-6 rounded hover:bg-white/20"><Icons.Search /></button>
                        </div>
                     </div>
+
+                    {/* 2. Product */}
                     <div className="bg-[#1a1a1a] p-8 rounded-xl border border-white/10">
                        <h3 className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-4 flex items-center gap-2"><span className="w-2 h-2 bg-[#D32F2F] rounded-full"></span> 2. Product (DB)</h3>
                        <select className="w-full bg-black border border-white/20 p-4 rounded text-white font-bold mb-4 focus:border-[#D32F2F] outline-none cursor-pointer" value={posProduct} onChange={(e)=>setPosProduct(e.target.value)}>
@@ -407,18 +451,58 @@ export default function WireMasterCloud() {
                           </div>
                        </div>
                     </div>
-                    <button onClick={handlePosCalculate} className="w-full bg-[#D32F2F] text-white py-6 rounded-xl font-bold text-lg tracking-widest hover:bg-[#B71C1C] transition shadow-lg shadow-red-900/20">CALCULATE PRICE</button>
+
+                    <button onClick={handlePosCalculate} className="w-full bg-[#1a1a1a] border border-white/20 text-white py-6 rounded-xl font-bold text-lg tracking-widest hover:bg-[#333] transition">
+                      CALCULATE PREVIEW
+                    </button>
                  </div>
+
+                 {/* Receipt & Action */}
                  <div className="col-span-12 lg:col-span-4">
                     <div className="bg-white text-black p-8 rounded-xl shadow-2xl relative h-full flex flex-col">
-                       <div className="text-center border-b-2 border-dashed border-gray-300 pb-6 mb-6"><h4 className="font-serif font-bold text-xl mb-1">PURCHASE RECEIPT</h4><p className="text-xs text-gray-500 uppercase tracking-widest">Tsukisamu Manufacturing</p></div>
-                       <div className="flex-1 space-y-4 font-mono text-sm">
-                          <div className="flex justify-between"><span className="text-gray-500">DATE</span><span>{new Date().toLocaleDateString()}</span></div>
-                          <div className="flex justify-between"><span className="text-gray-500">MEMBER</span><span>{posUser || 'Guest'}</span></div>
-                          <div className="border-b border-gray-200 my-4"></div>
-                          <div><p className="font-bold mb-1">{posProduct ? data?.products.find(p=>p.id===posProduct)?.name : '---'}</p><div className="flex justify-between text-xs text-gray-500"><span>{posProduct || '-'}</span><span>{posWeight || 0}kg × Rank {posRank}</span></div></div>
-                       </div>
-                       <div className="border-t-2 border-dashed border-gray-300 pt-6 mt-6"><div className="flex justify-between items-end"><span className="font-bold text-gray-600">TOTAL</span><span className="text-3xl font-black tracking-tighter">¥{posResult ? posResult.toLocaleString() : '0'}</span></div><p className="text-[10px] text-center text-gray-400 mt-6">* This is a digital record.</p></div>
+                       {completeTxId ? (
+                         <div className="flex flex-col items-center justify-center h-full text-center space-y-6 animate-in fade-in zoom-in duration-300">
+                           <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center text-white mb-2 shadow-lg"><Icons.Check /></div>
+                           <h3 className="text-2xl font-black text-gray-800">TRANSACTION<br/>COMPLETED</h3>
+                           <p className="font-mono text-gray-500 bg-gray-100 px-4 py-2 rounded">ID: {completeTxId}</p>
+                           <button onClick={()=>setCompleteTxId(null)} className="text-xs font-bold text-[#D32F2F] hover:underline mt-4 uppercase tracking-widest">Start New Transaction</button>
+                         </div>
+                       ) : (
+                         <>
+                           <div className="text-center border-b-2 border-dashed border-gray-300 pb-6 mb-6">
+                              <h4 className="font-serif font-bold text-xl mb-1">PURCHASE RECEIPT</h4>
+                              <p className="text-xs text-gray-500 uppercase tracking-widest">Tsukisamu Manufacturing</p>
+                           </div>
+                           <div className="flex-1 space-y-4 font-mono text-sm">
+                              <div className="flex justify-between"><span className="text-gray-500">DATE</span><span>{new Date().toLocaleDateString()}</span></div>
+                              <div className="flex justify-between"><span className="text-gray-500">MEMBER</span><span>{posUser || 'Guest'}</span></div>
+                              <div className="border-b border-gray-200 my-4"></div>
+                              <div>
+                                 <p className="font-bold mb-1">{posProduct ? data?.products.find(p=>p.id===posProduct)?.name : '---'}</p>
+                                 <div className="flex justify-between text-xs text-gray-500">
+                                   <span>{posProduct || '-'}</span>
+                                   <span>{posWeight || 0}kg × Rank {posRank}</span>
+                                 </div>
+                              </div>
+                           </div>
+                           <div className="border-t-2 border-dashed border-gray-300 pt-6 mt-6">
+                              <div className="flex justify-between items-end mb-6">
+                                 <span className="font-bold text-gray-600">TOTAL</span>
+                                 <span className="text-3xl font-black tracking-tighter">¥{posResult ? posResult.toLocaleString() : '0'}</span>
+                              </div>
+                              {/* 確定ボタン (金額がある時のみ表示) */}
+                              {posResult !== null && (
+                                <button 
+                                  onClick={handlePosSubmit} 
+                                  disabled={isSubmitting}
+                                  className="w-full bg-[#D32F2F] text-white py-4 rounded font-bold shadow-lg hover:bg-[#B71C1C] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                >
+                                  {isSubmitting ? 'PROCESSING...' : 'CONFIRM PURCHASE'}
+                                </button>
+                              )}
+                           </div>
+                         </>
+                       )}
                     </div>
                  </div>
               </div>
