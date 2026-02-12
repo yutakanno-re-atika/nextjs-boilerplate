@@ -3,18 +3,21 @@
 import React, { useState, useEffect } from 'react';
 
 // ==========================================
-// 画像パス定義 (拡張子を .png に修正)
+// 画像パス定義 (現実の拡張子に完全準拠)
 // ==========================================
 const IMAGES = {
-  hero: "/images/factory_floor.png",      // .jpg -> .png
-  pika: "/images/pika_wire.png",          // .jpg -> .png
-  cv: "/images/cv_cable.png",             // .jpg -> .png
-  iv: "/images/iv_cable.png",             // .jpg -> .png
-  vvf: "/images/vvf_cable.png",           // .jpg -> .png
-  mixed: "/images/mixed_wire.png",        // .jpg -> .png
-  cabtire: "/images/cabtire_cable.png",   // .jpg -> .png
-  weight: "/images/weighing_station.png", // .jpg -> .png
-  nugget: "/images/copper_nugget.png"     // .jpg -> .png
+  hero: "/images/factory_floor.png",      // PNG
+  pika: "/images/pika_wire.png",          // PNG
+  cv: "/images/cv_cable.png",             // PNG
+  iv: "/images/iv_cable.png",             // PNG
+  vvf: "/images/vvf_cable.png",           // PNG
+  mixed: "/images/mixed_wire.png",        // PNG
+  cabtire: "/images/cabtire_cable.png",   // PNG
+  
+  // ★ここだけ JPG (ユーザー環境に合わせる)
+  weight: "/images/weighing_station.jpg", 
+  
+  nugget: "/images/copper_nugget.png"     // PNG
 };
 
 // ==========================================
