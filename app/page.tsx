@@ -3,14 +3,8 @@
 import React, { useState, useEffect } from 'react';
 
 // ==========================================
-// 資産再利用: 初期データ & Fallback
+// 定数・設定
 // ==========================================
-const REAL_HISTORY_2026 = [
-  { date: '1/4', value: 2050 }, { date: '1/13', value: 2190 },
-  { date: '1/30', value: 2180 }, { date: '2/6', value: 2100 },
-  { date: '2/12', value: 2140 }
-];
-
 const FAQ_ITEMS = [
   { q: "インボイス制度には対応していますか？", a: "はい、完全対応しております。適格請求書発行事業者として登録済みですので、法人のお客様も安心してご利用いただけます。" },
   { q: "被覆付きの電線でもそのまま持ち込めますか？", a: "もちろんです！当社は独自のナゲットプラントを保有しており、被覆銅線から純度99.9%の銅を回収する技術を持っています。" },
@@ -25,7 +19,7 @@ const RANKS = [
 ];
 
 // ==========================================
-// 資産再利用: SVG Icons
+// UI Components
 // ==========================================
 const IconChart = () => <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>;
 const IconArrowUp = () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>;
@@ -34,7 +28,7 @@ const IconChevronDown = ({className}: {className?: string}) => <svg className={c
 const IconCheck = () => <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" strokeWidth="2" /></svg>;
 
 // ==========================================
-// 修正版: RealChart (日付フォーマット強化 & 大文字化)
+// RealChart Component (Fixed Date Handling)
 // ==========================================
 const RealChart = ({ data, color = "#ef4444" }: {data: any[], color?: string}) => {
   const [activePoint, setActivePoint] = useState<any>(null);
@@ -43,7 +37,7 @@ const RealChart = ({ data, color = "#ef4444" }: {data: any[], color?: string}) =
     return (
       <div className="h-48 flex flex-col items-center justify-center text-gray-700 bg-black/20 rounded-3xl border border-white/5 space-y-3">
         <div className="w-6 h-6 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-[9px] font-black uppercase tracking-[0.2em]">Synchronizing...</p>
+        <p className="text-[9px] font-black uppercase tracking-[0.2em]">Loading Market Data...</p>
       </div>
     );
   }
@@ -54,21 +48,32 @@ const RealChart = ({ data, color = "#ef4444" }: {data: any[], color?: string}) =
   const yMax = maxVal + range * 0.2;
   const yMin = minVal - range * 0.2;
   const getX = (i: number) => (i / (data.length - 1)) * 100;
+  
   const points = data.map((d: any, i: number) => `${getX(i)},${100 - ((d.value - yMin) / (yMax - yMin)) * 100}`).join(' ');
 
-  // 日付フォーマット関数: "2/10" -> "2026/02/10"
+  // ★修正: 日付フォーマット関数
+  // バックエンドから "2025/12/20" が来ればそのまま、"2/10" なら今年を補完
   const formatDate = (dateStr: string) => {
     if (!dateStr || dateStr === 'NOW' || dateStr === 'No Data') return dateStr;
     const parts = dateStr.split('/');
+    
+    // パターンA: 年あり (2025/12/20) -> 0埋めして整形
+    if (parts.length === 3) {
+      const y = parts[0];
+      const m = parts[1].padStart(2, '0');
+      const d = parts[2].padStart(2, '0');
+      return `${y}/${m}/${d}`;
+    }
+    // パターンB: 年なし (2/10) -> 今の年を補完
     if (parts.length === 2) {
+      const currentYear = new Date().getFullYear();
       const m = parts[0].padStart(2, '0');
       const d = parts[1].padStart(2, '0');
-      return `2026/${m}/${d}`;
+      return `${currentYear}/${m}/${d}`;
     }
     return dateStr;
   };
 
-  // 表示する日付（ホバー中ならその日付、そうでなければ最新の日付）
   const displayDate = activePoint ? activePoint.date : data[data.length - 1].date;
   const displayValue = activePoint ? activePoint.value : data[data.length - 1].value;
 
@@ -76,7 +81,6 @@ const RealChart = ({ data, color = "#ef4444" }: {data: any[], color?: string}) =
     <div className="w-full" onMouseLeave={() => setActivePoint(null)}>
       <div className="flex justify-between items-end mb-6 animate-in fade-in duration-500">
         <div>
-          {/* 変更点: 日付を大きく、見やすく表示 */}
           <p className="text-xl font-bold text-gray-400 font-mono tracking-wider mb-1">
             {formatDate(displayDate)}
           </p>
@@ -109,23 +113,27 @@ const RealChart = ({ data, color = "#ef4444" }: {data: any[], color?: string}) =
   );
 };
 
+// ==========================================
+// Main Application Component
+// ==========================================
 export default function WireMasterPortal() {
   const [view, setView] = useState<'LP' | 'CLIENT_LOGIN' | 'ADMIN_LOGIN' | 'MEMBER' | 'ADMIN'>('LP');
-  // 初期値に2026年の歴史的データをセット
-  const [data, setData] = useState<any>({ history: REAL_HISTORY_2026, config: { market_price: 2140 } });
+  const [data, setData] = useState<any>(null);
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
   const [calcValue, setCalcValue] = useState('0');
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
+  // 初回ロード
   useEffect(() => {
     fetch('/api/gas')
       .then(res => res.json())
       .then(d => { if(d.status === 'success') setData(d); })
-      .catch(err => console.error("Data Sync Failed", err));
+      .catch(err => console.error("Sync Failed", err));
   }, []);
 
+  // 認証ハンドラ
   const handleAuth = async (e: any, target: 'ADMIN' | 'MEMBER') => {
     e.preventDefault();
     setLoading(true);
@@ -143,9 +151,7 @@ export default function WireMasterPortal() {
 
   const marketPrice = data?.config?.market_price || 0;
 
-  // ----------------------------------------------------------------
-  // 1. Landing Page (LP)
-  // ----------------------------------------------------------------
+  // 1. LP View
   if (view === 'LP') {
     return (
       <div className="min-h-screen bg-[#0d1117] text-[#c9d1d9] font-sans selection:bg-red-900/50">
@@ -158,7 +164,7 @@ export default function WireMasterPortal() {
         </nav>
 
         <main>
-          {/* HERO */}
+          {/* Hero */}
           <section className="max-w-7xl mx-auto px-6 py-20 grid lg:grid-cols-2 gap-16 items-center">
             <div className="space-y-8 animate-in fade-in slide-in-from-left-4 duration-1000">
               <div className="inline-block px-3 py-1 bg-red-950/30 border border-red-500/30 text-red-500 text-[10px] font-black tracking-[0.3em] uppercase rounded">Est. 1961 - Tsukisamu Manufacturing</div>
@@ -173,11 +179,12 @@ export default function WireMasterPortal() {
               </button>
             </div>
             <div className="bg-[#161b22] border border-white/10 p-10 rounded-[3rem] shadow-2xl animate-in fade-in slide-in-from-right-4 duration-1000">
+              {/* チャート表示 */}
               <RealChart data={data?.history} />
             </div>
           </section>
 
-          {/* MAIN BUSINESS */}
+          {/* Business & Trust */}
           <section className="py-24 px-6 max-w-7xl mx-auto grid md:grid-cols-2 gap-16 items-center border-t border-white/5">
             <div className="bg-white/5 aspect-video rounded-3xl border border-white/10 flex flex-col items-center justify-center relative group overflow-hidden">
                <div className="absolute inset-0 bg-gradient-to-br from-red-600/10 to-transparent"></div>
@@ -216,7 +223,7 @@ export default function WireMasterPortal() {
             </div>
           </section>
 
-          {/* LOCATION */}
+          {/* Locations */}
           <section className="py-24 px-6 max-w-7xl mx-auto">
             <div className="bg-white/5 rounded-[3rem] border border-white/10 p-12 md:p-20 grid md:grid-cols-2 gap-16">
                <div>
@@ -240,9 +247,7 @@ export default function WireMasterPortal() {
     );
   }
 
-  // ----------------------------------------------------------------
-  // 2. Login & Dashboards
-  // ----------------------------------------------------------------
+  // 2. Login Views
   if (view === 'CLIENT_LOGIN' || view === 'ADMIN_LOGIN') {
     const isAdmin = view === 'ADMIN_LOGIN';
     return (
@@ -264,6 +269,7 @@ export default function WireMasterPortal() {
     );
   }
 
+  // 3. Member Dashboard
   if (view === 'MEMBER') {
     return (
       <div className="min-h-screen bg-[#0d1117] text-[#c9d1d9] font-sans">
@@ -307,6 +313,7 @@ export default function WireMasterPortal() {
     );
   }
 
+  // 4. Admin Dashboard
   if (view === 'ADMIN') {
     const monthlyTotal = data?.stats?.monthlyTotal || 0;
     const progress = Math.min(Math.round((monthlyTotal / 30000) * 100), 100);
