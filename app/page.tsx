@@ -3,18 +3,21 @@
 import React, { useState, useEffect } from 'react';
 
 // ==========================================
-// 画像パス定義
+// 画像パス定義 (修正版)
 // ==========================================
 const IMAGES = {
-  hero: "/images/factory_floor.png",
-  pika: "/images/pika_wire.png",
-  cv: "/images/cv_cable.png",
-  iv: "/images/iv_cable.png",
-  vvf: "/images/vvf_cable.png",
-  mixed: "/images/mixed_wire.png",
-  cabtire: "/images/cabtire_cable.png",
-  weight: "/images/weighing_station.jpg",
-  nugget: "/images/copper_nugget.png"
+  hero: "/images/factory_floor.png",      // PNG
+  pika: "/images/pika_wire.png",          // PNG
+  cv: "/images/cv_cable.png",             // PNG
+  iv: "/images/iv_cable.png",             // PNG
+  vvf: "/images/vvf_cable.png",           // PNG
+  mixed: "/images/mixed_wire.png",        // PNG
+  cabtire: "/images/cabtire_cable.png",   // PNG
+  weight: "/images/weighing_station.jpg", // JPG
+  nugget: "/images/copper_nugget.png",    // PNG
+  
+  // ★追加: これが抜けていました！
+  factory: "/images/factory_exterior.png" // PNG (工場外観)
 };
 
 // ==========================================
