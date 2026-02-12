@@ -13,7 +13,7 @@ const IMAGES = {
   vvf: "/images/vvf_cable.png",           // PNG
   mixed: "/images/mixed_wire.png",        // PNG
   cabtire: "/images/cabtire_cable.png",   // PNG
-  weight: "/images/weighing_station.jpg", // JPG (ここ重要)
+  weight: "/images/weighing_station.jpg", // JPG
   nugget: "/images/copper_nugget.png"     // PNG
 };
 
@@ -26,7 +26,10 @@ const Icons = {
   Calc: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2" strokeWidth="2"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 14v4M12 14v4M8 14v4M16 10h.01M12 10h.01M8 10h.01"/></svg>,
   Phone: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>,
   Check: () => <svg className="w-5 h-5 text-[#D32F2F]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>,
-  ChevronDown: ({className}:{className?:string}) => <svg className={className} width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/></svg>
+  ChevronDown: ({className}:{className?:string}) => <svg className={className} width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/></svg>,
+  Truck: () => <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" /></svg>,
+  Box: () => <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>,
+  Ship: () => <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
 };
 
 // ==========================================
@@ -61,7 +64,6 @@ const RealChart = ({ data, color = "#D32F2F" }: {data: any[], color?: string}) =
   const displayValue = activePoint ? activePoint.value : data[data.length - 1].value;
 
   return (
-    // ★変更点: 背景を白にし、赤背景の上でくっきり見えるように
     <div className="w-full bg-white p-6 rounded-2xl shadow-xl border-4 border-white/20" onMouseLeave={() => setActivePoint(null)}>
       <div className="flex justify-between items-end mb-4">
         <div>
@@ -137,14 +139,12 @@ export default function TsukisamuFactory() {
   const [simWeight, setSimWeight] = useState('');
   const [simResult, setSimResult] = useState<any>(null);
 
-  // データ取得
   useEffect(() => {
     fetch('/api/gas').then(res => res.json()).then(d => { if(d.status === 'success') setData(d); });
   }, []);
 
   const marketPrice = data?.config?.market_price || 0;
 
-  // ログイン処理
   const handleLogin = async (e: any) => {
     e.preventDefault();
     const res = await fetch('/api/gas', {
@@ -157,22 +157,14 @@ export default function TsukisamuFactory() {
     } else { alert(result.message); }
   };
 
-  // シミュレーション計算
   const calculateSim = () => {
     if (!simType || !simWeight) return;
     const w = parseFloat(simWeight);
     const ratios: any = { 'pika': 0.98, 'high': 0.82, 'medium': 0.65, 'low': 0.45, 'mixed': 0.40 };
     const labels: any = { 'pika': 'ピカ線 (特1号)', 'high': '高銅率 (80%~)', 'medium': '中銅率 (60-79%)', 'low': '低銅率 (40-59%)', 'mixed': '雑線・混合' };
-    
     const estimatedUnit = Math.floor(marketPrice * ratios[simType]); 
     const total = Math.floor(estimatedUnit * w);
-
-    setSimResult({
-      label: labels[simType],
-      weight: w,
-      unit: estimatedUnit,
-      total: total
-    });
+    setSimResult({ label: labels[simType], weight: w, unit: estimatedUnit, total: total });
   };
 
   const FAQ_ITEMS = [
@@ -182,9 +174,6 @@ export default function TsukisamuFactory() {
     { q: "支払いはいつになりますか？", a: "検収完了後、その場で現金にてお支払いいたします。法人様で掛け売りをご希望の場合はご相談ください。" }
   ];
 
-  // ----------------------------------------------------------------
-  // 1. PUBLIC LANDING PAGE
-  // ----------------------------------------------------------------
   if (view === 'LP' || view === 'LOGIN') {
     return (
       <div className="min-h-screen bg-white text-[#1a1a1a] font-sans scroll-smooth selection:bg-red-100 selection:text-red-900">
@@ -196,8 +185,9 @@ export default function TsukisamuFactory() {
             </div>
             <nav className="hidden md:flex gap-8 text-sm font-bold text-gray-600">
               <a href="#features" className="hover:text-[#D32F2F] transition relative group">特徴<span className="absolute bottom-[-4px] left-0 w-0 h-0.5 bg-[#D32F2F] transition-all group-hover:w-full"></span></a>
-              <a href="#simulator" className="hover:text-[#D32F2F] transition relative group">買取シミュレーション<span className="absolute bottom-[-4px] left-0 w-0 h-0.5 bg-[#D32F2F] transition-all group-hover:w-full"></span></a>
-              <a href="#types" className="hover:text-[#D32F2F] transition relative group">電線の種類<span className="absolute bottom-[-4px] left-0 w-0 h-0.5 bg-[#D32F2F] transition-all group-hover:w-full"></span></a>
+              <a href="#plans" className="hover:text-[#D32F2F] transition relative group">買取方法<span className="absolute bottom-[-4px] left-0 w-0 h-0.5 bg-[#D32F2F] transition-all group-hover:w-full"></span></a>
+              <a href="#simulator" className="hover:text-[#D32F2F] transition relative group">シミュレーション<span className="absolute bottom-[-4px] left-0 w-0 h-0.5 bg-[#D32F2F] transition-all group-hover:w-full"></span></a>
+              <a href="#types" className="hover:text-[#D32F2F] transition relative group">線種<span className="absolute bottom-[-4px] left-0 w-0 h-0.5 bg-[#D32F2F] transition-all group-hover:w-full"></span></a>
               <a href="#access" className="hover:text-[#D32F2F] transition relative group">アクセス<span className="absolute bottom-[-4px] left-0 w-0 h-0.5 bg-[#D32F2F] transition-all group-hover:w-full"></span></a>
             </nav>
             <div className="flex gap-4 items-center">
@@ -209,7 +199,6 @@ export default function TsukisamuFactory() {
           </div>
         </header>
 
-        {/* Login Modal */}
         {view === 'LOGIN' && (
           <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
             <div className="bg-white w-full max-w-sm p-10 rounded-2xl shadow-2xl relative">
@@ -225,19 +214,13 @@ export default function TsukisamuFactory() {
           </div>
         )}
 
-        {/* =================================================================
-           ★ HERO SECTION (RED BASE)
-           ここを「赤ベース」に大胆変更しました
-           ================================================================= */}
+        {/* HERO */}
         <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 px-4 bg-[#D32F2F] overflow-hidden min-h-[85vh] flex items-center">
-          {/* 背景画像：赤の上にうっすらと工場写真をブレンド */}
           <div className="absolute inset-0 z-0">
              <img src={IMAGES.hero} alt="工場内部" className="w-full h-full object-cover opacity-20 mix-blend-multiply" />
              <div className="absolute inset-0 bg-gradient-to-br from-[#D32F2F] via-[#C62828] to-[#800000] opacity-90"></div>
-             {/* 装飾的な円 */}
              <div className="absolute top-[-20%] right-[-10%] w-[800px] h-[800px] bg-white rounded-full opacity-5 blur-3xl"></div>
           </div>
-          
           <div className="max-w-7xl mx-auto relative z-10 grid lg:grid-cols-2 gap-16 items-center w-full">
             <div className="text-white space-y-8 animate-in slide-in-from-left-4 duration-700">
               <div className="inline-flex gap-3 flex-wrap">
@@ -258,12 +241,8 @@ export default function TsukisamuFactory() {
                 </a>
               </div>
             </div>
-            
-            {/* チャートエリア */}
             <div className="hidden lg:block animate-in slide-in-from-right-4 duration-700 delay-200">
-              {/* 白いカードでチャートを表示（赤背景の上で目立つ） */}
               <RealChart data={data?.history} color="#D32F2F" />
-              
               <div className="mt-6 flex gap-4">
                 <div className="bg-white/10 backdrop-blur p-5 rounded-2xl flex-1 border border-white/20 hover:bg-white/20 transition">
                   <p className="text-xs text-white/80 font-bold uppercase tracking-widest mb-1">本日の建値</p>
@@ -299,10 +278,80 @@ export default function TsukisamuFactory() {
           </div>
         </section>
 
+        {/* New Section: Service Plans */}
+        <section id="plans" className="py-24 bg-white">
+          <div className="max-w-7xl mx-auto px-4">
+            <h2 className="text-4xl font-black text-center mb-6 text-gray-900 tracking-tight">選べる<span className="text-[#D32F2F]">3つの買取方法</span></h2>
+            <p className="text-center text-gray-500 font-bold mb-16 max-w-2xl mx-auto">
+              お客様の規模やニーズに合わせて最適なプランをお選びいただけます。<br/>
+              ご不明な点は、お気軽にお電話ください。
+            </p>
+            
+            <div className="grid md:grid-cols-3 gap-8">
+              {/* Plan 1: 持込 */}
+              <div className="bg-gray-50 border border-gray-200 rounded-3xl p-8 hover:shadow-2xl transition-all duration-300 group hover:border-[#D32F2F]/30 relative overflow-hidden">
+                <div className="absolute top-0 right-0 bg-gray-200 text-gray-600 font-bold px-4 py-1 rounded-bl-xl text-xs">STANDARD</div>
+                <div className="text-[#D32F2F] mb-6 group-hover:scale-110 transition-transform"><Icons.Box /></div>
+                <h3 className="text-2xl font-black text-gray-900 mb-2">① お持ち込み</h3>
+                <p className="text-xs text-gray-500 font-bold mb-6 uppercase tracking-widest">Customer Drop-off</p>
+                <div className="space-y-4">
+                  <div className="bg-white p-4 rounded-xl border border-gray-200">
+                    <p className="text-xs text-gray-400 font-bold mb-1">対象重量</p>
+                    <p className="font-black text-lg">100kg 〜</p>
+                  </div>
+                  <ul className="text-sm font-bold text-gray-600 space-y-3">
+                    <li className="flex items-start gap-2"><Icons.Check /><span className="flex-1">少量からでも大歓迎</span></li>
+                    <li className="flex items-start gap-2"><Icons.Check /><span className="flex-1">その場で<span className="text-[#D32F2F]">現金買取</span></span></li>
+                    <li className="flex items-start gap-2"><span className="text-gray-400 text-xs">※1t以上は後日銀行振込にて対応</span></li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Plan 2: 出張 */}
+              <div className="bg-gradient-to-b from-[#D32F2F] to-[#B71C1C] text-white rounded-3xl p-8 shadow-2xl shadow-red-900/30 transform md:-translate-y-4 relative overflow-hidden">
+                <div className="absolute top-0 right-0 bg-yellow-400 text-red-900 font-black px-4 py-1 rounded-bl-xl text-xs">POPULAR</div>
+                <div className="text-white mb-6 animate-bounce"><Icons.Truck /></div>
+                <h3 className="text-2xl font-black mb-2">② 出張買取</h3>
+                <p className="text-xs text-red-200 font-bold mb-6 uppercase tracking-widest">On-site Purchase</p>
+                <div className="space-y-4">
+                   <div className="bg-white/10 backdrop-blur p-4 rounded-xl border border-white/20">
+                    <p className="text-xs text-red-200 font-bold mb-1">対象重量</p>
+                    <p className="font-black text-lg">1t 〜 2t まで</p>
+                  </div>
+                  <ul className="text-sm font-bold text-white space-y-3">
+                    <li className="flex items-start gap-2"><span className="bg-white text-red-600 rounded-full w-5 h-5 flex items-center justify-center text-xs">✓</span><span className="flex-1">北海道全域対応</span></li>
+                    <li className="flex items-start gap-2"><span className="bg-white text-red-600 rounded-full w-5 h-5 flex items-center justify-center text-xs">✓</span><span className="flex-1">引き取り手数料 <span className="text-yellow-400 text-lg">無料</span></span></li>
+                    <li className="flex items-start gap-2"><span className="text-red-200 text-xs">※スタッフがトラックでお伺いします</span></li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Plan 3: 大口 */}
+              <div className="bg-gray-50 border border-gray-200 rounded-3xl p-8 hover:shadow-2xl transition-all duration-300 group hover:border-[#D32F2F]/30 relative overflow-hidden">
+                <div className="absolute top-0 right-0 bg-gray-200 text-gray-600 font-bold px-4 py-1 rounded-bl-xl text-xs">BUSINESS</div>
+                <div className="text-[#D32F2F] mb-6 group-hover:scale-110 transition-transform"><Icons.Ship /></div>
+                <h3 className="text-2xl font-black text-gray-900 mb-2">③ 大規模買取</h3>
+                <p className="text-xs text-gray-500 font-bold mb-6 uppercase tracking-widest">Large-scale Lot</p>
+                <div className="space-y-4">
+                  <div className="bg-white p-4 rounded-xl border border-gray-200">
+                    <p className="text-xs text-gray-400 font-bold mb-1">対象重量</p>
+                    <p className="font-black text-lg">5t 〜 6t 単位</p>
+                  </div>
+                  <ul className="text-sm font-bold text-gray-600 space-y-3">
+                    <li className="flex items-start gap-2"><Icons.Check /><span className="flex-1">道外からも対応可能</span></li>
+                    <li className="flex items-start gap-2"><Icons.Check /><span className="flex-1">運送費は<span className="text-[#D32F2F]">弊社負担</span></span></li>
+                    <li className="flex items-start gap-2"><span className="text-gray-400 text-xs">※まずはお電話にてご相談ください</span></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Simulator */}
-        <section id="simulator" className="py-24 bg-white">
+        <section id="simulator" className="py-24 bg-gray-50">
           <div className="max-w-4xl mx-auto px-4">
-            <div className="bg-gray-50 border border-gray-200 p-8 md:p-12 rounded-2xl shadow-sm">
+            <div className="bg-white border border-gray-200 p-8 md:p-12 rounded-2xl shadow-xl">
               <div className="text-center mb-10">
                 <h2 className="text-3xl font-black text-gray-900 mb-4 tracking-tight">買取価格<span className="text-[#D32F2F]">シミュレーター</span></h2>
                 <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 text-left text-sm text-yellow-800 font-medium inline-block rounded-r">
@@ -314,7 +363,7 @@ export default function TsukisamuFactory() {
               <div className="grid md:grid-cols-2 gap-8 mb-8">
                 <div>
                   <label className="block font-bold mb-2 text-gray-700">被覆線の種類</label>
-                  <select className="w-full p-4 border border-gray-300 rounded bg-white font-bold text-gray-900 focus:outline-none focus:border-[#D32F2F] focus:ring-1 focus:ring-[#D32F2F]" value={simType} onChange={(e)=>setSimType(e.target.value)}>
+                  <select className="w-full p-4 border border-gray-300 rounded bg-gray-50 font-bold text-gray-900 focus:outline-none focus:border-[#D32F2F] focus:ring-1 focus:ring-[#D32F2F]" value={simType} onChange={(e)=>setSimType(e.target.value)}>
                     <option value="">選択してください</option>
                     <option value="pika">ピカ線 (特1号)</option>
                     <option value="high">高銅率（80%以上）- CV高圧/太物</option>
@@ -325,7 +374,7 @@ export default function TsukisamuFactory() {
                 </div>
                 <div>
                   <label className="block font-bold mb-2 text-gray-700">重量 (kg)</label>
-                  <input type="number" className="w-full p-4 border border-gray-300 rounded bg-white font-bold text-gray-900 focus:outline-none focus:border-[#D32F2F] focus:ring-1 focus:ring-[#D32F2F]" placeholder="例: 100" value={simWeight} onChange={(e)=>setSimWeight(e.target.value)} />
+                  <input type="number" className="w-full p-4 border border-gray-300 rounded bg-gray-50 font-bold text-gray-900 focus:outline-none focus:border-[#D32F2F] focus:ring-1 focus:ring-[#D32F2F]" placeholder="例: 100" value={simWeight} onChange={(e)=>setSimWeight(e.target.value)} />
                 </div>
               </div>
 
@@ -334,10 +383,10 @@ export default function TsukisamuFactory() {
               </button>
 
               {simResult && (
-                <div className="mt-8 border-2 border-[#D32F2F] bg-white p-8 animate-in slide-in-from-top-4 duration-300 rounded-xl relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-red-50 rounded-bl-full -mr-10 -mt-10 z-0"></div>
+                <div className="mt-8 border-2 border-[#D32F2F] bg-gray-50 p-8 animate-in slide-in-from-top-4 duration-300 rounded-xl relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-red-100 rounded-bl-full -mr-10 -mt-10 z-0"></div>
                   <div className="relative z-10">
-                    <div className="flex justify-between border-b border-gray-100 pb-4 mb-4">
+                    <div className="flex justify-between border-b border-gray-200 pb-4 mb-4">
                       <span className="text-gray-500 font-bold">{simResult.label}</span>
                       <span className="font-bold text-xl">{simResult.weight} kg</span>
                     </div>
@@ -359,7 +408,7 @@ export default function TsukisamuFactory() {
         </section>
 
         {/* Wire Types (Tabs) */}
-        <section id="types" className="py-24 bg-gray-50">
+        <section id="types" className="py-24 bg-white">
           <div className="max-w-6xl mx-auto px-4">
             <h2 className="text-4xl font-black text-center mb-12 tracking-tight">取り扱い<span className="text-[#D32F2F]">線種一覧</span></h2>
             
@@ -368,7 +417,7 @@ export default function TsukisamuFactory() {
                 <button 
                   key={type}
                   onClick={() => setActiveTab(type)}
-                  className={`px-6 py-3 font-bold rounded transition ${activeTab === type ? 'bg-[#D32F2F] text-white shadow-lg' : 'bg-white text-gray-600 hover:bg-gray-200'}`}
+                  className={`px-6 py-3 font-bold rounded transition ${activeTab === type ? 'bg-[#D32F2F] text-white shadow-lg' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
                 >
                   {type === 'pika' ? 'ピカ線' : type === 'cv' ? 'CVケーブル' : type === 'iv' ? 'IV線' : type === 'vvf' ? 'VVF (VA)' : type === 'mixed' ? '雑線' : 'キャブタイヤ'}
                 </button>
@@ -387,7 +436,7 @@ export default function TsukisamuFactory() {
         </section>
 
         {/* Company & Access */}
-        <section id="access" className="py-24 bg-white border-t border-gray-100">
+        <section id="access" className="py-24 bg-gray-50 border-t border-gray-200">
           <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-12">
             <div>
               <h2 className="text-3xl font-black mb-8 text-gray-900">会社情報</h2>
@@ -397,14 +446,14 @@ export default function TsukisamuFactory() {
                 <InfoRow label="許可証" value="北海道知事許可（般-18）石第00857号 / 産廃処分業許可 第00120077601号" />
                 <InfoRow label="設備" value="70t トラックスケール 2基 / ナゲットプラント / 剥離機" />
                 <div className="pt-4 grid grid-cols-2 gap-4">
-                   <div className="h-32 rounded-lg overflow-hidden border border-gray-100"><img src={IMAGES.weight} alt="計量所" className="w-full h-full object-cover" /></div>
-                   <div className="h-32 rounded-lg overflow-hidden border border-gray-100"><img src={IMAGES.nugget} alt="銅ナゲット" className="w-full h-full object-cover" /></div>
+                   <div className="h-32 rounded-lg overflow-hidden border border-gray-200 shadow-sm"><img src={IMAGES.weight} alt="計量所" className="w-full h-full object-cover" /></div>
+                   <div className="h-32 rounded-lg overflow-hidden border border-gray-200 shadow-sm"><img src={IMAGES.nugget} alt="銅ナゲット" className="w-full h-full object-cover" /></div>
                 </div>
               </div>
             </div>
-            <div className="h-[500px] bg-gray-100 rounded-2xl overflow-hidden shadow-inner relative">
+            <div className="h-[500px] bg-white rounded-2xl overflow-hidden shadow-xl border border-gray-200 relative">
               <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2932.339790216788!2d141.6738927766324!3d42.69780077116297!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x5f7566f07a092899%3A0x89e8360098f98072!2z44CSMDUzLTAwMDEg5YyX5rW36YGT6IuL5bCP54mn5biC5LiA5pys5p2-55S677yZ4oiS77yW!5e0!3m2!1sja!2sjp!4v1707727000000!5m2!1sja!2sjp" width="100%" height="100%" style={{border:0}} loading="lazy"></iframe>
-              <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur p-4 rounded shadow-lg max-w-xs">
+              <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur p-4 rounded shadow-lg max-w-xs">
                  <p className="font-bold text-sm">苫小牧工場</p>
                  <p className="text-xs text-gray-600">大型トラックでの搬入もスムーズに行えます。</p>
               </div>
@@ -451,7 +500,6 @@ export default function TsukisamuFactory() {
 
     return (
       <div className="min-h-screen bg-[#0d1117] text-[#c9d1d9] font-sans flex flex-col md:flex-row">
-        {/* Sidebar */}
         <aside className="w-full md:w-80 border-r border-white/5 bg-black/30 p-8 shrink-0 flex flex-col">
           <div className="font-black italic text-2xl text-white tracking-tighter mb-12">FACTORY <span className="text-cyan-500">OS</span></div>
           <div className="space-y-6 flex-1">
@@ -466,7 +514,6 @@ export default function TsukisamuFactory() {
                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block italic">LME Copper</span>
                <div className="text-3xl font-mono font-black text-red-500 italic">¥{Number(marketPrice).toLocaleString()}</div>
             </div>
-            {/* User Info Card */}
             <div className="bg-white/5 p-6 rounded-3xl border border-white/5">
               <p className="text-[10px] text-gray-500 uppercase font-bold mb-2">Account</p>
               <p className="text-white font-bold text-lg">{user?.companyName}</p>
@@ -476,13 +523,10 @@ export default function TsukisamuFactory() {
           <button onClick={() => setView('LP')} className="mt-8 w-full py-4 text-[10px] font-black uppercase text-gray-500 border border-white/10 rounded-2xl hover:bg-white/5 hover:text-white transition-all tracking-widest">Logout</button>
         </aside>
 
-        {/* Dashboard Main */}
         <main className="flex-1 p-8 overflow-y-auto">
           <div className="max-w-6xl mx-auto">
             <h2 className="text-3xl font-black text-white mb-8 italic uppercase tracking-tighter">Dashboard <span className="text-gray-600">/ {isAdmin ? 'Processing' : 'My Page'}</span></h2>
-            
             {isAdmin ? (
-              // Admin View
               <div className="grid lg:grid-cols-2 gap-8">
                  <div className="bg-[#161b22] p-8 rounded-[2.5rem] border border-white/5">
                     <h3 className="text-xs font-bold text-white uppercase tracking-widest mb-6">Queue Status</h3>
@@ -502,7 +546,6 @@ export default function TsukisamuFactory() {
                  <div className="bg-[#161b22] h-64 rounded-[2.5rem] border border-white/5 flex items-center justify-center text-gray-600 font-bold uppercase tracking-widest">POS System Module</div>
               </div>
             ) : (
-              // Member View
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="bg-[#161b22] border border-white/10 p-8 rounded-[2.5rem]">
                   <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-8 flex items-center gap-3"><span className="w-1.5 h-4 bg-red-600"></span>Quality Performance</h3>
