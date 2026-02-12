@@ -3,6 +3,29 @@
 import React, { useState, useEffect } from 'react';
 
 // ==========================================
+// 型定義 (新データベース構造に対応)
+// ==========================================
+interface ProductData {
+  id: string;      // MIX-xx, P-MEAS-xx
+  maker: string;   // メーカー
+  name: string;    // 線種名
+  year: string;    // 製造年
+  sq: string;      // サイズ
+  core: string;    // 芯数
+  ratio: number;   // 銅分率 (0.00%)
+  category: string;// カテゴリ
+  source: string;  // データソース
+}
+
+interface MarketData {
+  status: string;
+  config: { market_price: number };
+  history: { date: string; value: number }[];
+  products: ProductData[]; // 製品リスト
+  stats: { monthlyTotal: number };
+}
+
+// ==========================================
 // 画像パス定義
 // ==========================================
 const IMAGES = {
@@ -25,7 +48,6 @@ const Icons = {
   ArrowRight: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>,
   ArrowUp: () => <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>,
   ChevronDown: ({className}:{className?:string}) => <svg className={className} width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/></svg>,
-  // ★追加: ランク用アイコン
   Crown: () => <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>,
   Star: () => <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
 };
@@ -87,7 +109,7 @@ const RealChart = ({ data }: {data: any[]}) => {
 // ==========================================
 export default function WireMasterCloud() {
   const [view, setView] = useState<'LP' | 'LOGIN' | 'ADMIN' | 'MEMBER'>('LP');
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<MarketData | null>(null);
   const [user, setUser] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('pika');
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
@@ -123,6 +145,7 @@ export default function WireMasterCloud() {
   const calculateSim = () => {
     if (!simType || !simWeight) return;
     const w = parseFloat(simWeight);
+    // 将来的にはここで data.products から動的に比率を取得することも可能
     const ratios: any = { 'pika': 0.98, 'high': 0.82, 'medium': 0.65, 'low': 0.45, 'mixed': 0.40 };
     const estimatedUnit = Math.floor(marketPrice * ratios[simType]); 
     const total = Math.floor(estimatedUnit * w);
@@ -342,9 +365,8 @@ export default function WireMasterCloud() {
           </div>
         </section>
 
-        {/* ★新設: PARTNERSHIP RANK SYSTEM (Dark & Intellectual) */}
+        {/* PARTNERSHIP RANK SYSTEM */}
         <section id="membership" className="py-32 px-6 bg-[#1a1a1a] text-white relative overflow-hidden">
-          {/* 背景装飾 */}
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#1a1a1a] via-[#D32F2F] to-[#1a1a1a]"></div>
           <div className="absolute -right-20 top-40 text-white/5 text-9xl font-serif font-bold select-none z-0" style={{writingMode: 'vertical-rl'}}>
             会員制度
@@ -360,7 +382,6 @@ export default function WireMasterCloud() {
                </p>
             </div>
 
-            {/* 方程式の可視化 */}
             <div className="flex flex-col md:flex-row justify-center items-center gap-8 mb-20 text-center md:text-left">
                <div className="bg-white/5 border border-white/10 px-8 py-6 rounded-xl">
                  <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-2">Volume</p>
@@ -381,7 +402,6 @@ export default function WireMasterCloud() {
                </div>
             </div>
 
-            {/* ランクカード */}
             <div className="grid md:grid-cols-3 gap-6">
                {/* COPPER RANK */}
                <div className="bg-[#222] border border-white/10 p-8 rounded-lg relative group hover:border-[#b87333] transition-colors duration-500">
