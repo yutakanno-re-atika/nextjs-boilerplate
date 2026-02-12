@@ -145,7 +145,6 @@ export default function WireMasterCloud() {
   const calculateSim = () => {
     if (!simType || !simWeight) return;
     const w = parseFloat(simWeight);
-    // 将来的にはここで data.products から動的に比率を取得することも可能
     const ratios: any = { 'pika': 0.98, 'high': 0.82, 'medium': 0.65, 'low': 0.45, 'mixed': 0.40 };
     const estimatedUnit = Math.floor(marketPrice * ratios[simType]); 
     const total = Math.floor(estimatedUnit * w);
@@ -229,7 +228,8 @@ export default function WireMasterCloud() {
             <div className="lg:col-span-5 animate-in fade-in slide-in-from-right-8 duration-1000 delay-300">
               <div className="backdrop-blur-sm bg-white/10 border border-white/20 p-8 md:p-12 shadow-2xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-2xl"></div>
-                <RealChart data={data?.history} />
+                {/* ★修正ポイント: undefined対策の || [] を追加 */}
+                <RealChart data={data?.history || []} />
                 <div className="mt-8 pt-6 border-t border-white/20 flex justify-between items-center">
                    <div>
                      <p className="text-[9px] text-white/70 uppercase tracking-widest mb-1">Factory Status</p>
