@@ -3,6 +3,22 @@
 import React, { useState, useEffect } from 'react';
 
 // ==========================================
+// 画像パス定義 (ローカルファイル参照)
+// ※ public/images/ フォルダ内のファイル名と一致させてください
+// ==========================================
+const IMAGES = {
+  hero: "/images/factory_floor.jpg",      // 工場背景 (ヒーローエリア)
+  pika: "/images/pika_wire.jpg",          // ピカ線
+  cv: "/images/cv_cable.jpg",             // CVケーブル
+  iv: "/images/iv_cable.jpg",             // IV線
+  vvf: "/images/vvf_cable.jpg",           // VVF
+  mixed: "/images/mixed_wire.jpg",        // 雑線
+  cabtire: "/images/cabtire_cable.jpg",   // キャブタイヤ
+  weight: "/images/weighing_station.jpg", // 計量所
+  nugget: "/images/copper_nugget.jpg"     // 銅ナゲット
+};
+
+// ==========================================
 // コンポーネント: アイコン類
 // ==========================================
 const Icons = {
@@ -15,7 +31,7 @@ const Icons = {
 };
 
 // ==========================================
-// コンポーネント: リアルタイムチャート (LP用デザイン)
+// コンポーネント: リアルタイムチャート
 // ==========================================
 const RealChart = ({ data, color = "#D32F2F" }: {data: any[], color?: string}) => {
   const [activePoint, setActivePoint] = useState<any>(null);
@@ -34,6 +50,7 @@ const RealChart = ({ data, color = "#D32F2F" }: {data: any[], color?: string}) =
   const getX = (i: number) => (i / (data.length - 1)) * 100;
   const points = data.map((d: any, i: number) => `${getX(i)},${100 - ((d.value - yMin) / (yMax - yMin)) * 100}`).join(' ');
 
+  // 日付フォーマット調整
   const formatDate = (dateStr: string) => {
     if (!dateStr || dateStr === 'NOW' || dateStr === 'No Data') return dateStr;
     const parts = dateStr.split('/');
@@ -80,6 +97,33 @@ const RealChart = ({ data, color = "#D32F2F" }: {data: any[], color?: string}) =
 };
 
 // ==========================================
+// サブコンポーネント: 線種詳細 (画像対応)
+// ==========================================
+const WireDetail = ({ img, title, desc, price }: {img:string, title:string, desc:string, price:string}) => (
+  <div className="grid md:grid-cols-2 gap-12 w-full animate-in fade-in">
+    <div className="h-64 rounded-xl overflow-hidden shadow-lg border border-gray-100 bg-gray-50">
+      <img src={img} alt={title} className="w-full h-full object-cover hover:scale-105 transition duration-500" />
+    </div>
+    <div className="flex flex-col justify-center">
+      <h3 className="text-2xl font-black mb-4 text-gray-900">{title}</h3>
+      <p className="text-gray-600 mb-6 leading-relaxed font-medium">{desc}</p>
+      <div className="bg-[#D32F2F]/5 border-l-4 border-[#D32F2F] p-4">
+        <p className="text-sm text-gray-500 font-bold mb-1">参考価格目安</p>
+        <p className="text-xl font-black text-[#D32F2F]">{price}</p>
+      </div>
+    </div>
+  </div>
+);
+
+// サブコンポーネント: 会社情報行
+const InfoRow = ({ label, value }: {label:string, value:string}) => (
+  <div className="flex gap-4 border-b border-gray-100 pb-4">
+    <span className="w-24 font-bold text-gray-400 text-sm shrink-0">{label}</span>
+    <span className="font-bold text-gray-800">{value}</span>
+  </div>
+);
+
+// ==========================================
 // メインアプリケーション
 // ==========================================
 export default function TsukisamuFactory() {
@@ -89,7 +133,7 @@ export default function TsukisamuFactory() {
   const [activeTab, setActiveTab] = useState('pika');
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
   
-  // シミュレーター用State
+  // シミュレーター用
   const [simType, setSimType] = useState('');
   const [simWeight, setSimWeight] = useState('');
   const [simResult, setSimResult] = useState<any>(null);
@@ -121,7 +165,6 @@ export default function TsukisamuFactory() {
     const ratios: any = { 'pika': 0.98, 'high': 0.82, 'medium': 0.65, 'low': 0.45, 'mixed': 0.40 };
     const labels: any = { 'pika': 'ピカ線 (特1号)', 'high': '高銅率 (80%~)', 'medium': '中銅率 (60-79%)', 'low': '低銅率 (40-59%)', 'mixed': '雑線・混合' };
     
-    // 計算ロジック: 建値 × 歩留まり
     const estimatedUnit = Math.floor(marketPrice * ratios[simType]); 
     const total = Math.floor(estimatedUnit * w);
 
@@ -133,17 +176,24 @@ export default function TsukisamuFactory() {
     });
   };
 
+  const FAQ_ITEMS = [
+    { q: "インボイス制度には対応していますか？", a: "はい、完全対応しております。適格請求書発行事業者として登録済みですので、法人のお客様も安心してご利用いただけます。" },
+    { q: "被覆付きの電線でもそのまま持ち込めますか？", a: "もちろんです！当社は独自のナゲットプラントを保有しており、被覆銅線から純度99.9%の銅を回収する技術を持っています。" },
+    { q: "基板や電子部品も買取可能ですか？", a: "はい。E-Scrapも高度な選別技術により金・銀・パラジウムなどの希少金属として評価・買取いたします。" },
+    { q: "支払いはいつになりますか？", a: "検収完了後、その場で現金にてお支払いいたします。法人様で掛け売りをご希望の場合はご相談ください。" }
+  ];
+
   // ----------------------------------------------------------------
-  // 1. PUBLIC LANDING PAGE (WHITE THEME)
+  // 1. PUBLIC LANDING PAGE
   // ----------------------------------------------------------------
   if (view === 'LP' || view === 'LOGIN') {
     return (
-      <div className="min-h-screen bg-white text-[#1a1a1a] font-sans scroll-smooth">
+      <div className="min-h-screen bg-white text-[#1a1a1a] font-sans scroll-smooth selection:bg-red-100 selection:text-red-900">
         {/* Header */}
         <header className="fixed top-0 w-full bg-white/95 backdrop-blur shadow-sm z-50 border-b border-gray-100">
           <div className="max-w-7xl mx-auto px-4 md:px-8 py-4 flex justify-between items-center">
-            <div className="leading-tight cursor-pointer" onClick={()=>setView('LP')}>
-              <h1 className="text-lg font-bold text-gray-900 tracking-tight">株式会社月寒製作所<br/><span className="text-[#D32F2F] text-sm font-bold">苫小牧工場</span></h1>
+            <div className="leading-tight cursor-pointer group" onClick={()=>setView('LP')}>
+              <h1 className="text-lg font-bold text-gray-900 tracking-tight group-hover:opacity-70 transition">株式会社月寒製作所<br/><span className="text-[#D32F2F] text-sm font-bold">苫小牧工場</span></h1>
             </div>
             <nav className="hidden md:flex gap-8 text-sm font-bold text-gray-600">
               <a href="#features" className="hover:text-[#D32F2F] transition relative group">特徴<span className="absolute bottom-[-4px] left-0 w-0 h-0.5 bg-[#D32F2F] transition-all group-hover:w-full"></span></a>
@@ -177,13 +227,13 @@ export default function TsukisamuFactory() {
         )}
 
         {/* Hero Section */}
-        <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 px-4 bg-gray-900">
+        <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 px-4 bg-gray-900 min-h-[80vh] flex items-center">
           <div className="absolute inset-0 z-0">
-             <img src="/images/factory_floor.jpg" alt="工場内部" className="w-full h-full object-cover opacity-40" />
+             <img src={IMAGES.hero} alt="工場内部" className="w-full h-full object-cover opacity-30" />
              <div className="absolute inset-0 bg-gradient-to-r from-gray-900 via-gray-900/80 to-transparent"></div>
           </div>
           
-          <div className="max-w-7xl mx-auto relative z-10 grid lg:grid-cols-2 gap-12 items-center">
+          <div className="max-w-7xl mx-auto relative z-10 grid lg:grid-cols-2 gap-12 items-center w-full">
             <div className="text-white space-y-8 animate-in slide-in-from-left-4 duration-700">
               <div className="inline-flex gap-3 flex-wrap">
                 <span className="bg-[#D32F2F] text-white px-3 py-1 text-xs font-bold rounded tracking-wider">創業1961年</span>
@@ -318,13 +368,12 @@ export default function TsukisamuFactory() {
             </div>
 
             <div className="bg-white p-8 md:p-12 rounded border border-gray-200 min-h-[400px] flex items-center relative overflow-hidden">
-              {/* 各タブのコンテンツ */}
-              {activeTab === 'pika' && <WireDetail img="/images/pika_wire.jpg" title="特1号銅線 (ピカ線)" desc="被覆を剥いた純度の高い銅線。直径1.3mm以上のもの。酸化やメッキがない光沢のある状態。" price="最高値での買取対象" />}
-              {activeTab === 'cv' && <WireDetail img="/images/cv_cable.jpg" title="CV・CVTケーブル" desc="架橋ポリエチレン絶縁ビニルシースケーブル。工場やビルの電力供給用。太くて重量があるため高価買取。" price="1,100円～1,450円/kg" />}
-              {activeTab === 'iv' && <WireDetail img="/images/iv_cable.jpg" title="IVケーブル" desc="屋内配線用ビニル絶縁電線。建物内の配線に広く使用される。単線または撚り線。" price="1,150円～1,280円/kg" />}
-              {activeTab === 'vvf' && <WireDetail img="/images/vvf_cable.jpg" title="VVFケーブル (VA線)" desc="ビニル絶縁ビニルシースケーブル平形。一般住宅の配線として最も一般的。" price="650円～750円/kg" />}
-              {activeTab === 'mixed' && <WireDetail img="/images/mixed_wire.jpg" title="雑線・ミックス" desc="様々な種類の電線が混ざった状態。家電コードや通信線、LANケーブルなどが含まれていてもOK。" price="550円～750円/kg" />}
-              {activeTab === 'cabtire' && <WireDetail img="/images/cabtire_cable.jpg" title="キャブタイヤケーブル" desc="ゴムやビニルで被覆された移動用ケーブル。工事現場や工場で使用される丈夫な電線。" price="銅率により変動" />}
+              {activeTab === 'pika' && <WireDetail img={IMAGES.pika} title="特1号銅線 (ピカ線)" desc="被覆を剥いた純度の高い銅線。直径1.3mm以上のもの。酸化やメッキがない光沢のある状態。" price="最高値での買取対象" />}
+              {activeTab === 'cv' && <WireDetail img={IMAGES.cv} title="CV・CVTケーブル" desc="架橋ポリエチレン絶縁ビニルシースケーブル。工場やビルの電力供給用。太くて重量があるため高価買取。" price="1,100円～1,450円/kg" />}
+              {activeTab === 'iv' && <WireDetail img={IMAGES.iv} title="IVケーブル" desc="屋内配線用ビニル絶縁電線。建物内の配線に広く使用される。単線または撚り線。" price="1,150円～1,280円/kg" />}
+              {activeTab === 'vvf' && <WireDetail img={IMAGES.vvf} title="VVFケーブル (VA線)" desc="ビニル絶縁ビニルシースケーブル平形。一般住宅の配線として最も一般的。" price="650円～750円/kg" />}
+              {activeTab === 'mixed' && <WireDetail img={IMAGES.mixed} title="雑線・ミックス" desc="様々な種類の電線が混ざった状態。家電コードや通信線、LANケーブルなどが含まれていてもOK。" price="550円～750円/kg" />}
+              {activeTab === 'cabtire' && <WireDetail img={IMAGES.cabtire} title="キャブタイヤケーブル" desc="ゴムやビニルで被覆された移動用ケーブル。工事現場や工場で使用される丈夫な電線。" price="銅率により変動" />}
             </div>
           </div>
         </section>
@@ -340,13 +389,13 @@ export default function TsukisamuFactory() {
                 <InfoRow label="許可証" value="北海道知事許可（般-18）石第00857号 / 産廃処分業許可 第00120077601号" />
                 <InfoRow label="設備" value="70t トラックスケール 2基 / ナゲットプラント / 剥離機" />
                 <div className="pt-4 grid grid-cols-2 gap-4">
-                   <img src="/images/weighing_station.jpg" alt="計量所" className="rounded-lg shadow-sm border border-gray-100" />
-                   <img src="/images/copper_nugget.jpg" alt="銅ナゲット" className="rounded-lg shadow-sm border border-gray-100" />
+                   <div className="h-32 rounded-lg overflow-hidden border border-gray-100"><img src={IMAGES.weight} alt="計量所" className="w-full h-full object-cover" /></div>
+                   <div className="h-32 rounded-lg overflow-hidden border border-gray-100"><img src={IMAGES.nugget} alt="銅ナゲット" className="w-full h-full object-cover" /></div>
                 </div>
               </div>
             </div>
             <div className="h-[500px] bg-gray-100 rounded-2xl overflow-hidden shadow-inner relative">
-              <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2944.567890123456!2d141.650000!3d42.650000!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDLCsDM5JzAwLjAiTiAxNDHCsDM5JzAwLjAiRQ!5e0!3m2!1sja!2sjp!4v1600000000000!5m2!1sja!2sjp" width="100%" height="100%" style={{border:0}} loading="lazy"></iframe>
+              <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2932.339790216788!2d141.6738927766324!3d42.69780077116297!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x5f7566f07a092899%3A0x89e8360098f98072!2z44CSMDUzLTAwMDEg5YyX5rW36YGT6IuL5bCP54mn5biC5LiA5pys5p2-55S677yZ4oiS77yW!5e0!3m2!1sja!2sjp!4v1707727000000!5m2!1sja!2sjp" width="100%" height="100%" style={{border:0}} loading="lazy"></iframe>
               <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur p-4 rounded shadow-lg max-w-xs">
                  <p className="font-bold text-sm">苫小牧工場</p>
                  <p className="text-xs text-gray-600">大型トラックでの搬入もスムーズに行えます。</p>
@@ -470,28 +519,3 @@ export default function TsukisamuFactory() {
 
   return null;
 }
-
-// サブコンポーネント: 線種詳細
-const WireDetail = ({ img, title, desc, price }: {img:string, title:string, desc:string, price:string}) => (
-  <div className="grid md:grid-cols-2 gap-12 w-full animate-in fade-in">
-    <div className="h-64 rounded-xl overflow-hidden shadow-lg border border-gray-100">
-      <img src={img} alt={title} className="w-full h-full object-cover hover:scale-105 transition duration-500" />
-    </div>
-    <div>
-      <h3 className="text-2xl font-black mb-4 text-gray-900">{title}</h3>
-      <p className="text-gray-600 mb-6 leading-relaxed font-medium">{desc}</p>
-      <div className="bg-[#D32F2F]/5 border-l-4 border-[#D32F2F] p-4">
-        <p className="text-sm text-gray-500 font-bold mb-1">参考価格目安</p>
-        <p className="text-xl font-black text-[#D32F2F]">{price}</p>
-      </div>
-    </div>
-  </div>
-);
-
-// サブコンポーネント: 会社情報行
-const InfoRow = ({ label, value }: {label:string, value:string}) => (
-  <div className="flex gap-4 border-b border-gray-100 pb-4">
-    <span className="w-24 font-bold text-gray-400 text-sm">{label}</span>
-    <span className="font-bold text-gray-800">{value}</span>
-  </div>
-);
