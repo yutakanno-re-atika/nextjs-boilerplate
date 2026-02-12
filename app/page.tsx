@@ -3,19 +3,18 @@
 import React, { useState, useEffect } from 'react';
 
 // ==========================================
-// 画像パス定義 (ローカルファイル参照)
-// ※ public/images/ フォルダ内のファイル名と一致させてください
+// 画像パス定義 (拡張子を .png に修正)
 // ==========================================
 const IMAGES = {
-  hero: "/images/factory_floor.jpg",      // 工場背景 (ヒーローエリア)
-  pika: "/images/pika_wire.jpg",          // ピカ線
-  cv: "/images/cv_cable.jpg",             // CVケーブル
-  iv: "/images/iv_cable.jpg",             // IV線
-  vvf: "/images/vvf_cable.jpg",           // VVF
-  mixed: "/images/mixed_wire.jpg",        // 雑線
-  cabtire: "/images/cabtire_cable.jpg",   // キャブタイヤ
-  weight: "/images/weighing_station.jpg", // 計量所
-  nugget: "/images/copper_nugget.jpg"     // 銅ナゲット
+  hero: "/images/factory_floor.png",      // .jpg -> .png
+  pika: "/images/pika_wire.png",          // .jpg -> .png
+  cv: "/images/cv_cable.png",             // .jpg -> .png
+  iv: "/images/iv_cable.png",             // .jpg -> .png
+  vvf: "/images/vvf_cable.png",           // .jpg -> .png
+  mixed: "/images/mixed_wire.png",        // .jpg -> .png
+  cabtire: "/images/cabtire_cable.png",   // .jpg -> .png
+  weight: "/images/weighing_station.png", // .jpg -> .png
+  nugget: "/images/copper_nugget.png"     // .jpg -> .png
 };
 
 // ==========================================
