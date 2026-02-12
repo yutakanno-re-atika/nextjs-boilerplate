@@ -13,10 +13,7 @@ const IMAGES = {
   vvf: "/images/vvf_cable.png",           // PNG
   mixed: "/images/mixed_wire.png",        // PNG
   cabtire: "/images/cabtire_cable.png",   // PNG
-  
-  // ★ここだけ JPG (ユーザー環境に合わせる)
-  weight: "/images/weighing_station.jpg", 
-  
+  weight: "/images/weighing_station.jpg", // JPG (ここ重要)
   nugget: "/images/copper_nugget.png"     // PNG
 };
 
@@ -33,14 +30,14 @@ const Icons = {
 };
 
 // ==========================================
-// コンポーネント: リアルタイムチャート
+// コンポーネント: リアルタイムチャート (赤背景用デザイン)
 // ==========================================
 const RealChart = ({ data, color = "#D32F2F" }: {data: any[], color?: string}) => {
   const [activePoint, setActivePoint] = useState<any>(null);
   
   if (!data || data.length < 2) return (
-    <div className="h-32 w-full bg-black/20 backdrop-blur rounded-xl border border-white/10 flex items-center justify-center">
-      <div className="text-white/50 text-xs font-bold animate-pulse">CONNECTING TO MARKET...</div>
+    <div className="h-32 w-full bg-white/10 backdrop-blur rounded-xl border border-white/20 flex items-center justify-center">
+      <div className="text-white text-xs font-bold animate-pulse">CONNECTING TO MARKET...</div>
     </div>
   );
 
@@ -52,7 +49,6 @@ const RealChart = ({ data, color = "#D32F2F" }: {data: any[], color?: string}) =
   const getX = (i: number) => (i / (data.length - 1)) * 100;
   const points = data.map((d: any, i: number) => `${getX(i)},${100 - ((d.value - yMin) / (yMax - yMin)) * 100}`).join(' ');
 
-  // 日付フォーマット調整
   const formatDate = (dateStr: string) => {
     if (!dateStr || dateStr === 'NOW' || dateStr === 'No Data') return dateStr;
     const parts = dateStr.split('/');
@@ -65,17 +61,18 @@ const RealChart = ({ data, color = "#D32F2F" }: {data: any[], color?: string}) =
   const displayValue = activePoint ? activePoint.value : data[data.length - 1].value;
 
   return (
-    <div className="w-full bg-white p-6 rounded-xl shadow-2xl border-4 border-white/20" onMouseLeave={() => setActivePoint(null)}>
+    // ★変更点: 背景を白にし、赤背景の上でくっきり見えるように
+    <div className="w-full bg-white p-6 rounded-2xl shadow-xl border-4 border-white/20" onMouseLeave={() => setActivePoint(null)}>
       <div className="flex justify-between items-end mb-4">
         <div>
           <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{formatDate(displayDate)}</p>
-          <p className="text-4xl font-black text-[#1a1a1a] tracking-tighter leading-none">
+          <p className="text-4xl font-black text-[#D32F2F] tracking-tighter leading-none">
             ¥{displayValue.toLocaleString()}
             <span className="text-sm text-gray-500 font-normal ml-1">/kg</span>
           </p>
         </div>
         <div className="text-right">
-           <div className="text-green-600 font-bold text-xs flex items-center justify-end gap-1 animate-pulse"><Icons.ArrowUp /> RISING</div>
+           <div className="text-red-500 font-bold text-xs flex items-center justify-end gap-1 animate-pulse"><Icons.ArrowUp /> RISING</div>
            <p className="text-[10px] text-gray-400 font-bold">LME Copper Price</p>
         </div>
       </div>
@@ -228,44 +225,53 @@ export default function TsukisamuFactory() {
           </div>
         )}
 
-        {/* Hero Section */}
-        <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 px-4 bg-gray-900 min-h-[80vh] flex items-center">
+        {/* =================================================================
+           ★ HERO SECTION (RED BASE)
+           ここを「赤ベース」に大胆変更しました
+           ================================================================= */}
+        <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 px-4 bg-[#D32F2F] overflow-hidden min-h-[85vh] flex items-center">
+          {/* 背景画像：赤の上にうっすらと工場写真をブレンド */}
           <div className="absolute inset-0 z-0">
-             <img src={IMAGES.hero} alt="工場内部" className="w-full h-full object-cover opacity-30" />
-             <div className="absolute inset-0 bg-gradient-to-r from-gray-900 via-gray-900/80 to-transparent"></div>
+             <img src={IMAGES.hero} alt="工場内部" className="w-full h-full object-cover opacity-20 mix-blend-multiply" />
+             <div className="absolute inset-0 bg-gradient-to-br from-[#D32F2F] via-[#C62828] to-[#800000] opacity-90"></div>
+             {/* 装飾的な円 */}
+             <div className="absolute top-[-20%] right-[-10%] w-[800px] h-[800px] bg-white rounded-full opacity-5 blur-3xl"></div>
           </div>
           
-          <div className="max-w-7xl mx-auto relative z-10 grid lg:grid-cols-2 gap-12 items-center w-full">
+          <div className="max-w-7xl mx-auto relative z-10 grid lg:grid-cols-2 gap-16 items-center w-full">
             <div className="text-white space-y-8 animate-in slide-in-from-left-4 duration-700">
               <div className="inline-flex gap-3 flex-wrap">
-                <span className="bg-[#D32F2F] text-white px-3 py-1 text-xs font-bold rounded tracking-wider">創業1961年</span>
-                <span className="bg-white/10 backdrop-blur border border-white/20 px-3 py-1 text-xs font-bold rounded tracking-wider">北海道知事許可</span>
+                <span className="bg-white text-[#D32F2F] px-4 py-1 text-sm font-black rounded-full tracking-wider shadow-lg">創業1961年</span>
+                <span className="bg-white/20 backdrop-blur border border-white/30 px-4 py-1 text-sm font-bold rounded-full tracking-wider">北海道知事許可</span>
               </div>
-              <h1 className="text-5xl md:text-7xl font-black leading-tight tracking-tight">
+              <h1 className="text-6xl md:text-8xl font-black leading-[0.9] tracking-tighter drop-shadow-sm">
                 繋げ、未来へ。<br/>
-                <span className="text-[#D32F2F]">資源</span>を<span className="text-[#D32F2F]">価値</span>に。
+                資源を<span className="text-yellow-400 border-b-8 border-yellow-400/30">価値</span>に。
               </h1>
-              <p className="text-lg text-gray-300 font-medium max-w-lg leading-relaxed">
+              <p className="text-xl text-white/90 font-bold max-w-lg leading-relaxed">
                 60年以上の実績と、独自の「銅ナゲットプラント」で中間マージンをカット。
-                確かな目利きで、あなたの電線を適正価格で買い取ります。
+                <span className="border-b-2 border-white/50">確かな目利き</span>で、あなたの電線を適正価格で買い取ります。
               </p>
-              <div className="flex flex-wrap gap-4 pt-4">
-                <a href="#simulator" className="bg-white text-[#D32F2F] px-8 py-4 rounded font-bold shadow-xl hover:bg-gray-100 transition flex items-center gap-2">
+              <div className="flex flex-wrap gap-4 pt-6">
+                <a href="#simulator" className="bg-white text-[#D32F2F] px-8 py-5 rounded-xl font-black text-lg shadow-2xl hover:bg-gray-100 hover:scale-105 transition flex items-center gap-3">
                   <Icons.Calc /> 買取価格シミュレーション
                 </a>
               </div>
             </div>
+            
+            {/* チャートエリア */}
             <div className="hidden lg:block animate-in slide-in-from-right-4 duration-700 delay-200">
-              {/* チャート埋め込み */}
-              <RealChart data={data?.history} />
-              <div className="mt-4 flex gap-4">
-                <div className="bg-black/60 backdrop-blur p-4 rounded-lg flex-1 border border-white/10">
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">本日の建値</p>
-                  <p className="text-2xl font-mono font-black text-white">¥{Number(marketPrice).toLocaleString()}</p>
+              {/* 白いカードでチャートを表示（赤背景の上で目立つ） */}
+              <RealChart data={data?.history} color="#D32F2F" />
+              
+              <div className="mt-6 flex gap-4">
+                <div className="bg-white/10 backdrop-blur p-5 rounded-2xl flex-1 border border-white/20 hover:bg-white/20 transition">
+                  <p className="text-xs text-white/80 font-bold uppercase tracking-widest mb-1">本日の建値</p>
+                  <p className="text-3xl font-mono font-black text-white">¥{Number(marketPrice).toLocaleString()}</p>
                 </div>
-                <div className="bg-black/60 backdrop-blur p-4 rounded-lg flex-1 border border-white/10">
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">工場稼働状況</p>
-                  <p className="text-2xl font-mono font-black text-green-500 flex items-center gap-2"><span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span> 受入可能</p>
+                <div className="bg-white/10 backdrop-blur p-5 rounded-2xl flex-1 border border-white/20 hover:bg-white/20 transition">
+                  <p className="text-xs text-white/80 font-bold uppercase tracking-widest mb-1">工場稼働状況</p>
+                  <p className="text-3xl font-mono font-black text-green-300 flex items-center gap-3 text-shadow"><span className="w-3 h-3 bg-green-400 rounded-full animate-pulse shadow-[0_0_10px_#4ade80]"></span> 受入可能</p>
                 </div>
               </div>
             </div>
