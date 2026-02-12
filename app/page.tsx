@@ -13,11 +13,9 @@ const IMAGES = {
   vvf: "/images/vvf_cable.png",           // PNG
   mixed: "/images/mixed_wire.png",        // PNG
   cabtire: "/images/cabtire_cable.png",   // PNG
-  weight: "/images/weighing_station.jpg", // JPG (ここ重要)
+  weight: "/images/weighing_station.jpg", // JPG
   nugget: "/images/copper_nugget.png",    // PNG
-  
-  // ★追加: 工場外観 (なければ hero と同じでもOK)
-  factory: "/images/factory_floor.png"    
+  factory: "/images/factory_floor.png"    // PNG
 };
 
 // ==========================================
@@ -26,6 +24,8 @@ const IMAGES = {
 const Icons = {
   ArrowRight: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>,
   ArrowUp: () => <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>,
+  // ★追加: FAQ用アイコン
+  ChevronDown: ({className}:{className?:string}) => <svg className={className} width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/></svg>,
 };
 
 // ==========================================
@@ -70,7 +70,6 @@ const RealChart = ({ data }: {data: any[]}) => {
       </div>
       <div className="h-40 w-full relative overflow-visible">
         <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible" preserveAspectRatio="none">
-          {/* 純白のラインで清潔感を */}
           <path d={`M ${points}`} fill="none" stroke="#FFFFFF" strokeWidth="2" vectorEffect="non-scaling-stroke" filter="drop-shadow(0px 2px 4px rgba(0,0,0,0.1))" />
           {data.map((d: any, i: number) => (
             <rect key={i} x={getX(i)-1} y="0" width="2" height="100" fill="transparent" onMouseEnter={() => setActivePoint(d)} />
@@ -89,6 +88,7 @@ export default function WireMasterCloud() {
   const [data, setData] = useState<any>(null);
   const [user, setUser] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('pika');
+  const [activeFaq, setActiveFaq] = useState<number | null>(null); // FAQ State
   
   // シミュレーター
   const [simType, setSimType] = useState('');
@@ -96,7 +96,6 @@ export default function WireMasterCloud() {
   const [simResult, setSimResult] = useState<any>(null);
 
   useEffect(() => {
-    // 縦書き対応のため明朝体ロード
     const link = document.createElement('link');
     link.href = "https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;500;700;900&family=Oswald:wght@300;500&display=swap";
     link.rel = "stylesheet";
@@ -130,9 +129,13 @@ export default function WireMasterCloud() {
     setSimResult({ label: labels[simType], weight: w, unit: estimatedUnit, total: total });
   };
 
-  // ----------------------------------------------------------------
-  // 1. LP VIEW (Red & White Modern)
-  // ----------------------------------------------------------------
+  const FAQ_ITEMS = [
+    { q: "インボイス制度への対応について", a: "適格請求書発行事業者として登録済みです。法人のお客様も安心してご利用いただけます。" },
+    { q: "被覆付き電線の買取について", a: "独自のナゲットプラントを保有しており、被覆のまま高価買取が可能です。剥離作業は不要です。" },
+    { q: "お支払いサイトについて", a: "検収完了後、即時現金払いとなります。法人様の掛け売り（請求書払い）もご相談ください。" },
+    { q: "出張買取のエリアについて", a: "基本的に北海道全域に対応しております。数量によって条件が異なりますので、まずはお気軽にお問い合わせください。" }
+  ];
+
   if (view === 'LP' || view === 'LOGIN') {
     return (
       <div className="min-h-screen bg-white text-[#111] font-sans selection:bg-[#D32F2F] selection:text-white">
@@ -164,22 +167,18 @@ export default function WireMasterCloud() {
           </div>
         )}
 
-        {/* HERO SECTION - "Passion & Tradition" (Red Gradient) */}
+        {/* HERO SECTION */}
         <section className="relative h-screen min-h-[800px] flex items-center bg-[#D32F2F] text-white overflow-hidden">
-          {/* Background: Red Gradient + Texture */}
           <div className="absolute inset-0 z-0">
              <img src={IMAGES.hero} className="w-full h-full object-cover opacity-20 mix-blend-multiply grayscale" alt="Factory" />
              <div className="absolute inset-0 bg-gradient-to-br from-[#B71C1C] via-[#D32F2F] to-[#E53935] opacity-90"></div>
-             {/* 和モダンな装飾（円） */}
              <div className="absolute top-[-10%] right-[-10%] w-[60vw] h-[60vw] border-[1px] border-white/10 rounded-full opacity-50"></div>
              <div className="absolute bottom-[-10%] left-[-10%] w-[40vw] h-[40vw] border-[1px] border-white/10 rounded-full opacity-50"></div>
           </div>
 
           <div className="max-w-[1400px] mx-auto px-6 w-full relative z-10 grid lg:grid-cols-12 gap-12 items-center">
-            {/* Typography */}
             <div className="lg:col-span-7 space-y-12">
               <div className="space-y-6 relative">
-                {/* 縦書きのアクセント (Sumiyoshi Style) */}
                 <div className="hidden lg:block absolute -left-24 top-0 h-full w-10 border-r border-white/30">
                   <span className="block text-xs font-serif tracking-[0.5em] opacity-80" style={{writingMode: 'vertical-rl'}}>創業昭和三十六年</span>
                 </div>
@@ -202,7 +201,6 @@ export default function WireMasterCloud() {
               </div>
             </div>
 
-            {/* Market Data */}
             <div className="lg:col-span-5 animate-in fade-in slide-in-from-right-8 duration-1000 delay-300">
               <div className="backdrop-blur-sm bg-white/10 border border-white/20 p-8 md:p-12 shadow-2xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-2xl"></div>
@@ -223,9 +221,8 @@ export default function WireMasterCloud() {
           </div>
         </section>
 
-        {/* CONCEPT - Vertical Text & White Space */}
+        {/* CONCEPT */}
         <section id="about" className="py-32 px-6 bg-white relative">
-          {/* 縦書きタイトル (背景あしらい) */}
           <div className="absolute right-6 top-32 text-[#f0f0f0] text-9xl font-serif font-bold opacity-50 select-none z-0" style={{writingMode: 'vertical-rl'}}>
             一貫処理
           </div>
@@ -234,7 +231,6 @@ export default function WireMasterCloud() {
              <div className="order-2 md:order-1 relative">
                 <div className="aspect-[4/5] bg-gray-100 overflow-hidden relative">
                    <img src={IMAGES.nugget} alt="Copper Nugget" className="w-full h-full object-cover grayscale hover:grayscale-0 transition duration-[1.5s]" />
-                   {/* 赤いアクセントライン */}
                    <div className="absolute top-0 left-0 w-2 h-full bg-[#D32F2F]"></div>
                 </div>
              </div>
@@ -268,7 +264,7 @@ export default function WireMasterCloud() {
           </div>
         </section>
 
-        {/* SERVICE PLANS - Light & Energetic */}
+        {/* SERVICE PLANS */}
         <section id="service" className="py-32 px-6 bg-[#F9F9F9]">
           <div className="max-w-[1400px] mx-auto">
             <div className="flex flex-col md:flex-row justify-between items-end mb-16">
@@ -280,7 +276,7 @@ export default function WireMasterCloud() {
             </div>
 
             <div className="grid md:grid-cols-3 gap-8">
-              {/* Plan 1: Drop-off */}
+              {/* Plan 1 */}
               <div className="bg-white p-10 shadow-sm hover:shadow-2xl transition-all duration-500 group border-t-4 border-transparent hover:border-[#D32F2F] relative overflow-hidden">
                  <div className="absolute top-4 right-4 text-gray-100 text-6xl font-black font-serif z-0 group-hover:text-red-50 transition-colors">01</div>
                  <div className="relative z-10">
@@ -300,7 +296,7 @@ export default function WireMasterCloud() {
                  </div>
               </div>
 
-              {/* Plan 2: Pick-up (Featured) */}
+              {/* Plan 2 */}
               <div className="bg-[#111] text-white p-10 shadow-2xl hover:shadow-2xl transition-all duration-500 group border-t-4 border-[#D32F2F] relative transform md:-translate-y-4">
                  <div className="absolute top-4 right-4 text-white/10 text-6xl font-black font-serif z-0">02</div>
                  <div className="relative z-10">
@@ -321,7 +317,7 @@ export default function WireMasterCloud() {
                  </div>
               </div>
 
-              {/* Plan 3: Business */}
+              {/* Plan 3 */}
               <div className="bg-white p-10 shadow-sm hover:shadow-2xl transition-all duration-500 group border-t-4 border-transparent hover:border-[#D32F2F] relative overflow-hidden">
                  <div className="absolute top-4 right-4 text-gray-100 text-6xl font-black font-serif z-0 group-hover:text-red-50 transition-colors">03</div>
                  <div className="relative z-10">
@@ -344,7 +340,7 @@ export default function WireMasterCloud() {
           </div>
         </section>
 
-        {/* SIMULATOR - Functional Beauty */}
+        {/* SIMULATOR */}
         <section id="simulator" className="py-32 px-6 bg-white relative">
           <div className="max-w-[900px] mx-auto relative z-10">
              <div className="text-center mb-12">
@@ -397,6 +393,84 @@ export default function WireMasterCloud() {
                    </div>
                 </div>
              </div>
+          </div>
+        </section>
+
+        {/* WIRE TYPES */}
+        <section id="price" className="py-32 px-6 bg-white">
+          <div className="max-w-[1200px] mx-auto">
+             <div className="mb-20 flex items-end justify-between border-b border-gray-200 pb-6">
+               <h2 className="text-3xl font-serif">取扱品目</h2>
+               <div className="flex gap-4">
+                  {['pika', 'cv', 'iv', 'mixed'].map(t => (
+                    <button key={t} onClick={()=>setActiveTab(t)} className={`text-[10px] font-bold uppercase tracking-widest px-4 py-2 transition-colors ${activeTab===t ? 'bg-black text-white' : 'bg-gray-100 text-gray-400 hover:text-black'}`}>
+                      {t}
+                    </button>
+                  ))}
+               </div>
+             </div>
+             
+             <div className="grid md:grid-cols-2 gap-16 items-center animate-in fade-in duration-500" key={activeTab}>
+               <div className="h-[400px] bg-gray-100 overflow-hidden relative group">
+                 <img src={IMAGES[activeTab as keyof typeof IMAGES]} alt={activeTab} className="w-full h-full object-cover transition duration-700 group-hover:scale-105" />
+                 <div className="absolute inset-0 border-[12px] border-white pointer-events-none"></div>
+               </div>
+               <div className="space-y-8">
+                 <h3 className="text-3xl font-serif font-medium">
+                   {activeTab === 'pika' && '特1号銅線 (ピカ線)'}
+                   {activeTab === 'cv' && 'CV・CVTケーブル'}
+                   {activeTab === 'iv' && 'IV線'}
+                   {activeTab === 'mixed' && '雑線・ミックス'}
+                 </h3>
+                 <p className="text-sm text-gray-600 leading-loose">
+                   {activeTab === 'pika' && '被覆を完全に除去した、直径1.3mm以上の純銅線。酸化やメッキがなく、光沢がある状態のものが最高値での買取対象となります。'}
+                   {activeTab === 'cv' && '工場やビルの電力供給用として使用される架橋ポリエチレン絶縁ビニルシースケーブル。銅率が高く、太いものが多いため高価買取が可能です。'}
+                   {activeTab === 'iv' && '屋内配線用として最も一般的に使用されるビニル絶縁電線。単線・撚り線問わず買取可能です。'}
+                   {activeTab === 'mixed' && '様々な種類の電線が混ざった状態や、家電コード、通信線などもまとめて引き受けます。選別不要でお持ち込みいただけます。'}
+                 </p>
+                 <div className="inline-block border-l-2 border-red-600 pl-6 py-2">
+                   <span className="text-xs text-gray-400 block mb-1 tracking-widest uppercase">Target Price</span>
+                   <span className="text-xl font-serif font-bold">
+                     {activeTab === 'pika' ? '最高値基準' : activeTab === 'mixed' ? '銅率により変動' : '高価買取対象'}
+                   </span>
+                 </div>
+               </div>
+             </div>
+          </div>
+        </section>
+
+        {/* ★追加: FAQ SECTION (Clean List Design) */}
+        <section id="faq" className="py-32 px-6 bg-[#F9F9F9] border-t border-gray-200">
+          <div className="max-w-[800px] mx-auto">
+            <div className="text-center mb-16">
+               <span className="text-[#D32F2F] text-xs font-bold tracking-[0.3em] uppercase block mb-3">Q & A</span>
+               <h2 className="text-3xl font-serif">よくある質問</h2>
+            </div>
+            
+            <div className="space-y-4">
+              {FAQ_ITEMS.map((item, idx) => (
+                <div key={idx} className="bg-white border border-gray-200 hover:border-gray-300 transition-colors">
+                  <button 
+                    onClick={() => setActiveFaq(activeFaq === idx ? null : idx)} 
+                    className="w-full flex justify-between items-center p-6 md:p-8 text-left group"
+                  >
+                    <div className="flex items-start gap-6">
+                      <span className="text-[#D32F2F] font-serif font-bold text-lg leading-none mt-1">Q.</span>
+                      <span className="font-serif font-medium text-[#111] group-hover:text-[#D32F2F] transition-colors">{item.q}</span>
+                    </div>
+                    <Icons.ChevronDown className={`text-gray-300 transition-transform duration-300 ${activeFaq === idx ? 'rotate-180' : ''}`} />
+                  </button>
+                  
+                  {activeFaq === idx && (
+                    <div className="px-8 pb-8 pl-20 animate-in slide-in-from-top-1 fade-in duration-200">
+                      <p className="text-sm text-gray-500 leading-loose border-l-2 border-gray-100 pl-4">
+                        {item.a}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
