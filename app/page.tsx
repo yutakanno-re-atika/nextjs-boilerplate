@@ -55,20 +55,28 @@ const Icons = {
 };
 
 // ==========================================
-// RealChart
+// RealChart (絶対落ちない防御版)
 // ==========================================
 const RealChart = ({ data }: {data: any[]}) => {
   const [activePoint, setActivePoint] = useState<any>(null);
-  // データが無い場合のガード
-  if (!data || data.length < 2) return <div className="h-40 flex items-center justify-center text-xs tracking-widest text-white/50">LOADING MARKET DATA...</div>;
+  
+  // データチェック強化
+  if (!data || !Array.isArray(data) || data.length < 2) {
+    return <div className="h-40 flex items-center justify-center text-xs tracking-widest text-white/50">LOADING MARKET DATA...</div>;
+  }
 
-  const maxVal = Math.max(...data.map((d: any) => d.value));
-  const minVal = Math.min(...data.map((d: any) => d.value));
+  const maxVal = Math.max(...data.map((d: any) => d.value || 0));
+  const minVal = Math.min(...data.map((d: any) => d.value || 0));
   const range = maxVal - minVal || 100;
   const yMax = maxVal + range * 0.2;
   const yMin = minVal - range * 0.2;
   const getX = (i: number) => (i / (data.length - 1)) * 100;
-  const points = data.map((d: any, i: number) => `${getX(i)},${100 - ((d.value - yMin) / (yMax - yMin)) * 100}`).join(' ');
+  
+  // ポイント計算時のnull対策
+  const points = data.map((d: any, i: number) => {
+    const val = d.value || 0;
+    return `${getX(i)},${100 - ((val - yMin) / (yMax - yMin)) * 100}`;
+  }).join(' ');
 
   const displayDate = activePoint ? activePoint.date : data[data.length - 1].date;
   const displayValue = activePoint ? activePoint.value : data[data.length - 1].value;
@@ -86,7 +94,9 @@ const RealChart = ({ data }: {data: any[]}) => {
         <div>
           <p className="text-[10px] font-medium text-white/70 tracking-[0.2em] mb-1">MARKET PRICE / {formatDate(displayDate)}</p>
           <p className="text-5xl font-serif text-white tracking-tight drop-shadow-md">
-            <span className="text-2xl mr-1">¥</span>{displayValue.toLocaleString()}
+            <span className="text-2xl mr-1">¥</span>
+            {/* ★ここが修正ポイント: Number()でラップしてnull落ちを防ぐ */}
+            {Number(displayValue).toLocaleString()}
           </p>
         </div>
         <div className="text-right">
