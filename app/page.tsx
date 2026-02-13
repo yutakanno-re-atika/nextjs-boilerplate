@@ -266,13 +266,10 @@ export default function WireMasterCloud() {
   // =========================================================
   const loadFont = async (doc: any) => {
     try {
-      // フォントファイルをFetch
       const res = await fetch('/fonts/NotoSansJP-Regular.ttf');
       if (!res.ok) throw new Error('Font file not found');
       const fontBuffer = await res.arrayBuffer();
-      // Base64に変換
       const fontBase64 = Buffer.from(fontBuffer).toString('base64');
-      // jsPDFに登録
       doc.addFileToVFS('NotoSansJP.ttf', fontBase64);
       doc.addFont('NotoSansJP.ttf', 'NotoSansJP', 'normal');
       doc.setFont('NotoSansJP');
@@ -309,7 +306,7 @@ export default function WireMasterCloud() {
         head: [['品目', '重量', '単価', '金額']], 
         body: tableBody, 
         startY: 50,
-        styles: { font: 'NotoSansJP', fontStyle: 'normal' }, // 日本語フォント指定
+        styles: { font: 'NotoSansJP', fontStyle: 'normal' },
         headStyles: { fillColor: [211, 47, 47] }
     });
     
@@ -350,9 +347,17 @@ export default function WireMasterCloud() {
       headStyles: { fillColor: [20, 20, 20] }
     });
 
-    doc.text("毎度ありがとうございます。", 105, doc.lastAutoTable.finalY + 20, {align: "center"});
+    // ▼ ここが修正ポイント！ (doc as any) で型チェックを回避
+    doc.text("毎度ありがとうございます。", 105, (doc as any).lastAutoTable.finalY + 20, {align: "center"});
     doc.save(`Invoice_${lastTxData.id}.pdf`);
   };
+
+  const FAQ_ITEMS = [
+    { q: "インボイス制度への対応について", a: "適格請求書発行事業者として登録済みです。法人のお客様も安心してご利用いただけます。" },
+    { q: "被覆付き電線の買取について", a: "独自のナゲットプラントを保有しており、被覆のまま高価買取が可能です。剥離作業は不要です。" },
+    { q: "お支払いサイトについて", a: "検収完了後、即時現金払いとなります。法人様の掛け売り（請求書払い）もご相談ください。" },
+    { q: "出張買取のエリアについて", a: "基本的に北海道全域に対応しております。数量によって条件が異なりますので、まずはお気軽にお問い合わせください。" }
+  ];
 
   // ----------------------------------------------------------------
   // 1. PUBLIC LANDING PAGE
@@ -462,7 +467,6 @@ export default function WireMasterCloud() {
                         </div>
                         <div className="text-right">
                            <span className="text-[10px] text-gray-500 uppercase tracking-wider block">Cu Yield</span>
-                           {/* 銅率表示: 数値の場合はtoFixedで整形して表示 */}
                            <span className="text-lg font-mono font-bold">
                              {product.ratio !== undefined && product.ratio !== null ? Number(product.ratio).toFixed(1) + '%' : '-'}
                            </span>
