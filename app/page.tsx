@@ -67,7 +67,7 @@ const Icons = {
   Check: () => <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>,
   Box: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>,
   Users: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
-  Dashboard: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2z" /></svg>,
+  Dashboard: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>,
   History: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   Calc: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
 };
@@ -389,68 +389,54 @@ export default function WireMasterCloud() {
         </section>
 
         {/* PRICE LIST SECTION */}
-        <section className="py-24 bg-[#111] text-white">
-          <div className="max-w-[1000px] mx-auto px-6">
+        <section id="price" className="py-24 bg-[#111] text-white">
+          <div className="max-w-[1200px] mx-auto px-6">
             <div className="text-center mb-16">
               <span className="text-[#D32F2F] text-xs font-bold tracking-[0.3em] uppercase block mb-3">Today's Price</span>
-              <h2 className="text-4xl font-serif font-medium text-white">本日の買取価格一覧</h2>
+              <h2 className="text-4xl font-serif font-medium text-white">本日の買取価格</h2>
               <p className="text-gray-500 mt-4 text-sm font-mono">※相場変動により予告なく変更する場合があります</p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-8">
-              {data?.products?.map((product) => (
-                <div key={product.id} className="group relative bg-white/5 border border-white/10 p-6 hover:bg-white/10 transition-all duration-300">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <span className="text-[10px] text-[#D32F2F] font-bold tracking-widest uppercase mb-1 block">{product.category}</span>
-                      <h3 className="text-xl font-bold font-serif">{product.name}</h3>
-                      <p className="text-xs text-gray-400 mt-1 font-mono">{product.sq}sq / {product.core}C / {product.maker}</p>
-                    </div>
-                    <div className="text-right">
-                       <div className="text-2xl font-serif font-bold tracking-tighter">
-                         ¥{Math.floor(marketPrice * (product.ratio / 100) * 0.9).toLocaleString()}
-                         <span className="text-xs text-gray-500 font-normal ml-1">/kg</span>
-                       </div>
-                       <div className="text-[10px] text-gray-500 mt-1">銅率 {product.ratio}%</div>
+            <div className="grid md:grid-cols-3 gap-8">
+              {data?.products?.filter(p => ['pika', 'cv', 'iv', 'vvf', 'mixed', 'cabtire'].some(k => p.id.includes(k) || p.category.includes(k) || Object.keys(IMAGES).includes(p.id))).slice(0, 6).map((product, i) => {
+                const imgKey = Object.keys(IMAGES).find(k => product.id.toLowerCase().includes(k) || product.category.toLowerCase().includes(k)) || 'nugget';
+                // @ts-ignore
+                const imgSrc = IMAGES[imgKey];
+
+                return (
+                  <div key={product.id} className="group relative bg-[#1a1a1a] border border-white/10 overflow-hidden hover:border-[#D32F2F] transition-all duration-500">
+                    <div className="absolute inset-0 bg-cover bg-center opacity-30 group-hover:opacity-50 group-hover:scale-110 transition-all duration-700 mix-blend-overlay" style={{backgroundImage: `url(${imgSrc})`}}></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent"></div>
+                    
+                    <div className="relative p-8 h-full flex flex-col justify-end">
+                      <div className="mb-4 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                        <span className="text-[10px] text-[#D32F2F] font-bold tracking-widest uppercase mb-2 block">{product.category}</span>
+                        <h3 className="text-2xl font-bold font-serif leading-tight mb-1">{product.name}</h3>
+                        <p className="text-xs text-gray-400 font-mono">{product.sq}sq / {product.core}C</p>
+                      </div>
+                      
+                      <div className="border-t border-white/20 pt-4 flex justify-between items-end">
+                        <div>
+                           <span className="text-[10px] text-gray-500 uppercase tracking-wider block">Unit Price</span>
+                           <div className="text-3xl font-serif font-bold tracking-tighter text-white group-hover:text-[#D32F2F] transition-colors">
+                             ¥{Math.floor(marketPrice * (product.ratio / 100) * 0.9).toLocaleString()}
+                           </div>
+                        </div>
+                        <div className="text-right">
+                           <span className="text-[10px] text-gray-500 uppercase tracking-wider block">Cu Yield</span>
+                           <span className="text-lg font-mono font-bold">{product.ratio}%</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div className="w-full bg-white/10 h-[1px] group-hover:bg-[#D32F2F] transition-colors"></div>
-                </div>
-              ))}
-              {(!data?.products || data.products.length === 0) && (
-                <div className="col-span-2 text-center py-12 text-gray-500 font-serif">
-                  データを読み込んでいます...
-                </div>
-              )}
+                );
+              })}
             </div>
-          </div>
-        </section>
-
-        {/* FAQ SECTION */}
-        <section className="py-24 bg-white text-[#111]">
-          <div className="max-w-[800px] mx-auto px-6">
-             <div className="text-center mb-16">
-               <span className="text-[#D32F2F] text-xs font-bold tracking-[0.3em] uppercase block mb-3">Q & A</span>
-               <h2 className="text-4xl font-serif font-medium">よくあるご質問</h2>
-             </div>
-             <div className="space-y-4">
-               {FAQ_ITEMS.map((item, i) => (
-                 <div key={i} className="border-b border-gray-200">
-                   <button onClick={() => setActiveFaq(activeFaq === i ? null : i)} className="w-full text-left py-6 flex justify-between items-center group">
-                     <span className="font-bold text-lg font-serif group-hover:text-[#D32F2F] transition-colors">{item.q}</span>
-                     <span className={`transition-transform duration-300 ${activeFaq === i ? 'rotate-180 text-[#D32F2F]' : 'text-gray-400'}`}><Icons.ChevronDown /></span>
-                   </button>
-                   <div className={`overflow-hidden transition-all duration-300 ${activeFaq === i ? 'max-h-40 opacity-100 pb-6' : 'max-h-0 opacity-0'}`}>
-                     <p className="text-gray-600 leading-relaxed text-sm">{item.a}</p>
-                   </div>
-                 </div>
-               ))}
-             </div>
           </div>
         </section>
 
         {/* ACCESS SECTION */}
-        <section className="py-24 bg-[#F5F5F7] text-[#111] border-t border-gray-200">
+        <section id="access" className="py-24 bg-[#F5F5F7] text-[#111] border-t border-gray-200">
            <div className="max-w-[1200px] mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
               <div className="space-y-8">
                  <div>
@@ -579,7 +565,7 @@ export default function WireMasterCloud() {
                                <label className="text-[10px] text-gray-500 uppercase tracking-widest block mb-2">Rank</label>
                                <select className="w-full bg-black border border-white/20 p-4 rounded text-white font-bold focus:border-[#D32F2F] outline-none" value={posRank} onChange={(e:any)=>setPosRank(e.target.value)}>
                                   <option value="A">A (+2%)</option><option value="B">B (Std)</option><option value="C">C (-5%)</option>
-                                </select>
+                               </select>
                             </div>
                          </div>
                       </div>
