@@ -67,31 +67,28 @@ const Icons = {
   Check: () => <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>,
   Box: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>,
   Users: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
-  Dashboard: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>,
+  Dashboard: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>,
   History: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   Calc: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
 };
 
 // ==========================================
-// RealChart (修正: 0円表示バグ対応)
+// RealChart
 // ==========================================
 const RealChart = ({ data, currentPrice }: {data: any[], currentPrice: number}) => {
   const [activePoint, setActivePoint] = useState<any>(null);
   
   if (!data || !Array.isArray(data) || data.length < 2) return <div className="h-40 flex items-center justify-center text-xs tracking-widest text-white/50">LOADING...</div>;
 
-  // 0円対策: currentPriceが0なら履歴の最新値を使う
   const effectivePrice = currentPrice > 0 ? currentPrice : (data.length > 0 ? data[data.length-1].value : 0);
-
   const maxVal = Math.max(...data.map((d: any) => d.value || 0), effectivePrice);
   const minVal = Math.min(...data.map((d: any) => d.value || 0), effectivePrice);
   const range = maxVal - minVal || 100;
-  const yMax = maxVal + range * 0.2;
-  const yMin = minVal - range * 0.2;
   const getX = (i: number) => (i / (data.length - 1)) * 100;
-  
   const points = data.map((d: any, i: number) => {
     const val = d.value || 0;
+    const yMax = maxVal + range * 0.2;
+    const yMin = minVal - range * 0.2;
     return `${getX(i)},${100 - ((val - yMin) / (yMax - yMin)) * 100}`;
   }).join(' ');
 
@@ -135,12 +132,10 @@ export default function WireMasterCloud() {
   const [activeTab, setActiveTab] = useState('pika');
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
   
-  // シミュレーター
   const [simType, setSimType] = useState('');
   const [simWeight, setSimWeight] = useState('');
   const [simResult, setSimResult] = useState<any>(null);
 
-  // POS (Admin)
   const [posUser, setPosUser] = useState<string>('');
   const [posProduct, setPosProduct] = useState<string>('');
   const [posWeight, setPosWeight] = useState<string>('');
@@ -148,12 +143,10 @@ export default function WireMasterCloud() {
   const [posResult, setPosResult] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // 予約・明細関連
   const [adminReservations, setAdminReservations] = useState<any[]>([]);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [lastTxData, setLastTxData] = useState<any>(null);
   
-  // 会員予約フォーム
   const [reserveItems, setReserveItems] = useState<ReservationItem[]>([{product: '', weight: 0, unitPrice: 0}]);
   const [reserveDate, setReserveDate] = useState('');
   const [reserveMemo, setReserveMemo] = useState('');
@@ -166,7 +159,6 @@ export default function WireMasterCloud() {
     fetch('/api/gas').then(res => res.json()).then(d => { 
         if(d.status === 'success') {
             setData(d);
-            // 管理者の場合、予約リストをセット
             if(d.reservations) setAdminReservations(d.reservations);
         }
     });
@@ -174,7 +166,6 @@ export default function WireMasterCloud() {
 
   const marketPrice = data?.config?.market_price || 0;
 
-  // ログイン (DB認証対応)
   const handleLogin = async (e: any) => {
     e.preventDefault();
     const res = await fetch('/api/gas', { 
@@ -192,7 +183,6 @@ export default function WireMasterCloud() {
     if (!simType || !simWeight) return;
     const w = parseFloat(simWeight);
     const ratios: any = { 'pika': 0.98, 'high': 0.82, 'medium': 0.65, 'low': 0.45, 'mixed': 0.40 };
-    // 0円対策: フォールバック価格
     const basePrice = marketPrice > 0 ? marketPrice : 1450;
     const estimatedUnit = Math.floor(basePrice * ratios[simType]); 
     const total = Math.floor(estimatedUnit * w);
@@ -200,7 +190,6 @@ export default function WireMasterCloud() {
     setSimResult({ label: labels[simType], weight: w, unit: estimatedUnit, total: total });
   };
 
-  // POS計算
   const handlePosCalculate = () => {
     if (!posProduct || !posWeight) { alert("商品と重量を入力してください"); return; }
     const currentMarketPrice = marketPrice > 0 ? marketPrice : 1450; 
@@ -219,7 +208,6 @@ export default function WireMasterCloud() {
     setPosResult(Math.floor(finalUnitPrice * weight));
   };
 
-  // POS確定 & 明細モーダル表示
   const handlePosSubmitWithInvoice = async () => {
     if (isSubmitting || !posResult) return;
     setIsSubmitting(true);
@@ -251,15 +239,12 @@ export default function WireMasterCloud() {
     } catch (e) { alert('通信エラー'); } finally { setIsSubmitting(false); }
   };
 
-  // 会員予約処理 (修正: 0円バグ対策)
   const handleReserveSubmit = async () => {
-     // 再計算して念の為合計額を確定させる
      const total = reserveItems.reduce((sum, i) => sum + (i.weight * i.unitPrice), 0);
      if (total === 0) {
         alert("金額が0円です。品目を選択し直してください。");
         return;
      }
-     
      const payload = {
         action: 'REGISTER_RESERVATION',
         visitDate: reserveDate,
@@ -275,32 +260,77 @@ export default function WireMasterCloud() {
      } catch(e) { alert('予約エラー'); }
   };
 
-  // PDF発行: 見積書 (Member)
-  const generateEstimatePDF = () => {
-    const doc = new jsPDF();
-    doc.setFontSize(18); doc.text("ESTIMATE / QUOTATION", 105, 20, { align: "center" });
-    doc.setFontSize(12); doc.text(`Date: ${new Date().toLocaleDateString()}`, 15, 30);
-    doc.text(`Client: ${user?.name || 'Guest'}`, 15, 38);
-    doc.setFontSize(10); doc.text("Tsukisamu Manufacturing Co., Ltd.", 195, 30, { align: "right" });
-    
-    const tableBody = reserveItems.map(item => [item.product||'Item', `${item.weight} kg`, `Yen ${item.unitPrice.toLocaleString()}`, `Yen ${(item.weight * item.unitPrice).toLocaleString()}`]);
-    const total = reserveItems.reduce((sum, item) => sum + (item.weight * item.unitPrice), 0);
-    tableBody.push(['TOTAL', '', '', `Yen ${total.toLocaleString()}`]);
+  // =========================================================
+  // PDF GENERATION (JAPANESE FONT SUPPORT)
+  // public/fonts/NotoSansJP-Regular.ttf を読み込んで使用
+  // =========================================================
+  const loadFont = async (doc: any) => {
+    try {
+      // フォントファイルをFetch
+      const res = await fetch('/fonts/NotoSansJP-Regular.ttf');
+      if (!res.ok) throw new Error('Font file not found');
+      const fontBuffer = await res.arrayBuffer();
+      // Base64に変換
+      const fontBase64 = Buffer.from(fontBuffer).toString('base64');
+      // jsPDFに登録
+      doc.addFileToVFS('NotoSansJP.ttf', fontBase64);
+      doc.addFont('NotoSansJP.ttf', 'NotoSansJP', 'normal');
+      doc.setFont('NotoSansJP');
+      return true;
+    } catch (e) {
+      console.error("Font loading failed", e);
+      alert("日本語フォントの読み込みに失敗しました。public/fonts/NotoSansJP-Regular.ttf を確認してください。");
+      return false;
+    }
+  };
 
-    autoTable(doc, { head: [['Item', 'Weight', 'Unit Price', 'Total']], body: tableBody, startY: 50 });
+  const generateEstimatePDF = async () => {
+    const doc = new jsPDF();
+    const fontLoaded = await loadFont(doc);
+    if (!fontLoaded) return;
+
+    doc.setFontSize(18); doc.text("御見積書 / QUOTATION", 105, 20, { align: "center" });
+    doc.setFontSize(12); doc.text(`日付: ${new Date().toLocaleDateString()}`, 15, 30);
+    doc.text(`顧客名: ${user?.companyName || user?.name || 'お客様'}`, 15, 38);
+    
+    doc.setFontSize(10); doc.text("株式会社 月寒製作所 苫小牧工場", 195, 30, { align: "right" });
+    doc.text("北海道苫小牧市勇払123-4", 195, 35, { align: "right" });
+    
+    const tableBody = reserveItems.map(item => [
+        item.product || '未選択', 
+        `${item.weight} kg`, 
+        `¥${item.unitPrice.toLocaleString()}`, 
+        `¥${(item.weight * item.unitPrice).toLocaleString()}`
+    ]);
+    const total = reserveItems.reduce((sum, item) => sum + (item.weight * item.unitPrice), 0);
+    tableBody.push(['合計 (税込)', '', '', `¥${total.toLocaleString()}`]);
+
+    autoTable(doc, { 
+        head: [['品目', '重量', '単価', '金額']], 
+        body: tableBody, 
+        startY: 50,
+        styles: { font: 'NotoSansJP', fontStyle: 'normal' }, // 日本語フォント指定
+        headStyles: { fillColor: [211, 47, 47] }
+    });
+    
     doc.save(`Estimate_${new Date().getTime()}.pdf`);
   };
 
-  // PDF発行: 買取明細書 (Admin)
-  const generateInvoicePDF = () => {
+  const generateInvoicePDF = async () => {
     if(!lastTxData) return;
     const doc = new jsPDF();
-    doc.setFontSize(20); doc.text("PURCHASE STATEMENT", 105, 20, { align: "center" });
-    doc.setFontSize(10); doc.text(`Tx ID: ${lastTxData.id}`, 15, 30);
-    doc.text(`Date: ${new Date().toLocaleDateString()}`, 15, 35);
-    doc.text(`Member: ${lastTxData.member}`, 15, 40);
-    doc.text("BUYER: Tsukisamu Manufacturing Co., Ltd.", 195, 30, { align: "right" });
-    doc.text("Reg No: T1234567890123", 195, 35, { align: "right" });
+    const fontLoaded = await loadFont(doc);
+    if (!fontLoaded) return;
+
+    doc.setFontSize(20); doc.text("買取明細書 兼 仕切書", 105, 20, { align: "center" });
+    
+    doc.setFontSize(10);
+    doc.text(`取引ID: ${lastTxData.id}`, 15, 30);
+    doc.text(`日付: ${new Date().toLocaleDateString()}`, 15, 35);
+    doc.text(`会員様: ${lastTxData.member}`, 15, 40);
+
+    doc.text("買主: 株式会社 月寒製作所", 195, 30, { align: "right" });
+    doc.text("登録番号: T1234567890123", 195, 35, { align: "right" });
 
     const taxRate = 0.10;
     const price = lastTxData.price || 0;
@@ -308,24 +338,21 @@ export default function WireMasterCloud() {
     const total = price + tax;
 
     autoTable(doc, {
-      head: [['Description', 'Weight', 'Rank', 'Amount']],
+      head: [['品目', '重量', 'ランク', '金額']],
       body: [
-        [lastTxData.product, `${lastTxData.weight} kg`, lastTxData.rank, `Yen ${price.toLocaleString()}`],
-        ['', '', 'Tax (10%)', `Yen ${tax.toLocaleString()}`],
-        ['', '', 'TOTAL', `Yen ${total.toLocaleString()}`]
+        [lastTxData.product, `${lastTxData.weight} kg`, lastTxData.rank, `¥${price.toLocaleString()}`],
+        ['', '', '消費税 (10%)', `¥${tax.toLocaleString()}`],
+        ['', '', '合計金額', `¥${total.toLocaleString()}`]
       ],
       startY: 50,
-      theme: 'grid'
+      theme: 'grid',
+      styles: { font: 'NotoSansJP', fontStyle: 'normal' },
+      headStyles: { fillColor: [20, 20, 20] }
     });
+
+    doc.text("毎度ありがとうございます。", 105, doc.lastAutoTable.finalY + 20, {align: "center"});
     doc.save(`Invoice_${lastTxData.id}.pdf`);
   };
-
-  const FAQ_ITEMS = [
-    { q: "インボイス制度への対応について", a: "適格請求書発行事業者として登録済みです。法人のお客様も安心してご利用いただけます。" },
-    { q: "被覆付き電線の買取について", a: "独自のナゲットプラントを保有しており、被覆のまま高価買取が可能です。剥離作業は不要です。" },
-    { q: "お支払いサイトについて", a: "検収完了後、即時現金払いとなります。法人様の掛け売り（請求書払い）もご相談ください。" },
-    { q: "出張買取のエリアについて", a: "基本的に北海道全域に対応しております。数量によって条件が異なりますので、まずはお気軽にお問い合わせください。" }
-  ];
 
   // ----------------------------------------------------------------
   // 1. PUBLIC LANDING PAGE
@@ -399,18 +426,57 @@ export default function WireMasterCloud() {
           </div>
         </section>
 
-        {/* PRICE / WIRE TYPES (復旧) */}
-        <section id="price" className="py-32 px-6 bg-white">
-          <div className="max-w-[1200px] mx-auto">
-             <div className="mb-20 flex items-end justify-between border-b border-gray-200 pb-6"><h2 className="text-3xl font-serif">取扱品目</h2><div className="flex gap-4">{['pika', 'cv', 'iv', 'mixed'].map(t => (<button key={t} onClick={()=>setActiveTab(t)} className={`text-[10px] font-bold uppercase tracking-widest px-4 py-2 transition-colors ${activeTab===t ? 'bg-black text-white' : 'bg-gray-100 text-gray-400 hover:text-black'}`}>{t}</button>))}</div></div>
-             <div className="grid md:grid-cols-2 gap-16 items-center animate-in fade-in duration-500" key={activeTab}>
-               <div className="h-[400px] bg-gray-100 overflow-hidden relative group"><img src={IMAGES[activeTab as keyof typeof IMAGES]} alt={activeTab} className="w-full h-full object-cover transition duration-700 group-hover:scale-105" /><div className="absolute inset-0 border-[12px] border-white pointer-events-none"></div></div>
-               <div className="space-y-8"><h3 className="text-3xl font-serif font-medium">{activeTab === 'pika' && '特1号銅線 (ピカ線)'}{activeTab === 'cv' && 'CV・CVTケーブル'}{activeTab === 'iv' && 'IV線'}{activeTab === 'mixed' && '雑線・ミックス'}</h3><p className="text-sm text-gray-600 leading-loose">{activeTab === 'pika' && '被覆を完全に除去した、直径1.3mm以上の純銅線。酸化やメッキがなく、光沢がある状態のものが最高値での買取対象となります。'}{activeTab === 'cv' && '工場やビルの電力供給用として使用される架橋ポリエチレン絶縁ビニルシースケーブル。銅率が高く、太いものが多いため高価買取が可能です。'}{activeTab === 'iv' && '屋内配線用として最も一般的に使用されるビニル絶縁電線。単線・撚り線問わず買取可能です。'}{activeTab === 'mixed' && '様々な種類の電線が混ざった状態や、家電コード、通信線などもまとめて引き受けます。選別不要でお持ち込みいただけます。'}</p><div className="inline-block border-l-2 border-red-600 pl-6 py-2"><span className="text-xs text-gray-400 block mb-1 tracking-widest uppercase">Target Price</span><span className="text-xl font-serif font-bold">{activeTab === 'pika' ? '最高値基準' : activeTab === 'mixed' ? '銅率により変動' : '高価買取対象'}</span></div></div>
-             </div>
+        {/* PRICE LIST SECTION */}
+        <section id="price" className="py-24 bg-[#111] text-white">
+          <div className="max-w-[1200px] mx-auto px-6">
+            <div className="text-center mb-16">
+              <span className="text-[#D32F2F] text-xs font-bold tracking-[0.3em] uppercase block mb-3">Today's Price</span>
+              <h2 className="text-4xl font-serif font-medium text-white">本日の買取価格</h2>
+              <p className="text-gray-500 mt-4 text-sm font-mono">※相場変動により予告なく変更する場合があります</p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8">
+              {data?.products?.filter(p => ['pika', 'cv', 'iv', 'vvf', 'mixed', 'cabtire'].some(k => p.id.includes(k) || p.category.includes(k) || Object.keys(IMAGES).includes(p.id))).slice(0, 6).map((product, i) => {
+                const imgKey = Object.keys(IMAGES).find(k => product.id.toLowerCase().includes(k) || product.category.toLowerCase().includes(k)) || 'nugget';
+                // @ts-ignore
+                const imgSrc = IMAGES[imgKey];
+
+                return (
+                  <div key={product.id} className="group relative bg-[#1a1a1a] border border-white/10 overflow-hidden hover:border-[#D32F2F] transition-all duration-500">
+                    <div className="absolute inset-0 bg-cover bg-center opacity-30 group-hover:opacity-50 group-hover:scale-110 transition-all duration-700 mix-blend-overlay" style={{backgroundImage: `url(${imgSrc})`}}></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent"></div>
+                    
+                    <div className="relative p-8 h-full flex flex-col justify-end">
+                      <div className="mb-4 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                        <span className="text-[10px] text-[#D32F2F] font-bold tracking-widest uppercase mb-2 block">{product.category}</span>
+                        <h3 className="text-2xl font-bold font-serif leading-tight mb-1">{product.name}</h3>
+                        <p className="text-xs text-gray-400 font-mono">{product.sq}sq / {product.core}C</p>
+                      </div>
+                      
+                      <div className="border-t border-white/20 pt-4 flex justify-between items-end">
+                        <div>
+                           <span className="text-[10px] text-gray-500 uppercase tracking-wider block">Unit Price</span>
+                           <div className="text-3xl font-serif font-bold tracking-tighter text-white group-hover:text-[#D32F2F] transition-colors">
+                             ¥{Math.floor(marketPrice * (product.ratio / 100) * 0.9).toLocaleString()}
+                           </div>
+                        </div>
+                        <div className="text-right">
+                           <span className="text-[10px] text-gray-500 uppercase tracking-wider block">Cu Yield</span>
+                           {/* 銅率表示: 数値の場合はtoFixedで整形して表示 */}
+                           <span className="text-lg font-mono font-bold">
+                             {product.ratio !== undefined && product.ratio !== null ? Number(product.ratio).toFixed(1) + '%' : '-'}
+                           </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </section>
 
-        {/* FAQ SECTION (復旧) */}
+        {/* FAQ SECTION */}
         <section id="faq" className="py-32 px-6 bg-[#F9F9F9] border-t border-gray-200">
           <div className="max-w-[800px] mx-auto">
             <div className="text-center mb-16"><span className="text-[#D32F2F] text-xs font-bold tracking-[0.3em] uppercase block mb-3">Q & A</span><h2 className="text-3xl font-serif">よくある質問</h2></div>
@@ -428,7 +494,7 @@ export default function WireMasterCloud() {
           </div>
         </section>
 
-        {/* ACCESS / FOOTER (復旧) */}
+        {/* ACCESS / FOOTER */}
         <section id="access" className="border-t border-gray-200">
            <div className="grid md:grid-cols-2">
               <div className="bg-[#1a1a1a] text-white p-16 md:p-24 flex flex-col justify-center"><h2 className="text-2xl font-serif mb-12 flex items-center gap-4"><span className="w-8 h-[1px] bg-[#D32F2F]"></span> 会社概要</h2><div className="space-y-8 text-sm font-light tracking-wide text-gray-400"><div className="flex gap-8 border-b border-white/10 pb-4"><span className="w-24 shrink-0 font-bold text-white">社名</span><span>株式会社月寒製作所 苫小牧工場</span></div><div className="flex gap-8 border-b border-white/10 pb-4"><span className="w-24 shrink-0 font-bold text-white">所在地</span><span>〒053-0001 北海道苫小牧市一本松町9-6</span></div><div className="flex gap-8 border-b border-white/10 pb-4"><span className="w-24 shrink-0 font-bold text-white">許可証</span><span>北海道知事許可（般-18）石第00857号<br/>産廃処分業許可 第00120077601号</span></div><div className="pt-8"><p className="text-3xl font-serif text-white mb-2">0144-55-5544</p><p className="text-xs tracking-widest">平日 8:00 - 17:00 / 定休日: 土日祝</p></div></div></div>
@@ -607,7 +673,6 @@ export default function WireMasterCloud() {
                           const p = data?.products.find(x=>x.id===e.target.value);
                           const newItems = [...reserveItems];
                           newItems[0].product = p?.name || '';
-                          // 0円対策: フォールバック価格
                           const basePrice = marketPrice > 0 ? marketPrice : 1450;
                           newItems[0].unitPrice = Math.floor(basePrice * (p?.ratio||0)/100 * 0.9);
                           setReserveItems(newItems);
