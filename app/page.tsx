@@ -73,15 +73,18 @@ const Icons = {
 };
 
 // ==========================================
-// RealChart
+// RealChart (修正: 0円表示バグ対応)
 // ==========================================
 const RealChart = ({ data, currentPrice }: {data: any[], currentPrice: number}) => {
   const [activePoint, setActivePoint] = useState<any>(null);
   
   if (!data || !Array.isArray(data) || data.length < 2) return <div className="h-40 flex items-center justify-center text-xs tracking-widest text-white/50">LOADING...</div>;
 
-  const maxVal = Math.max(...data.map((d: any) => d.value || 0), currentPrice);
-  const minVal = Math.min(...data.map((d: any) => d.value || 0), currentPrice);
+  // 0円対策: currentPriceが0なら履歴の最新値を使う
+  const effectivePrice = currentPrice > 0 ? currentPrice : (data.length > 0 ? data[data.length-1].value : 0);
+
+  const maxVal = Math.max(...data.map((d: any) => d.value || 0), effectivePrice);
+  const minVal = Math.min(...data.map((d: any) => d.value || 0), effectivePrice);
   const range = maxVal - minVal || 100;
   const yMax = maxVal + range * 0.2;
   const yMin = minVal - range * 0.2;
@@ -93,7 +96,7 @@ const RealChart = ({ data, currentPrice }: {data: any[], currentPrice: number}) 
   }).join(' ');
 
   const displayDate = activePoint ? activePoint.date : 'NOW';
-  const displayValue = activePoint ? activePoint.value : currentPrice;
+  const displayValue = activePoint ? activePoint.value : effectivePrice;
 
   return (
     <div className="w-full" onMouseLeave={() => setActivePoint(null)}>
@@ -189,7 +192,9 @@ export default function WireMasterCloud() {
     if (!simType || !simWeight) return;
     const w = parseFloat(simWeight);
     const ratios: any = { 'pika': 0.98, 'high': 0.82, 'medium': 0.65, 'low': 0.45, 'mixed': 0.40 };
-    const estimatedUnit = Math.floor(marketPrice * ratios[simType]); 
+    // 0円対策: フォールバック価格
+    const basePrice = marketPrice > 0 ? marketPrice : 1450;
+    const estimatedUnit = Math.floor(basePrice * ratios[simType]); 
     const total = Math.floor(estimatedUnit * w);
     const labels: any = { 'pika': '特1号銅線', 'high': '高銅率線', 'medium': '中銅率線', 'low': '低銅率線', 'mixed': '雑線' };
     setSimResult({ label: labels[simType], weight: w, unit: estimatedUnit, total: total });
@@ -246,9 +251,15 @@ export default function WireMasterCloud() {
     } catch (e) { alert('通信エラー'); } finally { setIsSubmitting(false); }
   };
 
-  // 会員予約処理
+  // 会員予約処理 (修正: 0円バグ対策)
   const handleReserveSubmit = async () => {
+     // 再計算して念の為合計額を確定させる
      const total = reserveItems.reduce((sum, i) => sum + (i.weight * i.unitPrice), 0);
+     if (total === 0) {
+        alert("金額が0円です。品目を選択し直してください。");
+        return;
+     }
+     
      const payload = {
         action: 'REGISTER_RESERVATION',
         visitDate: reserveDate,
@@ -316,8 +327,8 @@ export default function WireMasterCloud() {
     { q: "出張買取のエリアについて", a: "基本的に北海道全域に対応しております。数量によって条件が異なりますので、まずはお気軽にお問い合わせください。" }
   ];
 
-// ----------------------------------------------------------------
-  // 1. PUBLIC LANDING PAGE (完全復旧版)
+  // ----------------------------------------------------------------
+  // 1. PUBLIC LANDING PAGE
   // ----------------------------------------------------------------
   if (view === 'LP' || view === 'LOGIN') {
     return (
@@ -468,7 +479,7 @@ export default function WireMasterCloud() {
                          }} className="min-w-[200px] bg-black p-4 rounded border border-white/20 hover:border-[#D32F2F] cursor-pointer transition">
                             <p className="font-bold text-[#D32F2F]">{res.date}</p>
                             <p className="text-sm">{res.memberName}</p>
-                            <p className="text-xs text-gray-500 mt-2">想定: ¥{Number(res.total).toLocaleString()}</p>
+                            <p className="text-xs text-gray-500 mt-2">想定: ¥{Number(res.total || 0).toLocaleString()}</p>
                          </div>
                       ))}
                       {adminReservations.length === 0 && <p className="text-sm text-gray-500">予約はありません</p>}
@@ -596,7 +607,9 @@ export default function WireMasterCloud() {
                           const p = data?.products.find(x=>x.id===e.target.value);
                           const newItems = [...reserveItems];
                           newItems[0].product = p?.name || '';
-                          newItems[0].unitPrice = Math.floor(marketPrice * (p?.ratio||0)/100 * 0.9);
+                          // 0円対策: フォールバック価格
+                          const basePrice = marketPrice > 0 ? marketPrice : 1450;
+                          newItems[0].unitPrice = Math.floor(basePrice * (p?.ratio||0)/100 * 0.9);
                           setReserveItems(newItems);
                        }}>
                           <option>品目を選択</option>
