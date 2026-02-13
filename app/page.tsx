@@ -67,7 +67,7 @@ const Icons = {
   Check: () => <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>,
   Box: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>,
   Users: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
-  Dashboard: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>,
+  Dashboard: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>,
   History: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   Calc: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
   Menu: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" /></svg>,
@@ -125,13 +125,14 @@ const RealChart = ({ data, currentPrice }: {data: any[], currentPrice: number}) 
 // メインコンポーネント
 // ==========================================
 export default function WireMasterCloud() {
-  const [view, setView] = useState<'LP' | 'LOGIN' | 'ADMIN' | 'MEMBER' | 'FLOW' | 'COMPANY' | 'CONTACT'>('LP');
+  const [view, setView] = useState<'LP' | 'LOGIN' | 'ADMIN' | 'MEMBER' | 'FLOW' | 'MEMBERSHIP' | 'COMPANY' | 'CONTACT'>('LP');
   const [adminTab, setAdminTab] = useState<'POS' | 'STOCK' | 'MEMBERS'>('POS');
   const [memberTab, setMemberTab] = useState<'DASHBOARD' | 'HISTORY' | 'RESERVATION' | 'SETTINGS'>('DASHBOARD');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const [data, setData] = useState<MarketData | null>(null);
   const [user, setUser] = useState<UserData | null>(null);
+  const [activeTab, setActiveTab] = useState('pika');
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
    
   const [simType, setSimType] = useState('');
@@ -370,7 +371,7 @@ export default function WireMasterCloud() {
 
             {/* DESKTOP MENU */}
             <div className="hidden lg:flex items-center gap-10">
-                {['HOME', 'FLOW', 'COMPANY', 'CONTACT'].map((item) => {
+                {['HOME', 'FLOW', 'MEMBERSHIP', 'COMPANY', 'CONTACT'].map((item) => {
                     const viewTarget = item === 'HOME' ? 'LP' : item;
                     return (
                         <button 
@@ -378,7 +379,7 @@ export default function WireMasterCloud() {
                             onClick={() => setView(viewTarget as any)}
                             className={`text-xs font-bold tracking-widest relative group py-2 ${view === viewTarget ? 'text-[#D32F2F]' : 'text-gray-500 hover:text-black'}`}
                         >
-                            {item === 'FLOW' ? '買取の流れ' : item === 'COMPANY' ? '会社概要' : item === 'CONTACT' ? 'お問い合わせ' : 'HOME'}
+                            {item === 'FLOW' ? '買取の流れ' : item === 'MEMBERSHIP' ? '会員制度' : item === 'COMPANY' ? '会社概要' : item === 'CONTACT' ? 'お問い合わせ' : 'HOME'}
                             <span className={`absolute bottom-0 left-0 h-[2px] bg-[#D32F2F] transition-all duration-300 ${view === viewTarget ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
                         </button>
                     )
@@ -397,7 +398,7 @@ export default function WireMasterCloud() {
         {/* MOBILE MENU OVERLAY */}
         {isMenuOpen && (
             <div className="lg:hidden fixed inset-0 top-20 bg-white z-50 p-6 flex flex-col gap-6 animate-in slide-in-from-top-4 duration-200 shadow-xl border-t border-gray-100">
-                 {['HOME', 'FLOW', 'COMPANY', 'CONTACT'].map((item) => {
+                 {['HOME', 'FLOW', 'MEMBERSHIP', 'COMPANY', 'CONTACT'].map((item) => {
                     const viewTarget = item === 'HOME' ? 'LP' : item;
                     return (
                         <button 
@@ -405,7 +406,7 @@ export default function WireMasterCloud() {
                             onClick={() => { setView(viewTarget as any); setIsMenuOpen(false); }}
                             className="text-lg font-bold text-left border-b border-gray-100 pb-4 text-black"
                         >
-                            {item === 'FLOW' ? '買取の流れ' : item === 'COMPANY' ? '会社概要' : item === 'CONTACT' ? 'お問い合わせ' : 'HOME'}
+                            {item === 'FLOW' ? '買取の流れ' : item === 'MEMBERSHIP' ? '会員制度' : item === 'COMPANY' ? '会社概要' : item === 'CONTACT' ? 'お問い合わせ' : 'HOME'}
                         </button>
                     )
                 })}
@@ -442,6 +443,7 @@ export default function WireMasterCloud() {
                 <ul className="space-y-4 text-sm text-gray-400">
                     <li><button onClick={()=>setView('LP')} className="hover:text-white transition-colors">ホーム</button></li>
                     <li><button onClick={()=>setView('FLOW')} className="hover:text-white transition-colors">買取の流れ</button></li>
+                    <li><button onClick={()=>setView('MEMBERSHIP')} className="hover:text-white transition-colors">会員制度</button></li>
                     <li><button onClick={()=>setView('COMPANY')} className="hover:text-white transition-colors">会社概要</button></li>
                     <li><button onClick={()=>setView('CONTACT')} className="hover:text-white transition-colors">お問い合わせ</button></li>
                     <li><button onClick={()=>setView('LOGIN')} className="hover:text-white transition-colors">関係者ログイン</button></li>
@@ -495,9 +497,9 @@ export default function WireMasterCloud() {
   );
 
   // ----------------------------------------------------------------
-  // PUBLIC VIEWS WRAPPER (LP, FLOW, COMPANY, CONTACT)
+  // PUBLIC VIEWS WRAPPER (LP, FLOW, MEMBERSHIP, COMPANY, CONTACT)
   // ----------------------------------------------------------------
-  if (['LP', 'FLOW', 'COMPANY', 'CONTACT'].includes(view) || view === 'LOGIN') {
+  if (['LP', 'FLOW', 'MEMBERSHIP', 'COMPANY', 'CONTACT'].includes(view) || view === 'LOGIN') {
     return (
       <div className="min-h-screen bg-white text-[#111] font-sans selection:bg-[#D32F2F] selection:text-white pt-20">
         <GlobalNav />
@@ -641,6 +643,22 @@ export default function WireMasterCloud() {
                             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center text-gray-300 font-bold text-xl">3</div>
                         </div>
                     </div>
+                </div>
+            </div>
+        )}
+
+        {view === 'MEMBERSHIP' && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pt-20 pb-32 px-6 bg-[#1a1a1a] text-white relative overflow-hidden min-h-[80vh]">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#1a1a1a] via-[#D32F2F] to-[#1a1a1a]"></div>
+                <div className="absolute -right-20 top-40 text-white/5 text-9xl font-serif font-bold select-none z-0" style={{writingMode: 'vertical-rl'}}>会員制度</div>
+                <div className="max-w-[1200px] mx-auto relative z-10">
+                <div className="text-center mb-20"><span className="text-[#D32F2F] text-xs font-bold tracking-[0.3em] uppercase block mb-4">Partnership Program</span><h2 className="text-4xl md:text-5xl font-serif font-medium mb-6">アカウントを育てる。<br/>価値を最大化する。</h2><p className="text-gray-400 text-sm font-light tracking-wide leading-loose">取引量と品質に応じて、あなたの会員ランクは進化します。<br/>ランクアップに伴い、買取単価や待遇が優遇されるパートナーシップ制度です。</p></div>
+                <div className="flex flex-col md:flex-row justify-center items-center gap-8 mb-20 text-center md:text-left"><div className="bg-white/5 border border-white/10 px-8 py-6 rounded-xl"><p className="text-[10px] text-gray-500 uppercase tracking-widest mb-2">Volume</p><p className="text-xl font-serif">取引数量</p></div><div className="text-2xl text-gray-600 font-serif">×</div><div className="bg-white/5 border border-white/10 px-8 py-6 rounded-xl"><p className="text-[10px] text-gray-500 uppercase tracking-widest mb-2">Quality</p><p className="text-xl font-serif">分別品質</p></div><div className="text-2xl text-[#D32F2F] font-bold">＝</div><div className="flex items-center gap-4"><Icons.Crown /><div><p className="text-[10px] text-[#D32F2F] uppercase tracking-widest mb-1">Rank Up</p><p className="text-2xl font-serif font-bold text-white">高価買取・優遇</p></div></div></div>
+                <div className="grid md:grid-cols-3 gap-6">
+                    <div className="bg-[#222] border border-white/10 p-8 rounded-lg relative group hover:border-[#b87333] transition-colors duration-500"><div className="absolute top-0 left-0 w-full h-1 bg-[#b87333]"></div><div className="flex justify-between items-start mb-6"><h3 className="text-2xl font-serif text-[#b87333]">COPPER</h3><span className="text-[10px] bg-[#b87333]/20 text-[#b87333] px-2 py-1 rounded">一般会員</span></div><p className="text-xs text-gray-400 mb-8 h-12">初回取引後に発行されるスタンダードプラン。全ての基本機能をご利用いただけます。</p><ul className="space-y-3 text-sm text-gray-300"><li className="flex items-center gap-3"><span className="text-[#b87333] text-lg">●</span> ポイント付与 <span className="font-bold">1.0倍</span></li><li className="flex items-center gap-3"><span className="text-[#b87333] text-lg">●</span> Web明細確認</li></ul></div>
+                    <div className="bg-[#222] border border-white/10 p-8 rounded-lg relative group hover:border-gray-400 transition-colors duration-500"><div className="absolute top-0 left-0 w-full h-1 bg-gray-400"></div><div className="flex justify-between items-start mb-6"><h3 className="text-2xl font-serif text-gray-300">SILVER</h3><span className="text-[10px] bg-gray-400/20 text-gray-300 px-2 py-1 rounded">優良会員</span></div><p className="text-xs text-gray-400 mb-8 h-12">継続的なお取引と、安定した品質の荷込みをいただけるお客様向けのプラン。</p><ul className="space-y-3 text-sm text-gray-300"><li className="flex items-center gap-3"><span className="text-gray-400 text-lg">●</span> ポイント付与 <span className="font-bold text-white">1.2倍</span></li><li className="flex items-center gap-3"><span className="text-gray-400 text-lg">●</span> 優先荷下ろしレーン</li></ul></div>
+                    <div className="bg-gradient-to-b from-[#2a2a2a] to-[#222] border border-yellow-600/30 p-8 rounded-lg relative group transform md:-translate-y-4 shadow-xl shadow-yellow-900/10"><div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-600 via-yellow-400 to-yellow-600 animate-pulse"></div><div className="flex justify-between items-start mb-6"><h3 className="text-2xl font-serif text-yellow-500 flex items-center gap-2"><Icons.Star /> GOLD</h3><span className="text-[10px] bg-yellow-500/20 text-yellow-500 px-2 py-1 rounded border border-yellow-500/30">特別会員</span></div><p className="text-xs text-gray-400 mb-8 h-12">大口取引、かつ分別品質が極めて高いプロフェッショナルなパートナー様へ。</p><ul className="space-y-4 text-sm text-white"><li className="flex items-center gap-3"><span className="text-yellow-500 text-lg">★</span> ポイント付与 <span className="font-bold text-yellow-400 text-lg">1.5倍</span></li><li className="flex items-center gap-3"><span className="text-yellow-500 text-lg">★</span> 買取単価 <span className="font-bold text-yellow-400 text-lg">特別優遇</span></li><li className="flex items-center gap-3"><span className="text-yellow-500 text-lg">★</span> 専用キャンペーン招待</li></ul></div>
+                </div>
                 </div>
             </div>
         )}
