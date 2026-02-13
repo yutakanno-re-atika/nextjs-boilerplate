@@ -69,7 +69,9 @@ const Icons = {
   Users: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
   Dashboard: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>,
   History: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-  Calc: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+  Calc: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
+  Menu: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" /></svg>,
+  X: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
 };
 
 // ==========================================
@@ -77,7 +79,7 @@ const Icons = {
 // ==========================================
 const RealChart = ({ data, currentPrice }: {data: any[], currentPrice: number}) => {
   const [activePoint, setActivePoint] = useState<any>(null);
-  
+   
   if (!data || !Array.isArray(data) || data.length < 2) return <div className="h-40 flex items-center justify-center text-xs tracking-widest text-white/50">LOADING...</div>;
 
   const effectivePrice = currentPrice > 0 ? currentPrice : (data.length > 0 ? data[data.length-1].value : 0);
@@ -105,8 +107,8 @@ const RealChart = ({ data, currentPrice }: {data: any[], currentPrice: number}) 
           </p>
         </div>
         <div className="text-right">
-           <div className="text-white text-[10px] font-bold flex items-center justify-end gap-2 uppercase tracking-widest"><Icons.ArrowUp /> Live</div>
-           <p className="text-[10px] text-white/70 mt-1 font-serif">LME Copper</p>
+            <div className="text-white text-[10px] font-bold flex items-center justify-end gap-2 uppercase tracking-widest"><Icons.ArrowUp /> Live</div>
+            <p className="text-[10px] text-white/70 mt-1 font-serif">LME Copper</p>
         </div>
       </div>
       <div className="h-40 w-full relative overflow-visible">
@@ -123,15 +125,15 @@ const RealChart = ({ data, currentPrice }: {data: any[], currentPrice: number}) 
 // メインコンポーネント
 // ==========================================
 export default function WireMasterCloud() {
-  const [view, setView] = useState<'LP' | 'LOGIN' | 'ADMIN' | 'MEMBER'>('LP');
+  const [view, setView] = useState<'LP' | 'LOGIN' | 'ADMIN' | 'MEMBER' | 'FLOW' | 'COMPANY' | 'CONTACT'>('LP');
   const [adminTab, setAdminTab] = useState<'POS' | 'STOCK' | 'MEMBERS'>('POS');
   const [memberTab, setMemberTab] = useState<'DASHBOARD' | 'HISTORY' | 'RESERVATION' | 'SETTINGS'>('DASHBOARD');
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const [data, setData] = useState<MarketData | null>(null);
   const [user, setUser] = useState<UserData | null>(null);
-  const [activeTab, setActiveTab] = useState('pika');
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
-  
+   
   const [simType, setSimType] = useState('');
   const [simWeight, setSimWeight] = useState('');
   const [simResult, setSimResult] = useState<any>(null);
@@ -142,11 +144,11 @@ export default function WireMasterCloud() {
   const [posRank, setPosRank] = useState<'A'|'B'|'C'>('B');
   const [posResult, setPosResult] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+   
   const [adminReservations, setAdminReservations] = useState<any[]>([]);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [lastTxData, setLastTxData] = useState<any>(null);
-  
+   
   const [reserveItems, setReserveItems] = useState<ReservationItem[]>([{product: '', weight: 0, unitPrice: 0}]);
   const [reserveDate, setReserveDate] = useState('');
   const [reserveMemo, setReserveMemo] = useState('');
@@ -195,7 +197,7 @@ export default function WireMasterCloud() {
     const currentMarketPrice = marketPrice > 0 ? marketPrice : 1450; 
     const product = data?.products.find(p => p.id === posProduct);
     if (!product) return;
-    
+     
     const weight = parseFloat(posWeight);
     const rankBonus = posRank === 'A' ? 1.02 : posRank === 'C' ? 0.95 : 1.0;
     const marketFactor = 0.90; 
@@ -204,7 +206,7 @@ export default function WireMasterCloud() {
     const rawPrice = currentMarketPrice * (product.ratio / 100);
     const adjustedPrice = (rawPrice * rankBonus * marketFactor) - processingCost;
     const finalUnitPrice = Math.max(0, Math.floor(adjustedPrice));
-    
+     
     setPosResult(Math.floor(finalUnitPrice * weight));
   };
 
@@ -240,30 +242,26 @@ export default function WireMasterCloud() {
   };
 
   const handleReserveSubmit = async () => {
-     const total = reserveItems.reduce((sum, i) => sum + (i.weight * i.unitPrice), 0);
-     if (total === 0) {
+      const total = reserveItems.reduce((sum, i) => sum + (i.weight * i.unitPrice), 0);
+      if (total === 0) {
         alert("金額が0円です。品目を選択し直してください。");
         return;
-     }
-     const payload = {
+      }
+      const payload = {
         action: 'REGISTER_RESERVATION',
         visitDate: reserveDate,
         memberId: user?.id,
         memberName: user?.name,
         items: reserveItems,
         totalEstimate: total
-     };
-     try {
-         const res = await fetch('/api/gas', { method: 'POST', body: JSON.stringify(payload) });
-         const d = await res.json();
-         if(d.status === 'success') alert('予約が完了しました。工場でお待ちしております。');
-     } catch(e) { alert('予約エラー'); }
+      };
+      try {
+          const res = await fetch('/api/gas', { method: 'POST', body: JSON.stringify(payload) });
+          const d = await res.json();
+          if(d.status === 'success') alert('予約が完了しました。工場でお待ちしております。');
+      } catch(e) { alert('予約エラー'); }
   };
 
-  // =========================================================
-  // PDF GENERATION (JAPANESE FONT SUPPORT)
-  // public/fonts/NotoSansJP-Regular.ttf を読み込んで使用
-  // =========================================================
   const loadFont = async (doc: any) => {
     try {
       const res = await fetch('/fonts/NotoSansJP-Regular.ttf');
@@ -289,10 +287,10 @@ export default function WireMasterCloud() {
     doc.setFontSize(18); doc.text("御見積書 / QUOTATION", 105, 20, { align: "center" });
     doc.setFontSize(12); doc.text(`日付: ${new Date().toLocaleDateString()}`, 15, 30);
     doc.text(`顧客名: ${user?.companyName || user?.name || 'お客様'}`, 15, 38);
-    
+     
     doc.setFontSize(10); doc.text("株式会社 月寒製作所 苫小牧工場", 195, 30, { align: "right" });
     doc.text("北海道苫小牧市勇払123-4", 195, 35, { align: "right" });
-    
+     
     const tableBody = reserveItems.map(item => [
         item.product || '未選択', 
         `${item.weight} kg`, 
@@ -309,7 +307,7 @@ export default function WireMasterCloud() {
         styles: { font: 'NotoSansJP', fontStyle: 'normal' },
         headStyles: { fillColor: [211, 47, 47] }
     });
-    
+     
     doc.save(`Estimate_${new Date().getTime()}.pdf`);
   };
 
@@ -320,7 +318,7 @@ export default function WireMasterCloud() {
     if (!fontLoaded) return;
 
     doc.setFontSize(20); doc.text("買取明細書 兼 仕切書", 105, 20, { align: "center" });
-    
+     
     doc.setFontSize(10);
     doc.text(`取引ID: ${lastTxData.id}`, 15, 30);
     doc.text(`日付: ${new Date().toLocaleDateString()}`, 15, 35);
@@ -347,7 +345,6 @@ export default function WireMasterCloud() {
       headStyles: { fillColor: [20, 20, 20] }
     });
 
-    // ▼ ここが修正ポイント！ (doc as any) で型チェックを回避
     doc.text("毎度ありがとうございます。", 105, (doc as any).lastAutoTable.finalY + 20, {align: "center"});
     doc.save(`Invoice_${lastTxData.id}.pdf`);
   };
@@ -360,20 +357,71 @@ export default function WireMasterCloud() {
   ];
 
   // ----------------------------------------------------------------
-  // 1. PUBLIC LANDING PAGE
+  // GLOBAL NAVIGATION COMPONENT
   // ----------------------------------------------------------------
-  if (view === 'LP' || view === 'LOGIN') {
-    return (
-      <div className="min-h-screen bg-white text-[#111] font-sans selection:bg-[#D32F2F] selection:text-white">
-        <header className="fixed top-0 w-full z-50 transition-all duration-500 bg-gradient-to-b from-black/20 to-transparent">
-          <div className="max-w-[1400px] mx-auto px-6 py-6 flex justify-between items-start">
-            <div className="cursor-pointer text-white" onClick={()=>setView('LP')}>
-              <h1 className="text-[10px] font-bold tracking-[0.3em] uppercase opacity-80 mb-1">Tsukisamu Mfg.</h1>
-              <p className="text-xl font-serif font-bold tracking-widest leading-none">月寒製作所</p>
+  const GlobalNav = () => (
+    <nav className="fixed top-0 w-full z-[100] transition-all duration-300 bg-white shadow-md border-b border-gray-100">
+        <div className="max-w-[1400px] mx-auto px-6 h-20 flex justify-between items-center">
+            {/* LOGO */}
+            <div className="cursor-pointer group" onClick={() => setView('LP')}>
+                <h1 className="text-[10px] font-bold tracking-[0.3em] uppercase text-gray-500 mb-0.5 group-hover:text-[#D32F2F] transition-colors">Tsukisamu Mfg.</h1>
+                <p className="text-xl font-serif font-bold tracking-widest leading-none text-black">月寒製作所</p>
             </div>
-            <button onClick={() => setView('LOGIN')} className="bg-white/10 backdrop-blur border border-white/30 text-white text-[10px] px-6 py-2 rounded-full hover:bg-white hover:text-[#D32F2F] transition-all duration-300 uppercase tracking-widest font-bold">Login</button>
-          </div>
-        </header>
+
+            {/* DESKTOP MENU */}
+            <div className="hidden lg:flex items-center gap-10">
+                {['HOME', 'FLOW', 'COMPANY', 'CONTACT'].map((item) => {
+                    const viewTarget = item === 'HOME' ? 'LP' : item;
+                    return (
+                        <button 
+                            key={item}
+                            onClick={() => setView(viewTarget as any)}
+                            className={`text-xs font-bold tracking-widest relative group py-2 ${view === viewTarget ? 'text-[#D32F2F]' : 'text-gray-500 hover:text-black'}`}
+                        >
+                            {item === 'FLOW' ? '買取の流れ' : item === 'COMPANY' ? '会社概要' : item === 'CONTACT' ? 'お問い合わせ' : 'HOME'}
+                            <span className={`absolute bottom-0 left-0 h-[2px] bg-[#D32F2F] transition-all duration-300 ${view === viewTarget ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
+                        </button>
+                    )
+                })}
+                <button onClick={() => setView('LOGIN')} className="bg-[#111] text-white text-[10px] px-6 py-2.5 rounded hover:bg-[#D32F2F] transition-all duration-300 uppercase tracking-widest font-bold shadow-lg">Login</button>
+            </div>
+
+            {/* MOBILE HAMBURGER */}
+            <div className="lg:hidden">
+                <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-black p-2">
+                    {isMenuOpen ? <Icons.X /> : <Icons.Menu />}
+                </button>
+            </div>
+        </div>
+
+        {/* MOBILE MENU OVERLAY */}
+        {isMenuOpen && (
+            <div className="lg:hidden fixed inset-0 top-20 bg-white z-50 p-6 flex flex-col gap-6 animate-in slide-in-from-top-4 duration-200 shadow-xl border-t border-gray-100">
+                 {['HOME', 'FLOW', 'COMPANY', 'CONTACT'].map((item) => {
+                    const viewTarget = item === 'HOME' ? 'LP' : item;
+                    return (
+                        <button 
+                            key={item}
+                            onClick={() => { setView(viewTarget as any); setIsMenuOpen(false); }}
+                            className="text-lg font-bold text-left border-b border-gray-100 pb-4 text-black"
+                        >
+                            {item === 'FLOW' ? '買取の流れ' : item === 'COMPANY' ? '会社概要' : item === 'CONTACT' ? 'お問い合わせ' : 'HOME'}
+                        </button>
+                    )
+                })}
+                <button onClick={() => { setView('LOGIN'); setIsMenuOpen(false); }} className="w-full bg-[#D32F2F] text-white py-4 font-bold rounded">関係者ログイン</button>
+            </div>
+        )}
+    </nav>
+  );
+
+  // ----------------------------------------------------------------
+  // PUBLIC VIEWS WRAPPER (LP, FLOW, COMPANY, CONTACT)
+  // ----------------------------------------------------------------
+  if (['LP', 'FLOW', 'COMPANY', 'CONTACT'].includes(view) || view === 'LOGIN') {
+    return (
+      <div className="min-h-screen bg-white text-[#111] font-sans selection:bg-[#D32F2F] selection:text-white pt-20">
+        <GlobalNav />
 
         {view === 'LOGIN' && (
           <div className="fixed inset-0 z-[100] bg-[#D32F2F]/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300">
@@ -388,125 +436,206 @@ export default function WireMasterCloud() {
             </div>
           </div>
         )}
-        
-        {/* HERO SECTION */}
-        <section className="relative h-screen min-h-[800px] flex items-center bg-[#D32F2F] text-white overflow-hidden">
-          <div className="absolute inset-0 z-0">
-             <img src={IMAGES.hero} className="w-full h-full object-cover opacity-20 mix-blend-multiply grayscale" alt="Factory" />
-             <div className="absolute inset-0 bg-gradient-to-br from-[#B71C1C] via-[#D32F2F] to-[#E53935] opacity-90"></div>
-          </div>
-          <div className="max-w-[1400px] mx-auto px-6 w-full relative z-10 grid lg:grid-cols-12 gap-12 items-center">
-            <div className="lg:col-span-7 space-y-12">
-              <div className="space-y-6 relative">
-                <div className="inline-block bg-white text-[#D32F2F] px-4 py-1 text-xs font-bold tracking-widest mb-4">SINCE 1961</div>
-                <h1 className="text-6xl md:text-8xl font-serif font-medium leading-tight tracking-tight drop-shadow-sm"><span className="block animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">資源を、</span><span className="block animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">あるべき<span className="border-b-4 border-white/80 pb-2">価値</span>へ。</span></h1>
-              </div>
-              <p className="text-white/90 text-sm md:text-base leading-loose max-w-lg font-medium tracking-wide animate-in fade-in duration-1000 delay-500 border-l-2 border-white/30 pl-6">月寒製作所は「目利き」と「技術」で、日本のリサイクルインフラを支え続けます。独自のナゲットプラントによる中間コストの排除。それが、高価買取の根拠です。</p>
-              <div className="pt-8 flex gap-6 animate-in fade-in duration-1000 delay-700"><a href="#simulator" className="bg-white text-[#D32F2F] px-8 py-4 text-sm font-bold tracking-widest hover:bg-[#111] hover:text-white transition-all shadow-xl">査定シミュレーション</a></div>
-            </div>
-            <div className="lg:col-span-5 animate-in fade-in slide-in-from-right-8 duration-1000 delay-300">
-              <div className="backdrop-blur-sm bg-white/10 border border-white/20 p-8 md:p-12 shadow-2xl relative overflow-hidden">
-                <RealChart data={data?.history || []} currentPrice={marketPrice} />
-                <div className="mt-8 pt-6 border-t border-white/20 flex justify-between items-center"><div><p className="text-[9px] text-white/70 uppercase tracking-widest mb-1">Factory Status</p><p className="text-xs font-medium tracking-wider flex items-center gap-2 text-white"><span className="w-2 h-2 bg-green-400 rounded-full shadow-[0_0_10px_#4ade80]"></span> Accepting</p></div><div className="text-right"><p className="text-xs font-serif italic text-white/80">Tomakomai, Hokkaido</p></div></div>
-              </div>
-            </div>
-          </div>
-        </section>
-        
-        {/* SIMULATOR */}
-        <section id="simulator" className="py-32 px-6 bg-white relative">
-          <div className="max-w-[900px] mx-auto relative z-10">
-             <div className="text-center mb-12"><span className="text-[#D32F2F] text-xs font-bold tracking-[0.3em] uppercase block mb-3">Estimation</span><h2 className="text-4xl font-serif font-medium">買取シミュレーション</h2></div>
-             <div className="bg-[#F5F5F7] p-8 md:p-16 border border-gray-200">
-                <div className="flex flex-col md:flex-row gap-12 items-center">
-                   <div className="flex-1 w-full space-y-8">
-                      <div><label className="block text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Wire Type</label><select className="w-full bg-white border border-gray-200 py-3 px-4 font-serif focus:border-[#D32F2F] focus:outline-none transition-colors cursor-pointer" value={simType} onChange={(e)=>setSimType(e.target.value)}><option value="">線種を選択</option><option value="pika">特1号銅線 (ピカ線)</option><option value="high">高銅率線 (80%~)</option><option value="medium">中銅率線 (60%~)</option><option value="low">低銅率線 (40%~)</option><option value="mixed">雑線・ミックス</option></select></div>
-                      <div><label className="block text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Weight (kg)</label><input type="number" className="w-full bg-white border border-gray-200 py-3 px-4 font-mono focus:border-[#D32F2F] focus:outline-none transition-colors" placeholder="0" value={simWeight} onChange={(e)=>setSimWeight(e.target.value)} /></div>
-                      <button onClick={calculateSim} className="w-full bg-[#D32F2F] text-white py-4 text-xs font-bold tracking-[0.2em] hover:bg-[#B71C1C] transition-colors duration-300 shadow-lg">計算する</button>
-                   </div>
-                   <div className="w-full md:w-80 bg-white p-8 border border-gray-200 text-center shadow-lg relative overflow-hidden group"><div className="absolute top-0 left-0 w-full h-1 bg-gray-100 group-hover:bg-[#D32F2F] transition-colors"></div>{simResult ? (<div className="animate-in fade-in slide-in-from-bottom-2 duration-500"><p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-4">{simResult.label} / {simResult.weight}kg</p><p className="text-5xl font-serif text-[#111] mb-2 tracking-tighter">¥{simResult.total.toLocaleString()}</p><p className="text-[10px] text-gray-400">参考単価: ¥{simResult.unit.toLocaleString()}/kg</p></div>) : (<div className="py-8 text-gray-400 text-sm font-serif">条件を入力して<br/>査定額を確認してください</div>)}</div>
-                </div>
-                <div className="mt-8 text-center"><div className="inline-flex items-center gap-2 text-xs font-mono text-gray-500"><span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>Current Market Price: ¥{Number(marketPrice).toLocaleString()} / kg</div></div>
-             </div>
-          </div>
-        </section>
 
-        {/* PRICE LIST SECTION */}
-        <section id="price" className="py-24 bg-[#111] text-white">
-          <div className="max-w-[1200px] mx-auto px-6">
-            <div className="text-center mb-16">
-              <span className="text-[#D32F2F] text-xs font-bold tracking-[0.3em] uppercase block mb-3">Today's Price</span>
-              <h2 className="text-4xl font-serif font-medium text-white">本日の買取価格</h2>
-              <p className="text-gray-500 mt-4 text-sm font-mono">※相場変動により予告なく変更する場合があります</p>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-8">
-              {data?.products?.filter(p => ['pika', 'cv', 'iv', 'vvf', 'mixed', 'cabtire'].some(k => p.id.includes(k) || p.category.includes(k) || Object.keys(IMAGES).includes(p.id))).slice(0, 6).map((product, i) => {
-                const imgKey = Object.keys(IMAGES).find(k => product.id.toLowerCase().includes(k) || product.category.toLowerCase().includes(k)) || 'nugget';
-                // @ts-ignore
-                const imgSrc = IMAGES[imgKey];
-
-                return (
-                  <div key={product.id} className="group relative bg-[#1a1a1a] border border-white/10 overflow-hidden hover:border-[#D32F2F] transition-all duration-500">
-                    <div className="absolute inset-0 bg-cover bg-center opacity-30 group-hover:opacity-50 group-hover:scale-110 transition-all duration-700 mix-blend-overlay" style={{backgroundImage: `url(${imgSrc})`}}></div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent"></div>
-                    
-                    <div className="relative p-8 h-full flex flex-col justify-end">
-                      <div className="mb-4 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                        <span className="text-[10px] text-[#D32F2F] font-bold tracking-widest uppercase mb-2 block">{product.category}</span>
-                        <h3 className="text-2xl font-bold font-serif leading-tight mb-1">{product.name}</h3>
-                        <p className="text-xs text-gray-400 font-mono">{product.sq}sq / {product.core}C</p>
+        {view === 'LP' && (
+            <>
+                {/* HERO SECTION */}
+                <section className="relative h-[85vh] min-h-[600px] flex items-center bg-[#D32F2F] text-white overflow-hidden">
+                  <div className="absolute inset-0 z-0">
+                      <img src={IMAGES.hero} className="w-full h-full object-cover opacity-20 mix-blend-multiply grayscale" alt="Factory" />
+                      <div className="absolute inset-0 bg-gradient-to-br from-[#B71C1C] via-[#D32F2F] to-[#E53935] opacity-90"></div>
+                  </div>
+                  <div className="max-w-[1400px] mx-auto px-6 w-full relative z-10 grid lg:grid-cols-12 gap-12 items-center">
+                    <div className="lg:col-span-7 space-y-12">
+                      <div className="space-y-6 relative">
+                        <div className="inline-block bg-white text-[#D32F2F] px-4 py-1 text-xs font-bold tracking-widest mb-4">SINCE 1961</div>
+                        <h1 className="text-6xl md:text-8xl font-serif font-medium leading-tight tracking-tight drop-shadow-sm"><span className="block animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">資源を、</span><span className="block animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">あるべき<span className="border-b-4 border-white/80 pb-2">価値</span>へ。</span></h1>
                       </div>
-                      
-                      <div className="border-t border-white/20 pt-4 flex justify-between items-end">
-                        <div>
-                           <span className="text-[10px] text-gray-500 uppercase tracking-wider block">Unit Price</span>
-                           <div className="text-3xl font-serif font-bold tracking-tighter text-white group-hover:text-[#D32F2F] transition-colors">
-                             ¥{Math.floor(marketPrice * (product.ratio / 100) * 0.9).toLocaleString()}
-                           </div>
-                        </div>
-                        <div className="text-right">
-                           <span className="text-[10px] text-gray-500 uppercase tracking-wider block">Cu Yield</span>
-                           <span className="text-lg font-mono font-bold">
-                             {product.ratio !== undefined && product.ratio !== null ? Number(product.ratio).toFixed(1) + '%' : '-'}
-                           </span>
-                        </div>
+                      <p className="text-white/90 text-sm md:text-base leading-loose max-w-lg font-medium tracking-wide animate-in fade-in duration-1000 delay-500 border-l-2 border-white/30 pl-6">月寒製作所は「目利き」と「技術」で、日本のリサイクルインフラを支え続けます。独自のナゲットプラントによる中間コストの排除。それが、高価買取の根拠です。</p>
+                      <div className="pt-8 flex gap-6 animate-in fade-in duration-1000 delay-700"><a href="#simulator" className="bg-white text-[#D32F2F] px-8 py-4 text-sm font-bold tracking-widest hover:bg-[#111] hover:text-white transition-all shadow-xl">査定シミュレーション</a></div>
+                    </div>
+                    <div className="lg:col-span-5 animate-in fade-in slide-in-from-right-8 duration-1000 delay-300">
+                      <div className="backdrop-blur-sm bg-white/10 border border-white/20 p-8 md:p-12 shadow-2xl relative overflow-hidden">
+                        <RealChart data={data?.history || []} currentPrice={marketPrice} />
+                        <div className="mt-8 pt-6 border-t border-white/20 flex justify-between items-center"><div><p className="text-[9px] text-white/70 uppercase tracking-widest mb-1">Factory Status</p><p className="text-xs font-medium tracking-wider flex items-center gap-2 text-white"><span className="w-2 h-2 bg-green-400 rounded-full shadow-[0_0_10px_#4ade80]"></span> Accepting</p></div><div className="text-right"><p className="text-xs font-serif italic text-white/80">Tomakomai, Hokkaido</p></div></div>
                       </div>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        {/* FAQ SECTION */}
-        <section id="faq" className="py-32 px-6 bg-[#F9F9F9] border-t border-gray-200">
-          <div className="max-w-[800px] mx-auto">
-            <div className="text-center mb-16"><span className="text-[#D32F2F] text-xs font-bold tracking-[0.3em] uppercase block mb-3">Q & A</span><h2 className="text-3xl font-serif">よくある質問</h2></div>
-            <div className="space-y-4">
-              {FAQ_ITEMS.map((item, idx) => (
-                <div key={idx} className="bg-white border border-gray-200 hover:border-gray-300 transition-colors">
-                  <div role="button" onClick={() => setActiveFaq(activeFaq === idx ? null : idx)} className="w-full flex justify-between items-center p-6 md:p-8 text-left group cursor-pointer">
-                    <div className="flex items-start gap-6"><span className="text-[#D32F2F] font-serif font-bold text-lg leading-none mt-1">Q.</span><span className="font-serif font-medium text-[#111] group-hover:text-[#D32F2F] transition-colors">{item.q}</span></div>
-                    <Icons.ChevronDown className={`text-gray-300 transition-transform duration-300 ${activeFaq === idx ? 'rotate-180' : ''}`} />
+                </section>
+                
+                {/* SIMULATOR */}
+                <section id="simulator" className="py-32 px-6 bg-white relative">
+                  <div className="max-w-[900px] mx-auto relative z-10">
+                      <div className="text-center mb-12"><span className="text-[#D32F2F] text-xs font-bold tracking-[0.3em] uppercase block mb-3">Estimation</span><h2 className="text-4xl font-serif font-medium">買取シミュレーション</h2></div>
+                      <div className="bg-[#F5F5F7] p-8 md:p-16 border border-gray-200">
+                        <div className="flex flex-col md:flex-row gap-12 items-center">
+                            <div className="flex-1 w-full space-y-8">
+                              <div><label className="block text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Wire Type</label><select className="w-full bg-white border border-gray-200 py-3 px-4 font-serif focus:border-[#D32F2F] focus:outline-none transition-colors cursor-pointer" value={simType} onChange={(e)=>setSimType(e.target.value)}><option value="">線種を選択</option><option value="pika">特1号銅線 (ピカ線)</option><option value="high">高銅率線 (80%~)</option><option value="medium">中銅率線 (60%~)</option><option value="low">低銅率線 (40%~)</option><option value="mixed">雑線・ミックス</option></select></div>
+                              <div><label className="block text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Weight (kg)</label><input type="number" className="w-full bg-white border border-gray-200 py-3 px-4 font-mono focus:border-[#D32F2F] focus:outline-none transition-colors" placeholder="0" value={simWeight} onChange={(e)=>setSimWeight(e.target.value)} /></div>
+                              <button onClick={calculateSim} className="w-full bg-[#D32F2F] text-white py-4 text-xs font-bold tracking-[0.2em] hover:bg-[#B71C1C] transition-colors duration-300 shadow-lg">計算する</button>
+                            </div>
+                            <div className="w-full md:w-80 bg-white p-8 border border-gray-200 text-center shadow-lg relative overflow-hidden group"><div className="absolute top-0 left-0 w-full h-1 bg-gray-100 group-hover:bg-[#D32F2F] transition-colors"></div>{simResult ? (<div className="animate-in fade-in slide-in-from-bottom-2 duration-500"><p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-4">{simResult.label} / {simResult.weight}kg</p><p className="text-5xl font-serif text-[#111] mb-2 tracking-tighter">¥{simResult.total.toLocaleString()}</p><p className="text-[10px] text-gray-400">参考単価: ¥{simResult.unit.toLocaleString()}/kg</p></div>) : (<div className="py-8 text-gray-400 text-sm font-serif">条件を入力して<br/>査定額を確認してください</div>)}</div>
+                        </div>
+                        <div className="mt-8 text-center"><div className="inline-flex items-center gap-2 text-xs font-mono text-gray-500"><span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>Current Market Price: ¥{Number(marketPrice).toLocaleString()} / kg</div></div>
+                      </div>
                   </div>
-                  {activeFaq === idx && (<div className="px-8 pb-8 pl-20 animate-in slide-in-from-top-1 fade-in duration-200"><p className="text-sm text-gray-500 leading-loose border-l-2 border-gray-100 pl-4">{item.a}</p></div>)}
+                </section>
+
+                {/* PRICE LIST SECTION */}
+                <section id="price" className="py-24 bg-[#111] text-white">
+                  <div className="max-w-[1200px] mx-auto px-6">
+                    <div className="text-center mb-16">
+                      <span className="text-[#D32F2F] text-xs font-bold tracking-[0.3em] uppercase block mb-3">Today's Price</span>
+                      <h2 className="text-4xl font-serif font-medium text-white">本日の買取価格</h2>
+                      <p className="text-gray-500 mt-4 text-sm font-mono">※相場変動により予告なく変更する場合があります</p>
+                    </div>
+                    <div className="grid md:grid-cols-3 gap-8">
+                      {data?.products?.filter(p => ['pika', 'cv', 'iv', 'vvf', 'mixed', 'cabtire'].some(k => p.id.includes(k) || p.category.includes(k) || Object.keys(IMAGES).includes(p.id))).slice(0, 6).map((product, i) => {
+                        const imgKey = Object.keys(IMAGES).find(k => product.id.toLowerCase().includes(k) || product.category.toLowerCase().includes(k)) || 'nugget';
+                        // @ts-ignore
+                        const imgSrc = IMAGES[imgKey];
+                        return (
+                          <div key={product.id} className="group relative bg-[#1a1a1a] border border-white/10 overflow-hidden hover:border-[#D32F2F] transition-all duration-500">
+                            <div className="absolute inset-0 bg-cover bg-center opacity-30 group-hover:opacity-50 group-hover:scale-110 transition-all duration-700 mix-blend-overlay" style={{backgroundImage: `url(${imgSrc})`}}></div>
+                            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent"></div>
+                            <div className="relative p-8 h-full flex flex-col justify-end">
+                              <div className="mb-4 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                                <span className="text-[10px] text-[#D32F2F] font-bold tracking-widest uppercase mb-2 block">{product.category}</span>
+                                <h3 className="text-2xl font-bold font-serif leading-tight mb-1">{product.name}</h3>
+                                <p className="text-xs text-gray-400 font-mono">{product.sq}sq / {product.core}C</p>
+                              </div>
+                              <div className="border-t border-white/20 pt-4 flex justify-between items-end">
+                                <div>
+                                   <span className="text-[10px] text-gray-500 uppercase tracking-wider block">Unit Price</span>
+                                   <div className="text-3xl font-serif font-bold tracking-tighter text-white group-hover:text-[#D32F2F] transition-colors">
+                                     ¥{Math.floor(marketPrice * (product.ratio / 100) * 0.9).toLocaleString()}
+                                   </div>
+                                </div>
+                                <div className="text-right">
+                                   <span className="text-[10px] text-gray-500 uppercase tracking-wider block">Cu Yield</span>
+                                   <span className="text-lg font-mono font-bold">
+                                     {product.ratio !== undefined && product.ratio !== null ? Number(product.ratio).toFixed(1) + '%' : '-'}
+                                   </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </section>
+                
+                {/* FAQ SECTION */}
+                <section id="faq" className="py-32 px-6 bg-[#F9F9F9] border-t border-gray-200">
+                  <div className="max-w-[800px] mx-auto">
+                    <div className="text-center mb-16"><span className="text-[#D32F2F] text-xs font-bold tracking-[0.3em] uppercase block mb-3">Q & A</span><h2 className="text-3xl font-serif">よくある質問</h2></div>
+                    <div className="space-y-4">
+                      {FAQ_ITEMS.map((item, idx) => (
+                        <div key={idx} className="bg-white border border-gray-200 hover:border-gray-300 transition-colors">
+                          <div role="button" onClick={() => setActiveFaq(activeFaq === idx ? null : idx)} className="w-full flex justify-between items-center p-6 md:p-8 text-left group cursor-pointer">
+                            <div className="flex items-start gap-6"><span className="text-[#D32F2F] font-serif font-bold text-lg leading-none mt-1">Q.</span><span className="font-serif font-medium text-[#111] group-hover:text-[#D32F2F] transition-colors">{item.q}</span></div>
+                            <Icons.ChevronDown className={`text-gray-300 transition-transform duration-300 ${activeFaq === idx ? 'rotate-180' : ''}`} />
+                          </div>
+                          {activeFaq === idx && (<div className="px-8 pb-8 pl-20 animate-in slide-in-from-top-1 fade-in duration-200"><p className="text-sm text-gray-500 leading-loose border-l-2 border-gray-100 pl-4">{item.a}</p></div>)}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </section>
+            </>
+        )}
+
+        {/* --- PLACEHOLDER PAGES FOR "OLD SCHOOL" NAV --- */}
+        {view === 'FLOW' && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 py-32 px-6 bg-gray-50 min-h-[60vh]">
+                <div className="max-w-4xl mx-auto text-center">
+                    <h2 className="text-4xl font-serif font-bold mb-8 text-[#111]">買取の流れ</h2>
+                    <div className="p-12 bg-white border border-gray-200 shadow-sm">
+                        <p className="text-gray-400 font-bold tracking-widest uppercase mb-4">COMING SOON</p>
+                        <p className="text-sm text-gray-500">初めてのお客様でも安心・スムーズな買取フローをご案内するページを準備中です。<br/>現在は「お問い合わせ」より直接ご相談ください。</p>
+                        <div className="mt-8 flex justify-center gap-4">
+                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center text-gray-300 font-bold text-xl">1</div>
+                            <div className="w-8 h-1 bg-gray-200 mt-8"></div>
+                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center text-gray-300 font-bold text-xl">2</div>
+                            <div className="w-8 h-1 bg-gray-200 mt-8"></div>
+                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center text-gray-300 font-bold text-xl">3</div>
+                        </div>
+                    </div>
                 </div>
-              ))}
             </div>
-          </div>
-        </section>
+        )}
 
-        {/* ACCESS / FOOTER */}
-        <section id="access" className="border-t border-gray-200">
-           <div className="grid md:grid-cols-2">
-              <div className="bg-[#1a1a1a] text-white p-16 md:p-24 flex flex-col justify-center"><h2 className="text-2xl font-serif mb-12 flex items-center gap-4"><span className="w-8 h-[1px] bg-[#D32F2F]"></span> 会社概要</h2><div className="space-y-8 text-sm font-light tracking-wide text-gray-400"><div className="flex gap-8 border-b border-white/10 pb-4"><span className="w-24 shrink-0 font-bold text-white">社名</span><span>株式会社月寒製作所 苫小牧工場</span></div><div className="flex gap-8 border-b border-white/10 pb-4"><span className="w-24 shrink-0 font-bold text-white">所在地</span><span>〒053-0001 北海道苫小牧市一本松町9-6</span></div><div className="flex gap-8 border-b border-white/10 pb-4"><span className="w-24 shrink-0 font-bold text-white">許可証</span><span>北海道知事許可（般-18）石第00857号<br/>産廃処分業許可 第00120077601号</span></div><div className="pt-8"><p className="text-3xl font-serif text-white mb-2">0144-55-5544</p><p className="text-xs tracking-widest">平日 8:00 - 17:00 / 定休日: 土日祝</p></div></div></div>
-              <div className="h-[400px] md:h-auto bg-gray-300 relative group grayscale hover:grayscale-0 transition duration-700"><iframe src="https://maps.google.com/maps?q=42.639373,141.747970&z=15&output=embed" width="100%" height="100%" style={{border:0}} loading="lazy"></iframe></div>
-           </div>
-        </section>
+        {view === 'COMPANY' && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 py-32 px-6 bg-gray-50 min-h-[60vh]">
+                <div className="max-w-4xl mx-auto">
+                    <div className="text-center mb-12">
+                        <h2 className="text-4xl font-serif font-bold mb-4 text-[#111]">会社概要</h2>
+                        <p className="text-xs tracking-[0.2em] text-gray-500 uppercase">Corporate Profile</p>
+                    </div>
+                    <div className="bg-white p-12 border border-gray-200 shadow-sm space-y-8">
+                        <div className="flex border-b border-gray-100 pb-4">
+                            <span className="w-32 font-bold text-sm text-gray-800">社名</span>
+                            <span className="text-sm text-gray-600">株式会社 月寒製作所 苫小牧工場</span>
+                        </div>
+                        <div className="flex border-b border-gray-100 pb-4">
+                            <span className="w-32 font-bold text-sm text-gray-800">設立</span>
+                            <span className="text-sm text-gray-600">1961年（昭和36年）</span>
+                        </div>
+                        <div className="flex border-b border-gray-100 pb-4">
+                            <span className="w-32 font-bold text-sm text-gray-800">所在地</span>
+                            <span className="text-sm text-gray-600">〒053-0001 北海道苫小牧市一本松町9-6</span>
+                        </div>
+                        <div className="flex border-b border-gray-100 pb-4">
+                            <span className="w-32 font-bold text-sm text-gray-800">事業内容</span>
+                            <span className="text-sm text-gray-600">非鉄金属リサイクル、銅ナゲット製造、産業廃棄物収集運搬・処分</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )}
 
-        <footer className="bg-white py-12 px-6 border-t border-gray-200"><div className="max-w-[1400px] mx-auto flex flex-col md:flex-row justify-between items-end gap-6"><div><p className="text-xs font-bold tracking-widest uppercase mb-1">Tsukisamu Manufacturing Co., Ltd.</p><p className="text-[10px] text-gray-400">Tomakomai Factory</p></div><p className="text-[10px] text-gray-300 tracking-widest">© 2026 TSUKISAMU. ALL RIGHTS RESERVED.</p></div></footer>
+        {view === 'CONTACT' && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 py-32 px-6 bg-gray-50 min-h-[60vh]">
+                <div className="max-w-2xl mx-auto">
+                    <div className="text-center mb-12">
+                        <h2 className="text-4xl font-serif font-bold mb-4 text-[#111]">お問い合わせ</h2>
+                        <p className="text-xs tracking-[0.2em] text-gray-500 uppercase">Contact Us</p>
+                    </div>
+                    <form className="bg-white p-8 md:p-12 border border-gray-200 shadow-sm space-y-6">
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 mb-2">御社名 / お名前</label>
+                            <input className="w-full bg-gray-50 border border-gray-200 p-4 outline-none focus:border-[#D32F2F] transition-colors" />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 mb-2">メールアドレス</label>
+                            <input type="email" className="w-full bg-gray-50 border border-gray-200 p-4 outline-none focus:border-[#D32F2F] transition-colors" />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 mb-2">お問い合わせ内容</label>
+                            <textarea rows={5} className="w-full bg-gray-50 border border-gray-200 p-4 outline-none focus:border-[#D32F2F] transition-colors"></textarea>
+                        </div>
+                        <button className="w-full bg-[#111] text-white py-4 font-bold tracking-widest hover:bg-[#D32F2F] transition-colors">送信する</button>
+                    </form>
+                </div>
+            </div>
+        )}
+
+        {/* COMMON FOOTER */}
+        <footer className="bg-white py-12 px-6 border-t border-gray-200">
+            <div className="max-w-[1400px] mx-auto flex flex-col md:flex-row justify-between items-end gap-6">
+                <div>
+                    <p className="text-xs font-bold tracking-widest uppercase mb-1">Tsukisamu Manufacturing Co., Ltd.</p>
+                    <p className="text-[10px] text-gray-400">Tomakomai Factory</p>
+                </div>
+                <div className="flex gap-6">
+                    <button onClick={()=>setView('FLOW')} className="text-[10px] text-gray-400 hover:text-[#D32F2F]">買取の流れ</button>
+                    <button onClick={()=>setView('COMPANY')} className="text-[10px] text-gray-400 hover:text-[#D32F2F]">会社概要</button>
+                    <button onClick={()=>setView('CONTACT')} className="text-[10px] text-gray-400 hover:text-[#D32F2F]">お問い合わせ</button>
+                </div>
+                <p className="text-[10px] text-gray-300 tracking-widest">© 2026 TSUKISAMU. ALL RIGHTS RESERVED.</p>
+            </div>
+        </footer>
       </div>
     );
   }
@@ -518,17 +647,17 @@ export default function WireMasterCloud() {
     return (
       <div className="min-h-screen bg-[#111] text-white font-sans flex flex-col md:flex-row">
         <aside className="w-full md:w-80 bg-black p-8 border-r border-white/10">
-          <div className="mb-12"><h1 className="text-2xl font-serif font-bold text-white">FACTORY<span className="text-[#D32F2F]">OS</span></h1><p className="text-[10px] text-gray-500 uppercase tracking-widest">Admin Control</p></div>
+          <div className="mb-12 cursor-pointer" onClick={()=>setView('LP')}><h1 className="text-2xl font-serif font-bold text-white">FACTORY<span className="text-[#D32F2F]">OS</span></h1><p className="text-[10px] text-gray-500 uppercase tracking-widest">Admin Control</p></div>
           <nav className="space-y-4">
-             <button onClick={()=>setAdminTab('POS')} className={`w-full text-left p-4 rounded text-sm font-bold transition flex items-center gap-3 ${adminTab==='POS' ? 'bg-white/5 border border-white/10 text-white' : 'text-gray-500 hover:text-white'}`}><Icons.Calc /> 買取POSレジ</button>
-             <button onClick={()=>setAdminTab('STOCK')} className={`w-full text-left p-4 rounded text-sm font-bold transition flex items-center gap-3 ${adminTab==='STOCK' ? 'bg-white/5 border border-white/10 text-white' : 'text-gray-500 hover:text-white'}`}><Icons.Box /> 在庫管理</button>
-             <button onClick={()=>setAdminTab('MEMBERS')} className={`w-full text-left p-4 rounded text-sm font-bold transition flex items-center gap-3 ${adminTab==='MEMBERS' ? 'bg-white/5 border border-white/10 text-white' : 'text-gray-500 hover:text-white'}`}><Icons.Users /> 会員管理</button>
+              <button onClick={()=>setAdminTab('POS')} className={`w-full text-left p-4 rounded text-sm font-bold transition flex items-center gap-3 ${adminTab==='POS' ? 'bg-white/5 border border-white/10 text-white' : 'text-gray-500 hover:text-white'}`}><Icons.Calc /> 買取POSレジ</button>
+              <button onClick={()=>setAdminTab('STOCK')} className={`w-full text-left p-4 rounded text-sm font-bold transition flex items-center gap-3 ${adminTab==='STOCK' ? 'bg-white/5 border border-white/10 text-white' : 'text-gray-500 hover:text-white'}`}><Icons.Box /> 在庫管理</button>
+              <button onClick={()=>setAdminTab('MEMBERS')} className={`w-full text-left p-4 rounded text-sm font-bold transition flex items-center gap-3 ${adminTab==='MEMBERS' ? 'bg-white/5 border border-white/10 text-white' : 'text-gray-500 hover:text-white'}`}><Icons.Users /> 会員管理</button>
           </nav>
         </aside>
 
         <main className="flex-1 p-8 overflow-y-auto">
-           {adminTab === 'POS' && (
-             <div className="max-w-4xl mx-auto animate-in fade-in zoom-in duration-300">
+            {adminTab === 'POS' && (
+              <div className="max-w-4xl mx-auto animate-in fade-in zoom-in duration-300">
                 <header className="flex justify-between items-end mb-12">
                   <h2 className="text-4xl font-serif font-bold">Purchase Station</h2>
                   <div className="flex gap-4"><span className="text-xs bg-green-500/20 text-green-500 px-3 py-1 rounded-full border border-green-500/30">SYSTEM ONLINE</span></div>
@@ -634,7 +763,7 @@ export default function WireMasterCloud() {
     return (
       <div className="min-h-screen bg-[#F5F5F7] text-[#111] font-sans flex flex-col md:flex-row">
         <aside className="w-full md:w-80 bg-white p-8 border-r border-gray-200">
-          <div className="mb-12"><h1 className="text-2xl font-serif font-bold text-[#111]">MY <span className="text-[#D32F2F]">PAGE</span></h1></div>
+          <div className="mb-12 cursor-pointer" onClick={()=>setView('LP')}><h1 className="text-2xl font-serif font-bold text-[#111]">MY <span className="text-[#D32F2F]">PAGE</span></h1></div>
           <div className="text-center mb-8">
              <div className="w-24 h-24 bg-gray-100 rounded-full mx-auto mb-4 flex items-center justify-center text-3xl">🏗️</div>
              <p className="font-bold text-lg">{user?.name || 'User'}</p>
