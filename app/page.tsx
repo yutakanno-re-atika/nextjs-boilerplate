@@ -316,8 +316,8 @@ export default function WireMasterCloud() {
     { q: "出張買取のエリアについて", a: "基本的に北海道全域に対応しております。数量によって条件が異なりますので、まずはお気軽にお問い合わせください。" }
   ];
 
-  // ----------------------------------------------------------------
-  // 1. PUBLIC LANDING PAGE
+// ----------------------------------------------------------------
+  // 1. PUBLIC LANDING PAGE (完全復旧版)
   // ----------------------------------------------------------------
   if (view === 'LP' || view === 'LOGIN') {
     return (
@@ -388,109 +388,44 @@ export default function WireMasterCloud() {
           </div>
         </section>
 
-        {/* PRICE LIST SECTION */}
-        <section id="price" className="py-24 bg-[#111] text-white">
-          <div className="max-w-[1200px] mx-auto px-6">
-            <div className="text-center mb-16">
-              <span className="text-[#D32F2F] text-xs font-bold tracking-[0.3em] uppercase block mb-3">Today's Price</span>
-              <h2 className="text-4xl font-serif font-medium text-white">本日の買取価格</h2>
-              <p className="text-gray-500 mt-4 text-sm font-mono">※相場変動により予告なく変更する場合があります</p>
-            </div>
+        {/* PRICE / WIRE TYPES (復旧) */}
+        <section id="price" className="py-32 px-6 bg-white">
+          <div className="max-w-[1200px] mx-auto">
+             <div className="mb-20 flex items-end justify-between border-b border-gray-200 pb-6"><h2 className="text-3xl font-serif">取扱品目</h2><div className="flex gap-4">{['pika', 'cv', 'iv', 'mixed'].map(t => (<button key={t} onClick={()=>setActiveTab(t)} className={`text-[10px] font-bold uppercase tracking-widest px-4 py-2 transition-colors ${activeTab===t ? 'bg-black text-white' : 'bg-gray-100 text-gray-400 hover:text-black'}`}>{t}</button>))}</div></div>
+             <div className="grid md:grid-cols-2 gap-16 items-center animate-in fade-in duration-500" key={activeTab}>
+               <div className="h-[400px] bg-gray-100 overflow-hidden relative group"><img src={IMAGES[activeTab as keyof typeof IMAGES]} alt={activeTab} className="w-full h-full object-cover transition duration-700 group-hover:scale-105" /><div className="absolute inset-0 border-[12px] border-white pointer-events-none"></div></div>
+               <div className="space-y-8"><h3 className="text-3xl font-serif font-medium">{activeTab === 'pika' && '特1号銅線 (ピカ線)'}{activeTab === 'cv' && 'CV・CVTケーブル'}{activeTab === 'iv' && 'IV線'}{activeTab === 'mixed' && '雑線・ミックス'}</h3><p className="text-sm text-gray-600 leading-loose">{activeTab === 'pika' && '被覆を完全に除去した、直径1.3mm以上の純銅線。酸化やメッキがなく、光沢がある状態のものが最高値での買取対象となります。'}{activeTab === 'cv' && '工場やビルの電力供給用として使用される架橋ポリエチレン絶縁ビニルシースケーブル。銅率が高く、太いものが多いため高価買取が可能です。'}{activeTab === 'iv' && '屋内配線用として最も一般的に使用されるビニル絶縁電線。単線・撚り線問わず買取可能です。'}{activeTab === 'mixed' && '様々な種類の電線が混ざった状態や、家電コード、通信線などもまとめて引き受けます。選別不要でお持ち込みいただけます。'}</p><div className="inline-block border-l-2 border-red-600 pl-6 py-2"><span className="text-xs text-gray-400 block mb-1 tracking-widest uppercase">Target Price</span><span className="text-xl font-serif font-bold">{activeTab === 'pika' ? '最高値基準' : activeTab === 'mixed' ? '銅率により変動' : '高価買取対象'}</span></div></div>
+             </div>
+          </div>
+        </section>
 
-            <div className="grid md:grid-cols-3 gap-8">
-              {data?.products?.filter(p => ['pika', 'cv', 'iv', 'vvf', 'mixed', 'cabtire'].some(k => p.id.includes(k) || p.category.includes(k) || Object.keys(IMAGES).includes(p.id))).slice(0, 6).map((product, i) => {
-                const imgKey = Object.keys(IMAGES).find(k => product.id.toLowerCase().includes(k) || product.category.toLowerCase().includes(k)) || 'nugget';
-                // @ts-ignore
-                const imgSrc = IMAGES[imgKey];
-
-                return (
-                  <div key={product.id} className="group relative bg-[#1a1a1a] border border-white/10 overflow-hidden hover:border-[#D32F2F] transition-all duration-500">
-                    <div className="absolute inset-0 bg-cover bg-center opacity-30 group-hover:opacity-50 group-hover:scale-110 transition-all duration-700 mix-blend-overlay" style={{backgroundImage: `url(${imgSrc})`}}></div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent"></div>
-                    
-                    <div className="relative p-8 h-full flex flex-col justify-end">
-                      <div className="mb-4 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                        <span className="text-[10px] text-[#D32F2F] font-bold tracking-widest uppercase mb-2 block">{product.category}</span>
-                        <h3 className="text-2xl font-bold font-serif leading-tight mb-1">{product.name}</h3>
-                        <p className="text-xs text-gray-400 font-mono">{product.sq}sq / {product.core}C</p>
-                      </div>
-                      
-                      <div className="border-t border-white/20 pt-4 flex justify-between items-end">
-                        <div>
-                           <span className="text-[10px] text-gray-500 uppercase tracking-wider block">Unit Price</span>
-                           <div className="text-3xl font-serif font-bold tracking-tighter text-white group-hover:text-[#D32F2F] transition-colors">
-                             ¥{Math.floor(marketPrice * (product.ratio / 100) * 0.9).toLocaleString()}
-                           </div>
-                        </div>
-                        <div className="text-right">
-                           <span className="text-[10px] text-gray-500 uppercase tracking-wider block">Cu Yield</span>
-                           <span className="text-lg font-mono font-bold">{product.ratio}%</span>
-                        </div>
-                      </div>
-                    </div>
+        {/* FAQ SECTION (復旧) */}
+        <section id="faq" className="py-32 px-6 bg-[#F9F9F9] border-t border-gray-200">
+          <div className="max-w-[800px] mx-auto">
+            <div className="text-center mb-16"><span className="text-[#D32F2F] text-xs font-bold tracking-[0.3em] uppercase block mb-3">Q & A</span><h2 className="text-3xl font-serif">よくある質問</h2></div>
+            <div className="space-y-4">
+              {FAQ_ITEMS.map((item, idx) => (
+                <div key={idx} className="bg-white border border-gray-200 hover:border-gray-300 transition-colors">
+                  <div role="button" onClick={() => setActiveFaq(activeFaq === idx ? null : idx)} className="w-full flex justify-between items-center p-6 md:p-8 text-left group cursor-pointer">
+                    <div className="flex items-start gap-6"><span className="text-[#D32F2F] font-serif font-bold text-lg leading-none mt-1">Q.</span><span className="font-serif font-medium text-[#111] group-hover:text-[#D32F2F] transition-colors">{item.q}</span></div>
+                    <Icons.ChevronDown className={`text-gray-300 transition-transform duration-300 ${activeFaq === idx ? 'rotate-180' : ''}`} />
                   </div>
-                );
-              })}
+                  {activeFaq === idx && (<div className="px-8 pb-8 pl-20 animate-in slide-in-from-top-1 fade-in duration-200"><p className="text-sm text-gray-500 leading-loose border-l-2 border-gray-100 pl-4">{item.a}</p></div>)}
+                </div>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* ACCESS SECTION */}
-        <section id="access" className="py-24 bg-[#F5F5F7] text-[#111] border-t border-gray-200">
-           <div className="max-w-[1200px] mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
-              <div className="space-y-8">
-                 <div>
-                    <span className="text-[#D32F2F] text-xs font-bold tracking-[0.3em] uppercase block mb-3">Location</span>
-                    <h2 className="text-4xl font-serif font-medium mb-6">工場アクセス</h2>
-                    <p className="text-gray-600 leading-loose text-sm font-medium">
-                       株式会社 月寒製作所 苫小牧工場<br/>
-                       〒053-0000 北海道苫小牧市勇払123-4<br/>
-                       TEL: 0144-00-0000 / FAX: 0144-00-0001
-                    </p>
-                 </div>
-                 <div className="space-y-4">
-                    <div className="flex items-center gap-4 bg-white p-4 border border-gray-200 shadow-sm">
-                       <div className="w-10 h-10 bg-[#111] text-white flex items-center justify-center text-lg">🚛</div>
-                       <div>
-                          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">お車でお越しの方</p>
-                          <p className="font-bold text-sm">日高自動車道「沼ノ端東IC」より車で5分</p>
-                       </div>
-                    </div>
-                    <div className="flex items-center gap-4 bg-white p-4 border border-gray-200 shadow-sm">
-                       <div className="w-10 h-10 bg-[#111] text-white flex items-center justify-center text-lg">🕒</div>
-                       <div>
-                          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">営業時間</p>
-                          <p className="font-bold text-sm">8:00 - 17:00 (日曜・祝日定休)</p>
-                       </div>
-                    </div>
-                 </div>
-              </div>
-              <div className="h-[400px] bg-gray-300 relative grayscale hover:grayscale-0 transition-all duration-700 shadow-2xl border-4 border-white">
-                 <iframe 
-                   src="https://maps.google.com/maps?q=42.639373,141.747970&z=15&output=embed"
-                   width="100%" height="100%" style={{border:0}} loading="lazy" referrerPolicy="no-referrer-when-downgrade"
-                   className="absolute inset-0 w-full h-full"
-                 ></iframe>
-              </div>
+        {/* ACCESS / FOOTER (復旧) */}
+        <section id="access" className="border-t border-gray-200">
+           <div className="grid md:grid-cols-2">
+              <div className="bg-[#1a1a1a] text-white p-16 md:p-24 flex flex-col justify-center"><h2 className="text-2xl font-serif mb-12 flex items-center gap-4"><span className="w-8 h-[1px] bg-[#D32F2F]"></span> 会社概要</h2><div className="space-y-8 text-sm font-light tracking-wide text-gray-400"><div className="flex gap-8 border-b border-white/10 pb-4"><span className="w-24 shrink-0 font-bold text-white">社名</span><span>株式会社月寒製作所 苫小牧工場</span></div><div className="flex gap-8 border-b border-white/10 pb-4"><span className="w-24 shrink-0 font-bold text-white">所在地</span><span>〒053-0001 北海道苫小牧市一本松町9-6</span></div><div className="flex gap-8 border-b border-white/10 pb-4"><span className="w-24 shrink-0 font-bold text-white">許可証</span><span>北海道知事許可（般-18）石第00857号<br/>産廃処分業許可 第00120077601号</span></div><div className="pt-8"><p className="text-3xl font-serif text-white mb-2">0144-55-5544</p><p className="text-xs tracking-widest">平日 8:00 - 17:00 / 定休日: 土日祝</p></div></div></div>
+              <div className="h-[400px] md:h-auto bg-gray-300 relative group grayscale hover:grayscale-0 transition duration-700"><iframe src="https://maps.google.com/maps?q=42.639373,141.747970&z=15&output=embed" width="100%" height="100%" style={{border:0}} loading="lazy"></iframe></div>
            </div>
         </section>
 
-        {/* FOOTER */}
-        <footer className="bg-[#111] text-white py-12 border-t border-white/10">
-           <div className="max-w-[1400px] mx-auto px-6 flex flex-col md:flex-row justify-between items-end gap-8">
-              <div>
-                 <h2 className="text-xl font-serif font-bold tracking-widest mb-2">TSUKISAMU MFG.</h2>
-                 <p className="text-[10px] text-gray-500 uppercase tracking-widest">Next Generation Recycling System</p>
-              </div>
-              <div className="text-right">
-                 <p className="text-[10px] text-gray-600">© 2026 Tsukisamu Manufacturing Co., Ltd. All Rights Reserved.</p>
-                 <div className="flex gap-4 justify-end mt-2">
-                    <a href="#" className="text-xs text-gray-500 hover:text-white transition-colors">Privacy Policy</a>
-                    <a href="#" className="text-xs text-gray-500 hover:text-white transition-colors">Terms of Service</a>
-                 </div>
-              </div>
-           </div>
-        </footer>
+        <footer className="bg-white py-12 px-6 border-t border-gray-200"><div className="max-w-[1400px] mx-auto flex flex-col md:flex-row justify-between items-end gap-6"><div><p className="text-xs font-bold tracking-widest uppercase mb-1">Tsukisamu Manufacturing Co., Ltd.</p><p className="text-[10px] text-gray-400">Tomakomai Factory</p></div><p className="text-[10px] text-gray-300 tracking-widest">© 2026 TSUKISAMU. ALL RIGHTS RESERVED.</p></div></footer>
       </div>
     );
   }
