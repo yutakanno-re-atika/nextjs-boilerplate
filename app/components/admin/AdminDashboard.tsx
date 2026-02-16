@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MarketData } from '../../types';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -29,6 +29,12 @@ export const AdminDashboard = ({ data, setView }: AdminProps) => {
   const [completeTxId, setCompleteTxId] = useState<string | null>(null);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [lastTxData, setLastTxData] = useState<any>(null);
+  
+  // ★修正ポイント: Hydration Errorを防ぐため、日付はクライアントサイドでのみ生成
+  const [dateStr, setDateStr] = useState<string>('');
+  useEffect(() => {
+    setDateStr(new Date().toLocaleDateString());
+  }, []);
 
   const marketPrice = data?.config?.market_price || 0;
 
@@ -202,6 +208,8 @@ export const AdminDashboard = ({ data, setView }: AdminProps) => {
                           <div className="flex justify-between"><span className="text-gray-500">MEMBER</span><span>{posUser || 'Guest'}</span></div>
                           <div className="border-b border-gray-200 my-4"></div>
                           <div className="flex justify-between text-xs text-gray-500"><span>{posProduct || '-'}</span><span>{posWeight || 0}kg / {posRank}</span></div>
+                          {/* ★修正ポイント: dateStrを使用 */}
+                          <div className="flex justify-between"><span className="text-gray-500">DATE</span><span>{dateStr}</span></div>
                        </div>
                        <div className="border-t-2 border-dashed border-gray-300 pt-6 mt-6">
                           <div className="flex justify-between items-end mb-6"><span className="font-bold text-gray-600">TOTAL</span><span className="text-3xl font-black tracking-tighter">¥{posResult ? posResult.toLocaleString() : '0'}</span></div>
