@@ -11,10 +11,9 @@ export interface ProductWire {
 export interface ProductCasting {
   id: string;
   name: string;
-  // ★ここで 'Urban' や 'Sus' を許可するように修正
-  type: 'Brass' | 'Bronze' | 'Alu' | 'Sus' | 'Urban';
-  // ★CSVのデータが増えてもエラーにならないよう string に緩和
-  form: string; 
+  // ★ここを修正：エラーが出ないよう string に緩和します
+  type: string; 
+  form: string;
   description: string;
   price_offset: number;
   ratio: number;
