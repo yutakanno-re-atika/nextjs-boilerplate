@@ -1,45 +1,58 @@
 "use client";
-import React, { useState } from 'react';
+import React from 'react';
 
-export const RealChart = ({ data, currentPrice }: {data: any[], currentPrice: number}) => {
-  const [activePoint, setActivePoint] = useState<any>(null);
-  if (!data || !Array.isArray(data) || data.length < 2) return <div className="h-40 flex items-center justify-center text-xs tracking-widest text-white/50">LOADING MARKET DATA...</div>;
+// 金属ごとの設定データ
+const METALS = [
+  { id: 'copper', name: '銅 (Copper)', symbol: 'Cu', color: 'text-red-500', bg: 'bg-red-50', border: 'border-red-200' },
+  { id: 'brass', name: '真鍮 (Brass)', symbol: 'Zn-Cu', color: 'text-yellow-600', bg: 'bg-yellow-50', border: 'border-yellow-200' },
+  { id: 'zinc', name: '亜鉛 (Zinc)', symbol: 'Zn', color: 'text-gray-500', bg: 'bg-gray-50', border: 'border-gray-200' },
+  { id: 'lead', name: '鉛 (Lead)', symbol: 'Pb', color: 'text-slate-600', bg: 'bg-slate-50', border: 'border-slate-200' },
+  { id: 'tin', name: '錫 (Tin)', symbol: 'Sn', color: 'text-blue-500', bg: 'bg-blue-50', border: 'border-blue-200' },
+];
 
-  const effectivePrice = currentPrice > 0 ? currentPrice : (data.length > 0 ? data[data.length-1].value : 0);
-  const maxVal = Math.max(...data.map((d: any) => d.value || 0), effectivePrice);
-  const minVal = Math.min(...data.map((d: any) => d.value || 0), effectivePrice);
-  const range = maxVal - minVal || 100;
+export const RealChart = ({ data, currentPrice }: { data: any[], currentPrice: number }) => {
   
-  const getX = (i: number) => (i / (data.length - 1)) * 100;
-  const points = data.map((d: any, i: number) => {
-    const val = d.value || 0;
-    const yMax = maxVal + range * 0.2;
-    const yMin = minVal - range * 0.2;
-    return `${getX(i)},${100 - ((val - yMin) / (yMax - yMin)) * 100}`;
-  }).join(' ');
-
-  const displayDate = activePoint ? activePoint.date : 'NOW';
-  const displayValue = activePoint ? activePoint.value : effectivePrice;
+  // 今は銅以外のデータがないので、銅建値を基準にした「仮の相場比率」で表示させます
+  // ※後でGASから正しい値を送るようにすれば、ここは不要になります
+  const rates: Record<string, number> = {
+    copper: currentPrice || 1450,         // 銅建値 (kg)
+    brass: Math.floor(currentPrice * 0.7), // 真鍮はおよそ銅の6-7割
+    zinc: 450,  // 亜鉛建値 (仮)
+    lead: 380,  // 鉛建値 (仮)
+    tin: 4800,  // 錫建値 (仮)
+  };
 
   return (
-    <div className="w-full" onMouseLeave={() => setActivePoint(null)}>
-      <div className="flex justify-between items-end mb-6 border-b border-white/30 pb-4">
-        <div>
-          <p className="text-[10px] font-medium text-white/70 tracking-[0.2em] mb-1">MARKET PRICE / {displayDate}</p>
-          <p className="text-5xl font-serif text-white tracking-tight drop-shadow-md">
-            <span className="text-2xl mr-1">¥</span>{Number(displayValue).toLocaleString()}
-          </p>
+    <div className="w-full bg-white border-b border-gray-200 shadow-sm">
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="flex items-center justify-between mb-6">
+            <h3 className="text-sm font-bold tracking-widest text-gray-500 uppercase flex items-center gap-2">
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                Market Rates (LME Linked)
+            </h3>
+            <span className="text-[10px] text-gray-400">※ 銅以外は参考価格です</span>
         </div>
-        <div className="text-right">
-            <div className="text-white text-[10px] font-bold flex items-center justify-end gap-2 uppercase tracking-widest">Live</div>
-            <p className="text-[10px] text-white/70 mt-1 font-serif">LME Copper</p>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          {METALS.map((metal) => (
+            <div key={metal.id} className={`relative p-4 rounded-xl border ${metal.bg} ${metal.border} flex flex-col justify-between transition-transform hover:-translate-y-1 duration-300`}>
+                <div className="flex justify-between items-start mb-2">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{metal.symbol}</span>
+                    {metal.id === 'copper' && <span className="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded font-bold">MAIN</span>}
+                </div>
+                <div>
+                    <h4 className={`text-xs font-bold text-gray-600 mb-1`}>{metal.name}</h4>
+                    <div className="flex items-baseline gap-1">
+                        <span className="text-xs text-gray-400">¥</span>
+                        <span className={`text-2xl font-black tracking-tighter ${metal.color}`}>
+                            {rates[metal.id]?.toLocaleString()}
+                        </span>
+                        <span className="text-[10px] text-gray-400">/kg</span>
+                    </div>
+                </div>
+            </div>
+          ))}
         </div>
-      </div>
-      <div className="h-40 w-full relative overflow-visible">
-        <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible" preserveAspectRatio="none">
-          <path d={`M ${points}`} fill="none" stroke="#FFFFFF" strokeWidth="2" vectorEffect="non-scaling-stroke" filter="drop-shadow(0px 2px 4px rgba(0,0,0,0.1))" />
-          {data.map((d: any, i: number) => ( <rect key={i} x={getX(i)-1} y="0" width="2" height="100" fill="transparent" onMouseEnter={() => setActivePoint(d)} /> ))}
-        </svg>
       </div>
     </div>
   );
