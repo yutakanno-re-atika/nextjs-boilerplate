@@ -22,23 +22,21 @@ type TabType = 'WIRE' | 'CASTING';
 export const PriceList = ({ data, marketPrice }: { data: MarketData | null, marketPrice: number }) => {
   const [activeTab, setActiveTab] = useState<TabType>('WIRE');
   const [searchTerm, setSearchTerm] = useState('');
-  const [wireFilter, setWireFilter] = useState('ALL'); // カテゴリフィルター
-  const [visibleCount, setVisibleCount] = useState(9); // 初期表示件数
+  const [wireFilter, setWireFilter] = useState('ALL'); 
+  const [visibleCount, setVisibleCount] = useState(9); 
 
   // ------------------------------------------------
-  // フィルタリングロジック (useMemoで高速化)
+  // フィルタリングロジック
   // ------------------------------------------------
   const filteredWires = useMemo(() => {
     if (!data?.wires) return [];
     let wires = data.wires;
 
-    // 1. ノイズ除去 (Legacyデータや空データを弾く)
-    // ※ nameがあるものだけ表示するなど、最低限のクレンジング
+    // 1. ノイズ除去
     wires = wires.filter(w => w.name && w.name !== '');
 
     // 2. カテゴリフィルター
     if (wireFilter !== 'ALL') {
-      // 部分一致でフィルタ (例: "IV" を選べば "600V IV" もヒットさせる)
       wires = wires.filter(w => 
         w.category && w.category.toUpperCase().includes(wireFilter)
       );
@@ -69,7 +67,6 @@ export const PriceList = ({ data, marketPrice }: { data: MarketData | null, mark
     return castings;
   }, [data?.castings, searchTerm]);
 
-  // ローディング表示
   if (!data) return (
     <div className="py-20 px-6 max-w-[1200px] mx-auto animate-pulse">
         <div className="h-10 bg-gray-200 w-1/3 mx-auto mb-10 rounded"></div>
@@ -83,25 +80,34 @@ export const PriceList = ({ data, marketPrice }: { data: MarketData | null, mark
     <section id="price" className="py-24 bg-white">
       <div className="max-w-[1400px] mx-auto px-6">
         
-        {/* HEADER: PRICING LOGIC */}
+        {/* HEADER: シンプルな相場表示に変更 (数式を削除) */}
         <div className="text-center mb-16">
             <span className="text-[#D32F2F] text-xs font-bold tracking-[0.3em] uppercase block mb-3">Realtime Market</span>
-            <h2 className="text-4xl font-serif font-medium text-[#111] mb-6">本日の買取価格</h2>
-            <div className="inline-flex flex-col md:flex-row items-center gap-4 bg-gray-50 px-8 py-4 rounded-full border border-gray-200 shadow-sm">
-                <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Pricing Logic:</span>
-                <div className="flex items-center gap-2 text-sm font-mono text-gray-700">
-                    <span className="font-bold">LME Market</span>
-                    <span className="text-gray-400">×</span>
-                    <span className="font-bold">Yield(%)</span>
-                    <span className="text-gray-400">-</span>
-                    <span className="text-xs bg-[#D32F2F] text-white px-2 py-1 rounded">No Middleman Cost</span>
-                    <span className="text-gray-400">=</span>
-                    <span className="text-xl font-bold text-[#D32F2F] border-b-2 border-[#D32F2F]">High Price</span>
+            <h2 className="text-4xl font-serif font-medium text-[#111] mb-8">本日の買取価格</h2>
+            
+            <div className="flex justify-center items-center gap-6 flex-wrap">
+                {/* 銅建値表示 */}
+                <div className="bg-[#111] text-white px-8 py-4 rounded-xl shadow-xl flex items-center gap-6">
+                    <div className="text-right border-r border-white/20 pr-6">
+                        <p className="text-[10px] text-gray-400 uppercase tracking-widest">Copper Base</p>
+                        <p className="text-xs text-gray-500">銅建値基準</p>
+                    </div>
+                    <div className="text-left">
+                        <p className="text-4xl font-serif font-bold tracking-tight">
+                            ¥{marketPrice.toLocaleString()}<span className="text-sm font-sans font-normal text-gray-400 ml-1">/kg</span>
+                        </p>
+                    </div>
+                </div>
+
+                {/* USPバッジ */}
+                <div className="flex items-center gap-2 text-[#D32F2F] bg-red-50 px-6 py-4 rounded-xl border border-red-100">
+                    <span className="w-2 h-2 bg-[#D32F2F] rounded-full animate-pulse"></span>
+                    <span className="text-xs font-bold tracking-widest uppercase">Factory Direct / 中間マージンなし</span>
                 </div>
             </div>
         </div>
 
-        {/* MAIN TABS (WIRE vs CASTING) */}
+        {/* MAIN TABS */}
         <div className="flex justify-center gap-4 mb-8">
             <button 
                 onClick={() => { setActiveTab('WIRE'); setVisibleCount(9); setSearchTerm(''); }}
@@ -117,7 +123,7 @@ export const PriceList = ({ data, marketPrice }: { data: MarketData | null, mark
             </button>
         </div>
 
-        {/* SUB FILTERS & SEARCH BAR */}
+        {/* SUB FILTERS & SEARCH */}
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-12 bg-gray-50 p-4 rounded-xl border border-gray-100 sticky top-20 z-30 shadow-sm backdrop-blur-sm bg-gray-50/90">
             {activeTab === 'WIRE' ? (
                 <div className="flex flex-wrap gap-2">
@@ -138,7 +144,7 @@ export const PriceList = ({ data, marketPrice }: { data: MarketData | null, mark
             <div className="relative w-full md:w-64">
                 <input 
                     type="text" 
-                    placeholder="キーワード検索 (例: 矢崎 14sq)" 
+                    placeholder="キーワード検索..." 
                     className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-full text-sm focus:border-[#D32F2F] focus:outline-none"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -147,15 +153,13 @@ export const PriceList = ({ data, marketPrice }: { data: MarketData | null, mark
             </div>
         </div>
 
-        {/* PRODUCT GRID */}
+        {/* GRID */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             
-            {/* --- WIRE LIST --- */}
+            {/* WIRE LIST */}
             {activeTab === 'WIRE' && filteredWires.slice(0, visibleCount).map((product, idx) => {
-                // 画像判定ロジック
                 const lowerCat = (product.category || '').toLowerCase();
                 const lowerName = (product.name || '').toLowerCase();
-                
                 let imgKey = 'nugget';
                 if (lowerCat.includes('iv') || lowerName.includes('iv')) imgKey = 'iv';
                 else if (lowerCat.includes('cv') || lowerName.includes('cv')) imgKey = 'cv';
@@ -182,7 +186,6 @@ export const PriceList = ({ data, marketPrice }: { data: MarketData | null, mark
                                 <span className="text-[10px] text-gray-400 font-mono bg-gray-100 px-2 py-1 rounded shrink-0 ml-2">{product.id}</span>
                             </div>
                             <p className="text-xs text-gray-500 mb-4 h-4 overflow-hidden">{product.maker} {product.sq}sq {product.core}C</p>
-                            
                             <div className="flex justify-between items-end border-t border-gray-100 pt-4">
                                 <div><p className="text-[10px] text-gray-400 uppercase tracking-widest mb-1">Est. Price / kg</p><p className="text-3xl font-serif font-bold text-[#111]">¥{price.toLocaleString()}</p></div>
                                 <div className="text-right"><p className="text-[10px] text-gray-400 uppercase tracking-widest mb-1">Yield</p><p className="text-lg font-mono font-bold text-gray-600">{Number(product.ratio).toFixed(1)}%</p></div>
@@ -192,7 +195,7 @@ export const PriceList = ({ data, marketPrice }: { data: MarketData | null, mark
                 );
             })}
 
-            {/* --- CASTING LIST --- */}
+            {/* CASTING LIST */}
             {activeTab === 'CASTING' && filteredCastings.map((product) => {
                 const imgKey = product.type.toLowerCase().includes('brass') ? 'brass' : 'bronze';
                 const imgSrc = IMG_MAP[imgKey] || IMG_MAP['nugget'];
@@ -220,48 +223,24 @@ export const PriceList = ({ data, marketPrice }: { data: MarketData | null, mark
                 );
             })}
             
-            {/* NO DATA FALLBACK */}
-            {activeTab === 'WIRE' && filteredWires.length === 0 && (
-                 <div className="col-span-full py-20 text-center text-gray-400 flex flex-col items-center">
-                    <p className="text-lg font-serif mb-2">No Wires Found</p>
-                    <p className="text-xs">条件に一致する電線が見つかりませんでした。</p>
-                 </div>
-            )}
-            {activeTab === 'CASTING' && filteredCastings.length === 0 && (
-                 <div className="col-span-full py-20 text-center text-gray-400 flex flex-col items-center">
-                    <p className="text-lg font-serif mb-2">No Castings Data</p>
-                    <p className="text-xs">鋳造・合金データが登録されていません。</p>
-                 </div>
-            )}
-
+            {/* NO DATA */}
+            {activeTab === 'WIRE' && filteredWires.length === 0 && <div className="col-span-full py-20 text-center text-gray-400">No Wires Found</div>}
+            {activeTab === 'CASTING' && filteredCastings.length === 0 && <div className="col-span-full py-20 text-center text-gray-400">No Castings Data</div>}
         </div>
 
-        {/* LOAD MORE BUTTON */}
+        {/* LOAD MORE */}
         {activeTab === 'WIRE' && visibleCount < filteredWires.length && (
             <div className="mt-12 text-center">
-                <button 
-                    onClick={() => setVisibleCount(prev => prev + 9)}
-                    className="bg-white border border-gray-300 text-gray-600 px-8 py-3 rounded-full text-xs font-bold tracking-widest hover:bg-gray-50 hover:text-black hover:border-black transition-all shadow-sm"
-                >
-                    LOAD MORE ({filteredWires.length - visibleCount})
-                </button>
+                <button onClick={() => setVisibleCount(prev => prev + 9)} className="bg-white border border-gray-300 text-gray-600 px-8 py-3 rounded-full text-xs font-bold tracking-widest hover:bg-gray-50 hover:text-black transition-all">LOAD MORE ({filteredWires.length - visibleCount})</button>
             </div>
         )}
 
-        {/* DISCLAIMER */}
-        <div className="mt-12 text-center">
-            <p className="text-[10px] text-gray-400">
-                ※ 表示価格はLME相場連動の参考価格です。実際の買取価格は、現物の状態（付着物、油、酸化等）および持込数量により変動します。<br/>
-                ※ WN-800ナゲットプラントおよび自社溶解炉による一貫処理が可能なため、中間マージンは発生しません。
-            </p>
-        </div>
-
+        <div className="mt-12 text-center"><p className="text-[10px] text-gray-400">※ 表示価格はLME相場連動の参考価格です。実際の買取価格は、現物の状態（付着物、油、酸化等）および持込数量により変動します。</p></div>
       </div>
     </section>
   );
 };
 
-// アイコン用の小さなコンポーネント
 const Icons = {
     Search: ({className}:{className?:string}) => (
         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
