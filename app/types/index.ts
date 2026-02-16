@@ -1,10 +1,14 @@
+// ==========================================
+// 型定義ファイル (Type Definitions)
+// ==========================================
+
 export interface ProductWire {
   id: string;
   maker: string;
   name: string;
   sq: string;
   core: string;
-  ratio: number;
+  ratio: number; // ★これが必要です
   category: string;
 }
 
@@ -15,7 +19,7 @@ export interface ProductCasting {
   form: 'Solid' | 'Turnings';
   description: string;
   price_offset: number;
-  ratio: number; // ★ここを追加しました
+  ratio: number; // ★★★ これがないとビルドエラーになります ★★★
 }
 
 export interface ReservationData {
@@ -31,8 +35,8 @@ export interface MarketData {
   status: string;
   config: { market_price: number };
   history: { date: string; value: number }[];
-  wires: ProductWire[];
-  castings: ProductCasting[];
+  wires: ProductWire[];        // 変数名を明確化
+  castings: ProductCasting[];  // 新規追加
   reservations?: ReservationData[];
   stats: { monthlyTotal: number };
 }
