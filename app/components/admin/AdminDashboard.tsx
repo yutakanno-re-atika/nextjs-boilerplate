@@ -26,11 +26,10 @@ export const AdminDashboard = ({ data, setView }: AdminProps) => {
   const [posRank, setPosRank] = useState<'A'|'B'|'C'>('B');
   const [posResult, setPosResult] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [completeTxId, setCompleteTxId] = useState<string | null>(null);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [lastTxData, setLastTxData] = useState<any>(null);
   
-  // ★修正ポイント: Hydration Error対策 (サーバーとクライアントの日付不一致を防ぐ)
+  // 日付生成 (Hydration Error対策)
   const [dateStr, setDateStr] = useState<string>('');
   useEffect(() => {
     setDateStr(new Date().toLocaleDateString());
@@ -41,29 +40,31 @@ export const AdminDashboard = ({ data, setView }: AdminProps) => {
   // POS計算ロジック
   const handlePosCalculate = () => {
     if (!posProduct || !posWeight) { alert("商品と重量を入力してください"); return; }
-    const product = data?.wires.find(p => p.id === posProduct) || data?.castings.find(p => p.id === posProduct); // Both Wire and Casting
+    
+    // WireかCastingか検索
+    const wire = data?.wires.find(p => p.id === posProduct);
+    const casting = data?.castings.find(p => p.id === posProduct);
+    const product = wire || casting;
+    
     if (!product) return;
     
     const weight = parseFloat(posWeight);
     const rankBonus = posRank === 'A' ? 1.02 : posRank === 'C' ? 0.95 : 1.0;
-    const marketFactor = 0.90; 
-    const processingCost = 15;
-
-    // Castingの場合は price_offset を使う、Wireの場合は ratio 計算
+    
+    // ★重要: PriceList.tsx と計算ロジックを統一
     let rawPrice = 0;
-    if ('price_offset' in product) {
-        // Casting Logic: (LME * Ratio) - Offset
-        rawPrice = (marketPrice * (product.ratio / 100)) - (product.price_offset || 0);
+    if (casting) {
+        // Casting: (LME * Ratio) + Offset (Offsetはマイナス値なので足す)
+        rawPrice = (marketPrice * (product.ratio / 100)) + (casting.price_offset || 0);
     } else {
-        // Wire Logic
-        rawPrice = (marketPrice * (product.ratio / 100) * marketFactor) - processingCost;
+        // Wire: (LME * Ratio * 0.9) - 加工費15円
+        rawPrice = (marketPrice * (product.ratio / 100) * 0.9) - 15;
     }
 
     const adjustedPrice = rawPrice * rankBonus;
     const finalUnitPrice = Math.max(0, Math.floor(adjustedPrice));
     
     setPosResult(Math.floor(finalUnitPrice * weight));
-    setCompleteTxId(null);
   };
 
   // 取引登録 & 明細発行
@@ -142,8 +143,13 @@ export const AdminDashboard = ({ data, setView }: AdminProps) => {
     doc.save(`Invoice_${lastTxData.id}.pdf`);
   };
 
+  // 商品リストの作成 (MIX系を上に)
+  const wireOptions = data?.wires?.filter(w => w.name.includes('ミックス') || w.name.toUpperCase().includes('MIX')) || [];
+  const otherWires = data?.wires?.filter(w => !w.name.includes('ミックス') && !w.name.toUpperCase().includes('MIX')) || [];
+
   return (
     <div className="min-h-screen bg-[#111] text-white font-sans flex flex-col md:flex-row">
+      {/* サイドバー */}
       <aside className="w-full md:w-80 bg-black p-8 border-r border-white/10">
         <div className="mb-12 cursor-pointer" onClick={()=>setView('LP')}><h1 className="text-2xl font-serif font-bold text-white">FACTORY<span className="text-[#D32F2F]">OS</span></h1><p className="text-[10px] text-gray-500 uppercase tracking-widest">Admin Control</p></div>
         <nav className="space-y-4">
@@ -153,6 +159,7 @@ export const AdminDashboard = ({ data, setView }: AdminProps) => {
         </nav>
       </aside>
 
+      {/* メインエリア */}
       <main className="flex-1 p-8 overflow-y-auto">
           {adminTab === 'POS' && (
             <div className="max-w-4xl mx-auto animate-in fade-in zoom-in duration-300">
@@ -163,6 +170,7 @@ export const AdminDashboard = ({ data, setView }: AdminProps) => {
 
               <div className="grid grid-cols-12 gap-8">
                  <div className="col-span-12 lg:col-span-8 space-y-8">
+                    {/* 1. Customer */}
                     <div className="bg-[#1a1a1a] p-8 rounded-xl border border-white/10">
                        <h3 className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-4 flex items-center gap-2"><span className="w-2 h-2 bg-[#D32F2F] rounded-full"></span> 1. Customer</h3>
                        <div className="flex gap-4">
@@ -171,15 +179,19 @@ export const AdminDashboard = ({ data, setView }: AdminProps) => {
                        </div>
                     </div>
 
+                    {/* 2. Product */}
                     <div className="bg-[#1a1a1a] p-8 rounded-xl border border-white/10">
                        <h3 className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-4 flex items-center gap-2"><span className="w-2 h-2 bg-[#D32F2F] rounded-full"></span> 2. Product</h3>
                        <select className="w-full bg-black border border-white/20 p-4 rounded text-white font-bold mb-4 focus:border-[#D32F2F] outline-none cursor-pointer" value={posProduct} onChange={(e)=>setPosProduct(e.target.value)}>
                           <option value="">商品を選択</option>
-                          <optgroup label="電線 (Wire)">
-                            {data?.wires?.map(p => (<option key={p.id} value={p.id}>{p.name} ({p.sq}sq)</option>))}
+                          <optgroup label="電線 (主要)">
+                            {wireOptions.map(p => (<option key={p.id} value={p.id}>{p.name}</option>))}
                           </optgroup>
-                          <optgroup label="鋳造・合金 (Casting)">
-                            {data?.castings?.map(p => (<option key={p.id} value={p.id}>{p.name}</option>))}
+                          <optgroup label="鋳造・その他">
+                            {data?.castings?.map(p => (<option key={p.id} value={p.id}>{p.name} ({p.type})</option>))}
+                          </optgroup>
+                          <optgroup label="電線 (その他)">
+                            {otherWires.slice(0, 20).map(p => (<option key={p.id} value={p.id}>{p.name} {p.sq ? `(${p.sq}sq)` : ''}</option>))}
                           </optgroup>
                        </select>
                        <div className="flex gap-4">
@@ -198,6 +210,7 @@ export const AdminDashboard = ({ data, setView }: AdminProps) => {
                     <button onClick={handlePosCalculate} className="w-full bg-[#1a1a1a] border border-white/20 text-white py-6 rounded-xl font-bold text-lg tracking-widest hover:bg-[#333] transition">CALCULATE</button>
                  </div>
 
+                 {/* レシート表示 */}
                  <div className="col-span-12 lg:col-span-4">
                     <div className="bg-white text-black p-8 rounded-xl shadow-2xl relative h-full flex flex-col">
                        <div className="text-center border-b-2 border-dashed border-gray-300 pb-6 mb-6">
@@ -208,7 +221,6 @@ export const AdminDashboard = ({ data, setView }: AdminProps) => {
                           <div className="flex justify-between"><span className="text-gray-500">MEMBER</span><span>{posUser || 'Guest'}</span></div>
                           <div className="border-b border-gray-200 my-4"></div>
                           <div className="flex justify-between text-xs text-gray-500"><span>{posProduct || '-'}</span><span>{posWeight || 0}kg / {posRank}</span></div>
-                          {/* ★修正ポイント: dateStrを使用 */}
                           <div className="flex justify-between"><span className="text-gray-500">DATE</span><span>{dateStr}</span></div>
                        </div>
                        <div className="border-t-2 border-dashed border-gray-300 pt-6 mt-6">
@@ -234,6 +246,7 @@ export const AdminDashboard = ({ data, setView }: AdminProps) => {
            </div>
          )}
          {adminTab === 'STOCK' && <div className="text-center py-20 text-gray-500">在庫管理機能は準備中です</div>}
+         {adminTab === 'MEMBERS' && <div className="text-center py-20 text-gray-500">会員管理機能は準備中です</div>}
       </main>
     </div>
   );
