@@ -6,8 +6,9 @@ import { FatFooter } from './components/layout/FatFooter';
 import { RealChart } from './components/features/RealChart';
 import { Simulator } from './components/features/Simulator';
 import { PriceList } from './components/features/PriceList';
-import { AdminDashboard } from './components/admin/AdminDashboard';   // 追加
-import { MemberDashboard } from './components/member/MemberDashboard'; // 追加
+// ▼▼▼ ここが重要：作成したダッシュボードコンポーネントを読み込む ▼▼▼
+import { AdminDashboard } from './components/admin/AdminDashboard';
+import { MemberDashboard } from './components/member/MemberDashboard';
 import { MarketData, UserData } from './types';
 
 // Images (Temporary placeholder)
@@ -52,12 +53,12 @@ export default function WireMasterCloud() {
   // RENDERING
   // ----------------------------------------------------------------
   
-  // 1. ADMIN DASHBOARD
+  // 1. ADMIN DASHBOARD (ここが修正ポイント：コンポーネントを表示)
   if (view === 'ADMIN') {
       return <AdminDashboard data={data} setView={setView} />;
   }
 
-  // 2. MEMBER DASHBOARD
+  // 2. MEMBER DASHBOARD (ここが修正ポイント：コンポーネントを表示)
   if (view === 'MEMBER') {
       return <MemberDashboard user={user} data={data} setView={setView} />;
   }
@@ -112,7 +113,7 @@ export default function WireMasterCloud() {
         </>
       )}
 
-      {/* SUB PAGES (Placeholders for now) */}
+      {/* SUB PAGES (Placeholders) */}
       {['FLOW', 'MEMBERSHIP', 'COMPANY', 'CONTACT'].includes(view) && (
           <div className="py-40 text-center bg-gray-50 min-h-[60vh]">
               <h2 className="text-2xl font-serif mb-4">{view} PAGE</h2>
