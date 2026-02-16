@@ -15,14 +15,25 @@ export interface ProductCasting {
   form: 'Solid' | 'Turnings';
   description: string;
   price_offset: number;
+  ratio: number; // ★ここを追加しました
+}
+
+export interface ReservationData {
+  id: string;
+  date: string;
+  memberId: string;
+  memberName: string;
+  items: string;
+  total: number;
 }
 
 export interface MarketData {
   status: string;
   config: { market_price: number };
   history: { date: string; value: number }[];
-  wires: ProductWire[];        // 変数名を明確化
-  castings: ProductCasting[];  // 新規追加
+  wires: ProductWire[];
+  castings: ProductCasting[];
+  reservations?: ReservationData[];
   stats: { monthlyTotal: number };
 }
 
