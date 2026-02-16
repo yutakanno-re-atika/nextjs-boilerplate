@@ -1,25 +1,23 @@
-// ==========================================
-// 型定義ファイル (Type Definitions)
-// ==========================================
-
 export interface ProductWire {
   id: string;
   maker: string;
   name: string;
   sq: string;
   core: string;
-  ratio: number; // ★これが必要です
+  ratio: number;
   category: string;
 }
 
 export interface ProductCasting {
   id: string;
   name: string;
-  type: 'Brass' | 'Bronze' | 'Alu';
-  form: 'Solid' | 'Turnings';
+  // ★ここで 'Urban' や 'Sus' を許可するように修正
+  type: 'Brass' | 'Bronze' | 'Alu' | 'Sus' | 'Urban';
+  // ★CSVのデータが増えてもエラーにならないよう string に緩和
+  form: string; 
   description: string;
   price_offset: number;
-  ratio: number; // ★★★ これがないとビルドエラーになります ★★★
+  ratio: number;
 }
 
 export interface ReservationData {
@@ -35,8 +33,8 @@ export interface MarketData {
   status: string;
   config: { market_price: number };
   history: { date: string; value: number }[];
-  wires: ProductWire[];        // 変数名を明確化
-  castings: ProductCasting[];  // 新規追加
+  wires: ProductWire[];
+  castings: ProductCasting[];
   reservations?: ReservationData[];
   stats: { monthlyTotal: number };
 }
