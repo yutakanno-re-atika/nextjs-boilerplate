@@ -3,19 +3,20 @@
 import React, { useState, useEffect } from 'react';
 import { GlobalNav } from './components/layout/GlobalNav';
 import { FatFooter } from './components/layout/FatFooter';
-import { RealChart } from './components/features/RealChart'; // 中身は建値一覧に変更済み
+import { RealChart } from './components/features/RealChart'; // 建値一覧パネル
 import { Simulator } from './components/features/Simulator';
 import { PriceList } from './components/features/PriceList';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { MemberDashboard } from './components/member/MemberDashboard';
 import { MarketData, UserData } from './types';
 
-// Images
+// Images (ここを修正)
 const IMAGES = {
-  hero: "/images/factory_floor.png",
+  hero: "/images/image_4.png", // 新しい工場の画像に変更
 };
 
 export default function WireMasterCloud() {
+  // ... (以下、変更なし)
   const [view, setView] = useState<'LP' | 'LOGIN' | 'ADMIN' | 'MEMBER' | 'FLOW' | 'MEMBERSHIP' | 'COMPANY' | 'CONTACT'>('LP');
   const [data, setData] = useState<MarketData | null>(null);
   const [user, setUser] = useState<UserData | null>(null);
@@ -75,6 +76,7 @@ export default function WireMasterCloud() {
             {/* HERO SECTION */}
             <section className="relative h-[70vh] min-h-[500px] flex items-center bg-[#D32F2F] text-white overflow-hidden">
                 <div className="absolute inset-0 z-0">
+                    {/* ここで新しい画像が使われます */}
                     <img src={IMAGES.hero} className="w-full h-full object-cover opacity-30 mix-blend-multiply grayscale" alt="Factory" />
                     <div className="absolute inset-0 bg-gradient-to-br from-[#B71C1C] via-[#D32F2F] to-transparent opacity-90"></div>
                 </div>
@@ -95,9 +97,7 @@ export default function WireMasterCloud() {
                 </div>
             </section>
 
-            {/* ★修正ポイント: ここに建値リスト(RealChart)を配置 */}
             <RealChart data={data?.history || []} currentPrice={marketPrice} />
-
             <Simulator marketPrice={marketPrice} />
             <PriceList data={data} marketPrice={marketPrice} />
         </>
