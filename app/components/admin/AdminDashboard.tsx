@@ -30,7 +30,7 @@ export const AdminDashboard = ({ data, setView }: AdminProps) => {
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [lastTxData, setLastTxData] = useState<any>(null);
   
-  // ★修正ポイント: Hydration Errorを防ぐため、日付はクライアントサイドでのみ生成
+  // ★修正ポイント: Hydration Error対策 (サーバーとクライアントの日付不一致を防ぐ)
   const [dateStr, setDateStr] = useState<string>('');
   useEffect(() => {
     setDateStr(new Date().toLocaleDateString());
@@ -134,107 +134,4 @@ export const AdminDashboard = ({ data, setView }: AdminProps) => {
     const tax = Math.floor(price * taxRate);
     const total = price + tax;
 
-    autoTable(doc, {
-      head: [['品目', '重量', 'ランク', '金額']],
-      body: [[lastTxData.product, `${lastTxData.weight} kg`, lastTxData.rank, `¥${price.toLocaleString()}`], ['', '', '消費税 (10%)', `¥${tax.toLocaleString()}`], ['', '', '合計金額', `¥${total.toLocaleString()}`]],
-      startY: 50, theme: 'grid', styles: { font: 'NotoSansJP', fontStyle: 'normal' }, headStyles: { fillColor: [20, 20, 20] }
-    });
-    doc.save(`Invoice_${lastTxData.id}.pdf`);
-  };
-
-  return (
-    <div className="min-h-screen bg-[#111] text-white font-sans flex flex-col md:flex-row">
-      <aside className="w-full md:w-80 bg-black p-8 border-r border-white/10">
-        <div className="mb-12 cursor-pointer" onClick={()=>setView('LP')}><h1 className="text-2xl font-serif font-bold text-white">FACTORY<span className="text-[#D32F2F]">OS</span></h1><p className="text-[10px] text-gray-500 uppercase tracking-widest">Admin Control</p></div>
-        <nav className="space-y-4">
-            <button onClick={()=>setAdminTab('POS')} className={`w-full text-left p-4 rounded text-sm font-bold transition flex items-center gap-3 ${adminTab==='POS' ? 'bg-white/5 border border-white/10 text-white' : 'text-gray-500 hover:text-white'}`}><Icons.Calc /> 買取POSレジ</button>
-            <button onClick={()=>setAdminTab('STOCK')} className={`w-full text-left p-4 rounded text-sm font-bold transition flex items-center gap-3 ${adminTab==='STOCK' ? 'bg-white/5 border border-white/10 text-white' : 'text-gray-500 hover:text-white'}`}><Icons.Box /> 在庫管理</button>
-            <button onClick={()=>setAdminTab('MEMBERS')} className={`w-full text-left p-4 rounded text-sm font-bold transition flex items-center gap-3 ${adminTab==='MEMBERS' ? 'bg-white/5 border border-white/10 text-white' : 'text-gray-500 hover:text-white'}`}><Icons.Users /> 会員管理</button>
-        </nav>
-      </aside>
-
-      <main className="flex-1 p-8 overflow-y-auto">
-          {adminTab === 'POS' && (
-            <div className="max-w-4xl mx-auto animate-in fade-in zoom-in duration-300">
-              <header className="flex justify-between items-end mb-12">
-                <h2 className="text-4xl font-serif font-bold">Purchase Station</h2>
-                <div className="flex gap-4"><span className="text-xs bg-green-500/20 text-green-500 px-3 py-1 rounded-full border border-green-500/30">SYSTEM ONLINE</span></div>
-              </header>
-
-              <div className="grid grid-cols-12 gap-8">
-                 <div className="col-span-12 lg:col-span-8 space-y-8">
-                    <div className="bg-[#1a1a1a] p-8 rounded-xl border border-white/10">
-                       <h3 className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-4 flex items-center gap-2"><span className="w-2 h-2 bg-[#D32F2F] rounded-full"></span> 1. Customer</h3>
-                       <div className="flex gap-4">
-                          <input className="flex-1 bg-black border border-white/20 p-4 rounded text-white font-mono focus:border-[#D32F2F] outline-none" placeholder="会員ID / 電話番号" value={posUser} onChange={(e)=>setPosUser(e.target.value)} />
-                          <button className="bg-white/10 border border-white/20 px-6 rounded hover:bg-white/20"><Icons.Search /></button>
-                       </div>
-                    </div>
-
-                    <div className="bg-[#1a1a1a] p-8 rounded-xl border border-white/10">
-                       <h3 className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-4 flex items-center gap-2"><span className="w-2 h-2 bg-[#D32F2F] rounded-full"></span> 2. Product</h3>
-                       <select className="w-full bg-black border border-white/20 p-4 rounded text-white font-bold mb-4 focus:border-[#D32F2F] outline-none cursor-pointer" value={posProduct} onChange={(e)=>setPosProduct(e.target.value)}>
-                          <option value="">商品を選択</option>
-                          <optgroup label="電線 (Wire)">
-                            {data?.wires?.map(p => (<option key={p.id} value={p.id}>{p.name} ({p.sq}sq)</option>))}
-                          </optgroup>
-                          <optgroup label="鋳造・合金 (Casting)">
-                            {data?.castings?.map(p => (<option key={p.id} value={p.id}>{p.name}</option>))}
-                          </optgroup>
-                       </select>
-                       <div className="flex gap-4">
-                          <div className="flex-1">
-                             <label className="text-[10px] text-gray-500 uppercase tracking-widest block mb-2">Weight (kg)</label>
-                             <input type="number" className="w-full bg-black border border-white/20 p-4 rounded text-white font-mono text-xl focus:border-[#D32F2F] outline-none" placeholder="0.0" value={posWeight} onChange={(e)=>setPosWeight(e.target.value)} />
-                          </div>
-                          <div className="w-1/3">
-                             <label className="text-[10px] text-gray-500 uppercase tracking-widest block mb-2">Rank</label>
-                             <select className="w-full bg-black border border-white/20 p-4 rounded text-white font-bold focus:border-[#D32F2F] outline-none" value={posRank} onChange={(e:any)=>setPosRank(e.target.value)}>
-                                <option value="A">A (+2%)</option><option value="B">B (Std)</option><option value="C">C (-5%)</option>
-                             </select>
-                          </div>
-                       </div>
-                    </div>
-                    <button onClick={handlePosCalculate} className="w-full bg-[#1a1a1a] border border-white/20 text-white py-6 rounded-xl font-bold text-lg tracking-widest hover:bg-[#333] transition">CALCULATE</button>
-                 </div>
-
-                 <div className="col-span-12 lg:col-span-4">
-                    <div className="bg-white text-black p-8 rounded-xl shadow-2xl relative h-full flex flex-col">
-                       <div className="text-center border-b-2 border-dashed border-gray-300 pb-6 mb-6">
-                          <h4 className="font-serif font-bold text-xl mb-1">RECEIPT</h4>
-                          <p className="text-xs text-gray-500 uppercase tracking-widest">Tsukisamu Mfg.</p>
-                       </div>
-                       <div className="flex-1 space-y-4 font-mono text-sm">
-                          <div className="flex justify-between"><span className="text-gray-500">MEMBER</span><span>{posUser || 'Guest'}</span></div>
-                          <div className="border-b border-gray-200 my-4"></div>
-                          <div className="flex justify-between text-xs text-gray-500"><span>{posProduct || '-'}</span><span>{posWeight || 0}kg / {posRank}</span></div>
-                          {/* ★修正ポイント: dateStrを使用 */}
-                          <div className="flex justify-between"><span className="text-gray-500">DATE</span><span>{dateStr}</span></div>
-                       </div>
-                       <div className="border-t-2 border-dashed border-gray-300 pt-6 mt-6">
-                          <div className="flex justify-between items-end mb-6"><span className="font-bold text-gray-600">TOTAL</span><span className="text-3xl font-black tracking-tighter">¥{posResult ? posResult.toLocaleString() : '0'}</span></div>
-                          {posResult !== null && (<button onClick={handlePosSubmitWithInvoice} disabled={isSubmitting} className="w-full bg-[#D32F2F] text-white py-4 rounded font-bold hover:bg-[#B71C1C] transition">{isSubmitting ? 'PROCESSING...' : 'CONFIRM'}</button>)}
-                       </div>
-                    </div>
-                 </div>
-              </div>
-
-              {/* 明細発行モーダル */}
-              {showInvoiceModal && (
-                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-                    <div className="bg-white text-black p-8 rounded-xl max-w-sm w-full text-center">
-                       <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center text-white text-3xl mx-auto mb-4"><Icons.Check /></div>
-                       <h3 className="text-2xl font-bold mb-2">取引完了</h3>
-                       <p className="text-gray-500 mb-6">データ登録完了。明細を発行しますか？</p>
-                       <button onClick={generateInvoicePDF} className="w-full bg-[#111] text-white py-3 rounded font-bold mb-3 hover:bg-[#333]">買取明細書(PDF)を発行</button>
-                       <button onClick={()=>setShowInvoiceModal(false)} className="text-sm text-gray-400 hover:text-black">閉じる</button>
-                    </div>
-                 </div>
-              )}
-           </div>
-         )}
-         {adminTab === 'STOCK' && <div className="text-center py-20 text-gray-500">在庫管理機能は準備中です</div>}
-      </main>
-    </div>
-  );
-};
+    autoTable(doc,
