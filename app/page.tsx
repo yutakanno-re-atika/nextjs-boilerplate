@@ -1,127 +1,196 @@
-"use client";
+// =========================================================
+// WIRE MASTER CLOUD - BACKEND (GAS)
+// Version: 2.0 (Hybrid: Wire & Casting)
+// =========================================================
 
-import React, { useState, useEffect } from 'react';
-import { GlobalNav } from './components/layout/GlobalNav';
-import { FatFooter } from './components/layout/FatFooter';
-import { RealChart } from './components/features/RealChart';
-import { Simulator } from './components/features/Simulator';
-import { PriceList } from './components/features/PriceList';
-// ▼▼▼ ここが重要：作成したダッシュボードコンポーネントを読み込む ▼▼▼
-import { AdminDashboard } from './components/admin/AdminDashboard';
-import { MemberDashboard } from './components/member/MemberDashboard';
-import { MarketData, UserData } from './types';
-
-// Images (Temporary placeholder)
-const IMAGES = {
-  hero: "/images/factory_floor.png",
-  weight: "/images/weighing_station.jpg",
-  nugget: "/images/copper_nugget.png",
-  factory: "/images/factory_floor.png"
-};
-
-export default function WireMasterCloud() {
-  const [view, setView] = useState<'LP' | 'LOGIN' | 'ADMIN' | 'MEMBER' | 'FLOW' | 'MEMBERSHIP' | 'COMPANY' | 'CONTACT'>('LP');
-  const [data, setData] = useState<MarketData | null>(null);
-  const [user, setUser] = useState<UserData | null>(null);
-
-  // Fetch Data on Load
-  useEffect(() => {
-    fetch('/api/gas').then(res => res.json()).then(d => { 
-        if(d.status === 'success') {
-            setData(d);
-        }
-    });
-  }, []);
-
-  const marketPrice = data?.config?.market_price || 0;
-
-  // --- Login Logic ---
-  const handleLogin = async (e: any) => {
-    e.preventDefault();
-    const res = await fetch('/api/gas', { 
-        method: 'POST', 
-        body: JSON.stringify({ action: 'AUTH_LOGIN', loginId: e.target.loginId.value, password: e.target.password.value }) 
-    });
-    const result = await res.json();
-    if (result.status === 'success') {
-      setUser(result.user);
-      setView(result.user.role === 'ADMIN' ? 'ADMIN' : 'MEMBER');
-    } else { alert(result.message); }
+// 1. GETリクエスト処理 (データ取得)
+function doGet(e) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const result = {
+    status: 'success',
+    config: {},
+    history: [],
+    wires: [],    // 旧 products (電線)
+    castings: [], // 新規追加 (鋳造)
+    reservations: [], // 管理画面用
+    stats: {}
   };
 
-  // ----------------------------------------------------------------
-  // RENDERING
-  // ----------------------------------------------------------------
+  try {
+    result.config = getConfig(ss);
+    result.history = getMarketHistory(ss);
+    result.wires = getProductsWire(ss);
+    result.castings = getProductsCasting(ss);
+    // 管理者用: 本日の予約を取得
+    result.reservations = getReservations(ss);
+
+  } catch (error) {
+    return createJSONOutput({ status: 'error', message: error.toString() });
+  }
+
+  return createJSONOutput(result);
+}
+
+// 2. POSTリクエスト処理 (ログイン、登録など)
+function doPost(e) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
   
-  // 1. ADMIN DASHBOARD (ここが修正ポイント：コンポーネントを表示)
-  if (view === 'ADMIN') {
-      return <AdminDashboard data={data} setView={setView} />;
+  try {
+    const params = JSON.parse(e.postData.contents);
+    const action = params.action;
+
+    // --- A. ログイン認証 ---
+    if (action === 'AUTH_LOGIN') {
+      const user = authenticateUser(ss, params.loginId, params.password);
+      if (user) {
+        return createJSONOutput({ status: 'success', user: user });
+      } else {
+        return createJSONOutput({ status: 'error', message: 'IDまたはパスワードが違います' });
+      }
+    }
+
+    // --- B. 取引登録 (POSレジ) ---
+    if (action === 'REGISTER_TRANSACTION') {
+      const txId = registerTransaction(ss, params);
+      return createJSONOutput({ status: 'success', data: { transactionId: txId } });
+    }
+
+    // --- C. 予約登録 ---
+    if (action === 'REGISTER_RESERVATION') {
+      const resId = registerReservation(ss, params);
+      return createJSONOutput({ status: 'success', data: { reservationId: resId } });
+    }
+
+    return createJSONOutput({ status: 'error', message: 'Invalid Action' });
+
+  } catch (error) {
+    return createJSONOutput({ status: 'error', message: error.toString() });
   }
+}
 
-  // 2. MEMBER DASHBOARD (ここが修正ポイント：コンポーネントを表示)
-  if (view === 'MEMBER') {
-      return <MemberDashboard user={user} data={data} setView={setView} />;
+// =========================================================
+// 内部関数 (ロジック)
+// =========================================================
+
+// JSONレスポンス生成ヘルパー
+function createJSONOutput(data) {
+  return ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// コンフィグ取得
+function getConfig(ss) {
+  const sheet = ss.getSheetByName('Config');
+  if (!sheet) return { market_price: 1450 }; // デフォルト値
+  const data = sheet.getDataRange().getValues();
+  const config = {};
+  data.forEach(row => { config[row[0]] = row[1]; });
+  return config;
+}
+
+// 相場履歴取得
+function getMarketHistory(ss) {
+  // 簡易的にConfigの値を現在値として返す（本来はHistoryシートから取得）
+  const sheet = ss.getSheetByName('Config');
+  const price = sheet ? sheet.getRange("B1").getValue() : 1450; 
+  // ダミーの履歴データを生成（本来は蓄積データを使う）
+  return [
+    { date: '2025/02/01', value: price - 50 },
+    { date: '2025/02/05', value: price - 20 },
+    { date: '2025/02/10', value: price + 10 },
+    { date: 'NOW', value: price }
+  ];
+}
+
+// 電線マスタ取得
+function getProductsWire(ss) {
+  const sheet = ss.getSheetByName('Products_Wire'); // シート名注意
+  if (!sheet) return [];
+  const data = sheet.getDataRange().getValues();
+  data.shift(); // ヘッダー削除
+  return data.map(row => ({
+    id: row[0], maker: row[1], name: row[2], sq: row[3], core: row[4], ratio: row[5], category: row[6]
+  })).filter(p => p.id);
+}
+
+// 鋳造マスタ取得
+function getProductsCasting(ss) {
+  const sheet = ss.getSheetByName('Products_Casting'); // シート名注意
+  if (!sheet) return [];
+  const data = sheet.getDataRange().getValues();
+  data.shift();
+  return data.map(row => ({
+    id: row[0], name: row[1], type: row[2], form: row[3], ratio: row[4], price_offset: row[5], description: row[6]
+  })).filter(p => p.id);
+}
+
+// 予約取得 (Admin用)
+function getReservations(ss) {
+  const sheet = ss.getSheetByName('Reservations');
+  if (!sheet) return [];
+  const data = sheet.getDataRange().getValues();
+  data.shift();
+  // 直近のものだけ返すなどのフィルタリングが可能
+  return data.map(row => ({
+    id: row[0], date: row[1], memberId: row[2], memberName: row[3], items: row[4], total: row[5]
+  })).reverse().slice(0, 10);
+}
+
+// ユーザー認証
+function authenticateUser(ss, loginId, password) {
+  const sheet = ss.getSheetByName('Clients');
+  if (!sheet) return null;
+  const data = sheet.getDataRange().getValues();
+  data.shift();
+  
+  // カラム想定: A:ID, B:Pass, C:Name, D:Rank, E:Role
+  const userRow = data.find(row => row[0] == loginId && row[1] == password);
+  
+  if (userRow) {
+    return {
+      id: userRow[0],
+      name: userRow[2],
+      rank: userRow[3],
+      role: userRow[4] // 'ADMIN' or 'MEMBER'
+    };
   }
+  return null;
+}
 
-  // 3. PUBLIC VIEWS
-  return (
-    <div className="min-h-screen bg-white text-[#111] font-sans selection:bg-[#D32F2F] selection:text-white pt-20">
-      <GlobalNav setView={setView} view={view} />
+// 取引登録
+function registerTransaction(ss, params) {
+  let sheet = ss.getSheetByName('Transactions');
+  if (!sheet) {
+    sheet = ss.insertSheet('Transactions');
+    sheet.appendRow(['ID', 'Date', 'MemberID', 'Product', 'Weight', 'Rank', 'Price', 'Status']);
+  }
+  
+  const txId = 'TX-' + new Date().getTime();
+  const date = new Date().toLocaleString('ja-JP');
+  
+  sheet.appendRow([
+    txId, date, params.memberId, params.productName, 
+    params.weight, params.rank, params.price, 'COMPLETED'
+  ]);
+  
+  return txId;
+}
 
-      {view === 'LOGIN' && (
-          <div className="fixed inset-0 z-[100] bg-[#D32F2F]/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300">
-            <div className="bg-white w-full max-w-sm p-12 shadow-2xl relative">
-              <button onClick={() => setView('LP')} className="absolute top-6 right-6 text-gray-400 hover:text-black transition">✕</button>
-              <h2 className="text-xl font-serif text-[#D32F2F] mb-8 tracking-widest text-center font-bold">関係者ログイン</h2>
-              <form onSubmit={handleLogin} className="space-y-6">
-                <input name="loginId" className="w-full bg-gray-50 border-b-2 border-gray-200 py-3 px-4 text-black outline-none focus:border-[#D32F2F] transition-colors font-mono text-sm" placeholder="ID" required />
-                <input name="password" type="password" className="w-full bg-gray-50 border-b-2 border-gray-200 py-3 px-4 text-black outline-none focus:border-[#D32F2F] transition-colors font-mono text-sm" placeholder="PASSWORD" required />
-                <button className="w-full bg-[#111] text-white py-4 text-xs font-bold tracking-widest hover:bg-[#D32F2F] transition-colors duration-300 shadow-lg">ENTER SYSTEM</button>
-              </form>
-            </div>
-          </div>
-      )}
-
-      {view === 'LP' && (
-        <>
-            {/* HERO SECTION */}
-            <section className="relative h-[85vh] min-h-[600px] flex items-center bg-[#D32F2F] text-white overflow-hidden">
-                <div className="absolute inset-0 z-0">
-                    <img src={IMAGES.hero} className="w-full h-full object-cover opacity-20 mix-blend-multiply grayscale" alt="Factory" />
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#B71C1C] via-[#D32F2F] to-[#E53935] opacity-90"></div>
-                </div>
-                <div className="max-w-[1400px] mx-auto px-6 w-full relative z-10 grid lg:grid-cols-12 gap-12 items-center">
-                    <div className="lg:col-span-7 space-y-12">
-                        <div className="space-y-6 relative">
-                            <div className="inline-block bg-white text-[#D32F2F] px-4 py-1 text-xs font-bold tracking-widest mb-4">SINCE 1961</div>
-                            <h1 className="text-6xl md:text-8xl font-serif font-medium leading-tight tracking-tight drop-shadow-sm"><span className="block animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">資源を、</span><span className="block animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">あるべき<span className="border-b-4 border-white/80 pb-2">価値</span>へ。</span></h1>
-                        </div>
-                        <p className="text-white/90 text-sm md:text-base leading-loose max-w-lg font-medium tracking-wide animate-in fade-in duration-1000 delay-500 border-l-2 border-white/30 pl-6">月寒製作所は「目利き」と「技術」で、日本のリサイクルインフラを支え続けます。独自のナゲットプラントによる中間コストの排除。それが、高価買取の根拠です。</p>
-                        <div className="pt-8 flex gap-6 animate-in fade-in duration-1000 delay-700"><a href="#simulator" className="bg-white text-[#D32F2F] px-8 py-4 text-sm font-bold tracking-widest hover:bg-[#111] hover:text-white transition-all shadow-xl">査定シミュレーション</a></div>
-                    </div>
-                    <div className="lg:col-span-5 animate-in fade-in slide-in-from-right-8 duration-1000 delay-300">
-                        <div className="backdrop-blur-sm bg-white/10 border border-white/20 p-8 md:p-12 shadow-2xl relative overflow-hidden">
-                            <RealChart data={data?.history || []} currentPrice={marketPrice} />
-                            <div className="mt-8 pt-6 border-t border-white/20 flex justify-between items-center"><div><p className="text-[9px] text-white/70 uppercase tracking-widest mb-1">Factory Status</p><p className="text-xs font-medium tracking-wider flex items-center gap-2 text-white"><span className="w-2 h-2 bg-green-400 rounded-full shadow-[0_0_10px_#4ade80]"></span> Accepting</p></div><div className="text-right"><p className="text-xs font-serif italic text-white/80">Tomakomai, Hokkaido</p></div></div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <Simulator marketPrice={marketPrice} />
-            <PriceList data={data} marketPrice={marketPrice} />
-        </>
-      )}
-
-      {/* SUB PAGES (Placeholders) */}
-      {['FLOW', 'MEMBERSHIP', 'COMPANY', 'CONTACT'].includes(view) && (
-          <div className="py-40 text-center bg-gray-50 min-h-[60vh]">
-              <h2 className="text-2xl font-serif mb-4">{view} PAGE</h2>
-              <p className="text-gray-500">現在コンテンツ準備中です。</p>
-          </div>
-      )}
-
-      <FatFooter setView={setView} />
-    </div>
-  );
+// 予約登録
+function registerReservation(ss, params) {
+  let sheet = ss.getSheetByName('Reservations');
+  if (!sheet) {
+    sheet = ss.insertSheet('Reservations');
+    sheet.appendRow(['ID', 'VisitDate', 'MemberID', 'Name', 'ItemsJSON', 'TotalEstimate']);
+  }
+  
+  const resId = 'RES-' + new Date().getTime();
+  const itemsJson = JSON.stringify(params.items);
+  
+  sheet.appendRow([
+    resId, params.visitDate, params.memberId, params.memberName, 
+    itemsJson, params.totalEstimate
+  ]);
+  
+  return resId;
 }
