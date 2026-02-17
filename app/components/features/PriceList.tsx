@@ -2,13 +2,14 @@
 import React, { useState, useMemo } from 'react';
 import { MarketData } from '../../types';
 
-// 画像マッピング (データと画像を紐付け)
+// 画像マッピング (copperを追加)
 const IMG_MAP: Record<string, string> = {
-  'Bronze': '/images/copper_nugget.png',
-  'Brass': '/images/copper_nugget.png',
-  'Urban': '/images/factory_floor.png',
-  'MIX': '/images/mixed_wire.png', 
-  'DEFAULT': '/images/factory_floor.png'
+  'bronze': '/images/copper_nugget.png',
+  'brass': '/images/copper_nugget.png',
+  'urban': '/images/factory_floor.png',
+  'copper': '/images/copper_nugget.png', // 新規: 銅スクラップ用
+  'mix': '/images/mixed_wire.png', 
+  'default': '/images/factory_floor.png'
 };
 
 const Icons = {
@@ -18,7 +19,7 @@ const Icons = {
 export const PriceList = ({ data, marketPrice }: { data: MarketData | null, marketPrice: number }) => {
   const [activeTab, setActiveTab] = useState<'WIRE' | 'CASTING'>('WIRE');
 
-  // 1. 電線： "MIX" または "ミックス" を含むものだけ抽出
+  // 電線: MIX系のみ
   const displayWires = useMemo(() => {
     if (!data?.wires) return [];
     return data.wires.filter(w => 
@@ -26,16 +27,14 @@ export const PriceList = ({ data, marketPrice }: { data: MarketData | null, mark
     );
   }, [data?.wires]);
 
-  // 2. 鋳造・その他： APIから来たデータを「全件」表示 (余計なフィルタを廃止)
+  // 鋳造・銅スクラップ: 全件表示
   const displayCastings = useMemo(() => {
     if (!data?.castings) return [];
     return data.castings;
   }, [data?.castings]);
 
-  // データロード中
   if (!data) return <div className="py-20 text-center text-gray-400 animate-pulse">Loading Realtime Data...</div>;
 
-  // 安全な銅建値 (0ならデフォルト2140円を使用)
   const safeMarketPrice = marketPrice > 0 ? marketPrice : 2140;
 
   return (
@@ -59,18 +58,16 @@ export const PriceList = ({ data, marketPrice }: { data: MarketData | null, mark
             電線 (ミックス)
           </button>
           <button onClick={() => setActiveTab('CASTING')} className={`px-6 py-3 rounded-full font-bold transition-all ${activeTab === 'CASTING' ? 'bg-[#D32F2F] text-white shadow-lg' : 'bg-white text-gray-600 border hover:bg-gray-50'}`}>
-            鋳造・都市鉱山
+            銅・非鉄スクラップ
           </button>
         </div>
 
         {/* Grid Display */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           
-          {/* --- WIRE LIST --- */}
+          {/* WIRE LIST */}
           {activeTab === 'WIRE' && displayWires.map((item, idx) => {
-            // 電線価格: (建値 * 歩留まり% * 0.9) - 加工費15円
             const price = Math.floor((safeMarketPrice * (item.ratio / 100) * 0.9) - 15);
-            
             return (
               <div key={`w-${idx}`} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
                 <div className="flex justify-between items-start mb-2">
@@ -85,18 +82,23 @@ export const PriceList = ({ data, marketPrice }: { data: MarketData | null, mark
             );
           })}
 
-          {/* --- CASTING LIST --- */}
+          {/* CASTING LIST (銅・真鍮・砲金など) */}
           {activeTab === 'CASTING' && displayCastings.map((item, idx) => {
-            // 鋳造価格: (建値 * 歩留まり%) + オフセット(マイナス値)
-            // ★修正ポイント: offsetはマイナスで来るので「足す」のが正解
+            // 計算式: 建値 * 歩留まり + オフセット(マイナス値)
             const rawPrice = safeMarketPrice * (item.ratio / 100);
             const price = Math.floor(rawPrice + (item.price_offset || 0));
 
-            // 色分け装飾
+            // 色分けロジック (小文字対応 & copper追加)
             let typeStyle = 'bg-gray-100 text-gray-600';
-            if (item.type === 'Bronze') typeStyle = 'bg-orange-100 text-orange-800';
-            if (item.type === 'Brass') typeStyle = 'bg-yellow-100 text-yellow-800';
-            if (item.type === 'Urban') typeStyle = 'bg-purple-100 text-purple-800';
+            const typeLower = (item.type || '').toLowerCase();
+            
+            if (typeLower === 'bronze') typeStyle = 'bg-orange-100 text-orange-800';
+            if (typeLower === 'brass') typeStyle = 'bg-yellow-100 text-yellow-800';
+            if (typeLower === 'urban') typeStyle = 'bg-purple-100 text-purple-800';
+            if (typeLower === 'copper') typeStyle = 'bg-red-100 text-red-800'; // ★銅用に追加
+            if (typeLower === 'lead') typeStyle = 'bg-slate-100 text-slate-800';
+            if (typeLower === 'zinc') typeStyle = 'bg-gray-200 text-gray-800';
+            if (typeLower === 'tin') typeStyle = 'bg-blue-100 text-blue-800';
 
             return (
               <div key={`c-${idx}`} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
@@ -104,28 +106,24 @@ export const PriceList = ({ data, marketPrice }: { data: MarketData | null, mark
                    <h3 className="font-bold text-lg text-gray-800">{item.name}</h3>
                    <span className={`text-xs px-2 py-1 rounded font-bold ${typeStyle}`}>{item.type}</span>
                 </div>
-                <p className="text-xs text-gray-500 mt-2 min-h-[1.5em]">{item.description || item.form}</p>
+                
+                {/* 説明文がない場合はフォーム(Solid等)を表示、それもなければハイフン */}
+                <p className="text-xs text-gray-500 mt-2 min-h-[1.5em]">
+                  {item.description ? item.description : (item.form || '-')}
+                </p>
                 
                 <div className="flex items-end gap-2 mt-4 border-t border-gray-50 pt-4">
                   <span className="text-3xl font-black text-[#D32F2F]">¥{price.toLocaleString()}</span>
                   <span className="text-sm text-gray-500 mb-1">/ kg</span>
                 </div>
-                {/* デバッグ用: 計算根拠を小さく表示 */}
-                <div className="mt-1 text-[10px] text-gray-300">
-                   Ratio: {item.ratio}% / Offset: {item.price_offset}
-                </div>
               </div>
             );
           })}
-
-          {/* Empty State */}
-          {activeTab === 'WIRE' && displayWires.length === 0 && (
-             <div className="col-span-full py-12 text-center text-gray-400">電線データ (MIX) が見つかりません</div>
-          )}
+          
+          {/* データなし時の表示 */}
           {activeTab === 'CASTING' && displayCastings.length === 0 && (
-             <div className="col-span-full py-12 text-center text-gray-400">鋳造データが見つかりません (GASを確認してください)</div>
+             <div className="col-span-full py-12 text-center text-gray-400">データが見つかりません</div>
           )}
-
         </div>
       </div>
     </section>
