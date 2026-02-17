@@ -8,7 +8,8 @@ import { Simulator } from './components/features/Simulator';
 import { PriceList } from './components/features/PriceList';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { MemberDashboard } from './components/member/MemberDashboard';
-import { FlowGuide } from './components/features/FlowGuide'; // ★新規追加: 買取の流れ
+import { FlowGuide } from './components/features/FlowGuide'; // 買取の流れ
+import { MembershipGuide } from './components/features/MembershipGuide'; // 会員制度
 import { MarketData, UserData } from './types';
 
 // Images
@@ -103,9 +104,10 @@ export default function WireMasterCloud() {
       )}
 
       {/* SUB PAGES */}
-      {view === 'FLOW' && <FlowGuide />}  {/* ★修正ポイント */}
+      {view === 'FLOW' && <FlowGuide />}
+      {view === 'MEMBERSHIP' && <MembershipGuide />}
 
-      {['MEMBERSHIP', 'COMPANY', 'CONTACT'].includes(view) && (
+      {['COMPANY', 'CONTACT'].includes(view) && (
           <div className="py-40 text-center bg-gray-50 min-h-[60vh]">
               <h2 className="text-2xl font-serif mb-4">{view} PAGE</h2>
               <p className="text-gray-500">準備中</p>
