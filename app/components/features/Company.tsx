@@ -1,6 +1,5 @@
 "use client";
 import React from 'react';
-// lucide-react のインポートを削除
 
 export const Company = () => {
   const companyInfo = {
@@ -25,7 +24,7 @@ export const Company = () => {
       tel: "011-881-1116",
       fax: "011-882-4439",
       type: "head",
-      icon: "⚡️" // アイコンを絵文字に変更
+      icon: "⚡️"
     },
     {
       name: "原料事業部・苫小牧工場",
@@ -33,7 +32,7 @@ export const Company = () => {
       tel: "0144-55-5544",
       fax: "0144-55-5545",
       type: "plant",
-      icon: "♻️" // アイコンを絵文字に変更
+      icon: "♻️"
     }
   ];
 
@@ -60,62 +59,68 @@ export const Company = () => {
   ];
 
   return (
-    <div className="w-full bg-slate-50 min-h-screen pb-20">
+    <div className="w-full bg-white text-[#111] font-sans">
       {/* 1. Hero Section */}
-      <div className="bg-[#1a237e] text-white py-20 px-6 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-1/2 h-full bg-white/5 skew-x-12 transform origin-bottom-left"></div>
-        <div className="max-w-5xl mx-auto relative z-10 text-center">
-          <h1 className="text-3xl md:text-5xl font-bold tracking-widest mb-6">信頼の経営</h1>
-          <p className="text-lg md:text-xl opacity-90 font-light tracking-wider leading-relaxed">
-            信頼を礎に優れた製品を市場に提供する。<br/>
-            電気と金属の融合で、未来のインフラを支えます。
-          </p>
-          <div className="mt-8 w-16 h-1 bg-yellow-400 mx-auto"></div>
-        </div>
-      </div>
-
-      <div className="max-w-5xl mx-auto px-4 md:px-8 py-12 space-y-16">
+      <section className="relative bg-[#D32F2F] text-white py-24 px-6 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#B71C1C] via-[#D32F2F] to-transparent opacity-90"></div>
+        {/* 背景画像があればここに配置 */}
+        {/* <div className="absolute inset-0 z-0 opacity-20 mix-blend-multiply grayscale"><img src="..." alt="" className="w-full h-full object-cover" /></div> */}
         
-        {/* 2. Company Profile */}
+        <div className="max-w-5xl mx-auto relative z-10 text-center md:text-left">
+          <div className="inline-block bg-white text-[#D32F2F] px-4 py-1 text-xs font-bold tracking-widest mb-4">COMPANY PROFILE</div>
+          <h1 className="text-4xl md:text-6xl font-serif font-medium tracking-tight mb-6">
+            信頼と技術の<br/>
+            <span className="border-b-4 border-white/60">モノづくり</span>
+          </h1>
+          <p className="text-lg md:text-xl opacity-90 font-light tracking-wider leading-relaxed max-w-2xl">
+            電気と金属の融合で、未来のインフラを支える。<br/>
+            創業以来の変わらぬ使命です。
+          </p>
+        </div>
+      </section>
+
+      <div className="max-w-5xl mx-auto px-6 py-20 space-y-20">
+        
+        {/* 2. Company Profile Table */}
         <section>
-          <div className="flex items-center gap-3 mb-6 border-b-2 border-[#1a237e] pb-2">
-            <span className="text-2xl">🏢</span>
-            <h2 className="text-2xl font-bold text-gray-800 tracking-wide">会社概要</h2>
+          <div className="flex items-center gap-4 mb-8 pb-4 border-b-2 border-[#D32F2F]">
+            <span className="text-3xl">🏢</span>
+            <h2 className="text-3xl font-serif font-bold tracking-wide">会社概要</h2>
           </div>
           
-          <div className="bg-white shadow-lg rounded-sm overflow-hidden border border-gray-200">
-            <dl className="divide-y divide-gray-100">
-              <div className="grid grid-cols-1 md:grid-cols-4">
-                <dt className="bg-gray-50 text-gray-600 font-bold py-4 px-6 md:border-r border-gray-100 flex items-center">商号</dt>
-                <dd className="col-span-3 py-4 px-6 text-gray-800 font-medium">
-                  {companyInfo.name}<br/>
-                  <span className="text-sm text-gray-400 font-normal">{companyInfo.enName}</span>
+          <div className="border-t border-gray-200">
+            <dl>
+              <div className="grid grid-cols-1 md:grid-cols-4 border-b border-gray-200">
+                <dt className="bg-gray-100 font-bold py-5 px-6 flex items-center">商号</dt>
+                <dd className="col-span-3 py-5 px-6 font-medium flex flex-col justify-center">
+                  <span className="text-xl">{companyInfo.name}</span>
+                  <span className="text-sm text-gray-500 font-normal tracking-wider mt-1">{companyInfo.enName}</span>
                 </dd>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-4">
-                <dt className="bg-gray-50 text-gray-600 font-bold py-4 px-6 md:border-r border-gray-100 flex items-center">代表者</dt>
-                <dd className="col-span-3 py-4 px-6 text-gray-800">{companyInfo.president}</dd>
+              <div className="grid grid-cols-1 md:grid-cols-4 border-b border-gray-200">
+                <dt className="bg-gray-100 font-bold py-5 px-6 flex items-center">代表者</dt>
+                <dd className="col-span-3 py-5 px-6 flex items-center">{companyInfo.president}</dd>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-4">
-                <dt className="bg-gray-50 text-gray-600 font-bold py-4 px-6 md:border-r border-gray-100 flex items-center">本社所在地</dt>
-                <dd className="col-span-3 py-4 px-6 text-gray-800">{companyInfo.address}</dd>
+              <div className="grid grid-cols-1 md:grid-cols-4 border-b border-gray-200">
+                <dt className="bg-gray-100 font-bold py-5 px-6 flex items-center">本社所在地</dt>
+                <dd className="col-span-3 py-5 px-6 flex items-center">{companyInfo.address}</dd>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-4">
-                <dt className="bg-gray-50 text-gray-600 font-bold py-4 px-6 md:border-r border-gray-100 flex items-center">設立</dt>
-                <dd className="col-span-3 py-4 px-6 text-gray-800">{companyInfo.established}</dd>
+              <div className="grid grid-cols-1 md:grid-cols-4 border-b border-gray-200">
+                <dt className="bg-gray-100 font-bold py-5 px-6 flex items-center">設立</dt>
+                <dd className="col-span-3 py-5 px-6 flex items-center">{companyInfo.established}</dd>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-4">
-                <dt className="bg-gray-50 text-gray-600 font-bold py-4 px-6 md:border-r border-gray-100 flex items-center">資本金</dt>
-                <dd className="col-span-3 py-4 px-6 text-gray-800">{companyInfo.capital}</dd>
+              <div className="grid grid-cols-1 md:grid-cols-4 border-b border-gray-200">
+                <dt className="bg-gray-100 font-bold py-5 px-6 flex items-center">資本金</dt>
+                <dd className="col-span-3 py-5 px-6 flex items-center">{companyInfo.capital}</dd>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-4">
-                <dt className="bg-gray-50 text-gray-600 font-bold py-4 px-6 md:border-r border-gray-100 flex items-center">事業内容</dt>
-                <dd className="col-span-3 py-4 px-6 text-gray-800 leading-relaxed">
-                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 md:grid-cols-4 border-b border-gray-200">
+                <dt className="bg-gray-100 font-bold py-5 px-6 flex items-start pt-6">事業内容</dt>
+                <dd className="col-span-3 py-5 px-6">
+                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {companyInfo.business.map((item, idx) => (
-                      <li key={idx} className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 bg-[#1a237e] rounded-full"></span>
-                        {item}
+                      <li key={idx} className="flex items-center gap-3">
+                        <span className="w-2 h-2 bg-[#D32F2F]"></span>
+                        <span className="font-medium">{item}</span>
                       </li>
                     ))}
                   </ul>
@@ -127,31 +132,36 @@ export const Company = () => {
 
         {/* 3. Locations */}
         <section>
-          <div className="flex items-center gap-3 mb-6 border-b-2 border-[#1a237e] pb-2">
-            <span className="text-2xl">📍</span>
-            <h2 className="text-2xl font-bold text-gray-800 tracking-wide">事業所一覧</h2>
+          <div className="flex items-center gap-4 mb-8 pb-4 border-b-2 border-[#D32F2F]">
+            <span className="text-3xl">📍</span>
+            <h2 className="text-3xl font-serif font-bold tracking-wide">事業所一覧</h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
             {locations.map((loc, idx) => (
-              <div key={idx} className="bg-white p-6 shadow-md border-t-4 border-[#1a237e] hover:shadow-xl transition-shadow duration-300">
-                <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
-                    <div className="text-2xl">{loc.icon}</div>
-                    <h3 className="font-bold text-xl text-gray-800">{loc.name}</h3>
+              <div key={idx} className="bg-white p-8 shadow-lg border-t-8 border-[#D32F2F] relative group overflow-hidden">
+                <div className="absolute top-0 right-0 -mt-4 -mr-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity select-none">
+                    {loc.icon}
                 </div>
-                <p className="text-base text-gray-600 mb-4 flex items-start gap-2">
-                  <span className="text-gray-400">〒</span>
-                  {loc.address}
-                </p>
-                <div className="space-y-2 pl-4">
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs text-white bg-[#1a237e] px-2 py-0.5 rounded">TEL</span>
-                    <span className="font-mono text-lg text-gray-800 font-bold">{loc.tel}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs text-gray-500 bg-gray-200 px-2 py-0.5 rounded">FAX</span>
-                    <span className="font-mono text-gray-600">{loc.fax}</span>
-                  </div>
+                <div className="relative z-10">
+                    <h3 className="font-serif font-bold text-2xl mb-4 flex items-center gap-3">
+                        <span className="text-3xl">{loc.icon}</span>
+                        {loc.name}
+                    </h3>
+                    <p className="text-gray-600 mb-6 flex items-start gap-2 font-medium leading-relaxed">
+                    <span className="text-[#D32F2F] mt-1">〒</span>
+                    {loc.address}
+                    </p>
+                    <div className="space-y-3 pl-4 border-l-4 border-gray-100">
+                    <div className="flex items-center gap-4">
+                        <span className="text-xs font-bold text-white bg-[#D32F2F] px-3 py-1 tracking-widest">TEL</span>
+                        <span className="font-mono text-xl font-bold tracking-wider">{loc.tel}</span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <span className="text-xs font-bold text-gray-500 bg-gray-100 px-3 py-1 tracking-widest">FAX</span>
+                        <span className="font-mono text-lg text-gray-600 tracking-wider">{loc.fax}</span>
+                    </div>
+                    </div>
                 </div>
               </div>
             ))}
@@ -160,16 +170,16 @@ export const Company = () => {
 
         {/* 4. Licenses */}
         <section>
-          <div className="flex items-center gap-3 mb-6 border-b-2 border-[#1a237e] pb-2">
-            <span className="text-2xl">🏅</span>
-            <h2 className="text-2xl font-bold text-gray-800 tracking-wide">許認可・認証</h2>
+          <div className="flex items-center gap-4 mb-8 pb-4 border-b-2 border-[#D32F2F]">
+            <span className="text-3xl">🏅</span>
+            <h2 className="text-3xl font-serif font-bold tracking-wide">許認可・認証</h2>
           </div>
-          <div className="bg-white p-6 shadow-sm border border-gray-200 rounded-sm">
-            <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-gray-50 p-8 border-l-8 border-[#D32F2F] shadow-inner">
+            <ul className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
               {licenses.map((lic, idx) => (
-                <li key={idx} className="flex items-start gap-3 p-2 hover:bg-gray-50 transition-colors">
-                  <span className="text-[#1a237e] mt-0.5">✔︎</span>
-                  <span className="text-gray-700 font-medium">{lic}</span>
+                <li key={idx} className="flex items-start gap-3">
+                  <span className="text-[#D32F2F] mt-1 text-xl font-bold">✓</span>
+                  <span className="text-lg font-medium">{lic}</span>
                 </li>
               ))}
             </ul>
@@ -178,18 +188,22 @@ export const Company = () => {
 
         {/* 5. History */}
         <section>
-          <div className="flex items-center gap-3 mb-6 border-b-2 border-[#1a237e] pb-2">
-            <span className="text-2xl">📜</span>
-            <h2 className="text-2xl font-bold text-gray-800 tracking-wide">沿革</h2>
+          <div className="flex items-center gap-4 mb-8 pb-4 border-b-2 border-[#D32F2F]">
+            <span className="text-3xl">📜</span>
+            <h2 className="text-3xl font-serif font-bold tracking-wide">沿革</h2>
           </div>
-          <div className="bg-white shadow-sm border border-gray-200 p-2">
+          <div className="border-l-4 border-gray-200 ml-4">
              {history.map((item, idx) => (
-               <div key={idx} className={`flex flex-col md:flex-row p-4 hover:bg-gray-50 transition-colors ${idx !== history.length - 1 ? 'border-b border-gray-100' : ''}`}>
-                 <div className="md:w-1/4 font-bold text-[#1a237e] mb-1 md:mb-0 whitespace-nowrap font-mono">
-                   {item.year}
-                 </div>
-                 <div className="md:w-3/4 text-gray-700">
-                   {item.event}
+               <div key={idx} className="relative pl-8 py-4 group">
+                 {/* タイムラインの丸ポチ */}
+                 <div className="absolute top-1/2 -mt-2 -left-[11px] w-5 h-5 bg-[#D32F2F] rounded-full border-4 border-white transition-transform group-hover:scale-125"></div>
+                 <div className="flex flex-col md:flex-row items-start md:items-center bg-white p-4 shadow-sm hover:shadow-md transition-shadow border border-gray-100">
+                   <div className="md:w-1/4 font-bold text-[#D32F2F] text-lg mb-1 md:mb-0 whitespace-nowrap font-mono">
+                     {item.year}
+                   </div>
+                   <div className="md:w-3/4 font-medium text-gray-800 leading-relaxed">
+                     {item.event}
+                   </div>
                  </div>
                </div>
              ))}
