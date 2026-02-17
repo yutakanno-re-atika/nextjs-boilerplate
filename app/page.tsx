@@ -6,6 +6,7 @@ import { FatFooter } from './components/layout/FatFooter';
 import { RealChart } from './components/features/RealChart';
 import { Simulator } from './components/features/Simulator';
 import { PriceList } from './components/features/PriceList';
+import { ServiceCriteria } from './components/features/ServiceCriteria'; // ★追加
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { MemberDashboard } from './components/member/MemberDashboard';
 import { FlowGuide } from './components/features/FlowGuide';
@@ -101,21 +102,13 @@ export default function WireMasterCloud() {
             {/* HERO SECTION */}
             <section className="relative min-h-[700px] flex items-center bg-black text-white overflow-hidden py-20 lg:py-0">
                 <div className="absolute inset-0 z-0">
-                    {/* 写真: 色味を活かすため opacity-90 */}
                     <img 
                       src={IMAGES.hero} 
                       className="w-full h-full object-cover opacity-90" 
                       alt="Copper Wire Recycling Factory" 
                     />
-                    
-                    {/* ★修正: グラデーションの色を #D32F2F (月寒レッド) に統一
-                        - 左0%〜35%: #D32F2F (不透明) で文字をくっきり
-                        - 35%〜65%: 徐々に透明へ
-                        - 明るい赤を使うことで「薄暗い印象」を回避
-                    */}
+                    {/* グラデーション: 月寒レッド(#D32F2F)ベース */}
                     <div className="absolute inset-0 bg-[linear-gradient(90deg,#D32F2F_0%,#D32F2F_35%,rgba(211,47,47,0.7)_65%,transparent_100%)] z-10"></div>
-                    
-                    {/* 全体のトーン調整用オーバーレイ (少しだけ赤みを足して統一感を出す) */}
                     <div className="absolute inset-0 bg-[#D32F2F]/10 mix-blend-overlay z-10"></div>
                 </div>
 
@@ -128,7 +121,6 @@ export default function WireMasterCloud() {
                                 <span className="text-white/90 text-xs font-bold tracking-[0.3em] uppercase">Est. 1961 Tomakomai</span>
                             </div>
                             
-                            {/* 明朝体で見出し (背景が赤なので白文字が映えます) */}
                             <h1 className="text-5xl md:text-7xl font-serif font-bold leading-[1.1] drop-shadow-md">
                                 資源を、<br/>
                                 あるべき<span className="border-b-4 border-white/40 pb-2">価値</span>へ。
@@ -140,7 +132,6 @@ export default function WireMasterCloud() {
                             </p>
                             
                             <div className="pt-6 flex flex-col sm:flex-row gap-4">
-                                {/* ボタンの色を白ベースに変更 (赤背景の上なので) */}
                                 <a href="#price-list" className="bg-white text-[#D32F2F] px-8 py-4 text-sm font-bold tracking-widest hover:bg-black hover:text-white transition text-center shadow-xl">
                                     本日の買取価格
                                 </a>
@@ -152,7 +143,6 @@ export default function WireMasterCloud() {
 
                         {/* RIGHT COLUMN: REAL CHART */}
                         <div className="lg:col-span-5 animate-in fade-in slide-in-from-right-8 duration-1000 delay-300">
-                             {/* 背景透過のためのラッパー (白の半透明) */}
                              <div className="bg-white/10 backdrop-blur-md rounded-xl overflow-hidden border border-white/20 shadow-2xl">
                                 <RealChart data={data} />
                              </div>
@@ -163,6 +153,9 @@ export default function WireMasterCloud() {
 
             {/* Price List Section */}
             <PriceList data={data} marketPrice={marketPrice} />
+
+            {/* ★Service Criteria (買取・引取基準) Section */}
+            <ServiceCriteria />
 
             {/* Simulator Section */}
             <div id="simulator">
