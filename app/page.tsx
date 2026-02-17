@@ -11,6 +11,7 @@ import { MemberDashboard } from './components/member/MemberDashboard';
 import { FlowGuide } from './components/features/FlowGuide';
 import { MembershipGuide } from './components/features/MembershipGuide';
 import { Company } from './components/features/Company'; // 会社概要
+import { Contact } from './components/features/Contact'; // お問い合わせ
 import { MarketData, UserData } from './types';
 
 // Images
@@ -55,7 +56,7 @@ export default function WireMasterCloud() {
   if (view === 'ADMIN') return <AdminDashboard data={data} setView={setView} />;
   if (view === 'MEMBER') return <MemberDashboard user={user} data={data} setView={setView} />;
 
-  // ★会社概要ページ
+  // ★会社概要ページ (Company)
   if (view === 'COMPANY') {
     return (
       <div className="min-h-screen bg-white text-[#111] font-sans pt-20">
@@ -66,10 +67,23 @@ export default function WireMasterCloud() {
     );
   }
 
+  // ★お問い合わせページ (Contact)
+  if (view === 'CONTACT') {
+    return (
+      <div className="min-h-screen bg-white text-[#111] font-sans pt-20">
+        <GlobalNav setView={setView} view={view} />
+        <Contact />
+        <FatFooter setView={setView} />
+      </div>
+    );
+  }
+
+  // トップページ (LP)
   return (
     <div className="min-h-screen bg-white text-[#111] font-sans pt-20">
       <GlobalNav setView={setView} view={view} />
 
+      {/* ログインモーダル */}
       {view === 'LOGIN' && (
           <div className="fixed inset-0 z-[100] bg-[#D32F2F]/90 backdrop-blur-md flex items-center justify-center p-4">
             <div className="bg-white w-full max-w-sm p-12 shadow-2xl relative">
@@ -134,14 +148,6 @@ export default function WireMasterCloud() {
       {/* SUB PAGES */}
       {view === 'FLOW' && <FlowGuide />}
       {view === 'MEMBERSHIP' && <MembershipGuide />}
-      
-      {/* CONTACT (COMPANYは上で処理済み) */}
-      {view === 'CONTACT' && (
-          <div className="py-40 text-center bg-gray-50 min-h-[60vh]">
-              <h2 className="text-2xl font-serif mb-4">CONTACT PAGE</h2>
-              <p className="text-gray-500">準備中</p>
-          </div>
-      )}
 
       <FatFooter setView={setView} />
     </div>
