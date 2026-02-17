@@ -3,13 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import { GlobalNav } from './components/layout/GlobalNav';
 import { FatFooter } from './components/layout/FatFooter';
-import { RealChart } from './components/features/RealChart'; // 縦型パネル化
+import { RealChart } from './components/features/RealChart';
 import { Simulator } from './components/features/Simulator';
 import { PriceList } from './components/features/PriceList';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { MemberDashboard } from './components/member/MemberDashboard';
 import { FlowGuide } from './components/features/FlowGuide';
 import { MembershipGuide } from './components/features/MembershipGuide';
+import { Company } from './components/features/Company'; // ★追加: 会社概要コンポーネント
 import { MarketData, UserData } from './types';
 
 // Images
@@ -54,6 +55,17 @@ export default function WireMasterCloud() {
   if (view === 'ADMIN') return <AdminDashboard data={data} setView={setView} />;
   if (view === 'MEMBER') return <MemberDashboard user={user} data={data} setView={setView} />;
 
+  // ★会社概要ページ (LPとは別画面として表示)
+  if (view === 'COMPANY') {
+    return (
+      <div className="min-h-screen bg-white text-[#111] font-sans pt-20">
+        <GlobalNav setView={setView} view={view} />
+        <Company />
+        <FatFooter setView={setView} />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white text-[#111] font-sans pt-20">
       <GlobalNav setView={setView} view={view} />
@@ -89,7 +101,7 @@ export default function WireMasterCloud() {
                                 資源を、<br/>あるべき<span className="border-b-4 border-white/60">価値</span>へ。
                             </h1>
                             <p className="text-white/90 text-sm md:text-base max-w-lg leading-loose border-l-2 border-white/30 pl-6">
-                                月寒製作所は「目利き」と「技術」で、リサイクルインフラを支えます。<br/>
+                                株式会社 月寒製作所は「技術」と「信頼」で、リサイクルインフラを支えます。<br/>
                                 独自のナゲットプラントによる中間コストの排除が、高価買取の根拠です。
                             </p>
                             <div className="pt-4">
@@ -99,7 +111,7 @@ export default function WireMasterCloud() {
                             </div>
                         </div>
 
-                        {/* RIGHT COLUMN: REAL CHART (NEW POSITION) */}
+                        {/* RIGHT COLUMN: REAL CHART */}
                         <div className="lg:col-span-4 animate-in fade-in slide-in-from-right-8 duration-1000 delay-300">
                              <RealChart data={data} />
                         </div>
@@ -112,7 +124,7 @@ export default function WireMasterCloud() {
                 <PriceList data={data} marketPrice={marketPrice} />
             </div>
 
-            {/* Simulator Section (Moved to Bottom) */}
+            {/* Simulator Section */}
             <div id="simulator">
                 <Simulator marketPrice={marketPrice} />
             </div>
@@ -122,10 +134,11 @@ export default function WireMasterCloud() {
       {/* SUB PAGES */}
       {view === 'FLOW' && <FlowGuide />}
       {view === 'MEMBERSHIP' && <MembershipGuide />}
-
-      {['COMPANY', 'CONTACT'].includes(view) && (
+      
+      {/* CONTACT (COMPANYは上で処理済み) */}
+      {view === 'CONTACT' && (
           <div className="py-40 text-center bg-gray-50 min-h-[60vh]">
-              <h2 className="text-2xl font-serif mb-4">{view} PAGE</h2>
+              <h2 className="text-2xl font-serif mb-4">CONTACT PAGE</h2>
               <p className="text-gray-500">準備中</p>
           </div>
       )}
