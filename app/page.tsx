@@ -101,20 +101,21 @@ export default function WireMasterCloud() {
             {/* HERO SECTION */}
             <section className="relative min-h-[700px] flex items-center bg-black text-white overflow-hidden py-20 lg:py-0">
                 <div className="absolute inset-0 z-0">
-                    {/* 写真: 右側を見せるため、不透明度を高めに設定 */}
+                    {/* 写真: 色味を活かすため opacity-90 */}
                     <img 
                       src={IMAGES.hero} 
                       className="w-full h-full object-cover opacity-90" 
                       alt="Copper Wire Recycling Factory" 
                     />
                     
-                    {/* ★修正: グラデーション調整
-                      - 左0%〜35%: 濃い赤(#330000)で塗りつぶし (文字が確実に読める)
-                      - 35%〜100%: 徐々に透明へ (右側の写真が見える)
+                    {/* ★修正: グラデーションの色を #D32F2F (月寒レッド) に統一
+                        - 左0%〜35%: #D32F2F (不透明) で文字をくっきり
+                        - 35%〜65%: 徐々に透明へ
+                        - 明るい赤を使うことで「薄暗い印象」を回避
                     */}
-                    <div className="absolute inset-0 bg-[linear-gradient(90deg,#330000_0%,#4a0404_35%,rgba(74,4,4,0.6)_60%,transparent_100%)] z-10"></div>
+                    <div className="absolute inset-0 bg-[linear-gradient(90deg,#D32F2F_0%,#D32F2F_35%,rgba(211,47,47,0.7)_65%,transparent_100%)] z-10"></div>
                     
-                    {/* 全体のトーン調整用（わずかに赤みを足して馴染ませる） */}
+                    {/* 全体のトーン調整用オーバーレイ (少しだけ赤みを足して統一感を出す) */}
                     <div className="absolute inset-0 bg-[#D32F2F]/10 mix-blend-overlay z-10"></div>
                 </div>
 
@@ -123,34 +124,35 @@ export default function WireMasterCloud() {
                         {/* LEFT COLUMN: COPY */}
                         <div className="lg:col-span-7 space-y-8">
                             <div className="inline-flex items-center gap-3">
-                                <span className="w-8 h-[2px] bg-[#D32F2F]"></span>
-                                <span className="text-white/80 text-xs font-bold tracking-[0.3em] uppercase">Est. 1961 Tomakomai</span>
+                                <span className="w-8 h-[2px] bg-white"></span>
+                                <span className="text-white/90 text-xs font-bold tracking-[0.3em] uppercase">Est. 1961 Tomakomai</span>
                             </div>
                             
-                            {/* 明朝体で見出し */}
-                            <h1 className="text-5xl md:text-7xl font-serif font-bold leading-[1.1] drop-shadow-2xl">
+                            {/* 明朝体で見出し (背景が赤なので白文字が映えます) */}
+                            <h1 className="text-5xl md:text-7xl font-serif font-bold leading-[1.1] drop-shadow-md">
                                 資源を、<br/>
-                                あるべき<span className="text-[#D32F2F]">価値</span>へ。
+                                あるべき<span className="border-b-4 border-white/40 pb-2">価値</span>へ。
                             </h1>
                             
-                            <p className="text-gray-200 text-sm md:text-base max-w-lg leading-loose font-sans drop-shadow-md">
+                            <p className="text-white text-sm md:text-base max-w-lg leading-loose font-sans font-medium drop-shadow-sm">
                                 株式会社 月寒製作所は「技術」と「信頼」で、リサイクルインフラを支えます。
                                 独自のナゲットプラントによる中間コストの排除が、高価買取の根拠です。
                             </p>
                             
                             <div className="pt-6 flex flex-col sm:flex-row gap-4">
-                                <a href="#price-list" className="bg-[#D32F2F] text-white px-8 py-4 text-sm font-bold tracking-widest hover:bg-[#B71C1C] transition text-center shadow-lg shadow-red-900/50">
+                                {/* ボタンの色を白ベースに変更 (赤背景の上なので) */}
+                                <a href="#price-list" className="bg-white text-[#D32F2F] px-8 py-4 text-sm font-bold tracking-widest hover:bg-black hover:text-white transition text-center shadow-xl">
                                     本日の買取価格
                                 </a>
-                                <a href="#contact" className="border border-white/30 text-white px-8 py-4 text-sm font-bold tracking-widest hover:bg-white hover:text-black transition text-center backdrop-blur-sm">
+                                <a href="#contact" className="border border-white text-white px-8 py-4 text-sm font-bold tracking-widest hover:bg-white hover:text-black transition text-center">
                                     お問い合わせ
                                 </a>
                             </div>
                         </div>
 
                         {/* RIGHT COLUMN: REAL CHART */}
-                        {/* ★修正: 親要素で透過背景を指定してみる（コンポーネントの実装次第で効かない場合あり） */}
                         <div className="lg:col-span-5 animate-in fade-in slide-in-from-right-8 duration-1000 delay-300">
+                             {/* 背景透過のためのラッパー (白の半透明) */}
                              <div className="bg-white/10 backdrop-blur-md rounded-xl overflow-hidden border border-white/20 shadow-2xl">
                                 <RealChart data={data} />
                              </div>
