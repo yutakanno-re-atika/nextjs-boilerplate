@@ -101,17 +101,20 @@ export default function WireMasterCloud() {
             {/* HERO SECTION */}
             <section className="relative min-h-[700px] flex items-center bg-black text-white overflow-hidden py-20 lg:py-0">
                 <div className="absolute inset-0 z-0">
-                    {/* 写真: 色味を活かすため opacity-80, grayscaleなし */}
+                    {/* 写真: 右側を見せるため、不透明度を高めに設定 */}
                     <img 
                       src={IMAGES.hero} 
-                      className="w-full h-full object-cover opacity-80" 
+                      className="w-full h-full object-cover opacity-90" 
                       alt="Copper Wire Recycling Factory" 
                     />
-                    {/* ★修正: 左側から延びるグラデーションを「濃い赤」ベースに変更し、少し透過 */}
-                    {/* from-red-950 (非常に暗い赤) から透明へ */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#330000] via-[#500000]/70 to-transparent z-10"></div>
                     
-                    {/* 全体のトーン調整用オーバーレイ */}
+                    {/* ★修正: グラデーション調整
+                      - 左0%〜35%: 濃い赤(#330000)で塗りつぶし (文字が確実に読める)
+                      - 35%〜100%: 徐々に透明へ (右側の写真が見える)
+                    */}
+                    <div className="absolute inset-0 bg-[linear-gradient(90deg,#330000_0%,#4a0404_35%,rgba(74,4,4,0.6)_60%,transparent_100%)] z-10"></div>
+                    
+                    {/* 全体のトーン調整用（わずかに赤みを足して馴染ませる） */}
                     <div className="absolute inset-0 bg-[#D32F2F]/10 mix-blend-overlay z-10"></div>
                 </div>
 
@@ -125,7 +128,7 @@ export default function WireMasterCloud() {
                             </div>
                             
                             {/* 明朝体で見出し */}
-                            <h1 className="text-5xl md:text-7xl font-serif font-bold leading-[1.1] drop-shadow-lg">
+                            <h1 className="text-5xl md:text-7xl font-serif font-bold leading-[1.1] drop-shadow-2xl">
                                 資源を、<br/>
                                 あるべき<span className="text-[#D32F2F]">価値</span>へ。
                             </h1>
@@ -146,8 +149,11 @@ export default function WireMasterCloud() {
                         </div>
 
                         {/* RIGHT COLUMN: REAL CHART */}
+                        {/* ★修正: 親要素で透過背景を指定してみる（コンポーネントの実装次第で効かない場合あり） */}
                         <div className="lg:col-span-5 animate-in fade-in slide-in-from-right-8 duration-1000 delay-300">
-                             <RealChart data={data} />
+                             <div className="bg-white/10 backdrop-blur-md rounded-xl overflow-hidden border border-white/20 shadow-2xl">
+                                <RealChart data={data} />
+                             </div>
                         </div>
                     </div>
                 </div>
