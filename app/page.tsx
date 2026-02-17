@@ -10,7 +10,7 @@ import { AdminDashboard } from './components/admin/AdminDashboard';
 import { MemberDashboard } from './components/member/MemberDashboard';
 import { FlowGuide } from './components/features/FlowGuide';
 import { MembershipGuide } from './components/features/MembershipGuide';
-import { Company } from './components/features/Company'; // ★追加: 会社概要コンポーネント
+import { Company } from './components/features/Company'; // 会社概要
 import { MarketData, UserData } from './types';
 
 // Images
@@ -55,7 +55,7 @@ export default function WireMasterCloud() {
   if (view === 'ADMIN') return <AdminDashboard data={data} setView={setView} />;
   if (view === 'MEMBER') return <MemberDashboard user={user} data={data} setView={setView} />;
 
-  // ★会社概要ページ (LPとは別画面として表示)
+  // ★会社概要ページ
   if (view === 'COMPANY') {
     return (
       <div className="min-h-screen bg-white text-[#111] font-sans pt-20">
