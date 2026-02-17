@@ -5,7 +5,6 @@ const config: Config = {
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
-    // srcディレクトリを使っていない場合は下記を使用
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
@@ -13,17 +12,18 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        // layout.tsxで定義した変数をここでお膳立てします
+        // ゴシック体
         sans: ["var(--font-noto-sans-jp)", "sans-serif"],
-        serif: ["var(--font-noto-sans-jp)", "serif"], 
+        // 明朝体 (これを追加)
+        serif: ["var(--font-noto-serif-jp)", "serif"], 
       },
       colors: {
         primary: {
-          DEFAULT: "#D32F2F", // 月寒レッド
+          DEFAULT: "#D32F2F", 
           dark: "#B71C1C",
         },
         metal: {
-          DEFAULT: "#111111", // 鉄・黒
+          DEFAULT: "#111111",
           gray: "#666666",
         }
       },
