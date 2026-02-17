@@ -1,19 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-import type { Config } from "tailwindcss";
-const { fontFamily } = require("tailwindcss/defaultTheme");
+/* その他のカスタムCSSがあればここに記述 */
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
 
-const config: Config = {
-  // ...他の設定
-  theme: {
-    extend: {
-      fontFamily: {
-        // デフォルトのsansフォントをNoto Sans JPに置き換える
-        sans: ["var(--font-noto-sans-jp)", ...fontFamily.sans],
-        // 必要に応じてセリフ体なども定義
-        serif: ["Merriweather", "serif"],
-      },
-    },
-  },
-  // ...
-};
-export default config;
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+  }
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+}
