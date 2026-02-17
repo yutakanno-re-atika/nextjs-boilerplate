@@ -1,3 +1,19 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+
+import type { Config } from "tailwindcss";
+const { fontFamily } = require("tailwindcss/defaultTheme");
+
+const config: Config = {
+  // ...他の設定
+  theme: {
+    extend: {
+      fontFamily: {
+        // デフォルトのsansフォントをNoto Sans JPに置き換える
+        sans: ["var(--font-noto-sans-jp)", ...fontFamily.sans],
+        // 必要に応じてセリフ体なども定義
+        serif: ["Merriweather", "serif"],
+      },
+    },
+  },
+  // ...
+};
+export default config;
