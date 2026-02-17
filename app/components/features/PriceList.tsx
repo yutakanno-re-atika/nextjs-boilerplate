@@ -2,12 +2,12 @@
 import React from 'react';
 import { MarketData } from '../../types';
 
-// 🛠️ 月寒ブランドカラー (赤・黒・白) に統一したカードデザイン
+// 🛠️ カードデザイン
 const PriceCard = ({ name, sub, ratio, price, desc }: any) => {
   return (
     <div className="group relative bg-white border-l-4 border-[#D32F2F] shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden">
       <div className="p-6">
-        {/* ヘッダー: 品名と銅率 */}
+        {/* ヘッダー */}
         <div className="flex justify-between items-start mb-2">
            <h3 className="font-bold text-lg text-black leading-tight group-hover:text-[#D32F2F] transition-colors">
              {name}
@@ -51,14 +51,11 @@ export const PriceList = ({ data, marketPrice }: PriceListProps) => {
     </div>
   );
 
-  // コンフィグシートまたは履歴から最新更新日時を取得
-  // Configシートの 'market_price' 行の description に入っている "Updated: ..." を解析するのが最も正確ですが、
-  // 簡易的に履歴の最新日付を使用します。
   const lastUpdate = data.history && data.history.length > 0 
     ? data.history[data.history.length - 1].date 
     : new Date().toLocaleDateString();
 
-  // === データ定義: Products_Wire (被覆電線) ===
+  // データ定義
   const wireCategories = [
     { id: 'IV', name: 'IV線 (ピカ線)', sub: 'Copper Wire', ratio: 98, desc: '剥離済み・高純度の銅線。' },
     { id: 'CV', name: 'CVケーブル', sub: 'Power Cable', ratio: 58, desc: '被覆が厚く銅率が高い幹線用ケーブル。' },
@@ -67,19 +64,17 @@ export const PriceList = ({ data, marketPrice }: PriceListProps) => {
     { id: 'MIX', name: '雑線ミックス', sub: 'Mixed Wire', ratio: 45, desc: '未選別の混合ケーブル・家電線など。' },
   ];
 
-  // === データ定義: Products_Casting (非鉄原料) ===
   const metalCategories = data.castings.filter(c => 
     ['特号', '1号', '2号', '込銅', '真鍮', '砲金'].some(key => c.name.includes(key))
   ).map(c => ({
       id: c.id,
       name: c.name,
-      sub: 'Non-Ferrous', // 英語表記で統一
+      sub: 'Non-Ferrous',
       ratio: c.ratio,
       price_offset: c.price_offset,
       desc: c.description || '非鉄金属スクラップ'
   }));
 
-  // 価格計算
   const calcWirePrice = (ratio: number) => Math.floor((marketPrice * (ratio / 100) * 0.9) - 15);
   const calcMetalPrice = (ratio: number, offset: number) => Math.floor((marketPrice * (ratio / 100)) + offset);
 
@@ -87,15 +82,18 @@ export const PriceList = ({ data, marketPrice }: PriceListProps) => {
     <section className="py-24 bg-white text-black" id="price-list">
       <div className="max-w-[1200px] mx-auto px-6">
         
-        {/* ヘッダーエリア */}
+        {/* ヘッダーエリア (修正: 日本語メイン・明朝体) */}
         <div className="flex flex-col md:flex-row justify-between items-end mb-16 pb-6 border-b-2 border-black">
             <div>
-                <h2 className="text-3xl md:text-4xl font-black text-black mb-2 uppercase tracking-tighter">
-                  Market Price
-                </h2>
-                <p className="text-[#D32F2F] font-bold text-sm tracking-widest">
-                  本日の買取単価一覧
+                {/* 英語は装飾的に小さく配置 */}
+                <p className="text-[#D32F2F] font-bold text-xs tracking-[0.3em] font-sans mb-2 flex items-center gap-2">
+                   <span className="w-6 h-[1px] bg-[#D32F2F]"></span>
+                   MARKET PRICE
                 </p>
+                {/* 日本語を明朝体(font-serif)で大きく */}
+                <h2 className="text-3xl md:text-4xl font-serif font-bold text-black leading-tight">
+                  本日の買取単価一覧
+                </h2>
             </div>
             <div className="text-right mt-6 md:mt-0">
                 <div className="inline-flex flex-col items-end">
@@ -107,7 +105,7 @@ export const PriceList = ({ data, marketPrice }: PriceListProps) => {
             </div>
         </div>
 
-        {/* SECTION 1: 被覆電線 */}
+        {/* 以下リスト（変更なし） */}
         <div className="mb-20">
             <div className="flex items-center gap-3 mb-8">
                 <span className="w-3 h-3 bg-[#D32F2F]"></span>
@@ -122,7 +120,6 @@ export const PriceList = ({ data, marketPrice }: PriceListProps) => {
             </div>
         </div>
 
-        {/* SECTION 2: 非鉄原料 */}
         <div>
             <div className="flex items-center gap-3 mb-8">
                 <span className="w-3 h-3 bg-black"></span>
@@ -143,7 +140,6 @@ export const PriceList = ({ data, marketPrice }: PriceListProps) => {
             </div>
         </div>
         
-        {/* 注意書き */}
         <div className="mt-16 border-t border-gray-200 pt-8 text-center">
             <p className="text-xs text-gray-500 font-medium">
                 ※ 価格は税込表示です。相場変動により予告なく変更される場合があります。<br className="hidden md:inline"/>
