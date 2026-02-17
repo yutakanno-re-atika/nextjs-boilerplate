@@ -1,132 +1,149 @@
 "use client";
-import React, { useState, useMemo } from 'react';
+import React from 'react';
 import { MarketData } from '../../types';
 
-// 画像マッピング (copperを追加)
-const IMG_MAP: Record<string, string> = {
-  'bronze': '/images/copper_nugget.png',
-  'brass': '/images/copper_nugget.png',
-  'urban': '/images/factory_floor.png',
-  'copper': '/images/copper_nugget.png',
-  'mix': '/images/mixed_wire.png', 
-  'default': '/images/factory_floor.png'
-};
-
-const Icons = {
-  TrendingUp: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>,
-};
-
-export const PriceList = ({ data, marketPrice }: { data: MarketData | null, marketPrice: number }) => {
-  const [activeTab, setActiveTab] = useState<'WIRE' | 'CASTING'>('WIRE');
-
-  // 電線: MIX系のみ (ナゲット原料)
-  const displayWires = useMemo(() => {
-    if (!data?.wires) return [];
-    return data.wires.filter(w => 
-      w.name.includes('ミックス') || w.name.toUpperCase().includes('MIX')
-    );
-  }, [data?.wires]);
-
-  // 鋳造原料・銅スクラップ: 全件表示
-  const displayCastings = useMemo(() => {
-    if (!data?.castings) return [];
-    return data.castings;
-  }, [data?.castings]);
-
-  // データロード中
-  if (!data) return <div className="py-20 text-center text-gray-400 animate-pulse">Loading Realtime Data...</div>;
-
-  const safeMarketPrice = marketPrice > 0 ? marketPrice : 2140;
+// 🛠️ 画像を使わないシンプルなカードコンポーネント
+const PriceCard = ({ name, sub, ratio, price, desc, isMetal = false }: any) => {
+  // アクセントカラーの定義
+  const accentColor = isMetal ? 'bg-blue-600' : 'bg-[#D32F2F]';
+  const textColor = isMetal ? 'text-blue-600' : 'text-[#D32F2F]';
+  const borderColor = isMetal ? 'group-hover:border-blue-600' : 'group-hover:border-[#D32F2F]';
 
   return (
-    <section className="py-16 bg-gray-50">
-      <div className="max-w-7xl mx-auto px-6">
-        
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-bold flex items-center gap-1">
-              <Icons.TrendingUp /> {data ? 'LIVE DATA' : 'OFFLINE'}
+    <div className={`relative bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 group border border-gray-200 ${borderColor}`}>
+      {/* 左側のカラーバーアクセント */}
+      <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${accentColor}`} />
+
+      <div className="p-5 pl-7">
+        {/* ヘッダー部分: 品名とサブ情報 */}
+        <div className="flex justify-between items-start mb-2">
+          <div>
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-0.5">
+              {sub || (isMetal ? 'NON-FERROUS' : 'SCRAP WIRE')}
             </span>
-            <span className="text-gray-500 text-sm">LME銅建値: ¥{safeMarketPrice.toLocaleString()}/kg</span>
+            <h3 className="font-bold text-lg text-gray-800 leading-tight">{name}</h3>
           </div>
-          <h2 className="text-3xl font-black text-gray-900">買取単価一覧</h2>
+          {/* 歩留まりバッジ */}
+          <div className={`text-xs font-bold px-2 py-1 rounded bg-gray-100 text-gray-600`}>
+            {ratio}%
+          </div>
         </div>
 
-        {/* Tab Buttons */}
-        <div className="flex justify-center gap-4 mb-8">
-          <button onClick={() => setActiveTab('WIRE')} className={`px-6 py-3 rounded-full font-bold transition-all ${activeTab === 'WIRE' ? 'bg-[#D32F2F] text-white shadow-lg' : 'bg-white text-gray-600 border hover:bg-gray-50'}`}>
-            被覆電線 (ナゲット原料)
-          </button>
-          <button onClick={() => setActiveTab('CASTING')} className={`px-6 py-3 rounded-full font-bold transition-all ${activeTab === 'CASTING' ? 'bg-[#D32F2F] text-white shadow-lg' : 'bg-white text-gray-600 border hover:bg-gray-50'}`}>
-            非鉄原料
-          </button>
+        {/* 説明文 */}
+        <p className="text-xs text-gray-400 mb-4 h-8 leading-4 overflow-hidden">
+          {desc}
+        </p>
+        
+        {/* 価格エリア */}
+        <div className="border-t border-dashed border-gray-100 pt-3 mt-auto">
+          <div className="flex items-end justify-between">
+             <span className="text-xs text-gray-400 font-medium">買取単価</span>
+             <div className={`flex items-baseline gap-0.5 ${textColor}`}>
+               <span className="text-sm font-bold">¥</span>
+               <span className="text-2xl font-black tracking-tighter">{price.toLocaleString()}</span>
+               <span className="text-xs font-bold text-gray-400 ml-1">/kg</span>
+             </div>
+          </div>
         </div>
+      </div>
+    </div>
+  );
+};
 
-        {/* Grid Display */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          
-          {/* WIRE LIST */}
-          {activeTab === 'WIRE' && displayWires.map((item, idx) => {
-            const price = Math.floor((safeMarketPrice * (item.ratio / 100) * 0.9) - 15);
-            return (
-              <div key={`w-${idx}`} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
-                <div className="flex justify-between items-start mb-2">
-                   <h3 className="font-bold text-lg text-gray-800">{item.name}</h3>
-                   <span className="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded">Cu: {item.ratio}%</span>
-                </div>
-                <div className="flex items-end gap-2 mt-4 border-t border-gray-50 pt-4">
-                  <span className="text-3xl font-black text-[#D32F2F]">¥{price.toLocaleString()}</span>
-                  <span className="text-sm text-gray-500 mb-1">/ kg</span>
-                </div>
-              </div>
-            );
-          })}
+interface PriceListProps {
+  data: MarketData | null;
+  marketPrice: number;
+}
 
-          {/* CASTING LIST (銅・真鍮・砲金など) */}
-          {activeTab === 'CASTING' && displayCastings.map((item, idx) => {
-            // 計算式: 建値 * 歩留まり + オフセット(マイナス値)
-            const rawPrice = safeMarketPrice * (item.ratio / 100);
-            const price = Math.floor(rawPrice + (item.price_offset || 0));
+export const PriceList = ({ data, marketPrice }: PriceListProps) => {
+  if (!data || !marketPrice) return (
+    <div className="py-32 text-center space-y-4 bg-gray-50">
+        <div className="animate-spin w-8 h-8 border-2 border-gray-300 border-t-[#D32F2F] rounded-full mx-auto"></div>
+        <p className="text-gray-400 text-xs tracking-widest">LOADING DATA...</p>
+    </div>
+  );
 
-            // 色分けロジック
-            let typeStyle = 'bg-gray-100 text-gray-600';
-            const typeLower = (item.type || '').toLowerCase();
-            
-            if (typeLower === 'copper') typeStyle = 'bg-red-100 text-red-800 border-red-200'; // 銅は赤系
-            if (typeLower === 'bronze') typeStyle = 'bg-orange-100 text-orange-800 border-orange-200'; // 砲金はオレンジ
-            if (typeLower === 'brass') typeStyle = 'bg-yellow-100 text-yellow-800 border-yellow-200'; // 真鍮は黄色
-            if (typeLower === 'urban') typeStyle = 'bg-purple-100 text-purple-800 border-purple-200';
+  // 更新日の取得 (履歴の最新日付を使用)
+  const lastUpdate = data.history && data.history.length > 0 
+    ? data.history[data.history.length - 1].date 
+    : new Date().toLocaleDateString();
 
-            return (
-              <div key={`c-${idx}`} className={`bg-white rounded-xl shadow-sm border p-6 hover:shadow-md transition-shadow ${typeLower === 'copper' ? 'border-red-100' : 'border-gray-100'}`}>
-                <div className="flex justify-between items-start">
-                   <h3 className="font-bold text-lg text-gray-800">{item.name}</h3>
-                   <span className={`text-xs px-2 py-1 rounded font-bold border ${typeStyle}`}>
-                     {item.type === 'copper' ? 'Copper' : item.type}
-                   </span>
-                </div>
-                
-                {/* 説明文がなければ form を表示 */}
-                <p className="text-xs text-gray-500 mt-2 min-h-[1.5em]">
-                  {item.description ? item.description : (item.form || '-')}
+  // === データ定義 ===
+  // 1. 被覆電線 (Wires)
+  const wireCategories = [
+    { id: 'IV', name: 'IV線 (ピカ線)', sub: '剥離済み・高純度', ratio: 98, desc: '最も高価なリサイクル素材' },
+    { id: 'CV', name: 'CVケーブル', sub: '幹線・動力ケーブル', ratio: 58, desc: '被覆が厚く銅率が高い' },
+    { id: 'VVF', name: 'VA線 (VVF)', sub: 'Fケーブル 2.0mm', ratio: 42, desc: '住宅解体・工事残材の定番' },
+    { id: 'CAB', name: 'キャブタイヤ', sub: '多芯・ゴム被覆', ratio: 38, desc: '柔軟性のある電源コード' },
+    { id: 'MIX', name: '雑線ミックス', sub: '未選別・家電線', ratio: 45, desc: '選別前の混合ケーブル' },
+  ];
+
+  // 2. 非鉄原料 (Metals)
+  const metalCategories = data.castings.filter(c => 
+    ['特号', '1号', '2号', '込銅', '真鍮', '砲金'].some(key => c.name.includes(key))
+  ).map(c => ({
+      id: c.id,
+      name: c.name,
+      sub: c.type || '非鉄金属',
+      ratio: c.ratio,
+      price_offset: c.price_offset,
+      desc: c.description || '-'
+  }));
+
+  // 価格計算ロジック
+  const calcWirePrice = (ratio: number) => Math.floor((marketPrice * (ratio / 100) * 0.9) - 15);
+  const calcMetalPrice = (ratio: number, offset: number) => Math.floor((marketPrice * (ratio / 100)) + offset);
+
+  return (
+    <section className="py-20 bg-[#f8f9fa]" id="price-list">
+      <div className="max-w-[1200px] mx-auto px-6">
+        {/* ヘッダーエリア */}
+        <div className="flex flex-col md:flex-row justify-between items-end mb-12 pb-6 border-b border-gray-200">
+            <div>
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                  本日の買取単価
+                </h2>
+                <p className="text-gray-500 text-sm">
+                  市場連動型の透明な価格提示。すべて1kgあたりの税込価格です。
                 </p>
-                
-                <div className="flex items-end gap-2 mt-4 border-t border-gray-50 pt-4">
-                  <span className="text-3xl font-black text-[#D32F2F]">¥{price.toLocaleString()}</span>
-                  <span className="text-sm text-gray-500 mb-1">/ kg</span>
-                </div>
-                {/* デバッグ用: 計算根拠を小さく表示 */}
-                <div className="mt-1 text-[10px] text-gray-300">
-                   歩留:{item.ratio}% / 調整:{item.price_offset}
-                </div>
-              </div>
-            );
-          })}
-          
-          {activeTab === 'CASTING' && displayCastings.length === 0 && (
-             <div className="col-span-full py-12 text-center text-gray-400">データが見つかりません</div>
-          )}
+            </div>
+            <div className="text-right mt-4 md:mt-0">
+                <span className="inline-block bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full font-mono">
+                   建値更新日: {lastUpdate}
+                </span>
+            </div>
+        </div>
+
+        {/* SECTION 1: 被覆電線 */}
+        <div className="mb-16">
+            <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                <span className="w-1.5 h-6 bg-[#D32F2F] mr-3 rounded-sm"></span>
+                被覆電線 <span className="text-sm font-normal text-gray-500 ml-2">Copper Wire Scrap</span>
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                {wireCategories.map((item) => (
+                    <PriceCard key={item.id} {...item} price={calcWirePrice(item.ratio)} />
+                ))}
+            </div>
+        </div>
+
+        {/* SECTION 2: 非鉄原料 */}
+        <div>
+            <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                <span className="w-1.5 h-6 bg-blue-600 mr-3 rounded-sm"></span>
+                非鉄原料 <span className="text-sm font-normal text-gray-500 ml-2">Non-Ferrous Metals</span>
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {metalCategories.length > 0 ? (
+                    metalCategories.map((item) => (
+                        <PriceCard key={item.id} {...item} price={calcMetalPrice(item.ratio, item.price_offset)} isMetal={true} />
+                    ))
+                ) : (
+                    <div className="col-span-full text-center py-8 bg-white rounded border border-gray-200 text-gray-400 text-sm">
+                        現在表示できる非鉄原料データがありません
+                    </div>
+                )}
+            </div>
         </div>
       </div>
     </section>
