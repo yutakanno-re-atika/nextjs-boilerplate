@@ -1,6 +1,6 @@
 "use client";
 import React from 'react';
-import { Building2, MapPin, Phone, Award, History, Factory, Zap, Recycle } from 'lucide-react';
+// lucide-react のインポートを削除
 
 export const Company = () => {
   const companyInfo = {
@@ -25,7 +25,7 @@ export const Company = () => {
       tel: "011-881-1116",
       fax: "011-882-4439",
       type: "head",
-      icon: <Zap className="w-5 h-5 text-yellow-600" />
+      icon: "⚡️" // アイコンを絵文字に変更
     },
     {
       name: "原料事業部・苫小牧工場",
@@ -33,7 +33,7 @@ export const Company = () => {
       tel: "0144-55-5544",
       fax: "0144-55-5545",
       type: "plant",
-      icon: <Recycle className="w-5 h-5 text-green-600" />
+      icon: "♻️" // アイコンを絵文字に変更
     }
   ];
 
@@ -61,9 +61,8 @@ export const Company = () => {
 
   return (
     <div className="w-full bg-slate-50 min-h-screen pb-20">
-      {/* 1. Hero Section: Corporate Philosophy */}
+      {/* 1. Hero Section */}
       <div className="bg-[#1a237e] text-white py-20 px-6 relative overflow-hidden">
-        {/* 背景アクセント（回路図とリサイクルのイメージ） */}
         <div className="absolute top-0 right-0 w-1/2 h-full bg-white/5 skew-x-12 transform origin-bottom-left"></div>
         <div className="max-w-5xl mx-auto relative z-10 text-center">
           <h1 className="text-3xl md:text-5xl font-bold tracking-widest mb-6">信頼の経営</h1>
@@ -77,10 +76,10 @@ export const Company = () => {
 
       <div className="max-w-5xl mx-auto px-4 md:px-8 py-12 space-y-16">
         
-        {/* 2. Company Profile Table */}
+        {/* 2. Company Profile */}
         <section>
           <div className="flex items-center gap-3 mb-6 border-b-2 border-[#1a237e] pb-2">
-            <Building2 className="text-[#1a237e] w-6 h-6" />
+            <span className="text-2xl">🏢</span>
             <h2 className="text-2xl font-bold text-gray-800 tracking-wide">会社概要</h2>
           </div>
           
@@ -129,7 +128,7 @@ export const Company = () => {
         {/* 3. Locations */}
         <section>
           <div className="flex items-center gap-3 mb-6 border-b-2 border-[#1a237e] pb-2">
-            <MapPin className="text-[#1a237e] w-6 h-6" />
+            <span className="text-2xl">📍</span>
             <h2 className="text-2xl font-bold text-gray-800 tracking-wide">事業所一覧</h2>
           </div>
 
@@ -137,20 +136,20 @@ export const Company = () => {
             {locations.map((loc, idx) => (
               <div key={idx} className="bg-white p-6 shadow-md border-t-4 border-[#1a237e] hover:shadow-xl transition-shadow duration-300">
                 <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
-                    <div className="p-2 bg-gray-50 rounded-full">{loc.icon}</div>
+                    <div className="text-2xl">{loc.icon}</div>
                     <h3 className="font-bold text-xl text-gray-800">{loc.name}</h3>
                 </div>
                 <p className="text-base text-gray-600 mb-4 flex items-start gap-2">
-                  <MapPin className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-400">〒</span>
                   {loc.address}
                 </p>
-                <div className="space-y-2 pl-7">
+                <div className="space-y-2 pl-4">
                   <div className="flex items-center gap-3">
-                    <Phone className="w-4 h-4 text-[#1a237e]" />
+                    <span className="text-xs text-white bg-[#1a237e] px-2 py-0.5 rounded">TEL</span>
                     <span className="font-mono text-lg text-gray-800 font-bold">{loc.tel}</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-xs text-gray-400 w-4 text-center">FAX</span>
+                    <span className="text-xs text-gray-500 bg-gray-200 px-2 py-0.5 rounded">FAX</span>
                     <span className="font-mono text-gray-600">{loc.fax}</span>
                   </div>
                 </div>
@@ -162,14 +161,14 @@ export const Company = () => {
         {/* 4. Licenses */}
         <section>
           <div className="flex items-center gap-3 mb-6 border-b-2 border-[#1a237e] pb-2">
-            <Award className="text-[#1a237e] w-6 h-6" />
+            <span className="text-2xl">🏅</span>
             <h2 className="text-2xl font-bold text-gray-800 tracking-wide">許認可・認証</h2>
           </div>
           <div className="bg-white p-6 shadow-sm border border-gray-200 rounded-sm">
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {licenses.map((lic, idx) => (
                 <li key={idx} className="flex items-start gap-3 p-2 hover:bg-gray-50 transition-colors">
-                  <Award className="w-5 h-5 text-[#1a237e] flex-shrink-0 mt-0.5" />
+                  <span className="text-[#1a237e] mt-0.5">✔︎</span>
                   <span className="text-gray-700 font-medium">{lic}</span>
                 </li>
               ))}
@@ -180,7 +179,7 @@ export const Company = () => {
         {/* 5. History */}
         <section>
           <div className="flex items-center gap-3 mb-6 border-b-2 border-[#1a237e] pb-2">
-            <History className="text-[#1a237e] w-6 h-6" />
+            <span className="text-2xl">📜</span>
             <h2 className="text-2xl font-bold text-gray-800 tracking-wide">沿革</h2>
           </div>
           <div className="bg-white shadow-sm border border-gray-200 p-2">
