@@ -3,18 +3,18 @@
 import React, { useState, useEffect } from 'react';
 import { GlobalNav } from './components/layout/GlobalNav';
 import { FatFooter } from './components/layout/FatFooter';
-import { RealChart } from './components/features/RealChart'; // 建値一覧パネル
+import { RealChart } from './components/features/RealChart'; // 縦型パネル化
 import { Simulator } from './components/features/Simulator';
 import { PriceList } from './components/features/PriceList';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { MemberDashboard } from './components/member/MemberDashboard';
-import { FlowGuide } from './components/features/FlowGuide'; // 買取の流れ
-import { MembershipGuide } from './components/features/MembershipGuide'; // 会員制度
+import { FlowGuide } from './components/features/FlowGuide';
+import { MembershipGuide } from './components/features/MembershipGuide';
 import { MarketData, UserData } from './types';
 
 // Images
 const IMAGES = {
-  hero: "/images/image_4.png", // 新しい工場の画像
+  hero: "/images/image_4.png",
 };
 
 export default function WireMasterCloud() {
@@ -75,31 +75,47 @@ export default function WireMasterCloud() {
       {view === 'LP' && (
         <>
             {/* HERO SECTION */}
-            <section className="relative h-[70vh] min-h-[500px] flex items-center bg-[#D32F2F] text-white overflow-hidden">
+            <section className="relative min-h-[700px] flex items-center bg-[#D32F2F] text-white overflow-hidden py-20 lg:py-0">
                 <div className="absolute inset-0 z-0">
                     <img src={IMAGES.hero} className="w-full h-full object-cover opacity-30 mix-blend-multiply grayscale" alt="Factory" />
                     <div className="absolute inset-0 bg-gradient-to-br from-[#B71C1C] via-[#D32F2F] to-transparent opacity-90"></div>
                 </div>
-                <div className="max-w-[1400px] mx-auto px-6 w-full relative z-10 grid lg:grid-cols-12 gap-12 items-center">
-                    <div className="lg:col-span-8 space-y-8">
-                        <div className="inline-block bg-white text-[#D32F2F] px-4 py-1 text-xs font-bold tracking-widest mb-2">SINCE 1961</div>
-                        <h1 className="text-5xl md:text-7xl font-serif font-medium leading-tight">
-                            資源を、<br/>あるべき<span className="border-b-4 border-white/60">価値</span>へ。
-                        </h1>
-                        <p className="text-white/90 text-sm md:text-base max-w-lg leading-loose border-l-2 border-white/30 pl-6">
-                            月寒製作所は「目利き」と「技術」で、リサイクルインフラを支えます。<br/>
-                            独自のナゲットプラントによる中間コストの排除が、高価買取の根拠です。
-                        </p>
-                        <div className="pt-4">
-                            <a href="#simulator" className="bg-white text-[#D32F2F] px-8 py-4 text-sm font-bold tracking-widest hover:bg-[#111] hover:text-white transition shadow-xl">査定シミュレーション</a>
+                <div className="max-w-[1400px] mx-auto px-6 w-full relative z-10">
+                    <div className="grid lg:grid-cols-12 gap-12 items-center">
+                        {/* LEFT COLUMN: COPY */}
+                        <div className="lg:col-span-8 space-y-8">
+                            <div className="inline-block bg-white text-[#D32F2F] px-4 py-1 text-xs font-bold tracking-widest mb-2">SINCE 1961</div>
+                            <h1 className="text-5xl md:text-7xl font-serif font-medium leading-tight">
+                                資源を、<br/>あるべき<span className="border-b-4 border-white/60">価値</span>へ。
+                            </h1>
+                            <p className="text-white/90 text-sm md:text-base max-w-lg leading-loose border-l-2 border-white/30 pl-6">
+                                月寒製作所は「目利き」と「技術」で、リサイクルインフラを支えます。<br/>
+                                独自のナゲットプラントによる中間コストの排除が、高価買取の根拠です。
+                            </p>
+                            <div className="pt-4">
+                                <a href="#price-list" className="bg-white text-[#D32F2F] px-8 py-4 text-sm font-bold tracking-widest hover:bg-[#111] hover:text-white transition shadow-xl">
+                                    買取価格を見る
+                                </a>
+                            </div>
+                        </div>
+
+                        {/* RIGHT COLUMN: REAL CHART (NEW POSITION) */}
+                        <div className="lg:col-span-4 animate-in fade-in slide-in-from-right-8 duration-1000 delay-300">
+                             <RealChart data={data} />
                         </div>
                     </div>
                 </div>
             </section>
 
-            <RealChart data={data} />
-            <Simulator marketPrice={marketPrice} />
-            <PriceList data={data} marketPrice={marketPrice} />
+            {/* Price List Section */}
+            <div id="price-list">
+                <PriceList data={data} marketPrice={marketPrice} />
+            </div>
+
+            {/* Simulator Section (Moved to Bottom) */}
+            <div id="simulator">
+                <Simulator marketPrice={marketPrice} />
+            </div>
         </>
       )}
 
