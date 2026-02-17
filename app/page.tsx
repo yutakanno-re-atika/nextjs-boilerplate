@@ -101,14 +101,17 @@ export default function WireMasterCloud() {
             {/* HERO SECTION */}
             <section className="relative min-h-[700px] flex items-center bg-black text-white overflow-hidden py-20 lg:py-0">
                 <div className="absolute inset-0 z-0">
+                    {/* 写真: 色味を活かすため opacity-80, grayscaleなし */}
                     <img 
                       src={IMAGES.hero} 
                       className="w-full h-full object-cover opacity-80" 
                       alt="Copper Wire Recycling Factory" 
                     />
-                    {/* グラデーション: 文字の視認性を確保 */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent z-10"></div>
-                    {/* ブランドカラーの微細なオーバーレイ */}
+                    {/* ★修正: 左側から延びるグラデーションを「濃い赤」ベースに変更し、少し透過 */}
+                    {/* from-red-950 (非常に暗い赤) から透明へ */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#330000] via-[#500000]/70 to-transparent z-10"></div>
+                    
+                    {/* 全体のトーン調整用オーバーレイ */}
                     <div className="absolute inset-0 bg-[#D32F2F]/10 mix-blend-overlay z-10"></div>
                 </div>
 
@@ -121,22 +124,22 @@ export default function WireMasterCloud() {
                                 <span className="text-white/80 text-xs font-bold tracking-[0.3em] uppercase">Est. 1961 Tomakomai</span>
                             </div>
                             
-                            {/* ★ここを明朝体(font-serif)に指定★ */}
-                            <h1 className="text-5xl md:text-7xl font-serif font-bold leading-[1.1]">
+                            {/* 明朝体で見出し */}
+                            <h1 className="text-5xl md:text-7xl font-serif font-bold leading-[1.1] drop-shadow-lg">
                                 資源を、<br/>
                                 あるべき<span className="text-[#D32F2F]">価値</span>へ。
                             </h1>
                             
-                            <p className="text-gray-300 text-sm md:text-base max-w-lg leading-loose font-sans">
+                            <p className="text-gray-200 text-sm md:text-base max-w-lg leading-loose font-sans drop-shadow-md">
                                 株式会社 月寒製作所は「技術」と「信頼」で、リサイクルインフラを支えます。
                                 独自のナゲットプラントによる中間コストの排除が、高価買取の根拠です。
                             </p>
                             
                             <div className="pt-6 flex flex-col sm:flex-row gap-4">
-                                <a href="#price-list" className="bg-[#D32F2F] text-white px-8 py-4 text-sm font-bold tracking-widest hover:bg-[#B71C1C] transition text-center shadow-lg shadow-red-900/20">
+                                <a href="#price-list" className="bg-[#D32F2F] text-white px-8 py-4 text-sm font-bold tracking-widest hover:bg-[#B71C1C] transition text-center shadow-lg shadow-red-900/50">
                                     本日の買取価格
                                 </a>
-                                <a href="#contact" className="border border-white/30 text-white px-8 py-4 text-sm font-bold tracking-widest hover:bg-white hover:text-black transition text-center">
+                                <a href="#contact" className="border border-white/30 text-white px-8 py-4 text-sm font-bold tracking-widest hover:bg-white hover:text-black transition text-center backdrop-blur-sm">
                                     お問い合わせ
                                 </a>
                             </div>
@@ -151,7 +154,6 @@ export default function WireMasterCloud() {
             </section>
 
             {/* Price List Section */}
-            {/* ※PriceList内部の見出しも明朝体にしたい場合は、PriceList.tsx側で font-serif を指定してください */}
             <PriceList data={data} marketPrice={marketPrice} />
 
             {/* Simulator Section */}
