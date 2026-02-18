@@ -65,7 +65,6 @@ export default function WireMasterCloud() {
 
   // LP (トップページ)
   return (
-    // ⚠️重要: ここから pt-20 を削除しました。これでヘッダーの下に画像が配置されます。
     <div className="min-h-screen bg-white text-[#111] font-sans">
       <GlobalNav setView={setView} view={view} />
 
@@ -90,13 +89,13 @@ export default function WireMasterCloud() {
             <section className="relative min-h-[700px] flex items-center bg-black text-white overflow-hidden py-20 lg:py-0">
                 <div className="absolute inset-0 z-0">
                     <img src={IMAGES.hero} className="w-full h-full object-cover opacity-90" alt="Factory" />
-                    {/* グラデーション: 文字が見やすいように調整 */}
+                    {/* グラデーション */}
                     <div className="absolute inset-0 bg-[linear-gradient(90deg,#D32F2F_0%,#D32F2F_35%,rgba(211,47,47,0.7)_65%,transparent_100%)] z-10"></div>
                     <div className="absolute inset-0 bg-[#D32F2F]/10 mix-blend-overlay z-10"></div>
                 </div>
 
                 <div className="max-w-[1400px] mx-auto px-6 w-full relative z-20">
-                    {/* PCレイアウト: ヘッダー被りを避けるため内部で余白を取る */}
+                    {/* PCレイアウト: mt-20は不要だが、内部コンテンツの位置調整として pt-24 を維持 */}
                     <div className="grid lg:grid-cols-12 gap-12 items-center pt-24">
                         <div className="lg:col-span-7 space-y-8">
                             <div className="inline-flex items-center gap-3">
@@ -113,4 +112,30 @@ export default function WireMasterCloud() {
                                 <a href="#price-list" className="bg-white text-[#D32F2F] px-8 py-4 text-sm font-bold tracking-widest hover:bg-black hover:text-white transition text-center shadow-xl">
                                     本日の買取価格
                                 </a>
-                                <a href="#contact" className="border border-white text-white px-8
+                                <a href="#contact" className="border border-white text-white px-8 py-4 text-sm font-bold tracking-widest hover:bg-white hover:text-black transition text-center">
+                                    お問い合わせ
+                                </a>
+                            </div>
+                        </div>
+                        <div className="lg:col-span-5 animate-in fade-in slide-in-from-right-8 duration-1000 delay-300">
+                             <div className="bg-white/10 backdrop-blur-md rounded-xl overflow-hidden border border-white/20 shadow-2xl">
+                                <RealChart data={data} />
+                             </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <PriceList data={data} marketPrice={marketPrice} />
+            <ServiceCriteria />
+            <div id="simulator"><Simulator marketPrice={marketPrice} /></div>
+        </>
+      )}
+
+      {view === 'FLOW' && <div className="pt-20"><FlowGuide /></div>}
+      {view === 'MEMBERSHIP' && <div className="pt-20"><MembershipGuide /></div>}
+
+      <FatFooter setView={setView} />
+    </div>
+  );
+}
