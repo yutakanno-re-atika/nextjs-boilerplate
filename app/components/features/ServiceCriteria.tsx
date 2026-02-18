@@ -26,7 +26,7 @@ export const ServiceCriteria = () => {
                 </div>
                 <p className="text-sm text-gray-500 leading-loose mb-6">
                     苫小牧工場へ直接お持ち込みください。<br/>
-                    トラックスケールで計量後、<strong className="text-black border-b border-[#D32F2F]">その場で現金支払い</strong>いたします。
+                    トラックスケールで計量後、<strong className="text-black border-b border-[#D32F2F]">全て銀行振込にてお支払い</strong>いたします。
                 </p>
                 <div className="bg-white py-3 px-4 text-xs font-mono font-bold text-gray-600 border border-gray-200 inline-block">
                     平日 8:00 〜 17:00 (土日祝: 要相談)
