@@ -27,10 +27,10 @@ const IMAGES = {
 
 // 右側に表示する4品目データ
 const HERO_RIGHT_ITEMS = [
-    { name: '被覆電線', sub: 'WIRE', img: '/images/items/vvf_cable.png' },
-    { name: '銅スクラップ', sub: 'COPPER', img: '/images/items/millberry.jpg' },
-    { name: '砲金・バルブ', sub: 'BRONZE', img: '/images/items/bronze_valve.jpg' },
-    { name: '真鍮・黄銅', sub: 'BRASS', img: '/images/items/yellow_brass.jpg' },
+    { name: '被覆電線', sub: 'INSULATED WIRE', img: '/images/items/vvf_cable.png', desc: 'VVF, CV, IV, ハーネス等' },
+    { name: '銅スクラップ', sub: 'COPPER SCRAP', img: '/images/items/millberry.jpg', desc: 'ピカ線, 込銅, パイプ, 板' },
+    { name: '砲金・バルブ', sub: 'GUNMETAL', img: '/images/items/bronze_valve.jpg', desc: 'バルブ, メーター, 軸受' },
+    { name: '真鍮・黄銅', sub: 'BRASS', img: '/images/items/yellow_brass.jpg', desc: '蛇口, ナット, 仏具, 削粉' },
 ];
 
 export default function WireMasterCloud() {
@@ -74,12 +74,6 @@ export default function WireMasterCloud() {
     );
   }
 
-  // ★修正ポイント: 安全なデータアクセス用ヘルパー
-  // 型定義にない 'market' プロパティにアクセスするため、一時的にanyキャストを使用
-  const safeData = data as any;
-  const copperPriceDisplay = safeData?.market?.copper?.price?.toLocaleString() || "---";
-  const lmePriceDisplay = safeData?.market?.lme_copper_usd?.toLocaleString() || "---";
-
   return (
     <div className="min-h-screen bg-white text-[#111] font-sans">
       <GlobalNav setView={setView} view={view} />
@@ -100,97 +94,83 @@ export default function WireMasterCloud() {
 
       {view === 'LP' && (
         <>
-            {/* === ORIGINAL HERO SECTION RESTORED === */}
-            <section className="relative min-h-[700px] flex items-center bg-black text-white overflow-hidden py-20 lg:py-0">
+            {/* === HERO SECTION (RED THEME) === */}
+            <section className="relative min-h-[600px] flex items-center bg-[#D32F2F] text-white overflow-hidden py-20 lg:py-0">
+                {/* 背景: シンプルな赤色ベース + 薄い画像 */}
                 <div className="absolute inset-0 z-0">
-                    <Image src={IMAGES.hero} alt="Factory" fill className="object-cover opacity-90" priority />
-                    <div className="absolute inset-0 bg-[linear-gradient(90deg,#D32F2F_0%,#D32F2F_35%,rgba(211,47,47,0.7)_65%,transparent_100%)] z-10"></div>
-                    <div className="absolute inset-0 bg-[#D32F2F]/10 mix-blend-overlay z-10"></div>
+                    <div className="absolute inset-0 bg-[#D32F2F] z-10"></div>
+                    {/* 画像を薄く重ねてテクスチャ感を出す */}
+                    <Image src={IMAGES.hero} alt="Factory" fill className="object-cover opacity-20 mix-blend-multiply" priority />
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#D32F2F] to-[#B71C1C] opacity-90 z-20"></div>
                 </div>
 
-                <div className="max-w-[1400px] mx-auto px-6 w-full relative z-20">
+                <div className="max-w-[1400px] mx-auto px-6 w-full relative z-30">
                     <div className="grid lg:grid-cols-12 gap-12 items-center pt-24">
                         
-                        <div className="lg:col-span-7 space-y-8">
+                        {/* 左側: メインコピー */}
+                        <div className="lg:col-span-7 space-y-6">
                             <div className="inline-flex items-center gap-3">
                                 <span className="w-8 h-[2px] bg-white"></span>
                                 <span className="text-white/90 text-xs font-bold tracking-[0.3em] uppercase">Est. 1961 Tomakomai</span>
                             </div>
-                            <h1 className="text-5xl md:text-7xl font-serif font-bold leading-[1.1] drop-shadow-md">
+                            <h1 className="text-5xl md:text-7xl font-serif font-bold leading-[1.1] drop-shadow-sm">
                                 資源を、<br/>あるべき<span className="border-b-4 border-white/40 pb-2">価値</span>へ。
                             </h1>
-                            <p className="text-white text-sm md:text-base max-w-lg leading-loose font-sans font-medium drop-shadow-sm">
+                            <p className="text-white text-sm md:text-base max-w-lg leading-loose font-sans font-medium">
                                 株式会社 月寒製作所は「技術」と「信頼」で、リサイクルインフラを支えます。独自のナゲットプラントによる中間コストの排除が、高価買取の根拠です。
                             </p>
-                            <div className="pt-6 flex flex-col sm:flex-row gap-4">
-                                <a href="#price-list" className="bg-white text-[#D32F2F] px-8 py-4 text-sm font-bold tracking-widest hover:bg-black hover:text-white transition text-center shadow-xl">
+                            <div className="pt-4 flex flex-col sm:flex-row gap-4">
+                                <a href="#price-list" className="bg-white text-[#D32F2F] px-8 py-4 text-sm font-bold tracking-widest hover:bg-black hover:text-white transition text-center shadow-lg rounded-full">
                                     本日の買取価格
                                 </a>
-                                <a href="#contact" className="border border-white text-white px-8 py-4 text-sm font-bold tracking-widest hover:bg-white hover:text-black transition text-center">
+                                <a href="#contact" className="border border-white text-white px-8 py-4 text-sm font-bold tracking-widest hover:bg-white hover:text-[#D32F2F] transition text-center rounded-full">
                                     お問い合わせ
                                 </a>
                             </div>
                         </div>
 
-                        {/* 右側: 新しい情報パネル */}
+                        {/* 右側: 主要4品目のみ表示 (建値削除) */}
                         <div className="lg:col-span-5 animate-in fade-in slide-in-from-right-8 duration-1000 delay-300">
-                             <div className="bg-white/10 backdrop-blur-md rounded-xl overflow-hidden border border-white/20 shadow-2xl p-6">
+                             {/* ガラス効果のあるコンテナ */}
+                             <div className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 p-6 shadow-2xl">
+                                <h3 className="text-white font-bold tracking-widest text-xs mb-4 flex items-center gap-2 border-b border-white/20 pb-3">
+                                    <span className="w-2 h-2 bg-white rounded-full"></span>
+                                    MAIN HANDLING ITEMS
+                                </h3>
                                 
-                                <div className="mb-8 pb-6 border-b border-white/10">
-                                    <h3 className="text-[#D32F2F] font-bold tracking-widest text-xs mb-4 flex items-center gap-2">
-                                        <span className="w-2 h-2 bg-[#D32F2F] rounded-full"></span>
-                                        TODAY'S MARKET INDEX
-                                    </h3>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="bg-black/20 p-3 rounded-lg">
-                                            <p className="text-xs text-gray-300 mb-1">国内銅建値</p>
-                                            <p className="text-xl font-mono font-bold">
-                                                {/* ★修正: safeDataを使用 */}
-                                                {copperPriceDisplay}<span className="text-xs ml-1">円/kg</span>
-                                            </p>
-                                        </div>
-                                        <div className="bg-black/20 p-3 rounded-lg">
-                                            <p className="text-xs text-gray-300 mb-1">LME Copper</p>
-                                            <p className="text-xl font-mono font-bold text-[#D32F2F]">
-                                                {/* ★修正: safeDataを使用 */}
-                                                ${lmePriceDisplay}<span className="text-xs ml-1">/t</span>
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div>
-                                     <h3 className="text-white font-bold tracking-widest text-xs mb-4 flex items-center gap-2">
-                                        <span className="w-2 h-2 bg-white rounded-full"></span>
-                                        MAIN ITEMS
-                                    </h3>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        {HERO_RIGHT_ITEMS.map((item, idx) => (
-                                            <div key={idx} className="group relative h-24 rounded-lg overflow-hidden border border-white/10 hover:border-[#D32F2F] transition-all">
-                                                {item.img && (
-                                                  <Image 
-                                                      src={item.img} 
-                                                      alt={item.name} 
-                                                      fill 
-                                                      className="object-cover opacity-50 group-hover:opacity-80 group-hover:scale-105 transition-all duration-500"
-                                                      sizes="200px"
-                                                  />
-                                                )}
-                                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
-                                                <div className="absolute bottom-0 left-0 p-3">
-                                                    <p className="text-[8px] text-[#D32F2F] font-bold tracking-wider mb-0.5">{item.sub}</p>
-                                                    <p className="text-sm font-bold text-white leading-tight">{item.name}</p>
-                                                </div>
+                                {/* 2x2グリッドで4品目を整列 */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    {HERO_RIGHT_ITEMS.map((item, idx) => (
+                                        <div key={idx} className="group relative aspect-[4/3] rounded-xl overflow-hidden border border-white/10 hover:border-white transition-all shadow-md bg-black/20">
+                                            {/* 画像 */}
+                                            {item.img && (
+                                              <Image 
+                                                  src={item.img} 
+                                                  alt={item.name} 
+                                                  fill 
+                                                  className="object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500"
+                                                  sizes="(max-width: 768px) 50vw, 25vw"
+                                              />
+                                            )}
+                                            {/* グラデーション & テキスト */}
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
+                                            <div className="absolute bottom-0 left-0 w-full p-3">
+                                                <p className="text-[9px] text-[#ffcccc] font-bold tracking-wider mb-0.5">{item.sub}</p>
+                                                <h4 className="text-sm md:text-base font-bold text-white leading-tight mb-1">{item.name}</h4>
+                                                <p className="text-[10px] text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity duration-300 line-clamp-1">
+                                                    {item.desc}
+                                                </p>
                                             </div>
-                                        ))}
-                                    </div>
+                                        </div>
+                                    ))}
                                 </div>
-
                              </div>
                         </div>
+
                     </div>
                 </div>
             </section>
+            {/* === END HERO SECTION === */}
 
             <PriceList data={data} marketPrice={marketPrice} />
             
