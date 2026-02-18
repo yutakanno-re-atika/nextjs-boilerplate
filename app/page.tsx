@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 
-// --- Components Import (修正: ./ に変更) ---
+// --- Components Import ---
 import { GlobalNav } from './components/layout/GlobalNav';
 import { FatFooter } from './components/layout/FatFooter';
 import { RealChart } from './components/features/RealChart'; 
@@ -15,21 +15,19 @@ import { MembershipGuide } from './components/features/MembershipGuide';
 import { Company } from './components/features/Company'; 
 import { Contact } from './components/features/Contact'; 
 
-// ★今回追加・更新するコンポーネント (修正: ./ に変更)
-import { Hero } from './components/layout/Hero';          
+// ★ここを修正しました (layout -> features)
+import { Hero } from './components/features/Hero';          
+
 import { MarketTicker } from './components/features/MarketTicker'; 
 import { PriceList } from './components/features/PriceList'; 
 
-// Types (修正: 相対パス)
 import { MarketData, UserData } from './types';
 
 export default function WireMasterCloud() {
-  // 既存のSPA用ステート管理を維持
   const [view, setView] = useState<'LP' | 'LOGIN' | 'ADMIN' | 'MEMBER' | 'FLOW' | 'MEMBERSHIP' | 'COMPANY' | 'CONTACT'>('LP');
   const [data, setData] = useState<MarketData | null>(null);
   const [user, setUser] = useState<UserData | null>(null);
 
-  // 既存のデータ取得ロジック (/api/gas 利用) を維持
   useEffect(() => {
     fetch('/api/gas')
       .then(res => res.json())
@@ -39,7 +37,6 @@ export default function WireMasterCloud() {
 
   const marketPrice = data?.config?.market_price || 0;
 
-  // 既存のログインハンドラを維持
   const handleLogin = async (e: any) => {
     e.preventDefault();
     try {
@@ -55,7 +52,6 @@ export default function WireMasterCloud() {
     } catch(e) { alert("Login Error"); }
   };
 
-  // --- View Switching Logic (Existing) ---
   if (view === 'ADMIN') return <AdminDashboard data={data} setView={setView} />;
   if (view === 'MEMBER') return <MemberDashboard user={user} data={data} setView={setView} />;
 
@@ -69,12 +65,10 @@ export default function WireMasterCloud() {
     );
   }
 
-  // --- LP View (Main Update Area) ---
   return (
     <div className="min-h-screen bg-white text-[#111] font-sans">
       <GlobalNav setView={setView} view={view} />
 
-      {/* Login Modal (Existing) */}
       {view === 'LOGIN' && (
           <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
             <div className="bg-white w-full max-w-sm p-12 shadow-2xl relative border-t-4 border-[#D32F2F]">
@@ -91,16 +85,16 @@ export default function WireMasterCloud() {
 
       {view === 'LP' && (
         <>
-            {/* ★1. New Hero Section (Replaces old section) */}
+            {/* New Hero Section */}
             <Hero />
 
-            {/* ★2. New Market Ticker */}
+            {/* New Market Ticker */}
             <MarketTicker data={data} />
 
-            {/* ★3. Updated Price List */}
+            {/* Updated Price List */}
             <PriceList data={data} marketPrice={marketPrice} />
 
-            {/* 4. RealChart (Existing - Optional) */}
+            {/* RealChart (Existing) */}
             <section className="py-12 bg-gray-50">
                <div className="container mx-auto px-4">
                   <h2 className="text-2xl font-bold text-center mb-8">相場推移チャート</h2>
@@ -110,7 +104,7 @@ export default function WireMasterCloud() {
                </div>
             </section>
 
-            {/* 5. Existing Features */}
+            {/* Existing Features */}
             <ServiceCriteria />
             <div id="simulator"><Simulator marketPrice={marketPrice} /></div>
         </>
