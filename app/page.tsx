@@ -2,25 +2,26 @@
 
 import React, { useState, useEffect } from 'react';
 
-// --- Components Import ---
-import { GlobalNav } from '@/components/layout/GlobalNav';
-import { FatFooter } from '@/components/layout/FatFooter';
-import { RealChart } from '@/components/features/RealChart'; // 既存維持
-import { Simulator } from '@/components/features/Simulator'; // 既存維持
-import { ServiceCriteria } from '@/components/features/ServiceCriteria'; // 既存維持
-import { AdminDashboard } from '@/components/admin/AdminDashboard'; // 既存維持
-import { MemberDashboard } from '@/components/member/MemberDashboard'; // 既存維持
-import { FlowGuide } from '@/components/features/FlowGuide'; // 既存維持
-import { MembershipGuide } from '@/components/features/MembershipGuide'; // 既存維持
-import { Company } from '@/components/features/Company'; // 既存維持
-import { Contact } from '@/components/features/Contact'; // 既存維持
+// --- Components Import (修正: ./ に変更) ---
+import { GlobalNav } from './components/layout/GlobalNav';
+import { FatFooter } from './components/layout/FatFooter';
+import { RealChart } from './components/features/RealChart'; 
+import { Simulator } from './components/features/Simulator'; 
+import { ServiceCriteria } from './components/features/ServiceCriteria'; 
+import { AdminDashboard } from './components/admin/AdminDashboard'; 
+import { MemberDashboard } from './components/member/MemberDashboard'; 
+import { FlowGuide } from './components/features/FlowGuide'; 
+import { MembershipGuide } from './components/features/MembershipGuide'; 
+import { Company } from './components/features/Company'; 
+import { Contact } from './components/features/Contact'; 
 
-// ★今回追加・更新するコンポーネント
-import { Hero } from '@/components/layout/Hero';          // New!
-import { MarketTicker } from '@/components/features/MarketTicker'; // New!
-import { PriceList } from '@/components/features/PriceList'; // Updated!
+// ★今回追加・更新するコンポーネント (修正: ./ に変更)
+import { Hero } from './components/layout/Hero';          
+import { MarketTicker } from './components/features/MarketTicker'; 
+import { PriceList } from './components/features/PriceList'; 
 
-import { MarketData, UserData } from '@/types';
+// Types (修正: 相対パス)
+import { MarketData, UserData } from './types';
 
 export default function WireMasterCloud() {
   // 既存のSPA用ステート管理を維持
@@ -99,8 +100,7 @@ export default function WireMasterCloud() {
             {/* ★3. Updated Price List */}
             <PriceList data={data} marketPrice={marketPrice} />
 
-            {/* 4. RealChart (Existing - Optional: Move below price list or keep) */}
-            {/* チャートを見せたいならここに配置。不要ならコメントアウト */}
+            {/* 4. RealChart (Existing - Optional) */}
             <section className="py-12 bg-gray-50">
                <div className="container mx-auto px-4">
                   <h2 className="text-2xl font-bold text-center mb-8">相場推移チャート</h2>
