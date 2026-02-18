@@ -1,13 +1,11 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import Image from 'next/image'; // 画像表示用に必要
+import Image from 'next/image'; 
 
-// --- Components Import (元の構成に戻す) ---
+// --- Components Import ---
 import { GlobalNav } from './components/layout/GlobalNav';
 import { FatFooter } from './components/layout/FatFooter';
-// RealChartは一旦非表示にし、スペースを新コンテンツに譲ります
-// import { RealChart } from './components/features/RealChart'; 
 import { Simulator } from './components/features/Simulator'; 
 import { ServiceCriteria } from './components/features/ServiceCriteria'; 
 import { AdminDashboard } from './components/admin/AdminDashboard'; 
@@ -17,13 +15,12 @@ import { MembershipGuide } from './components/features/MembershipGuide';
 import { Company } from './components/features/Company'; 
 import { Contact } from './components/features/Contact'; 
 
-// PriceListは最新の統合版を使います
 import { PriceList } from './components/features/PriceList'; 
 
 // Types
 import { MarketData, UserData } from './types';
 
-// Images (元のヒーロー画像)
+// Images
 const IMAGES = {
   hero: "/images/mixed_wire.png", 
 };
@@ -37,12 +34,10 @@ const HERO_RIGHT_ITEMS = [
 ];
 
 export default function WireMasterCloud() {
-  // SPA State
   const [view, setView] = useState<'LP' | 'LOGIN' | 'ADMIN' | 'MEMBER' | 'FLOW' | 'MEMBERSHIP' | 'COMPANY' | 'CONTACT'>('LP');
   const [data, setData] = useState<MarketData | null>(null);
   const [user, setUser] = useState<UserData | null>(null);
 
-  // Data Fetching
   useEffect(() => {
     fetch('/api/gas')
       .then(res => res.json())
@@ -52,7 +47,6 @@ export default function WireMasterCloud() {
 
   const marketPrice = data?.config?.market_price || 0;
 
-  // Login Handler
   const handleLogin = async (e: any) => {
     e.preventDefault();
     try {
@@ -68,7 +62,6 @@ export default function WireMasterCloud() {
     } catch(e) { alert("Login Error"); }
   };
 
-  // Sub Views
   if (view === 'ADMIN') return <AdminDashboard data={data} setView={setView} />;
   if (view === 'MEMBER') return <MemberDashboard user={user} data={data} setView={setView} />;
   if (view === 'COMPANY' || view === 'CONTACT') {
@@ -81,12 +74,16 @@ export default function WireMasterCloud() {
     );
   }
 
-  // Main LP View
+  // ★修正ポイント: 安全なデータアクセス用ヘルパー
+  // 型定義にない 'market' プロパティにアクセスするため、一時的にanyキャストを使用
+  const safeData = data as any;
+  const copperPriceDisplay = safeData?.market?.copper?.price?.toLocaleString() || "---";
+  const lmePriceDisplay = safeData?.market?.lme_copper_usd?.toLocaleString() || "---";
+
   return (
     <div className="min-h-screen bg-white text-[#111] font-sans">
       <GlobalNav setView={setView} view={view} />
 
-      {/* Login Modal */}
       {view === 'LOGIN' && (
           <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
             <div className="bg-white w-full max-w-sm p-12 shadow-2xl relative border-t-4 border-[#D32F2F]">
@@ -105,9 +102,7 @@ export default function WireMasterCloud() {
         <>
             {/* === ORIGINAL HERO SECTION RESTORED === */}
             <section className="relative min-h-[700px] flex items-center bg-black text-white overflow-hidden py-20 lg:py-0">
-                {/* 背景 (元のデザインを維持) */}
                 <div className="absolute inset-0 z-0">
-                    {/* next/image を使用して最適化 */}
                     <Image src={IMAGES.hero} alt="Factory" fill className="object-cover opacity-90" priority />
                     <div className="absolute inset-0 bg-[linear-gradient(90deg,#D32F2F_0%,#D32F2F_35%,rgba(211,47,47,0.7)_65%,transparent_100%)] z-10"></div>
                     <div className="absolute inset-0 bg-[#D32F2F]/10 mix-blend-overlay z-10"></div>
@@ -116,7 +111,6 @@ export default function WireMasterCloud() {
                 <div className="max-w-[1400px] mx-auto px-6 w-full relative z-20">
                     <div className="grid lg:grid-cols-12 gap-12 items-center pt-24">
                         
-                        {/* 左側: メインコピー (元のまま) */}
                         <div className="lg:col-span-7 space-y-8">
                             <div className="inline-flex items-center gap-3">
                                 <span className="w-8 h-[2px] bg-white"></span>
@@ -138,11 +132,10 @@ export default function WireMasterCloud() {
                             </div>
                         </div>
 
-                        {/* 右側: 新しい情報パネル (RealChartの場所に統合) */}
+                        {/* 右側: 新しい情報パネル */}
                         <div className="lg:col-span-5 animate-in fade-in slide-in-from-right-8 duration-1000 delay-300">
                              <div className="bg-white/10 backdrop-blur-md rounded-xl overflow-hidden border border-white/20 shadow-2xl p-6">
                                 
-                                {/* 1. 建値情報 (コンパクト表示) */}
                                 <div className="mb-8 pb-6 border-b border-white/10">
                                     <h3 className="text-[#D32F2F] font-bold tracking-widest text-xs mb-4 flex items-center gap-2">
                                         <span className="w-2 h-2 bg-[#D32F2F] rounded-full"></span>
@@ -152,19 +145,20 @@ export default function WireMasterCloud() {
                                         <div className="bg-black/20 p-3 rounded-lg">
                                             <p className="text-xs text-gray-300 mb-1">国内銅建値</p>
                                             <p className="text-xl font-mono font-bold">
-                                                {data?.market?.copper?.price?.toLocaleString() || "---"}<span className="text-xs ml-1">円/kg</span>
+                                                {/* ★修正: safeDataを使用 */}
+                                                {copperPriceDisplay}<span className="text-xs ml-1">円/kg</span>
                                             </p>
                                         </div>
                                         <div className="bg-black/20 p-3 rounded-lg">
                                             <p className="text-xs text-gray-300 mb-1">LME Copper</p>
                                             <p className="text-xl font-mono font-bold text-[#D32F2F]">
-                                                ${data?.market?.lme_copper_usd?.toLocaleString() || "---"}<span className="text-xs ml-1">/t</span>
+                                                {/* ★修正: safeDataを使用 */}
+                                                ${lmePriceDisplay}<span className="text-xs ml-1">/t</span>
                                             </p>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* 2. 主要4品目 (2x2グリッド) */}
                                 <div>
                                      <h3 className="text-white font-bold tracking-widest text-xs mb-4 flex items-center gap-2">
                                         <span className="w-2 h-2 bg-white rounded-full"></span>
@@ -173,7 +167,6 @@ export default function WireMasterCloud() {
                                     <div className="grid grid-cols-2 gap-3">
                                         {HERO_RIGHT_ITEMS.map((item, idx) => (
                                             <div key={idx} className="group relative h-24 rounded-lg overflow-hidden border border-white/10 hover:border-[#D32F2F] transition-all">
-                                                {/* 画像（存在する場合のみ表示） */}
                                                 {item.img && (
                                                   <Image 
                                                       src={item.img} 
@@ -198,9 +191,7 @@ export default function WireMasterCloud() {
                     </div>
                 </div>
             </section>
-            {/* === END HERO SECTION === */}
 
-            {/* PriceList (最新統合版) */}
             <PriceList data={data} marketPrice={marketPrice} />
             
             <ServiceCriteria />
