@@ -15,7 +15,6 @@ type PriceItem = {
 };
 
 // --- 商品データ定義 (CSVの内容 + 画像パス) ---
-// ※本来はAPI/CSVから読み込むべきですが、表示制御のためフロントでマスタ定義します
 const ITEM_MASTER: PriceItem[] = [
   // 【銅 Copper】
   {
@@ -60,7 +59,7 @@ const ITEM_MASTER: PriceItem[] = [
     id: 'mix-high',
     name: 'VA・VVFケーブル',
     category: 'wire',
-    imageSrc: '/images/items/vvf_cable.png', // アップロードされた画像を使用
+    imageSrc: '/images/items/vvf_cable.png',
     ratio: 42, // 平均的な歩留まり
     description: '住宅屋内で使われる平型ケーブル。剥離しやすく高価買取。',
   },
@@ -82,7 +81,8 @@ const CATEGORIES = [
   { id: 'other', label: 'その他', color: 'bg-gray-500' },
 ];
 
-export default function PriceList() {
+// ★修正ポイント: export default を削除し、export function に変更
+export function PriceList() {
   const [activeTab, setActiveTab] = useState('copper');
   const [marketData, setMarketData] = useState<any>(null);
 
@@ -91,6 +91,7 @@ export default function PriceList() {
     const fetchMarket = async () => {
       try {
         // GASのウェブアプリURLを指定 (環境変数推奨)
+        // ※実際のデプロイ時は .env.local 等で管理することを推奨
         const res = await fetch('YOUR_GAS_WEB_APP_URL_HERE');
         const data = await res.json();
         setMarketData(data);
@@ -104,23 +105,20 @@ export default function PriceList() {
   // 表示用データのフィルタリング
   const displayItems = ITEM_MASTER.filter(item => item.category === activeTab);
 
-  // 価格計算ロジック (簡易版)
+  // 価格計算ロジック
   const calculatePrice = (item: PriceItem) => {
     if (!marketData) return '---';
     
     // 銅建値 (例: 1300)
     const copperBase = marketData.market?.copper?.price || 1300;
     
-    // ロジック例: (建値 - オフセット) * 歩留まり
-    // ※実際は御社の厳密な計算式に合わせて調整してください
     let price = 0;
     
     if (item.category === 'copper') {
        price = (copperBase + (item.priceOffset || 0));
     } else if (item.category === 'wire') {
-       price = copperBase * (item.ratio / 100) * 0.8; // 電線は加工費(0.8)を引くなど
+       price = copperBase * (item.ratio / 100) * 0.8; 
     } else {
-       // 真鍮などは固定単価の場合もあるが、ここでは連動計算
        price = copperBase * (item.ratio / 100); 
     }
 
@@ -178,16 +176,18 @@ export default function PriceList() {
             >
               {/* 画像エリア (アスペクト比 4:3) */}
               <div className="relative h-48 w-full bg-gray-200">
-                {/* 注: next/imageを使用する場合、width/heightまたはfillを指定する必要があります。
-                  実際の運用では placeholder="blur" を推奨
-                */}
-                 <Image
-                    src={item.imageSrc}
-                    alt={item.name}
-                    fill
-                    className="object-cover hover:scale-105 transition-transform duration-500"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  />
+                 {/* 画像がない場合のフォールバック表示も考慮 */}
+                 {item.imageSrc ? (
+                   <Image
+                      src={item.imageSrc}
+                      alt={item.name}
+                      fill
+                      className="object-cover hover:scale-105 transition-transform duration-500"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    />
+                 ) : (
+                   <div className="flex items-center justify-center h-full text-gray-400">No Image</div>
+                 )}
                   {/* カテゴリバッジ */}
                   <div className="absolute top-2 left-2">
                      <span className={`text-xs text-white px-2 py-1 rounded shadow-sm ${
@@ -230,7 +230,8 @@ export default function PriceList() {
 
         {/* 注意書き */}
         <div className="mt-8 text-center text-xs text-gray-400">
-          ※ 上記価格は参考価格です。状態（付き物、油、酸化など）により変動します。
+          ※ 上記価格は参考価格です。状態（付き物、油、酸化など）により変動します。<br/>
+          ※ 10kg未満のお持ち込みは単価が異なる場合があります。
         </div>
 
       </div>
