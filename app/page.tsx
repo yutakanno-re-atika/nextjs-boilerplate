@@ -1,30 +1,34 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { GlobalNav } from './components/layout/GlobalNav';
-import { FatFooter } from './components/layout/FatFooter';
-import { RealChart } from './components/features/RealChart';
-import { Simulator } from './components/features/Simulator';
-import { PriceList } from './components/features/PriceList';
-import { ServiceCriteria } from './components/features/ServiceCriteria';
-import { AdminDashboard } from './components/admin/AdminDashboard';
-import { MemberDashboard } from './components/member/MemberDashboard';
-import { FlowGuide } from './components/features/FlowGuide';
-import { MembershipGuide } from './components/features/MembershipGuide';
-import { Company } from './components/features/Company';
-import { Contact } from './components/features/Contact';
-import { MarketData, UserData } from './types';
 
-// Images
-const IMAGES = {
-  hero: "/images/mixed_wire.png", 
-};
+// --- Components Import ---
+import { GlobalNav } from '@/components/layout/GlobalNav';
+import { FatFooter } from '@/components/layout/FatFooter';
+import { RealChart } from '@/components/features/RealChart'; // 既存維持
+import { Simulator } from '@/components/features/Simulator'; // 既存維持
+import { ServiceCriteria } from '@/components/features/ServiceCriteria'; // 既存維持
+import { AdminDashboard } from '@/components/admin/AdminDashboard'; // 既存維持
+import { MemberDashboard } from '@/components/member/MemberDashboard'; // 既存維持
+import { FlowGuide } from '@/components/features/FlowGuide'; // 既存維持
+import { MembershipGuide } from '@/components/features/MembershipGuide'; // 既存維持
+import { Company } from '@/components/features/Company'; // 既存維持
+import { Contact } from '@/components/features/Contact'; // 既存維持
+
+// ★今回追加・更新するコンポーネント
+import { Hero } from '@/components/layout/Hero';          // New!
+import { MarketTicker } from '@/components/features/MarketTicker'; // New!
+import { PriceList } from '@/components/features/PriceList'; // Updated!
+
+import { MarketData, UserData } from '@/types';
 
 export default function WireMasterCloud() {
+  // 既存のSPA用ステート管理を維持
   const [view, setView] = useState<'LP' | 'LOGIN' | 'ADMIN' | 'MEMBER' | 'FLOW' | 'MEMBERSHIP' | 'COMPANY' | 'CONTACT'>('LP');
   const [data, setData] = useState<MarketData | null>(null);
   const [user, setUser] = useState<UserData | null>(null);
 
+  // 既存のデータ取得ロジック (/api/gas 利用) を維持
   useEffect(() => {
     fetch('/api/gas')
       .then(res => res.json())
@@ -34,6 +38,7 @@ export default function WireMasterCloud() {
 
   const marketPrice = data?.config?.market_price || 0;
 
+  // 既存のログインハンドラを維持
   const handleLogin = async (e: any) => {
     e.preventDefault();
     try {
@@ -49,10 +54,10 @@ export default function WireMasterCloud() {
     } catch(e) { alert("Login Error"); }
   };
 
+  // --- View Switching Logic (Existing) ---
   if (view === 'ADMIN') return <AdminDashboard data={data} setView={setView} />;
   if (view === 'MEMBER') return <MemberDashboard user={user} data={data} setView={setView} />;
 
-  // 共通レイアウト (COMPANY, CONTACT)
   if (view === 'COMPANY' || view === 'CONTACT') {
     return (
       <div className="min-h-screen bg-white text-[#111] font-sans pt-20">
@@ -63,12 +68,12 @@ export default function WireMasterCloud() {
     );
   }
 
-  // LP (トップページ)
+  // --- LP View (Main Update Area) ---
   return (
     <div className="min-h-screen bg-white text-[#111] font-sans">
       <GlobalNav setView={setView} view={view} />
 
-      {/* ログインモーダル */}
+      {/* Login Modal (Existing) */}
       {view === 'LOGIN' && (
           <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
             <div className="bg-white w-full max-w-sm p-12 shadow-2xl relative border-t-4 border-[#D32F2F]">
@@ -85,48 +90,27 @@ export default function WireMasterCloud() {
 
       {view === 'LP' && (
         <>
-            {/* HERO SECTION */}
-            <section className="relative min-h-[700px] flex items-center bg-black text-white overflow-hidden py-20 lg:py-0">
-                <div className="absolute inset-0 z-0">
-                    <img src={IMAGES.hero} className="w-full h-full object-cover opacity-90" alt="Factory" />
-                    {/* グラデーション */}
-                    <div className="absolute inset-0 bg-[linear-gradient(90deg,#D32F2F_0%,#D32F2F_35%,rgba(211,47,47,0.7)_65%,transparent_100%)] z-10"></div>
-                    <div className="absolute inset-0 bg-[#D32F2F]/10 mix-blend-overlay z-10"></div>
-                </div>
+            {/* ★1. New Hero Section (Replaces old section) */}
+            <Hero />
 
-                <div className="max-w-[1400px] mx-auto px-6 w-full relative z-20">
-                    {/* PCレイアウト: mt-20は不要だが、内部コンテンツの位置調整として pt-24 を維持 */}
-                    <div className="grid lg:grid-cols-12 gap-12 items-center pt-24">
-                        <div className="lg:col-span-7 space-y-8">
-                            <div className="inline-flex items-center gap-3">
-                                <span className="w-8 h-[2px] bg-white"></span>
-                                <span className="text-white/90 text-xs font-bold tracking-[0.3em] uppercase">Est. 1961 Tomakomai</span>
-                            </div>
-                            <h1 className="text-5xl md:text-7xl font-serif font-bold leading-[1.1] drop-shadow-md">
-                                資源を、<br/>あるべき<span className="border-b-4 border-white/40 pb-2">価値</span>へ。
-                            </h1>
-                            <p className="text-white text-sm md:text-base max-w-lg leading-loose font-sans font-medium drop-shadow-sm">
-                                株式会社 月寒製作所は「技術」と「信頼」で、リサイクルインフラを支えます。独自のナゲットプラントによる中間コストの排除が、高価買取の根拠です。
-                            </p>
-                            <div className="pt-6 flex flex-col sm:flex-row gap-4">
-                                <a href="#price-list" className="bg-white text-[#D32F2F] px-8 py-4 text-sm font-bold tracking-widest hover:bg-black hover:text-white transition text-center shadow-xl">
-                                    本日の買取価格
-                                </a>
-                                <a href="#contact" className="border border-white text-white px-8 py-4 text-sm font-bold tracking-widest hover:bg-white hover:text-black transition text-center">
-                                    お問い合わせ
-                                </a>
-                            </div>
-                        </div>
-                        <div className="lg:col-span-5 animate-in fade-in slide-in-from-right-8 duration-1000 delay-300">
-                             <div className="bg-white/10 backdrop-blur-md rounded-xl overflow-hidden border border-white/20 shadow-2xl">
-                                <RealChart data={data} />
-                             </div>
-                        </div>
-                    </div>
-                </div>
+            {/* ★2. New Market Ticker */}
+            <MarketTicker data={data} />
+
+            {/* ★3. Updated Price List */}
+            <PriceList data={data} marketPrice={marketPrice} />
+
+            {/* 4. RealChart (Existing - Optional: Move below price list or keep) */}
+            {/* チャートを見せたいならここに配置。不要ならコメントアウト */}
+            <section className="py-12 bg-gray-50">
+               <div className="container mx-auto px-4">
+                  <h2 className="text-2xl font-bold text-center mb-8">相場推移チャート</h2>
+                  <div className="max-w-4xl mx-auto bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                     <RealChart data={data} />
+                  </div>
+               </div>
             </section>
 
-            <PriceList data={data} marketPrice={marketPrice} />
+            {/* 5. Existing Features */}
             <ServiceCriteria />
             <div id="simulator"><Simulator marketPrice={marketPrice} /></div>
         </>
