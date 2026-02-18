@@ -17,7 +17,7 @@ export const GlobalNav = ({ setView, view }: { setView: any, view: string }) => 
   const navItems = [
     { label: 'TOP', action: () => setView('LP') },
     { label: '買取価格', href: '#price-list' },
-    { label: '選ばれる理由', href: '#simulator' }, // Simulatorセクション付近へのリンクとして
+    { label: '選ばれる理由', href: '#simulator' },
     { label: '会社概要', action: () => setView('COMPANY') },
     { label: 'お問い合わせ', action: () => setView('CONTACT') },
   ];
@@ -40,7 +40,7 @@ export const GlobalNav = ({ setView, view }: { setView: any, view: string }) => 
              }`}>
                月寒製作所
              </h1>
-             {/* ★追加: 苫小牧工場 (少し小さく表示) */}
+             {/* 苫小牧工場表記 */}
              <span className={`text-xs font-bold mb-1 transition-colors ${
                scrolled || view !== 'LP' ? 'text-gray-500' : 'text-white/80'
              }`}>
@@ -71,7 +71,8 @@ export const GlobalNav = ({ setView, view }: { setView: any, view: string }) => 
             ) : (
               <button 
                 key={i} 
-                onClick={item.action} 
+                // 修正: item.actionが存在する場合のみ実行
+                onClick={() => item.action && item.action()} 
                 className={`text-sm font-bold tracking-wider hover:text-[#D32F2F] transition ${
                   scrolled || view !== 'LP' ? 'text-black' : 'text-white'
                 }`}
@@ -110,7 +111,14 @@ export const GlobalNav = ({ setView, view }: { setView: any, view: string }) => 
                item.href ? (
                  <a key={i} href={item.href} onClick={() => setMobileMenuOpen(false)} className="text-2xl font-bold text-black hover:text-[#D32F2F]">{item.label}</a>
                ) : (
-                 <button key={i} onClick={() => { item.action(); setMobileMenuOpen(false); }} className="text-2xl font-bold text-black hover:text-[#D32F2F]">{item.label}</button>
+                 <button 
+                    key={i} 
+                    // 修正: item.actionが存在するかチェックしてから実行
+                    onClick={() => { if(item.action) item.action(); setMobileMenuOpen(false); }} 
+                    className="text-2xl font-bold text-black hover:text-[#D32F2F]"
+                 >
+                    {item.label}
+                 </button>
                )
              ))}
              <button onClick={() => { setView('LOGIN'); setMobileMenuOpen(false); }} className="text-xl font-bold text-[#D32F2F] mt-4">関係者ログイン</button>
