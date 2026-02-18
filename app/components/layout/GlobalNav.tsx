@@ -13,6 +13,10 @@ export const GlobalNav = ({ setView, view }: { setView: any, view: string }) => 
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // ★修正: ロゴなどの色を決定する条件
+  // スクロールした OR トップページ以外 OR モバイルメニューが開いている 場合は「黒文字」
+  const isDarkText = scrolled || view !== 'LP' || mobileMenuOpen;
+
   // ナビゲーション項目
   const navItems = [
     { label: 'TOP', action: () => setView('LP') },
@@ -30,26 +34,26 @@ export const GlobalNav = ({ setView, view }: { setView: any, view: string }) => 
         
         {/* ロゴエリア */}
         <div 
-          className="cursor-pointer group" 
-          onClick={() => setView('LP')}
+          className="cursor-pointer group relative z-50" 
+          onClick={() => { setView('LP'); setMobileMenuOpen(false); }}
         >
           <div className="flex items-end gap-2">
              {/* メインロゴ */}
              <h1 className={`text-2xl font-serif font-bold tracking-tight transition-colors ${
-               scrolled || view !== 'LP' ? 'text-black' : 'text-white'
+               isDarkText ? 'text-black' : 'text-white'
              }`}>
                月寒製作所
              </h1>
              {/* 苫小牧工場表記 */}
              <span className={`text-xs font-bold mb-1 transition-colors ${
-               scrolled || view !== 'LP' ? 'text-gray-500' : 'text-white/80'
+               isDarkText ? 'text-gray-500' : 'text-white/80'
              }`}>
                (苫小牧工場)
              </span>
           </div>
           {/* 英語表記 */}
           <p className={`text-[10px] tracking-widest uppercase transition-colors ${
-             scrolled || view !== 'LP' ? 'text-[#D32F2F]' : 'text-white/60'
+             isDarkText ? 'text-[#D32F2F]' : 'text-white/60'
           }`}>
              Tsukisamu Mfg.
           </p>
@@ -63,7 +67,7 @@ export const GlobalNav = ({ setView, view }: { setView: any, view: string }) => 
                 key={i} 
                 href={item.href} 
                 className={`text-sm font-bold tracking-wider hover:text-[#D32F2F] transition ${
-                  scrolled || view !== 'LP' ? 'text-black' : 'text-white'
+                  isDarkText ? 'text-black' : 'text-white'
                 }`}
               >
                 {item.label}
@@ -71,10 +75,9 @@ export const GlobalNav = ({ setView, view }: { setView: any, view: string }) => 
             ) : (
               <button 
                 key={i} 
-                // 修正: item.actionが存在する場合のみ実行
                 onClick={() => item.action && item.action()} 
                 className={`text-sm font-bold tracking-wider hover:text-[#D32F2F] transition ${
-                  scrolled || view !== 'LP' ? 'text-black' : 'text-white'
+                  isDarkText ? 'text-black' : 'text-white'
                 }`}
               >
                 {item.label}
@@ -85,7 +88,7 @@ export const GlobalNav = ({ setView, view }: { setView: any, view: string }) => 
           <button 
             onClick={() => setView('LOGIN')} 
             className={`border px-6 py-2 text-xs font-bold tracking-widest hover:bg-[#D32F2F] hover:border-[#D32F2F] hover:text-white transition ${
-              scrolled || view !== 'LP' ? 'border-black text-black' : 'border-white text-white'
+              isDarkText ? 'border-black text-black' : 'border-white text-white'
             }`}
           >
             LOGIN
@@ -94,12 +97,12 @@ export const GlobalNav = ({ setView, view }: { setView: any, view: string }) => 
 
         {/* モバイルメニューボタン (ハンバーガー) */}
         <button 
-          className="md:hidden z-50"
+          className="md:hidden z-50 relative"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
         >
-          <div className={`w-6 h-0.5 mb-1.5 transition-all ${mobileMenuOpen ? 'rotate-45 translate-y-2 bg-black' : (scrolled || view !== 'LP' ? 'bg-black' : 'bg-white')}`}></div>
-          <div className={`w-6 h-0.5 mb-1.5 transition-all ${mobileMenuOpen ? 'opacity-0' : (scrolled || view !== 'LP' ? 'bg-black' : 'bg-white')}`}></div>
-          <div className={`w-6 h-0.5 transition-all ${mobileMenuOpen ? '-rotate-45 -translate-y-2 bg-black' : (scrolled || view !== 'LP' ? 'bg-black' : 'bg-white')}`}></div>
+          <div className={`w-6 h-0.5 mb-1.5 transition-all ${mobileMenuOpen ? 'rotate-45 translate-y-2 bg-black' : (isDarkText ? 'bg-black' : 'bg-white')}`}></div>
+          <div className={`w-6 h-0.5 mb-1.5 transition-all ${mobileMenuOpen ? 'opacity-0' : (isDarkText ? 'bg-black' : 'bg-white')}`}></div>
+          <div className={`w-6 h-0.5 transition-all ${mobileMenuOpen ? '-rotate-45 -translate-y-2 bg-black' : (isDarkText ? 'bg-black' : 'bg-white')}`}></div>
         </button>
 
         {/* モバイルメニュー展開 */}
@@ -113,7 +116,6 @@ export const GlobalNav = ({ setView, view }: { setView: any, view: string }) => 
                ) : (
                  <button 
                     key={i} 
-                    // 修正: item.actionが存在するかチェックしてから実行
                     onClick={() => { if(item.action) item.action(); setMobileMenuOpen(false); }} 
                     className="text-2xl font-bold text-black hover:text-[#D32F2F]"
                  >
