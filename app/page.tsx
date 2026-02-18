@@ -1,11 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image'; // 画像表示用に必要
 
-// --- Components Import ---
+// --- Components Import (元の構成に戻す) ---
 import { GlobalNav } from './components/layout/GlobalNav';
 import { FatFooter } from './components/layout/FatFooter';
-import { RealChart } from './components/features/RealChart'; 
+// RealChartは一旦非表示にし、スペースを新コンテンツに譲ります
+// import { RealChart } from './components/features/RealChart'; 
 import { Simulator } from './components/features/Simulator'; 
 import { ServiceCriteria } from './components/features/ServiceCriteria'; 
 import { AdminDashboard } from './components/admin/AdminDashboard'; 
@@ -15,19 +17,32 @@ import { MembershipGuide } from './components/features/MembershipGuide';
 import { Company } from './components/features/Company'; 
 import { Contact } from './components/features/Contact'; 
 
-// ★ここを修正しました (layout -> features)
-import { Hero } from './components/features/Hero';          
-
-import { MarketTicker } from './components/features/MarketTicker'; 
+// PriceListは最新の統合版を使います
 import { PriceList } from './components/features/PriceList'; 
 
+// Types
 import { MarketData, UserData } from './types';
 
+// Images (元のヒーロー画像)
+const IMAGES = {
+  hero: "/images/mixed_wire.png", 
+};
+
+// 右側に表示する4品目データ
+const HERO_RIGHT_ITEMS = [
+    { name: '被覆電線', sub: 'WIRE', img: '/images/items/vvf_cable.png' },
+    { name: '銅スクラップ', sub: 'COPPER', img: '/images/items/millberry.jpg' },
+    { name: '砲金・バルブ', sub: 'BRONZE', img: '/images/items/bronze_valve.jpg' },
+    { name: '真鍮・黄銅', sub: 'BRASS', img: '/images/items/yellow_brass.jpg' },
+];
+
 export default function WireMasterCloud() {
+  // SPA State
   const [view, setView] = useState<'LP' | 'LOGIN' | 'ADMIN' | 'MEMBER' | 'FLOW' | 'MEMBERSHIP' | 'COMPANY' | 'CONTACT'>('LP');
   const [data, setData] = useState<MarketData | null>(null);
   const [user, setUser] = useState<UserData | null>(null);
 
+  // Data Fetching
   useEffect(() => {
     fetch('/api/gas')
       .then(res => res.json())
@@ -37,6 +52,7 @@ export default function WireMasterCloud() {
 
   const marketPrice = data?.config?.market_price || 0;
 
+  // Login Handler
   const handleLogin = async (e: any) => {
     e.preventDefault();
     try {
@@ -52,9 +68,9 @@ export default function WireMasterCloud() {
     } catch(e) { alert("Login Error"); }
   };
 
+  // Sub Views
   if (view === 'ADMIN') return <AdminDashboard data={data} setView={setView} />;
   if (view === 'MEMBER') return <MemberDashboard user={user} data={data} setView={setView} />;
-
   if (view === 'COMPANY' || view === 'CONTACT') {
     return (
       <div className="min-h-screen bg-white text-[#111] font-sans pt-20">
@@ -65,10 +81,12 @@ export default function WireMasterCloud() {
     );
   }
 
+  // Main LP View
   return (
     <div className="min-h-screen bg-white text-[#111] font-sans">
       <GlobalNav setView={setView} view={view} />
 
+      {/* Login Modal */}
       {view === 'LOGIN' && (
           <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
             <div className="bg-white w-full max-w-sm p-12 shadow-2xl relative border-t-4 border-[#D32F2F]">
@@ -85,26 +103,106 @@ export default function WireMasterCloud() {
 
       {view === 'LP' && (
         <>
-            {/* New Hero Section */}
-            <Hero />
+            {/* === ORIGINAL HERO SECTION RESTORED === */}
+            <section className="relative min-h-[700px] flex items-center bg-black text-white overflow-hidden py-20 lg:py-0">
+                {/* 背景 (元のデザインを維持) */}
+                <div className="absolute inset-0 z-0">
+                    {/* next/image を使用して最適化 */}
+                    <Image src={IMAGES.hero} alt="Factory" fill className="object-cover opacity-90" priority />
+                    <div className="absolute inset-0 bg-[linear-gradient(90deg,#D32F2F_0%,#D32F2F_35%,rgba(211,47,47,0.7)_65%,transparent_100%)] z-10"></div>
+                    <div className="absolute inset-0 bg-[#D32F2F]/10 mix-blend-overlay z-10"></div>
+                </div>
 
-            {/* New Market Ticker */}
-            <MarketTicker data={data} />
+                <div className="max-w-[1400px] mx-auto px-6 w-full relative z-20">
+                    <div className="grid lg:grid-cols-12 gap-12 items-center pt-24">
+                        
+                        {/* 左側: メインコピー (元のまま) */}
+                        <div className="lg:col-span-7 space-y-8">
+                            <div className="inline-flex items-center gap-3">
+                                <span className="w-8 h-[2px] bg-white"></span>
+                                <span className="text-white/90 text-xs font-bold tracking-[0.3em] uppercase">Est. 1961 Tomakomai</span>
+                            </div>
+                            <h1 className="text-5xl md:text-7xl font-serif font-bold leading-[1.1] drop-shadow-md">
+                                資源を、<br/>あるべき<span className="border-b-4 border-white/40 pb-2">価値</span>へ。
+                            </h1>
+                            <p className="text-white text-sm md:text-base max-w-lg leading-loose font-sans font-medium drop-shadow-sm">
+                                株式会社 月寒製作所は「技術」と「信頼」で、リサイクルインフラを支えます。独自のナゲットプラントによる中間コストの排除が、高価買取の根拠です。
+                            </p>
+                            <div className="pt-6 flex flex-col sm:flex-row gap-4">
+                                <a href="#price-list" className="bg-white text-[#D32F2F] px-8 py-4 text-sm font-bold tracking-widest hover:bg-black hover:text-white transition text-center shadow-xl">
+                                    本日の買取価格
+                                </a>
+                                <a href="#contact" className="border border-white text-white px-8 py-4 text-sm font-bold tracking-widest hover:bg-white hover:text-black transition text-center">
+                                    お問い合わせ
+                                </a>
+                            </div>
+                        </div>
 
-            {/* Updated Price List */}
-            <PriceList data={data} marketPrice={marketPrice} />
+                        {/* 右側: 新しい情報パネル (RealChartの場所に統合) */}
+                        <div className="lg:col-span-5 animate-in fade-in slide-in-from-right-8 duration-1000 delay-300">
+                             <div className="bg-white/10 backdrop-blur-md rounded-xl overflow-hidden border border-white/20 shadow-2xl p-6">
+                                
+                                {/* 1. 建値情報 (コンパクト表示) */}
+                                <div className="mb-8 pb-6 border-b border-white/10">
+                                    <h3 className="text-[#D32F2F] font-bold tracking-widest text-xs mb-4 flex items-center gap-2">
+                                        <span className="w-2 h-2 bg-[#D32F2F] rounded-full"></span>
+                                        TODAY'S MARKET INDEX
+                                    </h3>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-black/20 p-3 rounded-lg">
+                                            <p className="text-xs text-gray-300 mb-1">国内銅建値</p>
+                                            <p className="text-xl font-mono font-bold">
+                                                {data?.market?.copper?.price?.toLocaleString() || "---"}<span className="text-xs ml-1">円/kg</span>
+                                            </p>
+                                        </div>
+                                        <div className="bg-black/20 p-3 rounded-lg">
+                                            <p className="text-xs text-gray-300 mb-1">LME Copper</p>
+                                            <p className="text-xl font-mono font-bold text-[#D32F2F]">
+                                                ${data?.market?.lme_copper_usd?.toLocaleString() || "---"}<span className="text-xs ml-1">/t</span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
 
-            {/* RealChart (Existing) */}
-            <section className="py-12 bg-gray-50">
-               <div className="container mx-auto px-4">
-                  <h2 className="text-2xl font-bold text-center mb-8">相場推移チャート</h2>
-                  <div className="max-w-4xl mx-auto bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                     <RealChart data={data} />
-                  </div>
-               </div>
+                                {/* 2. 主要4品目 (2x2グリッド) */}
+                                <div>
+                                     <h3 className="text-white font-bold tracking-widest text-xs mb-4 flex items-center gap-2">
+                                        <span className="w-2 h-2 bg-white rounded-full"></span>
+                                        MAIN ITEMS
+                                    </h3>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {HERO_RIGHT_ITEMS.map((item, idx) => (
+                                            <div key={idx} className="group relative h-24 rounded-lg overflow-hidden border border-white/10 hover:border-[#D32F2F] transition-all">
+                                                {/* 画像（存在する場合のみ表示） */}
+                                                {item.img && (
+                                                  <Image 
+                                                      src={item.img} 
+                                                      alt={item.name} 
+                                                      fill 
+                                                      className="object-cover opacity-50 group-hover:opacity-80 group-hover:scale-105 transition-all duration-500"
+                                                      sizes="200px"
+                                                  />
+                                                )}
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+                                                <div className="absolute bottom-0 left-0 p-3">
+                                                    <p className="text-[8px] text-[#D32F2F] font-bold tracking-wider mb-0.5">{item.sub}</p>
+                                                    <p className="text-sm font-bold text-white leading-tight">{item.name}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                             </div>
+                        </div>
+                    </div>
+                </div>
             </section>
+            {/* === END HERO SECTION === */}
 
-            {/* Existing Features */}
+            {/* PriceList (最新統合版) */}
+            <PriceList data={data} marketPrice={marketPrice} />
+            
             <ServiceCriteria />
             <div id="simulator"><Simulator marketPrice={marketPrice} /></div>
         </>
