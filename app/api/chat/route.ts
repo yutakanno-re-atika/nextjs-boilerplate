@@ -32,10 +32,11 @@ export async function POST(req: Request) {
       get_current_prices: tool({
         description: '現在の銅建値や、主要な電線・非鉄金属の買取参考価格を取得する',
         parameters: z.object({
-          // 型エラー回避のためのダミーパラメータ
-          query: z.string().optional().describe('特に指定なし')
+          // 型エラー回避のためのパラメータ
+          info: z.string().optional().describe('取得する情報（特に指定がなければ空でよい）'),
         }),
-        execute: async (_args) => {
+        // ★修正: 設計図と同じ名前 `{ info }` で受け取るようにしました
+        execute: async ({ info }) => {
           try {
             const response = await fetch('https://script.google.com/macros/s/AKfycbzzhS79p8H4ZkQx-D5f2t7Z9tQ/exec');
             const data = await response.json();
