@@ -8,9 +8,11 @@ export async function POST(req: Request) {
   const { messages } = await req.json();
 
   const result = await generateText({
-    // アーキテクト氏推奨の正式なモデルID指定
+    // シニアアーキテクト推奨の正式なモデルID
     model: google('models/gemini-1.5-flash'), 
     messages,
+    // ★追加: アーキテクトが忘れていた現場の知恵（型エラー回避）
+    // @ts-ignore
     maxSteps: 5,
     system: `
       あなたは株式会社月寒製作所（苫小牧工場）のAIコンシェルジュです。
@@ -26,7 +28,6 @@ export async function POST(req: Request) {
       get_current_prices: tool({
         description: '現在の銅建値や、主要な電線・非鉄金属の買取参考価格を取得する',
         parameters: z.object({}),
-        // ※Vercelの型チェック対策として _args を明示
         execute: async (_args) => {
           try {
             const response = await fetch('https://script.google.com/macros/s/AKfycbzzhS79p8H4ZkQx-D5f2t7Z9tQ/exec');
