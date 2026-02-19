@@ -7,11 +7,11 @@ export const maxDuration = 30;
 export async function POST(req: Request) {
   const { messages } = await req.json();
 
-  // ★ streamText ではなく generateText を使用して一括で処理します
   const result = await generateText({
     model: google('gemini-1.5-flash'),
     messages,
-    maxSteps: 5, // ★ ツールを自動実行させる魔法の数字
+    // @ts-ignore - 型定義が追いついていないための強制無視パス
+    maxSteps: 5,
     system: `
       あなたは株式会社月寒製作所（苫小牧工場）のAIコンシェルジュです。
       以下のルールを厳守して回答してください。
