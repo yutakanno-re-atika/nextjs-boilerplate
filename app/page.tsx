@@ -14,7 +14,7 @@ import { FlowGuide } from './components/features/FlowGuide';
 import { MembershipGuide } from './components/features/MembershipGuide'; 
 import { Company } from './components/features/Company'; 
 import { Contact } from './components/features/Contact'; 
-
+import { Concierge } from './components/features/Concierge';
 import { PriceList } from './components/features/PriceList'; 
 
 // Types
@@ -69,6 +69,7 @@ export default function WireMasterCloud() {
       <div className="min-h-screen bg-white text-[#111] font-sans pt-20">
         <GlobalNav setView={setView} view={view} />
         {view === 'COMPANY' ? <Company /> : <Contact />}
+        <Concierge />
         <FatFooter setView={setView} />
       </div>
     );
