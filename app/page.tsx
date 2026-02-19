@@ -14,8 +14,10 @@ import { FlowGuide } from './components/features/FlowGuide';
 import { MembershipGuide } from './components/features/MembershipGuide'; 
 import { Company } from './components/features/Company'; 
 import { Contact } from './components/features/Contact'; 
-import { Concierge } from './components/features/Concierge';
 import { PriceList } from './components/features/PriceList'; 
+
+// ★ ここで新入社員（コンシェルジュ）を呼び出しています
+import { Concierge } from './components/features/Concierge'; 
 
 // Types
 import { MarketData, UserData } from './types';
@@ -25,7 +27,6 @@ const IMAGES = {
   hero: "/images/mixed_wire.png", 
 };
 
-// 右側に表示する4品目データ
 const HERO_RIGHT_ITEMS = [
     { name: '被覆電線', sub: 'INSULATED WIRE', img: '/images/items/vvf_cable.png', desc: 'VVF, CV, IV, ハーネス等' },
     { name: '銅スクラップ', sub: 'COPPER SCRAP', img: '/images/items/millberry.jpg', desc: 'ピカ線, 込銅, パイプ, 板' },
@@ -69,7 +70,6 @@ export default function WireMasterCloud() {
       <div className="min-h-screen bg-white text-[#111] font-sans pt-20">
         <GlobalNav setView={setView} view={view} />
         {view === 'COMPANY' ? <Company /> : <Contact />}
-        <Concierge />
         <FatFooter setView={setView} />
       </div>
     );
@@ -95,20 +95,15 @@ export default function WireMasterCloud() {
 
       {view === 'LP' && (
         <>
-            {/* === HERO SECTION (RED THEME) === */}
             <section className="relative min-h-[600px] flex items-center bg-[#D32F2F] text-white overflow-hidden py-20 lg:py-0">
-                {/* 背景: シンプルな赤色ベース + 薄い画像 */}
                 <div className="absolute inset-0 z-0">
                     <div className="absolute inset-0 bg-[#D32F2F] z-10"></div>
-                    {/* 画像を薄く重ねてテクスチャ感を出す */}
                     <Image src={IMAGES.hero} alt="Factory" fill className="object-cover opacity-20 mix-blend-multiply" priority />
                     <div className="absolute inset-0 bg-gradient-to-br from-[#D32F2F] to-[#B71C1C] opacity-90 z-20"></div>
                 </div>
 
                 <div className="max-w-[1400px] mx-auto px-6 w-full relative z-30">
                     <div className="grid lg:grid-cols-12 gap-12 items-center pt-24">
-                        
-                        {/* 左側: メインコピー */}
                         <div className="lg:col-span-7 space-y-6">
                             <div className="inline-flex items-center gap-3">
                                 <span className="w-8 h-[2px] bg-white"></span>
@@ -130,20 +125,15 @@ export default function WireMasterCloud() {
                             </div>
                         </div>
 
-                        {/* 右側: 主要4品目のみ表示 (建値削除) */}
                         <div className="lg:col-span-5 animate-in fade-in slide-in-from-right-8 duration-1000 delay-300">
-                             {/* ガラス効果のあるコンテナ */}
                              <div className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 p-6 shadow-2xl">
                                 <h3 className="text-white font-bold tracking-widest text-xs mb-4 flex items-center gap-2 border-b border-white/20 pb-3">
                                     <span className="w-2 h-2 bg-white rounded-full"></span>
                                     MAIN HANDLING ITEMS
                                 </h3>
-                                
-                                {/* 2x2グリッドで4品目を整列 */}
                                 <div className="grid grid-cols-2 gap-4">
                                     {HERO_RIGHT_ITEMS.map((item, idx) => (
                                         <div key={idx} className="group relative aspect-[4/3] rounded-xl overflow-hidden border border-white/10 hover:border-white transition-all shadow-md bg-black/20">
-                                            {/* 画像 */}
                                             {item.img && (
                                               <Image 
                                                   src={item.img} 
@@ -153,7 +143,6 @@ export default function WireMasterCloud() {
                                                   sizes="(max-width: 768px) 50vw, 25vw"
                                               />
                                             )}
-                                            {/* グラデーション & テキスト */}
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
                                             <div className="absolute bottom-0 left-0 w-full p-3">
                                                 <p className="text-[9px] text-[#ffcccc] font-bold tracking-wider mb-0.5">{item.sub}</p>
@@ -167,14 +156,11 @@ export default function WireMasterCloud() {
                                 </div>
                              </div>
                         </div>
-
                     </div>
                 </div>
             </section>
-            {/* === END HERO SECTION === */}
 
             <PriceList data={data} marketPrice={marketPrice} />
-            
             <ServiceCriteria />
             <div id="simulator"><Simulator marketPrice={marketPrice} /></div>
         </>
@@ -182,6 +168,9 @@ export default function WireMasterCloud() {
 
       {view === 'FLOW' && <div className="pt-20"><FlowGuide /></div>}
       {view === 'MEMBERSHIP' && <div className="pt-20"><MembershipGuide /></div>}
+
+      {/* ★ ここで実際にページ右下に配置しています */}
+      <Concierge />
 
       <FatFooter setView={setView} />
     </div>
