@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from 'react';
 export const Concierge = () => {
   const [isOpen, setIsOpen] = useState(false);
   
-  // ★ 不良品ツールを捨てて、自前で完全に管理します
+  // ★ 外部のAIツールは一切使わず、純粋なReactの機能だけで動かします
   const [messages, setMessages] = useState<any[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -16,7 +16,7 @@ export const Concierge = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // 手動で通信を行う確実な関数
+  // 手動で確実に通信を行う関数
   const sendMessage = async (text: string) => {
     if (!text.trim() || isLoading) return;
     
@@ -27,7 +27,7 @@ export const Concierge = () => {
     setIsLoading(true);
 
     try {
-      // 脳みそ（バックエンド）へ直接送信
+      // さっきエラーを直した「脳みそ（route.ts）」へデータを送る
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -60,7 +60,8 @@ export const Concierge = () => {
         <div className="mb-4 w-[350px] h-[500px] bg-white rounded-xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300">
           <div className="bg-[#D32F2F] p-4 text-white flex justify-between items-center">
             <div>
-              <p className="font-bold text-sm">月寒製作所 AIコンシェルジュ</p>
+              {/* ★ ここが切り替わっているかが成功の目印です！ */}
+              <p className="font-bold text-sm">月寒製作所 AIコンシェルジュ 【自作版】</p>
               <p className="text-[10px] opacity-80">Gemini 1.5 Flash 搭載</p>
             </div>
             <button onClick={() => setIsOpen(false)} className="text-white hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center transition">
