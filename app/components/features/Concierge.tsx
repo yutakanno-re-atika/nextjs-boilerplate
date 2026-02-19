@@ -6,8 +6,9 @@ import { useState, useRef, useEffect } from 'react';
 export const Concierge = () => {
   const [isOpen, setIsOpen] = useState(false);
   
-  // ★修正: 「as any」をつけて、TypeScriptの型チェックを完全に黙らせます
-  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat() as any;
+  // ★修正: 翻訳機が絶対に混乱しないように、2行に分けて型を消します
+  const chat: any = useChat();
+  const { messages, input, handleInputChange, handleSubmit, isLoading } = chat;
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -31,7 +32,7 @@ export const Concierge = () => {
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4">
-            {messages.length === 0 && (
+            {(!messages || messages.length === 0) && (
               <div className="text-xs text-gray-500 text-center mt-4 space-y-4">
                 <p>👋 こんにちは！<br/>買取価格や持ち込み方法について<br/>お気軽にご質問ください。</p>
                 <div className="grid grid-cols-1 gap-2">
@@ -41,7 +42,7 @@ export const Concierge = () => {
               </div>
             )}
             
-            {messages.map((m: any) => (
+            {messages && messages.map((m: any) => (
               <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[85%] rounded-lg p-3 text-sm whitespace-pre-wrap ${
                   m.role === 'user' 
@@ -85,4 +86,10 @@ export const Concierge = () => {
         className={`${isOpen ? 'scale-0 opacity-0' : 'scale-100 opacity-100'} transition-all duration-300 bg-[#D32F2F] hover:bg-[#B71C1C] text-white w-14 h-14 rounded-full shadow-xl flex items-center justify-center group`}
       >
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7 group-hover:scale-110 transition">
-          <path strokeLinecap="round" strokeLinejoin
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
+        </svg>
+      </button>
+
+    </div>
+  );
+};
