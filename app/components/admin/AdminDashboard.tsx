@@ -36,7 +36,7 @@ export const AdminDashboard = ({ data, setView }: AdminProps) => {
 
   const marketPrice = data?.config?.market_price || 0;
   
-  // ★ デミス視点：TypeScriptの型エラーを `as any` で強行突破
+  // ★ 型エラーを強行突破するための修正箇所
   const targetMonthly = Number((data?.config as any)?.target_monthly) || 30000;
   const currentVolume = 18450; 
   const progressPercent = Math.min(100, (currentVolume / targetMonthly) * 100);
