@@ -10,6 +10,7 @@ const Icons = {
   Calc: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
   Box: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>,
   Users: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
+  Radar: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>,
   Search: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>,
   Check: () => <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>,
   TrendingUp: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>,
@@ -22,7 +23,8 @@ interface AdminProps {
 }
 
 export const AdminDashboard = ({ data, setView }: AdminProps) => {
-  const [adminTab, setAdminTab] = useState<'DASHBOARD' | 'POS' | 'STOCK' | 'MEMBERS'>('DASHBOARD');
+  // ★ COMPETITORタブを追加
+  const [adminTab, setAdminTab] = useState<'DASHBOARD' | 'POS' | 'COMPETITOR' | 'STOCK' | 'MEMBERS'>('DASHBOARD');
   const [posUser, setPosUser] = useState<string>('');
   const [posProduct, setPosProduct] = useState<string>('');
   const [posWeight, setPosWeight] = useState<string>('');
@@ -37,7 +39,7 @@ export const AdminDashboard = ({ data, setView }: AdminProps) => {
 
   const marketPrice = data?.config?.market_price || 0;
   
-  const targetMonthly = Number(data?.config?.target_monthly) || 30000;
+  const targetMonthly = Number((data?.config as any)?.target_monthly) || 30000;
   const currentVolume = 18450; 
   const progressPercent = Math.min(100, (currentVolume / targetMonthly) * 100);
 
@@ -142,13 +144,15 @@ export const AdminDashboard = ({ data, setView }: AdminProps) => {
         <nav className="space-y-4">
             <button onClick={()=>setAdminTab('DASHBOARD')} className={`w-full text-left p-4 rounded text-sm font-bold transition flex items-center gap-3 ${adminTab==='DASHBOARD' ? 'bg-[#D32F2F] text-white shadow-lg' : 'text-gray-500 hover:text-white'}`}><Icons.Dashboard /> ダッシュボード</button>
             <button onClick={()=>setAdminTab('POS')} className={`w-full text-left p-4 rounded text-sm font-bold transition flex items-center gap-3 ${adminTab==='POS' ? 'bg-[#D32F2F] text-white shadow-lg' : 'text-gray-500 hover:text-white'}`}><Icons.Calc /> 買取POSレジ</button>
+            {/* ★ 競合分析タブを追加 */}
+            <button onClick={()=>setAdminTab('COMPETITOR')} className={`w-full text-left p-4 rounded text-sm font-bold transition flex items-center gap-3 ${adminTab==='COMPETITOR' ? 'bg-blue-900/40 border border-blue-500/50 text-blue-400 shadow-lg' : 'text-gray-500 hover:text-white'}`}><Icons.Radar /> 競合分析AI (β)</button>
             <button onClick={()=>setAdminTab('STOCK')} className={`w-full text-left p-4 rounded text-sm font-bold transition flex items-center gap-3 ${adminTab==='STOCK' ? 'bg-white/5 border border-white/10 text-white' : 'text-gray-500 hover:text-white'}`}><Icons.Box /> 在庫管理</button>
             <button onClick={()=>setAdminTab('MEMBERS')} className={`w-full text-left p-4 rounded text-sm font-bold transition flex items-center gap-3 ${adminTab==='MEMBERS' ? 'bg-white/5 border border-white/10 text-white' : 'text-gray-500 hover:text-white'}`}><Icons.Users /> 会員管理</button>
         </nav>
         <div className="mt-auto pt-8 border-t border-white/10">
             <div className="flex items-center gap-3 mb-2">
                 <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                <span className="text-xs text-gray-400 font-mono">LME CU: ${data?.market?.lme_copper_usd || 0}</span>
+                <span className="text-xs text-gray-400 font-mono">LME CU: ${(data as any)?.market?.lme_copper_usd || 0}</span>
             </div>
         </div>
       </aside>
@@ -163,7 +167,6 @@ export const AdminDashboard = ({ data, setView }: AdminProps) => {
 
                  {/* KPI & Market Section */}
                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* 月間進捗 */}
                     <div className="bg-[#1a1a1a] p-6 rounded-xl border border-white/10 shadow-lg">
                         <h3 className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-4">月間買付進捗 (Target: {targetMonthly.toLocaleString()}kg)</h3>
                         <div className="flex justify-between items-end mb-2">
@@ -174,7 +177,6 @@ export const AdminDashboard = ({ data, setView }: AdminProps) => {
                             <div className="bg-[#D32F2F] h-2 rounded-full transition-all duration-1000" style={{width: `${progressPercent}%`}}></div>
                         </div>
                     </div>
-                    {/* 相場 */}
                     <div className="bg-[#1a1a1a] p-6 rounded-xl border border-white/10 shadow-lg">
                         <h3 className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-4">国内銅建値</h3>
                         <div className="flex items-end gap-3">
@@ -185,12 +187,12 @@ export const AdminDashboard = ({ data, setView }: AdminProps) => {
                     <div className="bg-[#1a1a1a] p-6 rounded-xl border border-white/10 shadow-lg">
                         <h3 className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-4">USD/JPY 為替</h3>
                         <div className="flex items-end gap-3">
-                            <span className="text-4xl font-black text-white">¥{data?.market?.usdjpy || 150.00}</span>
+                            <span className="text-4xl font-black text-white">¥{(data as any)?.market?.usdjpy || 150.00}</span>
                         </div>
                     </div>
                  </div>
 
-                 {/* 利益分析 (ホーク・タン視点: 歩留まり評価損益) */}
+                 {/* 利益分析 */}
                  <div className="bg-gradient-to-br from-[#1a1a1a] to-black p-8 rounded-xl border border-red-900/30 shadow-2xl mt-8 relative overflow-hidden">
                      <div className="absolute top-0 right-0 p-8 opacity-5">
                          <Icons.Calc />
@@ -216,7 +218,98 @@ export const AdminDashboard = ({ data, setView }: AdminProps) => {
                              <p className="text-2xl font-black text-[#D32F2F]">- ¥24,500</p>
                          </div>
                      </div>
-                     <p className="text-xs text-gray-500 mt-6">※査定時の「中線ミックス」設定に対して、実際の銅回収率が0.8%下回っています。現場の検収基準（歩留まり設定）の引き下げを検討してください。</p>
+                 </div>
+             </div>
+         )}
+
+         {/* ★ 競合分析モック画面 */}
+         {adminTab === 'COMPETITOR' && (
+             <div className="max-w-6xl mx-auto animate-in fade-in zoom-in duration-300 space-y-8">
+                 <header className="mb-8 flex justify-between items-end border-b border-white/10 pb-6">
+                    <div>
+                        <h2 className="text-4xl font-serif font-bold text-blue-400 flex items-center gap-3">
+                            <Icons.Radar /> Competitor Radar
+                        </h2>
+                        <p className="text-gray-400 mt-2">他社サイトからの価格クローリングと最適価格提案 (Sample)</p>
+                    </div>
+                    <div className="flex items-center gap-3 bg-blue-900/20 px-4 py-2 rounded-full border border-blue-500/30">
+                        <span className="relative flex h-3 w-3">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                        </span>
+                        <span className="text-xs font-mono text-blue-400 tracking-widest">CRAWLER ACTIVE</span>
+                        <span className="text-[10px] text-gray-500 ml-2">最終巡回: 10分前</span>
+                    </div>
+                 </header>
+
+                 <div className="bg-[#1a1a1a] rounded-xl border border-white/10 overflow-hidden shadow-2xl">
+                     <table className="w-full text-left text-sm">
+                         <thead className="bg-black text-gray-400 font-mono text-xs uppercase tracking-widest border-b border-white/10">
+                             <tr>
+                                 <th className="p-6">品目</th>
+                                 <th className="p-6 border-l border-white/5 text-center text-white bg-white/5">自社価格 (月寒)</th>
+                                 <th className="p-6 border-l border-white/5">競合A (札幌大手)</th>
+                                 <th className="p-6 border-l border-white/5">競合B (苫小牧近郊)</th>
+                                 <th className="p-6 border-l border-white/5 text-blue-400">AI推奨アクション</th>
+                             </tr>
+                         </thead>
+                         <tbody className="divide-y divide-white/5 font-mono">
+                             {/* モックデータ 1 */}
+                             <tr className="hover:bg-white/5 transition">
+                                 <td className="p-6 font-bold text-white font-sans">特1号銅線 (ピカ線)</td>
+                                 <td className="p-6 border-l border-white/5 text-center text-xl font-bold bg-white/5">¥1,410</td>
+                                 <td className="p-6 border-l border-white/5">¥1,400 <span className="text-xs text-gray-500">(-10)</span></td>
+                                 <td className="p-6 border-l border-white/5 text-red-400">¥1,415 <span className="text-xs">↑変更検知</span></td>
+                                 <td className="p-6 border-l border-white/5">
+                                     <button className="bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-blue-500 w-full">¥1,420に追従設定</button>
+                                 </td>
+                             </tr>
+                             {/* モックデータ 2 */}
+                             <tr className="hover:bg-white/5 transition">
+                                 <td className="p-6 font-bold text-white font-sans">80%電線 (IV等)</td>
+                                 <td className="p-6 border-l border-white/5 text-center text-xl font-bold bg-white/5">¥1,120</td>
+                                 <td className="p-6 border-l border-white/5 text-red-400">¥1,150 <span className="text-xs">↑変更検知</span></td>
+                                 <td className="p-6 border-l border-white/5">¥1,100 <span className="text-xs text-gray-500">(-20)</span></td>
+                                 <td className="p-6 border-l border-white/5">
+                                     <div className="text-[10px] text-red-400 mb-1">買負けリスク大 (乖離30円)</div>
+                                     <button className="bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-blue-500 w-full">¥1,150に追従設定</button>
+                                 </td>
+                             </tr>
+                             {/* モックデータ 3 */}
+                             <tr className="hover:bg-white/5 transition">
+                                 <td className="p-6 font-bold text-white font-sans">雑線ミックス (42%)</td>
+                                 <td className="p-6 border-l border-white/5 text-center text-xl font-bold bg-white/5">¥520</td>
+                                 <td className="p-6 border-l border-white/5">¥500 <span className="text-xs text-gray-500">(-20)</span></td>
+                                 <td className="p-6 border-l border-white/5">¥480 <span className="text-xs text-gray-500">(-40)</span></td>
+                                 <td className="p-6 border-l border-white/5">
+                                     <div className="text-[10px] text-green-400 mb-1">優位性確保 (利益率高)</div>
+                                     <button className="border border-gray-600 text-gray-400 px-3 py-1.5 rounded text-xs font-bold hover:bg-white/10 w-full">現状維持</button>
+                                 </td>
+                             </tr>
+                         </tbody>
+                     </table>
+                 </div>
+                 
+                 <div className="grid md:grid-cols-2 gap-6">
+                     <div className="bg-[#1a1a1a] p-6 rounded-xl border border-white/10">
+                         <h4 className="text-sm font-bold text-blue-400 mb-4 flex items-center gap-2">⚙️ 自動追従ルール設定</h4>
+                         <div className="space-y-4">
+                             <label className="flex items-center justify-between text-sm">
+                                 <span>競合Aの価格変動に自動追従する</span>
+                                 <div className="w-10 h-5 bg-blue-600 rounded-full relative"><div className="w-4 h-4 bg-white rounded-full absolute right-0.5 top-0.5"></div></div>
+                             </label>
+                             <label className="flex items-center justify-between text-sm">
+                                 <span className="text-gray-500">自社利益率確保フィルター (下限マージン10%)</span>
+                                 <div className="w-10 h-5 bg-blue-600 rounded-full relative"><div className="w-4 h-4 bg-white rounded-full absolute right-0.5 top-0.5"></div></div>
+                             </label>
+                         </div>
+                     </div>
+                     <div className="bg-[#1a1a1a] p-6 rounded-xl border border-white/10 opacity-50">
+                         <h4 className="text-sm font-bold text-gray-400 mb-2">💡 アーキテクト・ノート</h4>
+                         <p className="text-xs text-gray-500 leading-relaxed">
+                             この画面はモックアップです。将来的には、GAS（Google Apps Script）を用いて指定した競合他社のウェブサイト（HTML）を定期的にスクレイピングし、価格変動があった場合のみLINEやダッシュボードにアラートを飛ばす仕組みを構築できます。<br/>これにより、相場急変時の「高値掴み（赤字）」や「安値放置（買負け）」を完全に防止します。
+                         </p>
+                     </div>
                  </div>
              </div>
          )}
