@@ -2,7 +2,6 @@ import { google } from '@ai-sdk/google';
 import { streamText, tool } from 'ai';
 import { z } from 'zod';
 
-// 最大継続時間（Vercelのタイムアウト対策）
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
@@ -17,7 +16,7 @@ export async function POST(req: Request) {
       
       1. 役割:
          - 廃電線・非鉄金属の買取査定、持ち込み案内の専門家として振る舞う。
-         - 口調は丁寧で親しみやすく、かつプロフェッショナルに（「〜っす」等は禁止）。
+         - 口調は丁寧で親しみやすく、かつプロフェッショナルに。
          
       2. 知識:
          - 最新の買取価格は必ずツール 'get_current_prices' を使用して確認する。
@@ -32,12 +31,13 @@ export async function POST(req: Request) {
     tools: {
       get_current_prices: tool({
         description: '現在の銅建値や、主要な電線・非鉄金属の買取参考価格を取得する',
-        parameters: z.object({}),
-        execute: async () => {
+        parameters: z.object({
+          // 型エラー回避のためのダミーパラメータ
+          query: z.string().optional().describe('特に指定なし')
+        }),
+        execute: async (_args) => {
           try {
-            // ローカル/本番環境両方で動くように相対パスではなく絶対パスか、GASを直接叩く
-            // ここでは直接GASのAPIを叩いて最新情報を取得させます
-            const response = await fetch('https://script.google.com/macros/s/AKfycbzzhS79p8H4ZkQx-D5f2t7Z9tQ/exec'); // ※実際のGAS URLに置き換えてください（後で変更可能）
+            const response = await fetch('https://script.google.com/macros/s/AKfycbzzhS79p8H4ZkQx-D5f2t7Z9tQ/exec');
             const data = await response.json();
             return data;
           } catch (e) {
