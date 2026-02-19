@@ -8,8 +8,10 @@ export async function POST(req: Request) {
   const { messages } = await req.json();
 
   const result = await generateText({
-    model: google('models/gemini-1.5-flash'), 
+    // ★大修正: 唯一存在が確認されている「2.0-flash」を指名！課金設定済みなので今度は通ります！
+    model: google('gemini-2.0-flash'), 
     messages,
+    // Vercel現場の知恵: 最新機能の型エラー回避
     // @ts-ignore
     maxSteps: 5,
     system: `
