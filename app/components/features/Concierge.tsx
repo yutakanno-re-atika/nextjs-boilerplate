@@ -1,17 +1,14 @@
 "use client";
 
-import { useChat } from '@ai-sdk/react';
 import { useState, useRef, useEffect } from 'react';
 
 export const Concierge = () => {
   const [isOpen, setIsOpen] = useState(false);
   
-  // ★追加: 入力欄の状態を、100%確実に動くReactの基本機能で管理します
+  // ★ 不良品ツールを捨てて、自前で完全に管理します
+  const [messages, setMessages] = useState<any[]>([]);
   const [inputText, setInputText] = useState('');
-
-  const chat: any = useChat();
-  // ★修正: 内部のinput機能は捨てて、「append（直接メッセージを追加する機能）」を使います
-  const { messages, append, isLoading } = chat;
+  const [isLoading, setIsLoading] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -19,19 +16,41 @@ export const Concierge = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // 送信ボタンが押された時の処理
-  const handleSend = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputText.trim() || isLoading) return;
+  // 手動で通信を行う確実な関数
+  const sendMessage = async (text: string) => {
+    if (!text.trim() || isLoading) return;
     
-    append({ role: 'user', content: inputText });
-    setInputText(''); // 送信後に入力欄を空にする
+    // 自分のメッセージを画面に追加
+    const newMessages = [...messages, { id: Date.now().toString(), role: 'user', content: text }];
+    setMessages(newMessages);
+    setInputText('');
+    setIsLoading(true);
+
+    try {
+      // 脳みそ（バックエンド）へ直接送信
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: newMessages })
+      });
+      
+      if (!res.ok) throw new Error('通信エラー');
+      
+      const data = await res.json();
+      
+      // AIの返事を画面に追加
+      setMessages([...newMessages, { id: (Date.now() + 1).toString(), role: 'assistant', content: data.text }]);
+    } catch (error) {
+      console.error("Chat Error:", error);
+      setMessages([...newMessages, { id: (Date.now() + 1).toString(), role: 'assistant', content: "通信エラーが発生しました。設定やネットワークをご確認ください。" }]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // 提案ボタンが押された時の処理
-  const handleSuggestion = (text: string) => {
-    if (isLoading) return;
-    append({ role: 'user', content: text });
+  const handleSend = (e: React.FormEvent) => {
+    e.preventDefault();
+    sendMessage(inputText);
   };
 
   return (
@@ -50,21 +69,21 @@ export const Concierge = () => {
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4">
-            {(!messages || messages.length === 0) && (
+            {messages.length === 0 && (
               <div className="text-xs text-gray-500 text-center mt-4 space-y-4">
                 <p>👋 こんにちは！<br/>買取価格や持ち込み方法について<br/>お気軽にご質問ください。</p>
                 <div className="grid grid-cols-1 gap-2">
-                  <button onClick={() => handleSuggestion('今日の銅建値は？')} className="bg-white border p-2 rounded text-xs text-center text-gray-600 hover:bg-[#D32F2F] hover:text-white transition">
+                  <button onClick={() => sendMessage('今日の銅建値は？')} className="bg-white border p-2 rounded text-xs text-center text-gray-600 hover:bg-[#D32F2F] hover:text-white transition">
                     「今日の銅建値は？」
                   </button>
-                  <button onClick={() => handleSuggestion('VVFケーブル 50kgっていくらになる？')} className="bg-white border p-2 rounded text-xs text-center text-gray-600 hover:bg-[#D32F2F] hover:text-white transition">
+                  <button onClick={() => sendMessage('VVFケーブル 50kgっていくらになる？')} className="bg-white border p-2 rounded text-xs text-center text-gray-600 hover:bg-[#D32F2F] hover:text-white transition">
                     「VVFケーブル 50kgっていくらになる？」
                   </button>
                 </div>
               </div>
             )}
             
-            {messages && messages.map((m: any) => (
+            {messages.map((m: any) => (
               <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[85%] rounded-lg p-3 text-sm whitespace-pre-wrap ${
                   m.role === 'user' 
