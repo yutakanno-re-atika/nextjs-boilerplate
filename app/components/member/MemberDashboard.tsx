@@ -45,7 +45,6 @@ export const MemberDashboard = ({ user, data, setView }: MemberProps) => {
       setIsSubmitting(true);
       const productObj = data?.wires.find(x => x.id === reserveProduct) || data?.castings.find(x => x.id === reserveProduct);
 
-      // ★ 型エラー突破: (user as any) を使用
       const payload = {
         action: 'REGISTER_RESERVATION',
         visitDate: reserveDate,
@@ -87,7 +86,6 @@ export const MemberDashboard = ({ user, data, setView }: MemberProps) => {
 
     doc.setFontSize(18); doc.text("御見積書 / QUOTATION", 105, 20, { align: "center" });
     doc.setFontSize(12); doc.text(`日付: ${new Date().toLocaleDateString()}`, 15, 30);
-    // ★ 型エラー突破: (user as any) を使用
     doc.text(`お客様: ${(user as any)?.companyName || (user as any)?.name || 'ご担当者様'}`, 15, 38);
     doc.setFontSize(10); doc.text("株式会社 月寒製作所 苫小牧工場", 195, 30, { align: "right" });
     
@@ -115,7 +113,6 @@ export const MemberDashboard = ({ user, data, setView }: MemberProps) => {
         </div>
         <div className="text-center mb-8">
            <div className="w-24 h-24 bg-gray-100 rounded-full mx-auto mb-4 flex items-center justify-center text-3xl shadow-inner">🏗️</div>
-           {/* ★ 型エラー突破 */}
            <p className="font-bold text-lg mb-2">{(user as any)?.companyName || (user as any)?.name || 'User'}</p>
            <span className={`text-xs px-4 py-1.5 rounded-full font-bold border shadow-sm ${user?.rank==='GOLD' ? 'bg-gradient-to-r from-yellow-100 to-yellow-50 text-yellow-700 border-yellow-300' : 'bg-gray-100 text-gray-500 border-gray-200'}`}>
                {user?.rank} MEMBER
