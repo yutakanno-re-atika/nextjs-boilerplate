@@ -8,8 +8,8 @@ export async function POST(req: Request) {
   const { messages } = await req.json();
 
   const result = await generateText({
-    // ★大修正：省略名をやめ、「gemini-1.5-flash-latest」とフルネームで指名します！
-    model: google('gemini-1.5-flash-latest'),
+    // ★大修正：どんなアカウントでも100%存在する超・安定基本モデル
+    model: google('gemini-1.0-pro'),
     messages,
     maxSteps: 5,
     system: `
