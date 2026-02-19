@@ -29,7 +29,7 @@ export const ServiceCriteria = () => {
                     トラックスケールで計量後、<strong className="text-black border-b border-[#D32F2F]">全て銀行振込にてお支払い</strong>いたします。
                 </p>
                 <div className="bg-white py-3 px-4 text-xs font-mono font-bold text-gray-600 border border-gray-200 inline-block">
-                    平日 8:00 〜 17:00 (土日祝: 要相談)
+                    平日 8:30 〜 15:30
                 </div>
             </div>
 
@@ -47,7 +47,7 @@ export const ServiceCriteria = () => {
                     <span className="text-xl font-bold text-white/80 ml-1">kg〜</span>
                 </div>
                 <p className="text-sm text-white/90 leading-loose mb-6 relative z-10">
-                    北海道内全域、ユニック車等で回収に伺います。<br/>
+                    弊社周辺エリアを中心にユニック車等で回収に伺います。<br/>
                     工場・解体現場への引き取りも可能です。<br/>
                     <span className="text-xs opacity-75">※少量の場合は運搬費をご相談させていただく場合があります。</span>
                 </p>
