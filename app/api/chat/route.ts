@@ -31,18 +31,18 @@ export async function POST(req: Request) {
     tools: {
       get_current_prices: tool({
         description: '現在の銅建値や、主要な電線・非鉄金属の買取参考価格を取得する',
-        parameters: z.object({
-          // 型エラー回避のためのパラメータ
-          info: z.string().optional().describe('取得する情報（特に指定がなければ空でよい）'),
-        }),
-        // ★修正: 設計図と同じ名前 `{ info }` で受け取るようにしました
-        execute: async ({ info }) => {
+        parameters: z.object({}), // ★元通りの空っぽに戻しました
+        execute: async () => {
           try {
             const response = await fetch('https://script.google.com/macros/s/AKfycbzzhS79p8H4ZkQx-D5f2t7Z9tQ/exec');
             const data = await response.json();
-            return data;
+            
+            // ★超重要ポイント：正体不明のデータを「文字列(String)」に変換して返す！
+            // こうすることでTypeScriptの型エラーを完全に回避できます。
+            return JSON.stringify(data);
+            
           } catch (e) {
-            return { error: "価格データの取得に失敗しました。" };
+            return JSON.stringify({ error: "価格データの取得に失敗しました。" });
           }
         },
       }),
