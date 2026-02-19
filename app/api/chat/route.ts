@@ -7,10 +7,9 @@ export const maxDuration = 30;
 export async function POST(req: Request) {
   const { messages } = await req.json();
 
-  // ★ generateTextにも直接 `as any` をかけて全体をスルー
   const result = await generateText({
-    // ★大修正：退職した1.5ではなく、最新の2.0を指名します！
-    model: google('gemini-2.0-flash'),
+    // ★大修正：無料枠が0回の「2.0-flash」をやめて、無料で使える高性能版「1.5-pro」を指名します！
+    model: google('gemini-1.5-pro'),
     messages,
     maxSteps: 5,
     system: `
