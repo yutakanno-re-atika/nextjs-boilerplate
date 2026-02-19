@@ -1,5 +1,5 @@
 import { google } from '@ai-sdk/google';
-import { streamText, tool } from 'ai';
+import { generateText, tool } from 'ai';
 import { z } from 'zod';
 
 export const maxDuration = 30;
@@ -7,9 +7,11 @@ export const maxDuration = 30;
 export async function POST(req: Request) {
   const { messages } = await req.json();
 
-  const result = await streamText({
+  // ★ streamText ではなく generateText を使用して一括で処理します
+  const result = await generateText({
     model: google('gemini-1.5-flash'),
     messages,
+    maxSteps: 5, // ★ ツールを自動実行させる魔法の数字
     system: `
       あなたは株式会社月寒製作所（苫小牧工場）のAIコンシェルジュです。
       以下のルールを厳守して回答してください。
@@ -34,8 +36,7 @@ export async function POST(req: Request) {
         parameters: z.object({
           dummy: z.string().optional().describe('特に指定なし')
         }),
-        // @ts-ignore - 警備員スルー魔法
-        execute: async (_args) => {
+        execute: async () => {
           try {
             const response = await fetch('https://script.google.com/macros/s/AKfycbzzhS79p8H4ZkQx-D5f2t7Z9tQ/exec');
             const data = await response.json();
@@ -52,7 +53,6 @@ export async function POST(req: Request) {
           weight_kg: z.number().describe('重量(kg)'),
           unit_price: z.number().describe('単価(円/kg)'),
         }),
-        // @ts-ignore - 警備員スルー魔法
         execute: async ({ item, weight_kg, unit_price }) => {
           const total = Math.floor(weight_kg * unit_price);
           return {
@@ -67,6 +67,6 @@ export async function POST(req: Request) {
     },
   });
 
-  // @ts-ignore - ★Vercelの古いキャッシュによる型エラーを強制突破！
-  return result.toDataStreamResponse();
+  // 完成したテキストを一括で返却
+  return Response.json({ text: result.text });
 }
