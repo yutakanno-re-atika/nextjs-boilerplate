@@ -1,6 +1,6 @@
 "use client";
 
-import { useChat } from 'ai/react';
+import { useChat } from '@ai-sdk/react';
 import { useState, useRef, useEffect } from 'react';
 
 export const Concierge = () => {
@@ -8,7 +8,6 @@ export const Concierge = () => {
   const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // 新しいメッセージが来たら一番下まで自動スクロール
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -16,10 +15,8 @@ export const Concierge = () => {
   return (
     <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end font-sans">
       
-      {/* チャットウィンドウ */}
       {isOpen && (
         <div className="mb-4 w-[350px] h-[500px] bg-white rounded-xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300">
-          {/* ヘッダー */}
           <div className="bg-[#D32F2F] p-4 text-white flex justify-between items-center">
             <div>
               <p className="font-bold text-sm">月寒製作所 AIコンシェルジュ</p>
@@ -30,7 +27,6 @@ export const Concierge = () => {
             </button>
           </div>
 
-          {/* メッセージエリア */}
           <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4">
             {messages.length === 0 && (
               <div className="text-xs text-gray-500 text-center mt-4 space-y-4">
@@ -67,7 +63,6 @@ export const Concierge = () => {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* 入力エリア */}
           <form onSubmit={handleSubmit} className="p-3 bg-white border-t border-gray-100 flex gap-2">
             <input
               value={input}
@@ -82,7 +77,6 @@ export const Concierge = () => {
         </div>
       )}
 
-      {/* 起動ボタン (ランチャー) */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`${isOpen ? 'scale-0 opacity-0' : 'scale-100 opacity-100'} transition-all duration-300 bg-[#D32F2F] hover:bg-[#B71C1C] text-white w-14 h-14 rounded-full shadow-xl flex items-center justify-center group`}
