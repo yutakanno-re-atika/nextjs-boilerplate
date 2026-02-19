@@ -8,10 +8,9 @@ export async function POST(req: Request) {
   const { messages } = await req.json();
 
   const result = await generateText({
-    // ★大修正: 唯一存在が確認されている「2.0-flash」を指名！課金設定済みなので今度は通ります！
+    // 通信大成功が確認された2.0-flash
     model: google('gemini-2.0-flash'), 
     messages,
-    // Vercel現場の知恵: 最新機能の型エラー回避
     // @ts-ignore
     maxSteps: 5,
     system: `
@@ -28,7 +27,8 @@ export async function POST(req: Request) {
       get_current_prices: tool({
         description: '現在の銅建値や、主要な電線・非鉄金属の買取参考価格を取得する',
         parameters: z.object({
-          dummy: z.string().optional().describe('特に指定なし')
+          // ★大修正：Geminiの厳格な仕様を突破するための「必須ダミー引数」
+          action: z.string().describe('データ取得アクション（常に "fetch" という文字を入れてください）')
         }),
         // @ts-ignore
         execute: async (args) => {
