@@ -6,15 +6,33 @@ import { useState, useRef, useEffect } from 'react';
 export const Concierge = () => {
   const [isOpen, setIsOpen] = useState(false);
   
-  // ★修正: 翻訳機が絶対に混乱しないように、2行に分けて型を消します
+  // ★追加: 入力欄の状態を、100%確実に動くReactの基本機能で管理します
+  const [inputText, setInputText] = useState('');
+
   const chat: any = useChat();
-  const { messages, input, handleInputChange, handleSubmit, isLoading } = chat;
+  // ★修正: 内部のinput機能は捨てて、「append（直接メッセージを追加する機能）」を使います
+  const { messages, append, isLoading } = chat;
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // 送信ボタンが押された時の処理
+  const handleSend = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputText.trim() || isLoading) return;
+    
+    append({ role: 'user', content: inputText });
+    setInputText(''); // 送信後に入力欄を空にする
+  };
+
+  // 提案ボタンが押された時の処理
+  const handleSuggestion = (text: string) => {
+    if (isLoading) return;
+    append({ role: 'user', content: text });
+  };
 
   return (
     <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end font-sans">
@@ -36,8 +54,12 @@ export const Concierge = () => {
               <div className="text-xs text-gray-500 text-center mt-4 space-y-4">
                 <p>👋 こんにちは！<br/>買取価格や持ち込み方法について<br/>お気軽にご質問ください。</p>
                 <div className="grid grid-cols-1 gap-2">
-                  <div className="bg-white border p-2 rounded text-xs text-center text-gray-600">「今日の銅建値は？」</div>
-                  <div className="bg-white border p-2 rounded text-xs text-center text-gray-600">「VVFケーブル 50kgっていくらになる？」</div>
+                  <button onClick={() => handleSuggestion('今日の銅建値は？')} className="bg-white border p-2 rounded text-xs text-center text-gray-600 hover:bg-[#D32F2F] hover:text-white transition">
+                    「今日の銅建値は？」
+                  </button>
+                  <button onClick={() => handleSuggestion('VVFケーブル 50kgっていくらになる？')} className="bg-white border p-2 rounded text-xs text-center text-gray-600 hover:bg-[#D32F2F] hover:text-white transition">
+                    「VVFケーブル 50kgっていくらになる？」
+                  </button>
                 </div>
               </div>
             )}
@@ -67,14 +89,14 @@ export const Concierge = () => {
             <div ref={messagesEndRef} />
           </div>
 
-          <form onSubmit={handleSubmit} className="p-3 bg-white border-t border-gray-100 flex gap-2">
+          <form onSubmit={handleSend} className="p-3 bg-white border-t border-gray-100 flex gap-2">
             <input
-              value={input || ''}
-              onChange={handleInputChange}
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
               placeholder="メッセージを入力..."
               className="flex-1 bg-gray-100 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#D32F2F]/50"
             />
-            <button type="submit" disabled={isLoading || !input?.trim()} className="bg-[#111] text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-[#D32F2F] transition disabled:opacity-50">
+            <button type="submit" disabled={isLoading || !inputText.trim()} className="bg-[#111] text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-[#D32F2F] transition disabled:opacity-50">
               ➤
             </button>
           </form>
