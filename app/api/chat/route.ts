@@ -8,10 +8,10 @@ export async function POST(req: Request) {
   const { messages } = await req.json();
 
   const result = await generateText({
-    // シニアアーキテクト推奨の正式なモデルID
+    // アーキテクト氏推奨の正式なモデルID（これで無料枠エラーも404も回避！）
     model: google('models/gemini-1.5-flash'), 
     messages,
-    // ★追加: アーキテクトが忘れていた現場の知恵（型エラー回避）
+    // Vercel現場の知恵: 最新機能の型エラー回避
     // @ts-ignore
     maxSteps: 5,
     system: `
@@ -27,8 +27,12 @@ export async function POST(req: Request) {
     tools: {
       get_current_prices: tool({
         description: '現在の銅建値や、主要な電線・非鉄金属の買取参考価格を取得する',
-        parameters: z.object({}),
-        execute: async (_args) => {
+        // ★大修正: アーキテクトが消したダミー引数を復活させ、AI SDKのバグを回避！
+        parameters: z.object({
+          dummy: z.string().optional().describe('特に指定なし')
+        }),
+        // @ts-ignore
+        execute: async (args) => {
           try {
             const response = await fetch('https://script.google.com/macros/s/AKfycbzzhS79p8H4ZkQx-D5f2t7Z9tQ/exec');
             const data = await response.json();
@@ -46,6 +50,7 @@ export async function POST(req: Request) {
           weight_kg: z.number().describe('重量(kg)'),
           unit_price: z.number().describe('単価(円/kg)'),
         }),
+        // @ts-ignore
         execute: async ({ item, weight_kg, unit_price }) => {
           const total = Math.floor(weight_kg * unit_price);
           return {
