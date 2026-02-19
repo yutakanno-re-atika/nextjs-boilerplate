@@ -9,7 +9,8 @@ export async function POST(req: Request) {
 
   // ★ generateTextにも直接 `as any` をかけて全体をスルー
   const result = await generateText({
-    model: google('gemini-1.5-flash'),
+    // ★大修正：退職した1.5ではなく、最新の2.0を指名します！
+    model: google('gemini-2.0-flash'),
     messages,
     maxSteps: 5,
     system: `
@@ -31,7 +32,6 @@ export async function POST(req: Request) {
          - 違法な品物（盗難品疑い、バッテリー等）の買取はできないと答える。
     `,
     tools: {
-      // ★修正: tool() の中身全体に `as any` をつけて、エラーを根絶やしにします
       get_current_prices: tool({
         description: '現在の銅建値や、主要な電線・非鉄金属の買取参考価格を取得する',
         parameters: z.object({
@@ -46,9 +46,8 @@ export async function POST(req: Request) {
             return { success: false, error: "価格データの取得に失敗しました。" };
           }
         },
-      } as any), // ← ここが最大のポイントです！
+      } as any), 
 
-      // ★修正: こちらも同様に `as any` をつけます
       calculate_scrap_value: tool({
         description: '品目と重量から概算買取額を計算する',
         parameters: z.object({
@@ -66,9 +65,9 @@ export async function POST(req: Request) {
             formatted_total: total.toLocaleString() + '円'
           };
         },
-      } as any), // ← ここも！
+      } as any),
     }
-  } as any); // ← generateText自体もスルー！
+  } as any);
 
   return Response.json({ text: result.text });
 }
