@@ -13,11 +13,19 @@ const Icons = {
   Trash: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>,
 };
 
-// ★ 顧客データベースのモック (将来的にはGASから取得)
-const mockClients = [
-  { name: "月寒建設 株式会社", phone: "090-1111-2222", memo: "特1号銅線が多い。荷降ろし手伝い不要。" },
-  { name: "道央設備", phone: "080-3333-4444", memo: "いつも午後イチに来店。" },
-  { name: "佐藤モータース", phone: "011-555-6666", memo: "自動車ハーネス中心。歩留まり要確認。" }
+// ★ 2つのデータベース（会員 / 過去の非会員）をシミュレート
+// ※ 将来的にGASの doGet で「安全な顧客リスト」を取得してここに流し込みます
+const memberDB = [
+  { id: "M-001", name: "月寒建設 株式会社", phone: "090-1111-2222", memo: "特1号銅線が多い。荷降ろし手伝い不要。" },
+  { id: "M-002", name: "道央設備", phone: "080-3333-4444", memo: "いつも午後イチに来店。" }
+];
+const pastGuestDB = [
+  { id: "GUEST", name: "佐藤モータース", phone: "011-555-6666", memo: "自動車ハーネス中心。歩留まり要確認。" },
+  { id: "GUEST", name: "田中スクラップ", phone: "090-9999-8888", memo: "前回は雑線のみ。現金払い希望。" }
+];
+const allClients = [
+    ...memberDB.map(c => ({...c, type: 'MEMBER'})), 
+    ...pastGuestDB.map(c => ({...c, type: 'PAST_GUEST'}))
 ];
 
 export const AdminDashboard = ({ data, setView }: { data: any; setView: any }) => {
@@ -26,15 +34,17 @@ export const AdminDashboard = ({ data, setView }: { data: any; setView: any }) =
   // 受付フロント用ステート
   const [posCompany, setPosCompany] = useState<string>('');
   const [posPhone, setPosPhone] = useState<string>('');
-  const [posDate, setPosDate] = useState<string>(''); // 空なら現在時刻(飛込)
+  const [posDate, setPosDate] = useState<string>(''); 
   const [posMemo, setPosMemo] = useState<string>('');
-  const [isNewClient, setIsNewClient] = useState<boolean>(false);
+  const [clientType, setClientType] = useState<'MEMBER' | 'PAST_GUEST' | 'NEW' | null>(null);
+  const [clientId, setClientId] = useState<string>('GUEST');
   
   // 複数品目用ステート (カート)
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [currentProduct, setCurrentProduct] = useState<string>('');
   const [currentWeight, setCurrentWeight] = useState<string>('');
   const [currentRank, setCurrentRank] = useState<'A'|'B'|'C'>('B');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // 相場データ
   const market = data?.market || {};
@@ -43,71 +53,134 @@ export const AdminDashboard = ({ data, setView }: { data: any; setView: any }) =
   // --- 顧客の予測・自動補完ロジック ---
   useEffect(() => {
       if (!posCompany) {
-          setPosPhone(''); setPosMemo(''); setIsNewClient(false); return;
+          setPosPhone(''); setPosMemo(''); setClientType(null); setClientId('GUEST'); return;
       }
-      const match = mockClients.find(c => c.name === posCompany);
+      const match = allClients.find(c => c.name === posCompany);
       if (match) {
-          // 既存顧客の場合
           setPosPhone(match.phone);
           setPosMemo(match.memo);
-          setIsNewClient(false);
+          setClientType(match.type as 'MEMBER' | 'PAST_GUEST');
+          setClientId(match.id);
       } else {
-          // 新規顧客の場合（データベースに一致しない）
-          if (!isNewClient) {
-              setPosPhone('');
-              setPosMemo('【新規】'); // 備考に自動付与
-              setIsNewClient(true);
-          }
+          setPosPhone('');
+          setPosMemo('【新規】'); // 現場へ送る備考
+          setClientType('NEW');
+          setClientId('GUEST');
       }
   }, [posCompany]);
 
-  // --- カートに品物を追加するロジック ---
+  // --- カート追加 ---
   const handleAddItem = () => {
     if (!currentProduct || !currentWeight) return;
-    
-    const wire = data?.wires?.find((p: any) => p.id === currentProduct);
-    const casting = data?.castings?.find((p: any) => p.id === currentProduct);
-    const product = wire || casting;
+    const product = data?.wires?.find((p: any) => p.id === currentProduct) || data?.castings?.find((p: any) => p.id === currentProduct);
     if (!product) return;
     
     const weight = parseFloat(currentWeight);
     const rankBonus = currentRank === 'A' ? 1.02 : currentRank === 'C' ? 0.95 : 1.0;
     
-    let rawPrice = 0;
-    if (casting) {
-        rawPrice = (copperPrice * (product.ratio / 100)) + (casting.price_offset || 0);
-    } else {
+    let rawPrice = (copperPrice * (product.ratio / 100)) + (product.price_offset || 0);
+    if (product.category === 'wire' || currentProduct.includes('MIX')) {
         rawPrice = (copperPrice * (product.ratio / 100) * 0.9) - 15;
     }
     
     const itemPrice = Math.floor(Math.max(0, Math.floor(rawPrice * rankBonus)) * weight);
     
-    const newItem = {
+    setCartItems([...cartItems, {
         id: Date.now().toString(),
         productId: product.id,
         productName: product.name,
         weight: weight,
         rank: currentRank,
         price: itemPrice
-    };
-    
-    setCartItems([...cartItems, newItem]);
-    setCurrentProduct('');
-    setCurrentWeight('');
-    setCurrentRank('B');
+    }]);
+    setCurrentProduct(''); setCurrentWeight(''); setCurrentRank('B');
   };
 
-  const handleRemoveItem = (id: string) => {
-      setCartItems(cartItems.filter(item => item.id !== id));
-  };
-
+  const handleRemoveItem = (id: string) => setCartItems(cartItems.filter(item => item.id !== id));
   const cartTotal = cartItems.reduce((sum, item) => sum + item.price, 0);
+
+  // ★ 受付完了（GASへの送信）アクション
+  const handleSubmitReservation = async () => {
+      if (cartItems.length === 0 || !posCompany) return;
+      setIsSubmitting(true);
+      
+      try {
+          // 日時が空欄の場合は「現在時刻（飛込）」として送信
+          const visitDateTime = posDate ? posDate : new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
+          
+          const payload = {
+              action: 'REGISTER_RESERVATION',
+              visitDate: visitDateTime,
+              memberId: clientId,
+              memberName: posCompany,
+              // GASに保存するために、簡易的なJSON文字列に変換
+              items: cartItems.map(i => ({ product: i.productName, weight: i.weight, price: i.price })),
+              totalEstimate: cartTotal,
+              memo: posMemo
+          };
+
+          const response = await fetch('/api/gas', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+          });
+
+          const result = await response.json();
+          if (result.status === 'success') {
+              alert('受付データが現場へ送信されました！');
+              // フォームをリセット
+              setPosCompany(''); setPosDate(''); setCartItems([]); setPosMemo(''); setPosPhone('');
+              // カンバン画面へ自動遷移して確認させる
+              setAdminTab('OPERATIONS');
+              // ※ 理想的にはここでデータを再フェッチ（ページリロード等）してカンバンを更新します
+              window.location.reload(); 
+          } else {
+              alert('エラーが発生しました: ' + result.message);
+          }
+      } catch (error) {
+          alert('通信エラー: データベースに接続できませんでした。');
+      }
+      setIsSubmitting(false);
+  };
+
+  // カンバン描画用
+  const reservations = data?.reservations || [];
+  const reservedList = reservations.filter((r: any) => r.status === 'RESERVED');
+  const processingList = reservations.filter((r: any) => r.status === 'PROCESSING' || r.status === 'ARRIVED');
+  const renderCard = (res: any, isProcessing: boolean = false) => {
+      let items: any[] = [];
+      try { items = typeof res.items === 'string' ? JSON.parse(res.items) : res.items; } catch(e){}
+      const mainItem = items && items[0] ? items[0].product : '不明な品目';
+      const totalWeight = items ? items.reduce((sum:number, i:any) => sum + (Number(i.weight)||0), 0) : 0;
+      const isMember = res.memberId && res.memberId !== 'GUEST';
+      let timeStr = "未定";
+      try {
+          if (res.visitDate) {
+              const d = new Date(res.visitDate);
+              timeStr = !isNaN(d.getTime()) ? `${d.getMonth() + 1}/${d.getDate()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}` : String(res.visitDate).replace('T', ' ').substring(0, 16);
+          }
+      } catch(e){}
+
+      return (
+        <div key={res.id} className={`bg-white p-3 rounded-lg shadow-sm border border-gray-100 transition hover:shadow-md ${isProcessing ? 'border-l-4 border-l-[#D32F2F]' : (isMember ? 'border-l-4 border-l-yellow-400' : 'border-l-4 border-l-gray-400')}`}>
+            <div className="flex justify-between items-center mb-1">
+                <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${isMember ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-600'}`}>
+                    {isMember ? '会員' : '非会員'}
+                </span>
+                <span className="text-[10px] text-gray-500 font-bold">{timeStr}</span>
+            </div>
+            <p className="font-bold text-gray-900 text-sm truncate">{res.memberName}</p>
+            <p className="text-xs text-gray-600 truncate">{mainItem} / 約 <span className="font-bold text-gray-900">{totalWeight}</span> kg</p>
+        </div>
+      );
+  };
+
   const wireOptions = data?.wires?.filter((w: any) => w.name.includes('ミックス') || w.name.toUpperCase().includes('MIX')) || [];
 
   return (
     <div className="h-screen w-full bg-[#F5F5F7] text-gray-900 font-sans flex flex-col md:flex-row overflow-hidden">
       
-      {/* 🔴 サイドバー (省略：前回と同じ) */}
+      {/* 🔴 サイドバー (省略) */}
       <aside className="w-full md:w-64 bg-white border-r border-gray-200 flex flex-col shadow-sm z-10 flex-shrink-0">
         <div className="p-5 cursor-pointer border-b border-gray-50" onClick={()=>setView('LP')}>
             <h1 className="text-xl font-serif font-bold text-gray-900">FACTORY<span className="text-[#D32F2F]">OS</span></h1>
@@ -116,24 +189,49 @@ export const AdminDashboard = ({ data, setView }: { data: any; setView: any }) =
             <button onClick={()=>setAdminTab('HOME')} className={`w-full text-left px-4 py-3 rounded-lg text-sm font-bold transition flex items-center gap-3 ${adminTab==='HOME' ? 'bg-[#111] text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}><Icons.Home /> ホーム</button>
             <button onClick={()=>setAdminTab('OPERATIONS')} className={`w-full text-left px-4 py-3 rounded-lg text-sm font-bold transition flex items-center gap-3 ${adminTab==='OPERATIONS' ? 'bg-[#111] text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}><Icons.Kanban /> 現場カンバン</button>
             <button onClick={()=>setAdminTab('POS')} className={`w-full text-left px-4 py-3 rounded-lg text-sm font-bold transition flex items-center gap-3 ${adminTab==='POS' ? 'bg-[#111] text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}><Icons.Calc /> 受付・買取レジ</button>
-            <button onClick={()=>setAdminTab('COMPETITOR')} className={`w-full text-left px-4 py-3 rounded-lg text-sm font-bold transition flex items-center gap-3 ${adminTab==='COMPETITOR' ? 'bg-[#111] text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}><Icons.Radar /> 他社価格AI</button>
         </nav>
       </aside>
 
       {/* 🔴 メインエリア */}
       <main className="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col">
          
-         {/* 3. POS (受付フロント特化・複数品目対応) */}
+         {/* 2. OPERATIONS */}
+         {adminTab === 'OPERATIONS' && (
+             <div className="flex flex-col h-full animate-in fade-in duration-300">
+                 <header className="mb-4 flex justify-between items-center flex-shrink-0">
+                    <h2 className="text-xl font-bold text-gray-900">現場カンバン</h2>
+                    <button onClick={()=>setAdminTab('POS')} className="bg-gray-900 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-[#D32F2F] transition shadow-sm">＋ 飛込受付</button>
+                 </header>
+                 <div className="flex-1 flex gap-4 overflow-x-auto min-h-0">
+                     <div className="flex-none w-[280px] flex flex-col bg-gray-100/50 rounded-xl border border-gray-200 overflow-hidden">
+                         <div className="p-3 border-b border-gray-200 flex justify-between items-center bg-white">
+                             <span className="font-bold text-sm text-gray-700">① 来場待ち / 受付済</span>
+                             <span className="bg-gray-100 text-gray-600 text-[10px] px-2 py-1 rounded-full font-bold">{reservedList.length}</span>
+                         </div>
+                         <div className="flex-1 p-3 space-y-3 overflow-y-auto">
+                             {reservedList.length === 0 ? <p className="text-xs text-gray-400 text-center py-4">予定なし</p> : reservedList.map(res => renderCard(res, false))}
+                         </div>
+                     </div>
+                     <div className="flex-none w-[280px] flex flex-col bg-red-50/30 rounded-xl border border-red-100 overflow-hidden">
+                         <div className="p-3 border-b-2 border-b-[#D32F2F] flex justify-between items-center bg-white">
+                             <span className="font-bold text-sm text-[#D32F2F]">② 検収・計量中</span>
+                         </div>
+                         <div className="flex-1 p-3 space-y-3 overflow-y-auto">
+                              {processingList.length === 0 ? <p className="text-xs text-gray-400 text-center py-4">計量中なし</p> : processingList.map(res => renderCard(res, true))}
+                         </div>
+                     </div>
+                 </div>
+             </div>
+         )}
+
+         {/* 3. POS (受付フロント特化) */}
          {adminTab === 'POS' && (
             <div className="h-full flex flex-col animate-in fade-in duration-300">
               <header className="mb-4 flex-shrink-0 flex justify-between items-end">
                 <div>
                     <h2 className="text-xl font-bold text-gray-900">受付・買取フロント</h2>
-                    <p className="text-xs text-gray-500 mt-1">お客様情報の入力と、持ち込み品目の登録（複数可）を行います。</p>
                 </div>
-                <button onClick={()=>{setPosCompany(''); setPosDate(''); setCartItems([]); setPosMemo('');}} className="text-sm font-bold text-[#D32F2F] bg-red-50 px-4 py-2 rounded-lg hover:bg-red-100 transition">
-                    リセット
-                </button>
+                <button onClick={()=>{setPosCompany(''); setPosDate(''); setCartItems([]);}} className="text-sm font-bold text-[#D32F2F] bg-red-50 px-4 py-2 rounded-lg hover:bg-red-100 transition">リセット</button>
               </header>
 
               <div className="flex-1 grid grid-cols-1 md:grid-cols-[1.2fr_1fr] gap-6 min-h-0">
@@ -141,14 +239,17 @@ export const AdminDashboard = ({ data, setView }: { data: any; setView: any }) =
                  {/* 左側：入力フォーム */}
                  <div className="space-y-4 overflow-y-auto pr-2 pb-4">
                     
-                    {/* ① お客様情報・日時 */}
+                    {/* ① お客様情報 */}
                     <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden">
                        <div className="absolute top-0 left-0 w-1 h-full bg-[#D32F2F]"></div>
                        <div className="flex justify-between items-center mb-4">
                            <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
                                <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">STEP 1</span> 受付情報
                            </h3>
-                           {isNewClient && <span className="text-[10px] font-bold bg-red-100 text-[#D32F2F] px-2 py-1 rounded-full animate-pulse">新規のお客様</span>}
+                           {/* ★ 顧客タイプによるバッジの出し分け */}
+                           {clientType === 'MEMBER' && <span className="text-[10px] font-bold bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">会員企業</span>}
+                           {clientType === 'PAST_GUEST' && <span className="text-[10px] font-bold bg-gray-100 text-gray-600 px-2 py-1 rounded-full">過去に取引あり</span>}
+                           {clientType === 'NEW' && <span className="text-[10px] font-bold bg-red-100 text-[#D32F2F] px-2 py-1 rounded-full animate-pulse">新規のお客様</span>}
                        </div>
                        
                        <div className="grid grid-cols-2 gap-3 mb-3">
@@ -156,51 +257,37 @@ export const AdminDashboard = ({ data, setView }: { data: any; setView: any }) =
                                <label className="text-[10px] text-gray-500 font-bold block mb-1">企業名 / お名前</label>
                                <input 
                                  list="client-list"
-                                 className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900 text-sm focus:border-[#D32F2F] outline-none transition" 
-                                 placeholder="例: 月寒建設" 
+                                 className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900 text-sm focus:border-[#D32F2F] outline-none transition font-bold" 
+                                 placeholder="名前を入力..." 
                                  value={posCompany} 
                                  onChange={(e)=>setPosCompany(e.target.value)} 
                                />
-                               {/* オートコンプリート用のリスト */}
                                <datalist id="client-list">
-                                   {mockClients.map(c => <option key={c.name} value={c.name} />)}
+                                   {allClients.map(c => <option key={c.name} value={c.name} />)}
                                </datalist>
                            </div>
                            <div className="col-span-2 md:col-span-1">
                                <label className="text-[10px] text-gray-500 font-bold block mb-1">ご連絡先</label>
-                               <input 
-                                 type="tel"
-                                 className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900 text-sm focus:border-[#D32F2F] outline-none transition" 
-                                 placeholder="例: 090-XXXX" 
-                                 value={posPhone} 
-                                 onChange={(e)=>setPosPhone(e.target.value)} 
-                               />
+                               <input type="tel" className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900 text-sm outline-none" placeholder="090-XXXX" value={posPhone} onChange={(e)=>setPosPhone(e.target.value)} />
                            </div>
                        </div>
                        
                        <div className="grid grid-cols-2 gap-3">
                            <div>
                                <label className="text-[10px] text-gray-500 font-bold block mb-1">受付日時 (空欄なら「今すぐ」)</label>
-                               <input 
-                                 type="datetime-local"
-                                 className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900 text-sm focus:border-[#D32F2F] outline-none transition" 
-                                 value={posDate} 
-                                 onChange={(e)=>setPosDate(e.target.value)} 
-                               />
+                               <input type="datetime-local" className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900 text-sm focus:border-[#D32F2F] outline-none" value={posDate} onChange={(e)=>setPosDate(e.target.value)} />
                            </div>
                            <div>
                                <label className="text-[10px] text-gray-500 font-bold block mb-1">現場への引継ぎメモ (備考)</label>
                                <input 
-                                 className={`w-full border p-3 rounded-lg text-sm outline-none transition ${isNewClient ? 'bg-red-50 border-red-200 text-[#D32F2F] font-bold' : 'bg-gray-50 border-gray-200 text-gray-900 focus:border-[#D32F2F]'}`}
-                                 placeholder="注意事項など" 
-                                 value={posMemo} 
-                                 onChange={(e)=>setPosMemo(e.target.value)} 
+                                 className={`w-full border p-3 rounded-lg text-sm outline-none transition ${clientType === 'NEW' ? 'bg-red-50 border-red-200 text-[#D32F2F] font-bold' : 'bg-gray-50 border-gray-200 text-gray-900'}`}
+                                 placeholder="注意事項など" value={posMemo} onChange={(e)=>setPosMemo(e.target.value)} 
                                />
                            </div>
                        </div>
                     </div>
 
-                    {/* ② 銘柄追加カート */}
+                    {/* ② 銘柄追加 */}
                     <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden">
                        <div className="absolute top-0 left-0 w-1 h-full bg-gray-900"></div>
                        <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
@@ -210,51 +297,38 @@ export const AdminDashboard = ({ data, setView }: { data: any; setView: any }) =
                        <div className="flex flex-col md:flex-row gap-3 items-end">
                            <div className="flex-1 w-full">
                                <label className="text-[10px] text-gray-500 font-bold block mb-1">銘柄</label>
-                               <select 
-                                 className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900 text-sm focus:border-[#D32F2F] outline-none font-bold" 
-                                 value={currentProduct} 
-                                 onChange={(e)=>setCurrentProduct(e.target.value)}
-                               >
+                               <select className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900 text-sm outline-none font-bold" value={currentProduct} onChange={(e)=>setCurrentProduct(e.target.value)}>
                                   <option value="">-- 品物 --</option>
                                   <optgroup label="電線">{wireOptions.map((p:any) => (<option key={p.id} value={p.id}>{p.name}</option>))}</optgroup>
                                   <optgroup label="非鉄金属">{data?.castings?.map((p:any) => (<option key={p.id} value={p.id}>{p.name}</option>))}</optgroup>
                                </select>
                            </div>
-                           
                            <div className="w-full md:w-28 relative">
                                <label className="text-[10px] text-gray-500 font-bold block mb-1">重さ(kg)</label>
-                               <input type="number" className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900 text-sm font-black focus:border-[#D32F2F] outline-none" placeholder="0" value={currentWeight} onChange={(e)=>setCurrentWeight(e.target.value)} />
+                               <input type="number" className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900 text-sm font-black outline-none" placeholder="0" value={currentWeight} onChange={(e)=>setCurrentWeight(e.target.value)} />
                            </div>
-                           
                            <div className="w-full md:w-24">
                                <label className="text-[10px] text-gray-500 font-bold block mb-1">状態</label>
-                               <select className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900 text-sm font-bold focus:border-[#D32F2F] outline-none" value={currentRank} onChange={(e:any)=>setCurrentRank(e.target.value)}>
+                               <select className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900 text-sm font-bold outline-none" value={currentRank} onChange={(e:any)=>setCurrentRank(e.target.value)}>
                                   <option value="B">普通</option><option value="A">良</option><option value="C">劣</option>
                                </select>
                            </div>
-                           
-                           <button 
-                             onClick={handleAddItem}
-                             disabled={!currentProduct || !currentWeight}
-                             className="w-full md:w-auto bg-gray-900 text-white p-3 rounded-lg font-bold hover:bg-[#D32F2F] transition disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-1"
-                           >
+                           <button onClick={handleAddItem} disabled={!currentProduct || !currentWeight} className="w-full md:w-auto bg-gray-900 text-white p-3 rounded-lg font-bold hover:bg-[#D32F2F] transition disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-1">
                                <Icons.Plus /> 追加
                            </button>
                        </div>
                     </div>
                  </div>
 
-                 {/* 右側：受付票 兼 レシート（カート中身） */}
+                 {/* 右側：受付票 */}
                  <div className="h-full pb-4">
                     <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-lg h-full flex flex-col relative overflow-hidden">
                        <div className="absolute top-0 left-0 w-full h-2 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cG9seWdvbiBwb2ludHM9IjAsMCA0LDggOCwwIiBmaWxsPSIjRjVGNUY3Ii8+Cjwvc3ZnPg==')] repeat-x"></div>
                        
                        <div className="text-center border-b border-dashed border-gray-300 pb-4 mb-4 mt-2 flex-shrink-0">
                           <h4 className="font-bold text-xl text-gray-900 tracking-widest">{posDate ? '事前予約受付票' : '受付・買取明細'}</h4>
-                          <p className="text-[10px] text-gray-400 mt-1">月寒製作所 苫小牧工場</p>
                        </div>
                        
-                       {/* ヘッダー情報 */}
                        <div className="mb-4 flex-shrink-0">
                            <div className="flex justify-between items-start mb-2">
                                <div>
@@ -266,10 +340,11 @@ export const AdminDashboard = ({ data, setView }: { data: any; setView: any }) =
                                   <p className="text-sm font-bold text-gray-900">{posDate ? posDate.replace('T', ' ') : '本日 (飛込)'}</p>
                                </div>
                            </div>
-                           {posMemo && <div className="bg-yellow-50 text-yellow-800 p-2 rounded text-xs font-bold border border-yellow-100 mt-2">備考: {posMemo}</div>}
+                           {posMemo && <div className={`p-2 rounded text-xs font-bold border mt-2 ${clientType === 'NEW' ? 'bg-red-50 text-[#D32F2F] border-red-100' : 'bg-yellow-50 text-yellow-800 border-yellow-100'}`}>
+                               備考: {posMemo}
+                           </div>}
                        </div>
                        
-                       {/* 品目リスト (ここがスクロールする) */}
                        <div className="flex-1 overflow-y-auto space-y-2 border-t border-b border-gray-100 py-3 min-h-[150px]">
                            {cartItems.length === 0 ? (
                                <p className="text-center text-gray-400 text-sm mt-10">品物が登録されていません</p>
@@ -285,30 +360,31 @@ export const AdminDashboard = ({ data, setView }: { data: any; setView: any }) =
                                        </div>
                                        <div className="text-right flex items-center gap-3">
                                            <span className="font-bold text-gray-900">¥{item.price.toLocaleString()}</span>
-                                           <button onClick={() => handleRemoveItem(item.id)} className="text-gray-300 hover:text-red-500 transition p-1">
-                                               <Icons.Trash />
-                                           </button>
+                                           <button onClick={() => handleRemoveItem(item.id)} className="text-gray-300 hover:text-red-500 transition p-1"><Icons.Trash /></button>
                                        </div>
                                    </div>
                                ))
                            )}
                        </div>
 
-                       {/* 合計と確定ボタン */}
                        <div className="pt-4 mt-2 flex-shrink-0">
                           <p className="text-[10px] text-gray-500 font-bold mb-1">お支払予定額 (税込)</p>
                           <div className="flex justify-between items-end mb-4 bg-red-50 p-3 rounded-lg border border-red-100">
                               <span className="font-bold text-[#D32F2F] text-lg">¥</span>
-                              <span className="text-4xl font-black text-[#D32F2F] tracking-tighter">
-                                  {cartTotal.toLocaleString()}
-                              </span>
+                              <span className="text-4xl font-black text-[#D32F2F] tracking-tighter">{cartTotal.toLocaleString()}</span>
                           </div>
                           
+                          {/* ★ 送信ボタン（API連動） */}
                           <button 
-                            disabled={cartItems.length === 0 || !posCompany}
+                            onClick={handleSubmitReservation}
+                            disabled={cartItems.length === 0 || !posCompany || isSubmitting}
                             className="w-full bg-[#D32F2F] text-white py-3.5 rounded-xl font-bold hover:bg-red-700 transition shadow-md disabled:bg-gray-300 disabled:shadow-none flex justify-center items-center gap-2"
                           >
-                              <Icons.Check /> {posDate ? '予約を確定して現場へ送る' : '受付を完了して現場へ送る'}
+                              {isSubmitting ? (
+                                  <span className="animate-pulse">送信中...</span>
+                              ) : (
+                                  <><Icons.Check /> {posDate ? '予約を確定して現場へ送る' : '受付を完了して現場へ送る'}</>
+                              )}
                           </button>
                        </div>
                     </div>
@@ -316,8 +392,6 @@ export const AdminDashboard = ({ data, setView }: { data: any; setView: any }) =
               </div>
            </div>
          )}
-         
-         {/* 他のタブ省略 */}
 
       </main>
     </div>
