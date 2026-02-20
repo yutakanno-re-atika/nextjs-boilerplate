@@ -40,7 +40,50 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
   const reservedList = reservations.filter((r: any) => r.status === 'RESERVED');
   const processingList = reservations.filter((r: any) => r.status === 'PROCESSING' || r.status === 'ARRIVED');
   const completedList = reservations.filter((r: any) => r.status === 'COMPLETED');
-  
+
+  // ==========================================
+  // ★ 本物の実績と予測の計算ロジック
+  // ==========================================
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+
+  // 1. 今月の確定実績 (COMPLETEDになった荷物の総重量)
+  let actualVolume = 0;
+  completedList.forEach(res => {
+      const d = new Date(res.visitDate || new Date());
+      // 今月のデータのみ合算
+      if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
+          let items = [];
+          try { 
+              let temp = res.items;
+              if (typeof temp === 'string') temp = JSON.parse(temp);
+              if (typeof temp === 'string') temp = JSON.parse(temp);
+              if (Array.isArray(temp)) items = temp;
+          } catch(e) {}
+          items.forEach((it: any) => { actualVolume += (Number(it.weight) || 0); });
+      }
+  });
+
+  // 2. 本日の見込み (RESERVED と PROCESSING にある荷物の総重量)
+  let forecastVolume = 0;
+  [...reservedList, ...processingList].forEach(res => {
+      let items = [];
+      try { 
+          let temp = res.items;
+          if (typeof temp === 'string') temp = JSON.parse(temp);
+          if (typeof temp === 'string') temp = JSON.parse(temp);
+          if (Array.isArray(temp)) items = temp;
+      } catch(e) {}
+      items.forEach((it: any) => { forecastVolume += (Number(it.weight) || 0); });
+  });
+
+  // 3. グラフ用のパーセンテージ計算
+  const targetMonthly = Number(data?.config?.target_monthly) || 30000;
+  const progressActual = Math.min(100, (actualVolume / targetMonthly) * 100);
+  const progressForecast = Math.min(100, ((actualVolume + forecastVolume) / targetMonthly) * 100);
+
+  // ==========================================
+
   useEffect(() => {
       if (!posCompany) {
           setPosPhone(''); setPosMemo(''); setClientType(null); setClientId('GUEST'); return;
@@ -72,12 +115,10 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
           if (typeof temp === 'string') temp = JSON.parse(temp);
           if (typeof temp === 'string') temp = JSON.parse(temp); 
           if (Array.isArray(temp)) items = temp;
-      } catch(e){ console.error("データ展開エラー", e); }
+      } catch(e){}
       
-      // ★ 読み込み時に「本日の相場」で金額を強制的に再計算する
       const loadedCart = items.map((it:any, idx:number) => {
          const product = data?.wires?.find((p:any) => p.name === it.product) || data?.castings?.find((p:any) => p.name === it.product);
-         
          let calculatedPrice = 0;
          if (product) {
              const weight = parseFloat(it.weight) || 0;
@@ -88,19 +129,8 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
                  rawPrice = (copperPrice * (product.ratio / 100) * 0.9) - 15;
              }
              calculatedPrice = Math.floor(Math.max(0, Math.floor(rawPrice * rankBonus)) * weight);
-         } else {
-             // 万が一商品マスターにない場合は保存されていた価格を使用
-             calculatedPrice = it.price || 0;
-         }
-
-         return {
-             id: Date.now().toString() + idx,
-             productId: product ? product.id : '',
-             productName: it.product,
-             weight: it.weight,
-             rank: it.rank || 'B',
-             price: calculatedPrice
-         };
+         } else { calculatedPrice = it.price || 0; }
+         return { id: Date.now().toString() + idx, productId: product ? product.id : '', productName: it.product, weight: it.weight, rank: it.rank || 'B', price: calculatedPrice };
       });
       setCartItems(loadedCart);
       setAdminTab('POS');
@@ -135,7 +165,6 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
           if (item.id === id) {
               const product = data?.wires?.find((p: any) => p.name === item.productName) || data?.castings?.find((p: any) => p.name === item.productName);
               if (!product) return { ...item, weight: newWeightStr }; 
-              
               const rankBonus = item.rank === 'A' ? 1.02 : item.rank === 'C' ? 0.95 : 1.0;
               let rawPrice = (copperPrice * (product.ratio / 100)) + (product.price_offset || 0);
               if (product.category === 'wire' || item.productName.includes('MIX')) {
@@ -260,13 +289,35 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
       {/* 🔴 メインエリア */}
       <main className="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col relative">
          
-         {/* HOME */}
+         {/* ★ HOME：実績ダッシュボードがリアルタイム連動！ */}
          {adminTab === 'HOME' && (
              <div className="max-w-5xl mx-auto w-full animate-in fade-in zoom-in-95 duration-300 flex flex-col h-full">
                  <header className="mb-6 flex-shrink-0">
                     <h2 className="text-3xl font-bold text-gray-900 mb-2">工場長、お疲れ様です。</h2>
                  </header>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 flex-shrink-0">
+
+                 {/* ★ 月間目標と実績グラフ (リアルタイム) */}
+                 <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm mb-6 flex-shrink-0">
+                    <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> 今月の買付目標と実績
+                    </h3>
+                    <div className="flex justify-between items-end mb-2">
+                        <span className="text-xs text-gray-500 font-bold">現在の総買付量</span>
+                        <span className="text-2xl font-black text-gray-900">
+                            {actualVolume.toLocaleString()} <span className="text-xs font-bold text-gray-400">/ {targetMonthly.toLocaleString()} kg</span>
+                        </span>
+                    </div>
+                    <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden flex mb-2">
+                        <div className="bg-[#D32F2F] h-full transition-all duration-1000 ease-out" style={{width: `${progressActual}%`}}></div>
+                        <div className="bg-orange-300 h-full transition-all duration-1000 ease-out opacity-80" style={{width: `${progressForecast}%`}}></div>
+                    </div>
+                    <div className="flex justify-between text-[10px] text-gray-500 font-bold">
+                        <span>■ 確定実績: {actualVolume.toLocaleString()} kg</span>
+                        <span className="text-orange-500">■ 本日の見込み (受付中): +{forecastVolume.toLocaleString()} kg</span>
+                    </div>
+                 </div>
+
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 flex-shrink-0">
                      <button onClick={()=>{handleResetPos(); setAdminTab('POS');}} className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:border-[#D32F2F] hover:shadow-md transition text-left flex items-start gap-4 group">
                          <div className="w-12 h-12 bg-red-50 text-[#D32F2F] rounded-full flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition"><Icons.Calc /></div>
                          <div><h3 className="text-xl font-bold text-gray-900 mb-1">飛込受付・買取</h3><p className="text-xs text-gray-500">新規や予約なしのお客様の受付と明細発行</p></div>
@@ -276,6 +327,7 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
                          <div><h3 className="text-xl font-bold text-gray-900 mb-1">現場カンバン (進行状況)</h3><p className="text-xs text-gray-500">予約の確認、計量中の荷物、加工待ちのリスト管理</p></div>
                      </button>
                  </div>
+                 
                  <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
                     <h3 className="text-sm font-bold text-gray-900 mb-4 border-b border-gray-100 pb-2">本日の状況サマリー</h3>
                     <div className="grid grid-cols-3 gap-4">
