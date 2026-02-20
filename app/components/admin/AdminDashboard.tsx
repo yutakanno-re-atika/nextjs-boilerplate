@@ -70,19 +70,36 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
       try { 
           let temp = res.items;
           if (typeof temp === 'string') temp = JSON.parse(temp);
-          if (typeof temp === 'string') temp = JSON.parse(temp); // 二重エスケープ対策
+          if (typeof temp === 'string') temp = JSON.parse(temp); 
           if (Array.isArray(temp)) items = temp;
       } catch(e){ console.error("データ展開エラー", e); }
       
+      // ★ 読み込み時に「本日の相場」で金額を強制的に再計算する
       const loadedCart = items.map((it:any, idx:number) => {
          const product = data?.wires?.find((p:any) => p.name === it.product) || data?.castings?.find((p:any) => p.name === it.product);
+         
+         let calculatedPrice = 0;
+         if (product) {
+             const weight = parseFloat(it.weight) || 0;
+             const rank = it.rank || 'B';
+             const rankBonus = rank === 'A' ? 1.02 : (rank === 'C' ? 0.95 : 1.0);
+             let rawPrice = (copperPrice * (product.ratio / 100)) + (product.price_offset || 0);
+             if (product.category === 'wire' || it.product.includes('MIX')) {
+                 rawPrice = (copperPrice * (product.ratio / 100) * 0.9) - 15;
+             }
+             calculatedPrice = Math.floor(Math.max(0, Math.floor(rawPrice * rankBonus)) * weight);
+         } else {
+             // 万が一商品マスターにない場合は保存されていた価格を使用
+             calculatedPrice = it.price || 0;
+         }
+
          return {
              id: Date.now().toString() + idx,
              productId: product ? product.id : '',
              productName: it.product,
              weight: it.weight,
              rank: it.rank || 'B',
-             price: it.price || 0
+             price: calculatedPrice
          };
       });
       setCartItems(loadedCart);
@@ -108,16 +125,12 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
     setCurrentProduct(''); setCurrentWeight(''); setCurrentRank('B');
   };
 
-  // ★ 新規追加：右側のカート内で直接重さを変更する機能
   const handleUpdateCartItemWeight = (id: string, newWeightStr: string) => {
       const weight = parseFloat(newWeightStr);
-      
-      // 空欄や入力途中の場合は一旦0円としてステートを更新する
       if (isNaN(weight)) {
           setCartItems(cartItems.map(item => item.id === id ? { ...item, weight: newWeightStr, price: 0 } : item));
           return;
       }
-      
       setCartItems(cartItems.map(item => {
           if (item.id === id) {
               const product = data?.wires?.find((p: any) => p.name === item.productName) || data?.castings?.find((p: any) => p.name === item.productName);
@@ -247,7 +260,7 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
       {/* 🔴 メインエリア */}
       <main className="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col relative">
          
-         {/* HOME, OPERATIONS 省略せず保持 */}
+         {/* HOME */}
          {adminTab === 'HOME' && (
              <div className="max-w-5xl mx-auto w-full animate-in fade-in zoom-in-95 duration-300 flex flex-col h-full">
                  <header className="mb-6 flex-shrink-0">
@@ -274,6 +287,7 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
              </div>
          )}
 
+         {/* OPERATIONS */}
          {adminTab === 'OPERATIONS' && (
              <div className="flex flex-col h-full animate-in fade-in duration-300">
                  <header className="mb-6 flex justify-between items-center flex-shrink-0">
@@ -303,6 +317,7 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
              </div>
          )}
 
+         {/* POS */}
          {adminTab === 'POS' && (
             <div className="h-full flex flex-col animate-in fade-in duration-300">
               <header className="mb-4 flex-shrink-0 flex justify-between items-end">
@@ -316,13 +331,14 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
               </header>
 
               <div className="flex-1 grid grid-cols-1 md:grid-cols-[1fr_1.2fr] gap-6 min-h-0">
-                 
-                 {/* 左側：追加フォーム */}
                  <div className="space-y-4 overflow-y-auto pr-2 pb-4">
                     <div className={`bg-white p-5 rounded-xl border shadow-sm relative overflow-hidden transition ${editingResId ? 'border-[#D32F2F]' : 'border-gray-200'}`}>
                        <div className="absolute top-0 left-0 w-1 h-full bg-[#D32F2F]"></div>
                        <div className="flex justify-between items-center mb-4">
                            <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2"><span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">STEP 1</span> お客様情報</h3>
+                           {clientType === 'MEMBER' && <span className="text-[10px] font-bold bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">会員企業</span>}
+                           {clientType === 'PAST_GUEST' && <span className="text-[10px] font-bold bg-gray-100 text-gray-600 px-2 py-1 rounded-full">過去に取引あり</span>}
+                           {clientType === 'NEW' && <span className="text-[10px] font-bold bg-red-100 text-[#D32F2F] px-2 py-1 rounded-full animate-pulse">新規のお客様</span>}
                        </div>
                        <div className="space-y-3">
                            <div>
@@ -366,7 +382,6 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
                     </div>
                  </div>
 
-                 {/* ★ 右側：編集可能なカート（レシート） */}
                  <div className="h-full pb-4">
                     <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-lg h-full flex flex-col relative overflow-hidden">
                        <div className="absolute top-0 left-0 w-full h-2 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cG9seWdvbiBwb2ludHM9IjAsMCA0LDggOCwwIiBmaWxsPSIjRjVGNUY3Ii8+Cjwvc3ZnPg==')] repeat-x"></div>
@@ -380,7 +395,6 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
                            </div>
                        </div>
                        
-                       {/* カートエリア（直接編集可能） */}
                        <div className="flex-1 overflow-y-auto space-y-3 border-t border-b border-gray-100 py-4 min-h-[150px]">
                            {cartItems.length === 0 ? <p className="text-center text-gray-400 text-sm mt-10">品物がありません</p> : cartItems.map((item) => (
                                <div key={item.id} className={`bg-gray-50 p-4 rounded-xl border flex flex-col gap-3 transition ${editingResId ? 'border-[#D32F2F]/30 shadow-sm' : 'border-gray-200'}`}>
@@ -396,7 +410,6 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
                                        <div className="flex items-center gap-2">
                                            <label className="text-[10px] font-bold text-gray-400">実重量</label>
                                            <div className="relative">
-                                               {/* ★ ここが直接入力できるフォーム！ */}
                                                <input 
                                                    type="number" 
                                                    className="w-24 bg-red-50 border border-red-200 p-2 rounded text-base font-black text-[#D32F2F] outline-none focus:ring-2 focus:ring-red-200 transition" 
