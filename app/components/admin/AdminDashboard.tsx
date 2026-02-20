@@ -11,6 +11,7 @@ const Icons = {
   Trash: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>,
   ArrowRight: () => <svg className="w-4 h-4 inline-block ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>,
   Logout: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>,
+  Edit: () => <svg className="w-3 h-3 inline-block ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
 };
 
 export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView: any; onLogout?: any }) => {
@@ -29,8 +30,6 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
   const [currentRank, setCurrentRank] = useState<'A'|'B'|'C'>('B');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<string | null>(null);
-
-  // ★ 追加：現在「上書き編集（計量）」している予約のIDを保持するステート
   const [editingResId, setEditingResId] = useState<string | null>(null);
   
   const market = data?.market || {};
@@ -60,18 +59,21 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
       }
   }, [posCompany, allClients, editingResId]);
 
-  // --- ★ 追加: カンバンからPOSへデータを流し込む魔法の関数 ---
   const openPosWithData = (res: any) => {
-      setEditingResId(res.id); // 「編集中」フラグを立てる
+      setEditingResId(res.id);
       setPosCompany(res.memberName);
       setClientId(res.memberId);
       setPosDate(res.visitDate ? String(res.visitDate).substring(0, 16) : '');
       setPosMemo(res.memo || '');
       
       let items = [];
-      try { items = typeof res.items === 'string' ? JSON.parse(res.items) : res.items; } catch(e){}
+      try { 
+          let temp = res.items;
+          if (typeof temp === 'string') temp = JSON.parse(temp);
+          if (typeof temp === 'string') temp = JSON.parse(temp); // 二重エスケープ対策
+          if (Array.isArray(temp)) items = temp;
+      } catch(e){ console.error("データ展開エラー", e); }
       
-      // 予約品目をカートに復元
       const loadedCart = items.map((it:any, idx:number) => {
          const product = data?.wires?.find((p:any) => p.name === it.product) || data?.castings?.find((p:any) => p.name === it.product);
          return {
@@ -84,7 +86,7 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
          };
       });
       setCartItems(loadedCart);
-      setAdminTab('POS'); // POS画面へ自動遷移
+      setAdminTab('POS');
   };
 
   const handleResetPos = () => {
@@ -106,41 +108,54 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
     setCurrentProduct(''); setCurrentWeight(''); setCurrentRank('B');
   };
 
+  // ★ 新規追加：右側のカート内で直接重さを変更する機能
+  const handleUpdateCartItemWeight = (id: string, newWeightStr: string) => {
+      const weight = parseFloat(newWeightStr);
+      
+      // 空欄や入力途中の場合は一旦0円としてステートを更新する
+      if (isNaN(weight)) {
+          setCartItems(cartItems.map(item => item.id === id ? { ...item, weight: newWeightStr, price: 0 } : item));
+          return;
+      }
+      
+      setCartItems(cartItems.map(item => {
+          if (item.id === id) {
+              const product = data?.wires?.find((p: any) => p.name === item.productName) || data?.castings?.find((p: any) => p.name === item.productName);
+              if (!product) return { ...item, weight: newWeightStr }; 
+              
+              const rankBonus = item.rank === 'A' ? 1.02 : item.rank === 'C' ? 0.95 : 1.0;
+              let rawPrice = (copperPrice * (product.ratio / 100)) + (product.price_offset || 0);
+              if (product.category === 'wire' || item.productName.includes('MIX')) {
+                  rawPrice = (copperPrice * (product.ratio / 100) * 0.9) - 15;
+              }
+              const newPrice = Math.floor(Math.max(0, Math.floor(rawPrice * rankBonus)) * weight);
+              return { ...item, weight: newWeightStr, price: newPrice };
+          }
+          return item;
+      }));
+  };
+
   const handleRemoveItem = (id: string) => setCartItems(cartItems.filter(item => item.id !== id));
   const cartTotal = cartItems.reduce((sum, item) => sum + item.price, 0);
 
-  // --- ★ 変更: 新規登録と上書き保存（計量完了）の振り分け ---
   const handleSubmitReservation = async () => {
       if (cartItems.length === 0 || !posCompany) return;
       setIsSubmitting(true);
       try {
           const visitDateTime = posDate ? posDate : new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
-          
           let payload: any = {
-              visitDate: visitDateTime,
-              memberId: clientId,
-              memberName: posCompany,
-              items: cartItems.map(i => ({ product: i.productName, weight: i.weight, price: i.price, rank: i.rank })),
-              totalEstimate: cartTotal,
-              memo: posMemo
+              visitDate: visitDateTime, memberId: clientId, memberName: posCompany,
+              items: cartItems.map(i => ({ product: i.productName, weight: parseFloat(i.weight)||0, price: i.price, rank: i.rank })),
+              totalEstimate: cartTotal, memo: posMemo
           };
-
-          // 編集中なら「更新アクション」、新規なら「登録アクション」
           if (editingResId) {
-              payload.action = 'UPDATE_RESERVATION';
-              payload.reservationId = editingResId;
-              payload.status = 'COMPLETED'; // ★ 計量確定したら加工待ち(COMPLETED)へ送る
-          } else {
-              payload.action = 'REGISTER_RESERVATION';
-          }
+              payload.action = 'UPDATE_RESERVATION'; payload.reservationId = editingResId; payload.status = 'COMPLETED'; 
+          } else { payload.action = 'REGISTER_RESERVATION'; }
 
           const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
           const result = await res.json();
-          
           if (result.status === 'success') {
-              handleResetPos();
-              setAdminTab('OPERATIONS');
-              window.location.reload(); 
+              handleResetPos(); setAdminTab('OPERATIONS'); window.location.reload(); 
           } else { alert('エラー: ' + result.message); }
       } catch (error) { alert('通信エラーが発生しました。'); }
       setIsSubmitting(false);
@@ -159,7 +174,12 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
 
   const renderCard = (res: any, currentStatus: string) => {
       let items: any[] = [];
-      try { items = typeof res.items === 'string' ? JSON.parse(res.items) : res.items; } catch(e){}
+      try { 
+          let temp = res.items;
+          if (typeof temp === 'string') temp = JSON.parse(temp);
+          if (typeof temp === 'string') temp = JSON.parse(temp);
+          if (Array.isArray(temp)) items = temp;
+      } catch(e){}
       const totalWeight = items ? items.reduce((sum:number, i:any) => sum + (Number(i.weight)||0), 0) : 0;
       const isMember = res.memberId && res.memberId !== 'GUEST';
       let timeStr = "日時不明";
@@ -192,9 +212,8 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
                         {isUpdatingStatus === res.id ? '更新中...' : <>検収・計量へ進む <Icons.ArrowRight /></>}
                     </button>
                 )}
-                {/* ★ 変更: 検収中のカードからPOSレジを開き、データを流し込む */}
                 {currentStatus === 'PROCESSING' && (
-                    <button onClick={() => openPosWithData(res)} disabled={isUpdatingStatus === res.id} className="w-full bg-red-50 text-[#D32F2F] py-1.5 rounded-lg text-xs font-bold hover:bg-[#D32F2F] hover:text-white transition flex items-center justify-center">
+                    <button onClick={() => openPosWithData(res)} disabled={isUpdatingStatus === res.id} className="w-full bg-red-50 text-[#D32F2F] py-1.5 rounded-lg text-xs font-bold hover:bg-[#D32F2F] hover:text-white transition flex items-center justify-center border border-red-100">
                         <Icons.Calc /> レジで計量を確定する
                     </button>
                 )}
@@ -220,9 +239,7 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
         </nav>
         {onLogout && (
             <div className="p-4 border-t border-gray-100 flex-shrink-0">
-                <button onClick={onLogout} className="w-full text-left px-4 py-3 rounded-xl text-sm font-bold text-red-500 hover:bg-red-50 transition flex items-center gap-3">
-                    <Icons.Logout /> ログアウト
-                </button>
+                <button onClick={onLogout} className="w-full text-left px-4 py-3 rounded-xl text-sm font-bold text-red-500 hover:bg-red-50 transition flex items-center gap-3"><Icons.Logout /> ログアウト</button>
             </div>
         )}
       </aside>
@@ -230,20 +247,20 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
       {/* 🔴 メインエリア */}
       <main className="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col relative">
          
+         {/* HOME, OPERATIONS 省略せず保持 */}
          {adminTab === 'HOME' && (
              <div className="max-w-5xl mx-auto w-full animate-in fade-in zoom-in-95 duration-300 flex flex-col h-full">
                  <header className="mb-6 flex-shrink-0">
                     <h2 className="text-3xl font-bold text-gray-900 mb-2">工場長、お疲れ様です。</h2>
-                    <p className="text-gray-500">本日のアクションを選択してください。</p>
                  </header>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 flex-shrink-0">
                      <button onClick={()=>{handleResetPos(); setAdminTab('POS');}} className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:border-[#D32F2F] hover:shadow-md transition text-left flex items-start gap-4 group">
                          <div className="w-12 h-12 bg-red-50 text-[#D32F2F] rounded-full flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition"><Icons.Calc /></div>
-                         <div><h3 className="text-xl font-bold text-gray-900 mb-1">飛込受付・買取</h3><p className="text-xs text-gray-500 leading-relaxed">新規のお客様や予約なしのお客様の受付と明細発行を行います。</p></div>
+                         <div><h3 className="text-xl font-bold text-gray-900 mb-1">飛込受付・買取</h3><p className="text-xs text-gray-500">新規や予約なしのお客様の受付と明細発行</p></div>
                      </button>
                      <button onClick={()=>setAdminTab('OPERATIONS')} className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:border-orange-500 hover:shadow-md transition text-left flex items-start gap-4 group">
                          <div className="w-12 h-12 bg-orange-50 text-orange-600 rounded-full flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition"><Icons.Kanban /></div>
-                         <div><h3 className="text-xl font-bold text-gray-900 mb-1">現場カンバン (進行状況)</h3><p className="text-xs text-gray-500 leading-relaxed">予約の確認、計量中の荷物、加工待ちのリストをリアルタイムに確認・移動させます。</p></div>
+                         <div><h3 className="text-xl font-bold text-gray-900 mb-1">現場カンバン (進行状況)</h3><p className="text-xs text-gray-500">予約の確認、計量中の荷物、加工待ちのリスト管理</p></div>
                      </button>
                  </div>
                  <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
@@ -292,39 +309,39 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
                 <div>
                     <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                         受付・買取フロント
-                        {/* ★ 編集中バッジ */}
                         {editingResId && <span className="text-[10px] bg-red-100 text-[#D32F2F] px-2 py-1 rounded-full border border-red-200 animate-pulse">予約データの計量中</span>}
                     </h2>
                 </div>
-                <button onClick={handleResetPos} className="text-sm font-bold text-[#D32F2F] bg-red-50 px-4 py-2 rounded-lg hover:bg-red-100 transition">リセット</button>
+                <button onClick={handleResetPos} className="text-sm font-bold text-[#D32F2F] bg-red-50 px-4 py-2 rounded-lg hover:bg-red-100 transition">入力をクリア</button>
               </header>
 
-              <div className="flex-1 grid grid-cols-1 md:grid-cols-[1.2fr_1fr] gap-6 min-h-0">
+              <div className="flex-1 grid grid-cols-1 md:grid-cols-[1fr_1.2fr] gap-6 min-h-0">
+                 
+                 {/* 左側：追加フォーム */}
                  <div className="space-y-4 overflow-y-auto pr-2 pb-4">
                     <div className={`bg-white p-5 rounded-xl border shadow-sm relative overflow-hidden transition ${editingResId ? 'border-[#D32F2F]' : 'border-gray-200'}`}>
                        <div className="absolute top-0 left-0 w-1 h-full bg-[#D32F2F]"></div>
                        <div className="flex justify-between items-center mb-4">
-                           <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2"><span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">STEP 1</span> 受付情報</h3>
-                           {clientType === 'MEMBER' && <span className="text-[10px] font-bold bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">会員企業</span>}
+                           <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2"><span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">STEP 1</span> お客様情報</h3>
                        </div>
-                       <div className="grid grid-cols-2 gap-3 mb-3">
-                           <div className="col-span-2 md:col-span-1">
+                       <div className="space-y-3">
+                           <div>
                                <label className="text-[10px] text-gray-500 font-bold block mb-1">企業名 / お名前</label>
                                <input list="client-list" className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900 text-sm focus:border-[#D32F2F] outline-none font-bold" value={posCompany} onChange={(e)=>setPosCompany(e.target.value)} />
                                <datalist id="client-list">{allClients.map((c:any) => <option key={c.name} value={c.name} />)}</datalist>
                            </div>
-                           <div className="col-span-2 md:col-span-1">
-                               <label className="text-[10px] text-gray-500 font-bold block mb-1">ご連絡先</label>
-                               <input type="tel" className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900 text-sm outline-none" value={posPhone} onChange={(e)=>setPosPhone(e.target.value)} />
+                           <div>
+                               <label className="text-[10px] text-gray-500 font-bold block mb-1">引継ぎメモ (備考)</label>
+                               <input className={`w-full border p-3 rounded-lg text-sm outline-none transition ${clientType === 'NEW' ? 'bg-red-50 border-red-200 text-[#D32F2F] font-bold' : 'bg-gray-50 border-gray-200'}`} placeholder="注意事項" value={posMemo} onChange={(e)=>setPosMemo(e.target.value)} />
                            </div>
                        </div>
                     </div>
 
                     <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden">
                        <div className="absolute top-0 left-0 w-1 h-full bg-gray-900"></div>
-                       <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">STEP 2</span> 品目の計量と追加</h3>
-                       <div className="flex flex-col md:flex-row gap-3 items-end">
-                           <div className="flex-1 w-full">
+                       <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">STEP 2</span> 新しい品目の追加</h3>
+                       <div className="space-y-3">
+                           <div>
                                <label className="text-[10px] text-gray-500 font-bold block mb-1">銘柄</label>
                                <select className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900 text-sm outline-none font-bold" value={currentProduct} onChange={(e)=>setCurrentProduct(e.target.value)}>
                                   <option value="">-- 品物 --</option>
@@ -332,27 +349,69 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
                                   <optgroup label="非鉄金属">{data?.castings?.map((p:any) => (<option key={p.id} value={p.id}>{p.name}</option>))}</optgroup>
                                </select>
                            </div>
-                           <div className="w-full md:w-24 relative">
-                               <label className="text-[10px] text-gray-500 font-bold block mb-1">実際の重さ</label>
-                               <input type="number" className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900 text-sm font-black outline-none" placeholder="0" value={currentWeight} onChange={(e)=>setCurrentWeight(e.target.value)} />
+                           <div className="flex gap-3">
+                               <div className="flex-1 relative">
+                                   <label className="text-[10px] text-gray-500 font-bold block mb-1">重さ(kg)</label>
+                                   <input type="number" className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900 text-sm font-black outline-none" placeholder="0" value={currentWeight} onChange={(e)=>setCurrentWeight(e.target.value)} />
+                               </div>
+                               <div className="w-24">
+                                   <label className="text-[10px] text-gray-500 font-bold block mb-1">状態</label>
+                                   <select className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900 text-sm font-bold outline-none" value={currentRank} onChange={(e:any)=>setCurrentRank(e.target.value)}>
+                                      <option value="B">普通</option><option value="A">良</option><option value="C">劣</option>
+                                   </select>
+                               </div>
                            </div>
-                           <button onClick={handleAddItem} disabled={!currentProduct || !currentWeight} className="w-full md:w-auto bg-gray-900 text-white p-3 rounded-lg font-bold hover:bg-[#D32F2F] transition disabled:bg-gray-300 flex justify-center"><Icons.Plus /> 追加</button>
+                           <button onClick={handleAddItem} disabled={!currentProduct || !currentWeight} className="w-full bg-gray-900 text-white p-3 rounded-lg font-bold hover:bg-[#D32F2F] transition disabled:bg-gray-300 flex justify-center mt-2"><Icons.Plus /> カートに追加</button>
                        </div>
                     </div>
                  </div>
 
+                 {/* ★ 右側：編集可能なカート（レシート） */}
                  <div className="h-full pb-4">
                     <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-lg h-full flex flex-col relative overflow-hidden">
                        <div className="absolute top-0 left-0 w-full h-2 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cG9seWdvbiBwb2ludHM9IjAsMCA0LDggOCwwIiBmaWxsPSIjRjVGNUY3Ii8+Cjwvc3ZnPg==')] repeat-x"></div>
                        <div className="text-center border-b border-dashed border-gray-300 pb-4 mb-4 mt-2 flex-shrink-0">
-                          <h4 className="font-bold text-xl text-gray-900 tracking-widest">{editingResId ? '買取明細 (確定)' : (posDate ? '事前予約受付票' : '受付・買取明細')}</h4>
+                          <h4 className="font-bold text-xl text-gray-900 tracking-widest">{editingResId ? '買取明細 (計量・修正)' : '受付・買取明細'}</h4>
+                       </div>
+                       <div className="mb-2 flex-shrink-0">
+                           <div className="flex justify-between items-start">
+                               <div><p className="text-[10px] text-gray-400 font-bold mb-0.5">お客様</p><p className="text-base font-bold text-gray-900">{posCompany || '未入力'}</p></div>
+                               <div className="text-right"><p className="text-[10px] text-gray-400 font-bold mb-0.5">{editingResId ? '計量日' : '受付'}</p><p className="text-sm font-bold text-gray-900">{posDate ? posDate.replace('T', ' ') : '本日 (飛込)'}</p></div>
+                           </div>
                        </div>
                        
-                       <div className="flex-1 overflow-y-auto space-y-2 border-b border-gray-100 py-3 min-h-[150px]">
-                           {cartItems.length === 0 ? <p className="text-center text-gray-400 text-sm mt-10">品物を追加してください</p> : cartItems.map((item) => (
-                               <div key={item.id} className="bg-gray-50 p-3 rounded-lg border border-gray-100 flex justify-between items-center">
-                                   <div className="flex-1"><p className="text-sm font-bold text-gray-900 flex items-center gap-2">{item.productName}</p><p className="text-xs text-[#D32F2F] font-black mt-1">{item.weight} kg</p></div>
-                                   <div className="text-right flex items-center gap-3"><span className="font-bold text-gray-900">¥{item.price.toLocaleString()}</span><button onClick={() => handleRemoveItem(item.id)} className="text-gray-300 hover:text-red-500 p-1"><Icons.Trash /></button></div>
+                       {/* カートエリア（直接編集可能） */}
+                       <div className="flex-1 overflow-y-auto space-y-3 border-t border-b border-gray-100 py-4 min-h-[150px]">
+                           {cartItems.length === 0 ? <p className="text-center text-gray-400 text-sm mt-10">品物がありません</p> : cartItems.map((item) => (
+                               <div key={item.id} className={`bg-gray-50 p-4 rounded-xl border flex flex-col gap-3 transition ${editingResId ? 'border-[#D32F2F]/30 shadow-sm' : 'border-gray-200'}`}>
+                                   <div className="flex justify-between items-center">
+                                       <p className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                                           {item.productName}
+                                           <span className="text-[9px] font-mono text-gray-400 border px-1 rounded">R:{item.rank}</span>
+                                       </p>
+                                       <button onClick={() => handleRemoveItem(item.id)} className="text-gray-300 hover:text-red-500 p-1"><Icons.Trash /></button>
+                                   </div>
+                                   
+                                   <div className="flex justify-between items-center bg-white p-2 rounded border border-gray-100">
+                                       <div className="flex items-center gap-2">
+                                           <label className="text-[10px] font-bold text-gray-400">実重量</label>
+                                           <div className="relative">
+                                               {/* ★ ここが直接入力できるフォーム！ */}
+                                               <input 
+                                                   type="number" 
+                                                   className="w-24 bg-red-50 border border-red-200 p-2 rounded text-base font-black text-[#D32F2F] outline-none focus:ring-2 focus:ring-red-200 transition" 
+                                                   value={item.weight} 
+                                                   onChange={(e) => handleUpdateCartItemWeight(item.id, e.target.value)} 
+                                               />
+                                               <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-[#D32F2F] font-bold">kg</span>
+                                           </div>
+                                           {editingResId && <Icons.Edit />}
+                                       </div>
+                                       <div className="text-right">
+                                           <p className="text-[10px] font-bold text-gray-400 mb-0.5">金額</p>
+                                           <span className="font-bold text-gray-900">¥{item.price.toLocaleString()}</span>
+                                       </div>
+                                   </div>
                                </div>
                            ))}
                        </div>
@@ -365,7 +424,7 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
                           <button onClick={handleSubmitReservation} disabled={cartItems.length === 0 || !posCompany || isSubmitting} className="w-full bg-[#D32F2F] text-white py-3.5 rounded-xl font-bold hover:bg-red-700 transition shadow-md disabled:bg-gray-300 flex justify-center items-center gap-2">
                               {isSubmitting ? <span className="animate-pulse">送信中...</span> : 
                                (editingResId ? <><Icons.Check /> 計量を確定して加工待ちへ送る</> : 
-                               (posDate ? <><Icons.Check /> 予約を確定して現場へ送る</> : <><Icons.Check /> 受付を完了して現場へ送る</>))}
+                               <><Icons.Check /> 受付を完了して現場へ送る</>)}
                           </button>
                        </div>
                     </div>
