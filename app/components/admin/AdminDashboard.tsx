@@ -14,16 +14,17 @@ const Icons = {
 };
 
 export const AdminDashboard = ({ data, setView }: { data: any; setView: any }) => {
-  const [adminTab, setAdminTab] = useState<'HOME' | 'OPERATIONS' | 'POS' | 'COMPETITOR'>('HOME');
+  const [adminTab, setAdminTab] = useState<'HOME' | 'OPERATIONS' | 'POS' | 'COMPETITOR'>('POS');
   
-  // POSステート
-  const [posUser, setPosUser] = useState<string>('');
+  // ★ フロント受付用ステート（企業名、連絡先を追加）
+  const [posCompany, setPosCompany] = useState<string>('');
+  const [posPhone, setPosPhone] = useState<string>('');
   const [posProduct, setPosProduct] = useState<string>('');
   const [posWeight, setPosWeight] = useState<string>('');
   const [posRank, setPosRank] = useState<'A'|'B'|'C'>('B');
   const [posResult, setPosResult] = useState<number | null>(null);
   
-  // ★ GASの全相場データを安全に抽出 (無い場合は0)
+  // GASの全相場データ
   const market = data?.market || {};
   const copperPrice = market.copper?.price || data?.config?.market_price || 0;
   const brassPrice = market.brass?.price || 0;
@@ -32,11 +33,10 @@ export const AdminDashboard = ({ data, setView }: { data: any; setView: any }) =
   const tinPrice = market.tin?.price || 0;
   const usdjpy = market.usdjpy || 0;
   
-  // 予約データのパースと予測出来高計算
+  // 予測出来高計算
   const reservations = data?.reservations || [];
   const reservedList = reservations.filter((r: any) => r.status === 'RESERVED');
   const processingList = reservations.filter((r: any) => r.status === 'PROCESSING' || r.status === 'ARRIVED');
-  
   let forecastVolume = 0;
   reservedList.forEach((res: any) => {
      try { JSON.parse(res.items).forEach((i: any) => forecastVolume += (Number(i.weight) || 0)); } catch(e) {}
@@ -99,7 +99,11 @@ export const AdminDashboard = ({ data, setView }: { data: any; setView: any }) =
             <p className="font-bold text-gray-900 text-sm truncate">{res.memberName}</p>
             <p className="text-xs text-gray-600 truncate">{mainItem} / 約 <span className="font-bold text-gray-900">{totalWeight}</span> kg</p>
             {isProcessing ? (
-                <button onClick={()=>setAdminTab('POS')} className="mt-2 w-full bg-red-50 text-[#D32F2F] py-1.5 rounded text-xs font-bold hover:bg-[#D32F2F] hover:text-white transition">レジへ進む</button>
+                <button onClick={()=>{
+                    // カンバンからPOSへデータを渡す処理のモック
+                    setPosCompany(res.memberName);
+                    setAdminTab('POS');
+                }} className="mt-2 w-full bg-red-50 text-[#D32F2F] py-1.5 rounded text-xs font-bold hover:bg-[#D32F2F] hover:text-white transition">レジへ進む</button>
             ) : (
                 <button className="mt-2 w-full bg-gray-50 text-gray-600 py-1.5 rounded text-xs font-bold hover:bg-gray-200 transition">到着（計量へ）</button>
             )}
@@ -110,10 +114,9 @@ export const AdminDashboard = ({ data, setView }: { data: any; setView: any }) =
   const wireOptions = data?.wires?.filter((w: any) => w.name.includes('ミックス') || w.name.toUpperCase().includes('MIX')) || [];
 
   return (
-    // ★ h-screen と overflow-hidden でアプリライクな「スクロールしない」外枠を作る
     <div className="h-screen w-full bg-[#F5F5F7] text-gray-900 font-sans flex flex-col md:flex-row overflow-hidden">
       
-      {/* 🔴 サイドバー (相場ボード追加) */}
+      {/* 🔴 サイドバー */}
       <aside className="w-full md:w-64 bg-white border-r border-gray-200 flex flex-col shadow-sm z-10 flex-shrink-0">
         <div className="p-5 cursor-pointer border-b border-gray-50" onClick={()=>setView('LP')}>
             <h1 className="text-xl font-serif font-bold text-gray-900">FACTORY<span className="text-[#D32F2F]">OS</span></h1>
@@ -122,11 +125,11 @@ export const AdminDashboard = ({ data, setView }: { data: any; setView: any }) =
         <nav className="flex-1 overflow-y-auto p-4 space-y-1">
             <button onClick={()=>setAdminTab('HOME')} className={`w-full text-left px-4 py-3 rounded-lg text-sm font-bold transition flex items-center gap-3 ${adminTab==='HOME' ? 'bg-[#111] text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}><Icons.Home /> ホーム</button>
             <button onClick={()=>setAdminTab('OPERATIONS')} className={`w-full text-left px-4 py-3 rounded-lg text-sm font-bold transition flex items-center gap-3 ${adminTab==='OPERATIONS' ? 'bg-[#111] text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}><Icons.Kanban /> 現場カンバン</button>
-            <button onClick={()=>setAdminTab('POS')} className={`w-full text-left px-4 py-3 rounded-lg text-sm font-bold transition flex items-center gap-3 ${adminTab==='POS' ? 'bg-[#111] text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}><Icons.Calc /> 買取レジ</button>
+            <button onClick={()=>setAdminTab('POS')} className={`w-full text-left px-4 py-3 rounded-lg text-sm font-bold transition flex items-center gap-3 ${adminTab==='POS' ? 'bg-[#111] text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}><Icons.Calc /> 受付・買取レジ</button>
             <button onClick={()=>setAdminTab('COMPETITOR')} className={`w-full text-left px-4 py-3 rounded-lg text-sm font-bold transition flex items-center gap-3 ${adminTab==='COMPETITOR' ? 'bg-[#111] text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}><Icons.Radar /> 他社価格AI</button>
         </nav>
         
-        {/* ★ GAS直結：全相場ティッカーボード (スクロールさせず常に表示) */}
+        {/* 全相場ティッカーボード */}
         <div className="p-4 bg-gray-50 border-t border-gray-200 flex-shrink-0">
             <div className="flex items-center justify-between mb-2">
                 <p className="text-[10px] text-gray-500 font-bold">本日の自動取得相場</p>
@@ -161,42 +164,38 @@ export const AdminDashboard = ({ data, setView }: { data: any; setView: any }) =
         </div>
       </aside>
 
-      {/* 🔴 メインエリア (タブの中身だけがスクロールする) */}
+      {/* 🔴 メインエリア */}
       <main className="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col">
          
-         {/* 1. HOME */}
+         {/* 1. HOME (省略) */}
          {adminTab === 'HOME' && (
              <div className="max-w-5xl mx-auto w-full animate-in fade-in zoom-in-95 duration-300 flex flex-col h-full">
                  <header className="mb-6 flex-shrink-0">
                     <h2 className="text-2xl font-bold text-gray-900">お疲れ様です。本日の業務を選択してください。</h2>
                  </header>
-
-                 {/* 3つのボタンをコンパクトに */}
                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 flex-shrink-0">
                      <button onClick={()=>setAdminTab('POS')} className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:border-[#D32F2F] transition text-left flex items-center gap-4 group">
                          <div className="w-10 h-10 bg-red-50 text-[#D32F2F] rounded-full flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition"><Icons.Calc /></div>
                          <div>
-                             <h3 className="font-bold text-gray-900">買取レジを開く</h3>
-                             <p className="text-[10px] text-gray-500">お客様の計量と明細発行</p>
+                             <h3 className="font-bold text-gray-900">受付・買取レジ</h3>
+                             <p className="text-[10px] text-gray-500">お客様の受付と明細発行</p>
                          </div>
                      </button>
                      <button onClick={()=>setAdminTab('OPERATIONS')} className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:border-orange-500 transition text-left flex items-center gap-4 group">
                          <div className="w-10 h-10 bg-orange-50 text-orange-600 rounded-full flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition"><Icons.Kanban /></div>
                          <div>
-                             <h3 className="font-bold text-gray-900">本日の予約を見る</h3>
+                             <h3 className="font-bold text-gray-900">現場カンバン</h3>
                              <p className="text-[10px] text-gray-500">来場予定と作業進行の管理</p>
                          </div>
                      </button>
                      <button onClick={()=>setAdminTab('COMPETITOR')} className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:border-blue-500 transition text-left flex items-center gap-4 group">
                          <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition"><Icons.Radar /></div>
                          <div>
-                             <h3 className="font-bold text-gray-900">他社の価格を見る</h3>
+                             <h3 className="font-bold text-gray-900">他社価格を見る</h3>
                              <p className="text-[10px] text-gray-500">競合サイトのAI自動監視</p>
                          </div>
                      </button>
                  </div>
-
-                 {/* 目標と実績パネル */}
                  <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex-shrink-0">
                     <h3 className="text-sm font-bold text-gray-900 mb-4">月間 買付目標と実績</h3>
                     <div className="flex justify-between items-end mb-2">
@@ -207,22 +206,18 @@ export const AdminDashboard = ({ data, setView }: { data: any; setView: any }) =
                         <div className="bg-[#D32F2F] h-full transition-all" style={{width: `${progressActual}%`}}></div>
                         <div className="bg-orange-300 h-full transition-all opacity-80" style={{width: `${progressForecast - progressActual}%`}}></div>
                     </div>
-                    <p className="text-[10px] text-gray-400 text-right">※ オレンジ色は本日の予約見込み（{forecastVolume}kg）</p>
                  </div>
              </div>
          )}
 
-         {/* 2. OPERATIONS (全画面カンバン：この中でだけ縦スクロールさせる) */}
+         {/* 2. OPERATIONS (省略) */}
          {adminTab === 'OPERATIONS' && (
              <div className="flex flex-col h-full animate-in fade-in duration-300">
                  <header className="mb-4 flex justify-between items-center flex-shrink-0">
                     <h2 className="text-xl font-bold text-gray-900">現場カンバン</h2>
-                    <button className="bg-gray-900 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-[#D32F2F] transition shadow-sm">＋ 飛込受付</button>
+                    <button onClick={()=>setAdminTab('POS')} className="bg-gray-900 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-[#D32F2F] transition shadow-sm">＋ 飛込受付</button>
                  </header>
-
-                 {/* カンバンエリア（画面の高さいっぱいに広がり、はみ出たカードだけスクロール） */}
                  <div className="flex-1 flex gap-4 overflow-x-auto min-h-0">
-                     
                      <div className="flex-none w-[280px] flex flex-col bg-gray-100/50 rounded-xl border border-gray-200 overflow-hidden">
                          <div className="p-3 border-b border-gray-200 flex justify-between items-center bg-white">
                              <span className="font-bold text-sm text-gray-700">① 来場待ち</span>
@@ -232,7 +227,6 @@ export const AdminDashboard = ({ data, setView }: { data: any; setView: any }) =
                              {reservedList.length === 0 ? <p className="text-xs text-gray-400 text-center py-4">予定なし</p> : reservedList.map(res => renderCard(res, false))}
                          </div>
                      </div>
-
                      <div className="flex-none w-[280px] flex flex-col bg-red-50/30 rounded-xl border border-red-100 overflow-hidden">
                          <div className="p-3 border-b-2 border-b-[#D32F2F] flex justify-between items-center bg-white">
                              <span className="font-bold text-sm text-[#D32F2F]">② 検収・計量中</span>
@@ -242,7 +236,6 @@ export const AdminDashboard = ({ data, setView }: { data: any; setView: any }) =
                               {processingList.length === 0 ? <p className="text-xs text-gray-400 text-center py-4">計量中なし</p> : processingList.map(res => renderCard(res, true))}
                          </div>
                      </div>
-
                      <div className="flex-none w-[280px] flex flex-col bg-gray-100/50 rounded-xl border border-gray-200 overflow-hidden">
                          <div className="p-3 border-b border-gray-200 flex justify-between items-center bg-white">
                              <span className="font-bold text-sm text-gray-700">③ ナゲット加工待ち</span>
@@ -252,28 +245,70 @@ export const AdminDashboard = ({ data, setView }: { data: any; setView: any }) =
                              <p className="text-xs text-gray-400 border-2 border-dashed border-gray-300 p-4 rounded-lg text-center w-full mx-2">準備中</p>
                          </div>
                      </div>
-
                  </div>
              </div>
          )}
 
-         {/* 3. POS (スクロールを最小限にしたコンパクトレジ) */}
+         {/* 3. POS (★フロント受付用に大幅改良) */}
          {adminTab === 'POS' && (
             <div className="h-full flex flex-col animate-in fade-in duration-300">
-              <header className="mb-4 flex-shrink-0">
-                <h2 className="text-xl font-bold text-gray-900">かんたん買取レジ</h2>
+              
+              <header className="mb-4 flex-shrink-0 flex justify-between items-end">
+                <div>
+                    <h2 className="text-xl font-bold text-gray-900">受付・買取レジ</h2>
+                    <p className="text-xs text-gray-500 mt-1">飛込のお客様の情報入力と、計量・明細発行を行います。</p>
+                </div>
+                <button className="text-sm font-bold text-[#D32F2F] bg-red-50 px-4 py-2 rounded-lg hover:bg-red-100 transition">
+                    入力をクリア
+                </button>
               </header>
 
               <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 min-h-0">
+                 {/* 左側：入力フォーム */}
                  <div className="space-y-4 overflow-y-auto pr-2 pb-4">
-                    <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
-                       <h3 className="text-xs font-bold text-[#D32F2F] mb-2">① お客様のお名前</h3>
-                       <input className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900 text-base focus:border-[#D32F2F] outline-none" placeholder="例: 山田太郎 / 090-XXXX" value={posUser} onChange={(e)=>setPosUser(e.target.value)} />
+                    
+                    {/* ① お客様情報 (必須) */}
+                    <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden">
+                       <div className="absolute top-0 left-0 w-1 h-full bg-[#D32F2F]"></div>
+                       <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+                           <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">STEP 1</span> お客様情報
+                       </h3>
+                       <div className="space-y-3">
+                           <div>
+                               <label className="text-[10px] text-gray-500 font-bold block mb-1">企業名 / お名前</label>
+                               <input 
+                                 className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900 text-base focus:border-[#D32F2F] outline-none transition" 
+                                 placeholder="例: 月寒建設 株式会社" 
+                                 value={posCompany} 
+                                 onChange={(e)=>setPosCompany(e.target.value)} 
+                               />
+                           </div>
+                           <div>
+                               <label className="text-[10px] text-gray-500 font-bold block mb-1">ご連絡先 (任意)</label>
+                               <input 
+                                 type="tel"
+                                 className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900 text-base focus:border-[#D32F2F] outline-none transition" 
+                                 placeholder="例: 090-XXXX-XXXX" 
+                                 value={posPhone} 
+                                 onChange={(e)=>setPosPhone(e.target.value)} 
+                               />
+                           </div>
+                       </div>
                     </div>
 
-                    <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
-                       <h3 className="text-xs font-bold text-[#D32F2F] mb-2">② 持ち込まれた品物と重さ</h3>
-                       <select className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900 text-base mb-3 focus:border-[#D32F2F] outline-none font-bold" value={posProduct} onChange={(e)=>setPosProduct(e.target.value)}>
+                    {/* ② 銘柄と重量 */}
+                    <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden">
+                       <div className="absolute top-0 left-0 w-1 h-full bg-gray-900"></div>
+                       <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+                           <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">STEP 2</span> 銘柄と計量
+                       </h3>
+                       
+                       <label className="text-[10px] text-gray-500 font-bold block mb-1">持ち込まれた品物 (銘柄)</label>
+                       <select 
+                         className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900 text-base mb-4 focus:border-[#D32F2F] outline-none font-bold cursor-pointer" 
+                         value={posProduct} 
+                         onChange={(e)=>setPosProduct(e.target.value)}
+                       >
                           <option value="">-- 品物を選んでください --</option>
                           <optgroup label="電線">{wireOptions.map((p:any) => (<option key={p.id} value={p.id}>{p.name}</option>))}</optgroup>
                           <optgroup label="非鉄金属">{data?.castings?.map((p:any) => (<option key={p.id} value={p.id}>{p.name}</option>))}</optgroup>
@@ -281,49 +316,71 @@ export const AdminDashboard = ({ data, setView }: { data: any; setView: any }) =
                        
                        <div className="flex gap-3">
                           <div className="flex-1 relative">
-                             <input type="number" className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900 text-xl font-black focus:border-[#D32F2F] outline-none" placeholder="0" value={posWeight} onChange={(e)=>setPosWeight(e.target.value)} />
-                             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm">kg</span>
+                             <label className="text-[10px] text-gray-500 font-bold block mb-1">重さ (kg)</label>
+                             <input 
+                               type="number" 
+                               className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900 text-xl font-black focus:border-[#D32F2F] outline-none" 
+                               placeholder="0" 
+                               value={posWeight} 
+                               onChange={(e)=>setPosWeight(e.target.value)} 
+                             />
+                             <span className="absolute right-4 bottom-3 text-gray-400 font-bold text-sm">kg</span>
                           </div>
-                          <div className="w-24">
-                             <select className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900 font-bold focus:border-[#D32F2F] outline-none h-full" value={posRank} onChange={(e:any)=>setPosRank(e.target.value)}>
-                                <option value="B">普(B)</option><option value="A">良(A)</option><option value="C">劣(C)</option>
+                          <div className="w-28">
+                             <label className="text-[10px] text-gray-500 font-bold block mb-1">状態ランク</label>
+                             <select className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900 font-bold focus:border-[#D32F2F] outline-none h-[48px]" value={posRank} onChange={(e:any)=>setPosRank(e.target.value)}>
+                                <option value="B">普通(B)</option><option value="A">良品(A)</option><option value="C">劣化(C)</option>
                              </select>
                           </div>
                        </div>
                     </div>
                     
-                    <button onClick={handlePosCalculate} className="w-full bg-gray-900 text-white py-4 rounded-xl font-bold hover:bg-[#D32F2F] transition shadow-md active:scale-95">③ 金額を計算する</button>
+                    <button onClick={handlePosCalculate} className="w-full bg-gray-900 text-white py-4 rounded-xl font-bold hover:bg-[#D32F2F] transition shadow-md active:scale-95 flex items-center justify-center gap-2">
+                        <Icons.Calc /> 金額を計算する
+                    </button>
                  </div>
 
+                 {/* 右側：受付票 兼 レシートエリア */}
                  <div className="h-full pb-4">
-                    <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-lg h-full flex flex-col">
-                       <div className="text-center border-b border-dashed border-gray-200 pb-4 mb-4">
-                          <h4 className="font-bold text-xl text-gray-900">買取明細</h4>
+                    <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-lg h-full flex flex-col relative overflow-hidden">
+                       {/* レシート上部のギザギザ装飾 */}
+                       <div className="absolute top-0 left-0 w-full h-2 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cG9seWdvbiBwb2ludHM9IjAsMCA0LDggOCwwIiBmaWxsPSIjRjVGNUY3Ii8+Cjwvc3ZnPg==')] repeat-x"></div>
+                       
+                       <div className="text-center border-b border-dashed border-gray-300 pb-4 mb-4 mt-2">
+                          <h4 className="font-bold text-xl text-gray-900 tracking-widest">受付票 兼 買取明細</h4>
+                          <p className="text-[10px] text-gray-400 mt-1">株式会社 月寒製作所 苫小牧工場</p>
                        </div>
                        
-                       <div className="flex-1 space-y-4">
+                       <div className="flex-1 space-y-5">
                           <div>
-                              <p className="text-[10px] text-gray-400 font-bold mb-0.5">お客様</p>
-                              <p className="text-base font-bold text-gray-900">{posUser || '未入力'}</p>
+                              <p className="text-[10px] text-gray-400 font-bold mb-0.5">お客様 (企業名)</p>
+                              <p className="text-lg font-bold text-gray-900">{posCompany || '未入力'}</p>
+                              {posPhone && <p className="text-xs text-gray-500 font-mono mt-1">TEL: {posPhone}</p>}
                           </div>
-                          <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                              <p className="text-[10px] text-gray-400 font-bold mb-1">品物 / 重さ</p>
-                              <div className="flex justify-between items-center">
-                                  <span className="font-bold text-gray-900 text-sm truncate">{data?.wires?.find((x:any)=>x.id===posProduct)?.name || data?.castings?.find((x:any)=>x.id===posProduct)?.name || '未選択'}</span>
-                                  <span className="text-gray-600 font-bold text-sm ml-2">{posWeight ? `${posWeight} kg` : '-'}</span>
+                          
+                          <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                              <p className="text-[10px] text-gray-400 font-bold mb-2">品物 / 重さ</p>
+                              <div className="flex justify-between items-end">
+                                  <div className="flex-1">
+                                      <span className="font-bold text-gray-900 text-base block">{data?.wires?.find((x:any)=>x.id===posProduct)?.name || data?.castings?.find((x:any)=>x.id===posProduct)?.name || '未選択'}</span>
+                                      <span className="text-[10px] text-gray-400 font-mono mt-1 block">RANK: {posRank}</span>
+                                  </div>
+                                  <span className="text-gray-900 font-black text-xl ml-2">{posWeight ? `${posWeight} kg` : '-'}</span>
                               </div>
                           </div>
                        </div>
 
                        <div className="border-t-2 border-gray-900 pt-4 mt-4">
                           <p className="text-[10px] text-gray-500 font-bold mb-1">合計お支払額 (税込)</p>
-                          <div className="flex justify-between items-end mb-6">
-                              <span className="font-bold text-gray-400 text-lg">¥</span>
-                              <span className="text-4xl font-black text-[#D32F2F] tracking-tighter">{posResult !== null ? posResult.toLocaleString() : '0'}</span>
+                          <div className="flex justify-between items-end mb-6 bg-red-50 p-4 rounded-lg">
+                              <span className="font-bold text-[#D32F2F] text-xl">¥</span>
+                              <span className="text-5xl font-black text-[#D32F2F] tracking-tighter">
+                                  {posResult !== null ? posResult.toLocaleString() : '0'}
+                              </span>
                           </div>
                           {posResult !== null && (
-                              <button className="w-full bg-[#D32F2F] text-white py-3 rounded-lg font-bold hover:bg-red-700 transition shadow-sm active:scale-95 flex justify-center items-center gap-2">
-                                  <Icons.Check /> 明細を発行して完了
+                              <button className="w-full bg-[#D32F2F] text-white py-4 rounded-xl font-bold hover:bg-red-700 transition shadow-md active:scale-95 flex justify-center items-center gap-2">
+                                  <Icons.Check /> 受付を完了し、情報を現場へ送る
                               </button>
                           )}
                        </div>
