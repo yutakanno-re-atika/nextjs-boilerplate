@@ -21,7 +21,6 @@ interface AdminProps {
 export const AdminDashboard = ({ data, setView }: AdminProps) => {
   const [adminTab, setAdminTab] = useState<'DASHBOARD' | 'OPERATIONS' | 'POS' | 'COMPETITOR'>('OPERATIONS');
   
-  // (POSステート)
   const [posUser, setPosUser] = useState<string>('');
   const [posProduct, setPosProduct] = useState<string>('');
   const [posWeight, setPosWeight] = useState<string>('');
@@ -30,12 +29,10 @@ export const AdminDashboard = ({ data, setView }: AdminProps) => {
   
   const marketPrice = data?.config?.market_price || 0;
   
-  // ★ GASから取得した予約データをステータスごとにパース
   const reservations = data?.reservations || [];
   const reservedList = reservations.filter(r => r.status === 'RESERVED');
   const processingList = reservations.filter(r => r.status === 'PROCESSING' || r.status === 'ARRIVED');
   
-  // 本日の予約からの予測出来高を動的計算
   let forecastVolume = 0;
   reservedList.forEach(res => {
      try {
@@ -44,8 +41,8 @@ export const AdminDashboard = ({ data, setView }: AdminProps) => {
      } catch(e) {}
   });
 
-  const actualVolume = 18450; // モック実績
-  const targetMonthly = Number(data?.config?.target_monthly) || 30000;
+  const actualVolume = 18450; 
+  const targetMonthly = Number((data?.config as any)?.target_monthly) || 30000;
   const progressActual = Math.min(100, (actualVolume / targetMonthly) * 100);
   const progressForecast = Math.min(100, ((actualVolume + forecastVolume) / targetMonthly) * 100);
 
@@ -57,11 +54,25 @@ export const AdminDashboard = ({ data, setView }: AdminProps) => {
       const totalWeight = items.reduce((sum, i) => sum + (Number(i.weight)||0), 0);
       const isMember = res.memberId && res.memberId !== 'GUEST';
       
-      // 時間のフォーマット
+      // ★ 日付・時刻のフォーマット修正ロジック（時差ズレ対策込み）
       let timeStr = "未定";
       try {
-          const d = new Date(res.visitDate);
-          if(!isNaN(d.getTime())) timeStr = d.toLocaleTimeString('ja-JP', {hour: '2-digit', minute:'2-digit'});
+          if (res.visitDate) {
+              // GASから文字列 "2026-02-20T14:30:00.000Z" のような形で来た場合、文字列として切り出す
+              const rawStr = String(res.visitDate);
+              const d = new Date(res.visitDate);
+              
+              if (!isNaN(d.getTime())) {
+                  const month = d.getMonth() + 1;
+                  const date = d.getDate();
+                  const hours = d.getHours().toString().padStart(2, '0');
+                  const minutes = d.getMinutes().toString().padStart(2, '0');
+                  timeStr = `${month}/${date} ${hours}:${minutes}`;
+              } else {
+                  // パース失敗時はそのまま表示
+                  timeStr = rawStr.replace('T', ' ').substring(0, 16);
+              }
+          }
       } catch(e){}
 
       return (
@@ -87,7 +98,6 @@ export const AdminDashboard = ({ data, setView }: AdminProps) => {
 
   return (
     <div className="min-h-screen bg-[#111] text-white font-sans flex flex-col md:flex-row">
-      {/* サイドバー */}
       <aside className="w-full md:w-80 bg-black p-8 border-r border-white/10 flex flex-col">
         <div className="mb-12 cursor-pointer" onClick={()=>setView('LP')}>
             <h1 className="text-2xl font-serif font-bold text-white">FACTORY<span className="text-[#D32F2F]">OS</span></h1>
@@ -101,10 +111,8 @@ export const AdminDashboard = ({ data, setView }: AdminProps) => {
         </nav>
       </aside>
 
-      {/* メインエリア */}
       <main className="flex-1 p-8 overflow-y-auto">
          
-         {/* 1. 統合収支パネル (DASHBOARD) */}
          {adminTab === 'DASHBOARD' && (
              <div className="max-w-6xl mx-auto animate-in fade-in zoom-in-95 duration-300 space-y-8">
                  <header className="mb-8">
@@ -152,7 +160,6 @@ export const AdminDashboard = ({ data, setView }: AdminProps) => {
              </div>
          )}
 
-         {/* 2. 工程パイプライン (OPERATIONS) */}
          {adminTab === 'OPERATIONS' && (
              <div className="h-full flex flex-col animate-in fade-in duration-300">
                  <header className="mb-8 flex justify-between items-end">
@@ -167,10 +174,8 @@ export const AdminDashboard = ({ data, setView }: AdminProps) => {
                     </button>
                  </header>
 
-                 {/* Kanban ボード */}
                  <div className="flex-1 flex gap-6 overflow-x-auto pb-4">
                      
-                     {/* Column 1: 予約・持込予定 */}
                      <div className="flex-none w-80 flex flex-col">
                          <div className="bg-black border border-white/10 rounded-t-xl p-4 flex justify-between items-center">
                              <span className="font-bold text-sm">1. 予約 / 来場待ち</span>
@@ -185,7 +190,6 @@ export const AdminDashboard = ({ data, setView }: AdminProps) => {
                          </div>
                      </div>
 
-                     {/* Column 2: 検収・計量中 (POS) */}
                      <div className="flex-none w-80 flex flex-col">
                          <div className="bg-black border border-white/10 border-b-[#D32F2F] border-b-2 rounded-t-xl p-4 flex justify-between items-center">
                              <span className="font-bold text-sm text-[#D32F2F]">2. 検収・計量中</span>
@@ -200,7 +204,6 @@ export const AdminDashboard = ({ data, setView }: AdminProps) => {
                          </div>
                      </div>
 
-                     {/* Column 3: ナゲット加工待ち/処理中 */}
                      <div className="flex-none w-80 flex flex-col">
                          <div className="bg-black border border-white/10 rounded-t-xl p-4 flex justify-between items-center">
                              <span className="font-bold text-sm">3. 加工待ち (Batches)</span>
@@ -215,7 +218,6 @@ export const AdminDashboard = ({ data, setView }: AdminProps) => {
              </div>
          )}
 
-         {/* (POS, COMPETITOR タブは省略。必要に応じて統合します) */}
          {adminTab === 'POS' && <div className="text-center py-20 text-gray-500">（※POS画面は省略）</div>}
          {adminTab === 'COMPETITOR' && <div className="text-center py-20 text-gray-500">（※競合分析画面は省略）</div>}
 
