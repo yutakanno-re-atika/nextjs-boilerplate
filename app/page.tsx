@@ -2,36 +2,40 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { LP } from './components/lp/LP';
-import { MemberDashboard } from './components/member/MemberDashboard';
+// ★ ボスの環境に合わせた正しいパス
 import { AdminDashboard } from './components/admin/AdminDashboard';
-import { MarketData } from './types';
+import { MemberDashboard } from './components/member/MemberDashboard';
+import { MarketData } from './types'; // typesの場所が違う場合は修正してください
 
 export default function Home() {
+  // 画面とユーザーの記憶ステート
   const [view, setView] = useState<'LP' | 'MEMBER' | 'ADMIN'>('LP');
   const [user, setUser] = useState<any>(null);
   const [data, setData] = useState<MarketData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // ログインフォーム用のステート
+  const [loginId, setLoginId] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [loginError, setLoginError] = useState('');
+
   // ==========================================
   // ★ 1. 初期ロード時の「記憶復元」と「データ取得」
   // ==========================================
   useEffect(() => {
-    // ローカルストレージから通行証（記憶）を探す
+    // ローカルストレージから通行証を探す
     const savedUser = localStorage.getItem('factoryOS_user');
     const savedView = localStorage.getItem('factoryOS_view');
 
     if (savedUser && savedView) {
-      // 記憶があれば、ログイン状態を復元する
       setUser(JSON.parse(savedUser));
       setView(savedView as 'MEMBER' | 'ADMIN');
     }
 
-    // データベース（GAS）から最新相場とカンバンデータを取得
     fetchData();
   }, []);
 
-  // データ取得用の関数（カンバン更新時にも呼び出せるように独立）
   const fetchData = async () => {
     try {
       const res = await fetch('/api/gas');
@@ -47,16 +51,37 @@ export default function Home() {
   };
 
   // ==========================================
-  // ★ 2. ログイン成功時の「記憶書き込み」
+  // ★ 2. ログイン処理 ＆「記憶書き込み」
   // ==========================================
-  const handleLoginSuccess = (userData: any) => {
-    setUser(userData);
-    const nextView = userData.role === 'ADMIN' ? 'ADMIN' : 'MEMBER';
-    setView(nextView);
-    
-    // ブラウザの長期記憶（ローカルストレージ）に通行証を保存
-    localStorage.setItem('factoryOS_user', JSON.stringify(userData));
-    localStorage.setItem('factoryOS_view', nextView);
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoggingIn(true);
+    setLoginError('');
+
+    try {
+      const res = await fetch('/api/gas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'AUTH_LOGIN', loginId, password })
+      });
+      const result = await res.json();
+
+      if (result.status === 'success') {
+        const userData = result.user;
+        setUser(userData);
+        const nextView = userData.role === 'ADMIN' ? 'ADMIN' : 'MEMBER';
+        setView(nextView);
+        
+        // ブラウザの長期記憶に保存（これでリロードしても消えません！）
+        localStorage.setItem('factoryOS_user', JSON.stringify(userData));
+        localStorage.setItem('factoryOS_view', nextView);
+      } else {
+        setLoginError(result.message || 'ログインに失敗しました');
+      }
+    } catch (err) {
+      setLoginError('通信エラーが発生しました');
+    }
+    setIsLoggingIn(false);
   };
 
   // ==========================================
@@ -65,11 +90,14 @@ export default function Home() {
   const handleLogout = () => {
     setUser(null);
     setView('LP');
+    setLoginId('');
+    setPassword('');
     localStorage.removeItem('factoryOS_user');
     localStorage.removeItem('factoryOS_view');
   };
 
-  // ロード中の画面
+  // --- 画面レンダリング ---
+
   if (isLoading) {
     return (
       <div className="h-screen w-full flex flex-col items-center justify-center bg-[#F5F5F7]">
@@ -79,8 +107,7 @@ export default function Home() {
     );
   }
 
-  // 画面の振り分け（ルーティング）
-  // ※ onLogout などの関数を渡すことで、ダッシュボード側からログアウト処理を呼べるようにしています
+  // ★ 記憶があれば、LPをスキップしてそれぞれのダッシュボードを即座に表示！
   if (view === 'ADMIN') {
     return <AdminDashboard data={data} setView={setView} onLogout={handleLogout} />;
   }
@@ -89,6 +116,68 @@ export default function Home() {
     return <MemberDashboard data={data} setView={setView} user={user} onLogout={handleLogout} />;
   }
   
-  // デフォルトはLP（ログイン画面）
-  return <LP data={data} onLoginSuccess={handleLoginSuccess} />;
+  // ==========================================
+  // ★ 4. LP（トップページ・ログイン画面）のUI
+  // ==========================================
+  return (
+    <div className="min-h-screen bg-[#F5F5F7] flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+        <div className="bg-[#111] p-8 text-center">
+            <h1 className="text-3xl font-serif font-bold text-white tracking-wider">FACTORY<span className="text-[#D32F2F]">OS</span></h1>
+            <p className="text-gray-400 text-xs mt-2 font-bold tracking-widest">TSUKISAMU SEISAKUSHO</p>
+        </div>
+        
+        <div className="p-8">
+            <h2 className="text-xl font-bold text-gray-900 mb-6 text-center">システムにログイン</h2>
+            
+            {loginError && (
+                <div className="bg-red-50 text-[#D32F2F] p-3 rounded-lg text-sm font-bold mb-6 text-center border border-red-100">
+                    {loginError}
+                </div>
+            )}
+
+            <form onSubmit={handleLogin} className="space-y-5">
+                <div>
+                    <label className="text-xs font-bold text-gray-500 block mb-1">ログインID</label>
+                    <input 
+                      type="text" 
+                      className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-gray-900 focus:border-[#D32F2F] outline-none transition" 
+                      value={loginId} 
+                      onChange={(e)=>setLoginId(e.target.value)} 
+                      required 
+                    />
+                </div>
+                <div>
+                    <label className="text-xs font-bold text-gray-500 block mb-1">パスワード</label>
+                    <input 
+                      type="password" 
+                      className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-gray-900 focus:border-[#D32F2F] outline-none transition" 
+                      value={password} 
+                      onChange={(e)=>setPassword(e.target.value)} 
+                      required 
+                    />
+                </div>
+                <button 
+                  type="submit" 
+                  disabled={isLoggingIn}
+                  className="w-full bg-[#D32F2F] text-white py-4 rounded-xl font-bold text-lg hover:bg-red-700 transition shadow-md disabled:bg-gray-300 mt-4"
+                >
+                  {isLoggingIn ? '認証中...' : 'ログイン'}
+                </button>
+            </form>
+        </div>
+        
+        {/* 本日の相場表示 (LPのアクセント) */}
+        {data?.config?.market_price && (
+            <div className="bg-gray-50 p-4 border-t border-gray-100 text-center">
+                <p className="text-xs text-gray-500 font-bold">本日の基準銅建値</p>
+                <p className="text-xl font-black text-gray-900 tracking-tighter">¥{Number(data.config.market_price).toLocaleString()}</p>
+            </div>
+        )}
+      </div>
+      
+      {/* 以前ボスのLPにあった他のコンテンツがあれば、この下に追加してください */}
+      
+    </div>
+  );
 }
