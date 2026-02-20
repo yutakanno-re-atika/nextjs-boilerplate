@@ -11,7 +11,8 @@ const Icons = {
   Trash: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>,
   ArrowRight: () => <svg className="w-4 h-4 inline-block ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>,
   Logout: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>,
-  Edit: () => <svg className="w-3 h-3 inline-block ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+  Edit: () => <svg className="w-3 h-3 inline-block ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>,
+  DragGrip: () => <svg className="w-4 h-4 text-gray-300 cursor-grab active:cursor-grabbing" fill="currentColor" viewBox="0 0 24 24"><path d="M9 3H7v2h2V3zm0 4H7v2h2V7zm0 4H7v2h2v-2zm0 4H7v2h2v-2zm0 4H7v2h2v-2zm4-16h-2v2h2V3zm0 4h-2v2h2V7zm0 4h-2v2h2v-2zm0 4h-2v2h2v-2zm0 4h-2v2h2v-2z" /></svg>
 };
 
 export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView: any; onLogout?: any }) => {
@@ -32,6 +33,9 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<string | null>(null);
   const [editingResId, setEditingResId] = useState<string | null>(null);
   
+  // ★ ドラッグ＆ドロップ用のステート（現在ホバーしている列を光らせるため）
+  const [dragOverCol, setDragOverCol] = useState<string | null>(null);
+
   const market = data?.market || {};
   const copperPrice = market.copper?.price || data?.config?.market_price || 0;
   const allClients = data?.clients || [];
@@ -41,17 +45,11 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
   const processingList = reservations.filter((r: any) => r.status === 'PROCESSING' || r.status === 'ARRIVED');
   const completedList = reservations.filter((r: any) => r.status === 'COMPLETED');
 
-  // ==========================================
-  // ★ 本物の実績と予測の計算ロジック
-  // ==========================================
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
-
-  // 1. 今月の確定実績 (COMPLETEDになった荷物の総重量)
   let actualVolume = 0;
   completedList.forEach(res => {
       const d = new Date(res.visitDate || new Date());
-      // 今月のデータのみ合算
       if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
           let items = [];
           try { 
@@ -64,7 +62,6 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
       }
   });
 
-  // 2. 本日の見込み (RESERVED と PROCESSING にある荷物の総重量)
   let forecastVolume = 0;
   [...reservedList, ...processingList].forEach(res => {
       let items = [];
@@ -77,12 +74,9 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
       items.forEach((it: any) => { forecastVolume += (Number(it.weight) || 0); });
   });
 
-  // 3. グラフ用のパーセンテージ計算
   const targetMonthly = Number(data?.config?.target_monthly) || 30000;
   const progressActual = Math.min(100, (actualVolume / targetMonthly) * 100);
   const progressForecast = Math.min(100, ((actualVolume + forecastVolume) / targetMonthly) * 100);
-
-  // ==========================================
 
   useEffect(() => {
       if (!posCompany) {
@@ -214,6 +208,33 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
       setIsUpdatingStatus(null);
   };
 
+  // ==========================================
+  // ★ ドラッグ＆ドロップ機能のイベントハンドラ
+  // ==========================================
+  const handleDragStart = (e: React.DragEvent, resId: string) => {
+      e.dataTransfer.setData('resId', resId);
+      e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent, colStatus: string) => {
+      e.preventDefault(); // ドロップを許可するために必須
+      setDragOverCol(colStatus); // ホバーしている列を光らせる
+  };
+
+  const handleDragLeave = () => {
+      setDragOverCol(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, newStatus: string) => {
+      e.preventDefault();
+      setDragOverCol(null);
+      const resId = e.dataTransfer.getData('resId');
+      if (resId) {
+          handleUpdateStatus(resId, newStatus);
+      }
+  };
+  // ==========================================
+
   const renderCard = (res: any, currentStatus: string) => {
       let items: any[] = [];
       try { 
@@ -233,32 +254,42 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
       } catch(e){}
 
       return (
-        <div key={res.id} className="bg-white p-3 rounded-xl shadow-sm border border-gray-100 transition hover:shadow-md relative overflow-hidden">
+        <div 
+          key={res.id} 
+          draggable
+          onDragStart={(e) => handleDragStart(e, res.id)}
+          className={`bg-white p-3 rounded-xl shadow-sm border transition relative overflow-hidden group cursor-grab active:cursor-grabbing ${isUpdatingStatus === res.id ? 'opacity-50 scale-95 border-dashed border-gray-400' : 'border-gray-100 hover:shadow-md hover:border-gray-300'}`}
+        >
             <div className={`absolute left-0 top-0 bottom-0 w-1 ${currentStatus === 'PROCESSING' ? 'bg-[#D32F2F]' : currentStatus === 'COMPLETED' ? 'bg-blue-500' : isMember ? 'bg-yellow-400' : 'bg-gray-400'}`}></div>
             <div className="pl-2">
                 <div className="flex justify-between items-center mb-1">
-                    <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${isMember ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-600'}`}>{isMember ? '会員' : '非会員'}</span>
+                    <div className="flex items-center gap-1">
+                        <Icons.DragGrip />
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${isMember ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-600'}`}>{isMember ? '会員' : '非会員'}</span>
+                    </div>
                     <span className="text-[10px] text-gray-500 font-bold">{timeStr}</span>
                 </div>
-                <p className="font-bold text-gray-900 text-sm truncate">{res.memberName}</p>
-                <div className="mt-1 mb-2 bg-gray-50 rounded p-1.5 border border-gray-100 max-h-16 overflow-y-auto">
+                <p className="font-bold text-gray-900 text-sm truncate pl-5">{res.memberName}</p>
+                <div className="mt-1 mb-2 bg-gray-50 rounded p-1.5 border border-gray-100 max-h-16 overflow-y-auto ml-5">
                     {items.map((it:any, idx:number) => (
                         <p key={idx} className="text-[10px] text-gray-600 truncate flex justify-between"><span>{it.product}</span><span className="font-mono">{it.weight}kg</span></p>
                     ))}
                     <div className="border-t border-gray-200 mt-1 pt-1 text-right"><span className="text-[10px] font-bold text-gray-900">計 {totalWeight} kg</span></div>
                 </div>
-                {res.memo && <p className={`text-[9px] mb-2 p-1 rounded font-bold truncate ${res.memo.includes('【新規】') ? 'bg-red-50 text-[#D32F2F]' : 'bg-yellow-50 text-yellow-800'}`}>{res.memo}</p>}
+                {res.memo && <p className={`text-[9px] mb-2 p-1 rounded font-bold truncate ml-5 ${res.memo.includes('【新規】') ? 'bg-red-50 text-[#D32F2F]' : 'bg-yellow-50 text-yellow-800'}`}>{res.memo}</p>}
                 
-                {currentStatus === 'RESERVED' && (
-                    <button onClick={() => handleUpdateStatus(res.id, 'PROCESSING')} disabled={isUpdatingStatus === res.id} className="w-full bg-red-50 text-[#D32F2F] py-1.5 rounded-lg text-xs font-bold hover:bg-[#D32F2F] hover:text-white transition flex items-center justify-center">
-                        {isUpdatingStatus === res.id ? '更新中...' : <>検収・計量へ進む <Icons.ArrowRight /></>}
-                    </button>
-                )}
-                {currentStatus === 'PROCESSING' && (
-                    <button onClick={() => openPosWithData(res)} disabled={isUpdatingStatus === res.id} className="w-full bg-red-50 text-[#D32F2F] py-1.5 rounded-lg text-xs font-bold hover:bg-[#D32F2F] hover:text-white transition flex items-center justify-center border border-red-100">
-                        <Icons.Calc /> レジで計量を確定する
-                    </button>
-                )}
+                <div className="ml-5">
+                    {currentStatus === 'RESERVED' && (
+                        <button onClick={() => handleUpdateStatus(res.id, 'PROCESSING')} disabled={isUpdatingStatus === res.id} className="w-full bg-red-50 text-[#D32F2F] py-1.5 rounded-lg text-xs font-bold hover:bg-[#D32F2F] hover:text-white transition flex items-center justify-center">
+                            {isUpdatingStatus === res.id ? '移動中...' : <>検収・計量へ <Icons.ArrowRight /></>}
+                        </button>
+                    )}
+                    {currentStatus === 'PROCESSING' && (
+                        <button onClick={() => openPosWithData(res)} disabled={isUpdatingStatus === res.id} className="w-full bg-red-50 text-[#D32F2F] py-1.5 rounded-lg text-xs font-bold hover:bg-[#D32F2F] hover:text-white transition flex items-center justify-center border border-red-100">
+                            <Icons.Calc /> レジで計量を確定する
+                        </button>
+                    )}
+                </div>
             </div>
         </div>
       );
@@ -289,23 +320,17 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
       {/* 🔴 メインエリア */}
       <main className="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col relative">
          
-         {/* ★ HOME：実績ダッシュボードがリアルタイム連動！ */}
+         {/* HOME */}
          {adminTab === 'HOME' && (
              <div className="max-w-5xl mx-auto w-full animate-in fade-in zoom-in-95 duration-300 flex flex-col h-full">
                  <header className="mb-6 flex-shrink-0">
                     <h2 className="text-3xl font-bold text-gray-900 mb-2">工場長、お疲れ様です。</h2>
                  </header>
-
-                 {/* ★ 月間目標と実績グラフ (リアルタイム) */}
                  <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm mb-6 flex-shrink-0">
-                    <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> 今月の買付目標と実績
-                    </h3>
+                    <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> 今月の買付目標と実績</h3>
                     <div className="flex justify-between items-end mb-2">
                         <span className="text-xs text-gray-500 font-bold">現在の総買付量</span>
-                        <span className="text-2xl font-black text-gray-900">
-                            {actualVolume.toLocaleString()} <span className="text-xs font-bold text-gray-400">/ {targetMonthly.toLocaleString()} kg</span>
-                        </span>
+                        <span className="text-2xl font-black text-gray-900">{actualVolume.toLocaleString()} <span className="text-xs font-bold text-gray-400">/ {targetMonthly.toLocaleString()} kg</span></span>
                     </div>
                     <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden flex mb-2">
                         <div className="bg-[#D32F2F] h-full transition-all duration-1000 ease-out" style={{width: `${progressActual}%`}}></div>
@@ -316,7 +341,6 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
                         <span className="text-orange-500">■ 本日の見込み (受付中): +{forecastVolume.toLocaleString()} kg</span>
                     </div>
                  </div>
-
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 flex-shrink-0">
                      <button onClick={()=>{handleResetPos(); setAdminTab('POS');}} className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:border-[#D32F2F] hover:shadow-md transition text-left flex items-start gap-4 group">
                          <div className="w-12 h-12 bg-red-50 text-[#D32F2F] rounded-full flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition"><Icons.Calc /></div>
@@ -327,7 +351,6 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
                          <div><h3 className="text-xl font-bold text-gray-900 mb-1">現場カンバン (進行状況)</h3><p className="text-xs text-gray-500">予約の確認、計量中の荷物、加工待ちのリスト管理</p></div>
                      </button>
                  </div>
-                 
                  <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
                     <h3 className="text-sm font-bold text-gray-900 mb-4 border-b border-gray-100 pb-2">本日の状況サマリー</h3>
                     <div className="grid grid-cols-3 gap-4">
@@ -339,27 +362,52 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
              </div>
          )}
 
-         {/* OPERATIONS */}
+         {/* ★ OPERATIONS: ドラッグ＆ドロップ完全対応 */}
          {adminTab === 'OPERATIONS' && (
              <div className="flex flex-col h-full animate-in fade-in duration-300">
+                 
                  <header className="mb-6 flex justify-between items-center flex-shrink-0">
-                    <div><h2 className="text-2xl font-bold text-gray-900">現場カンバン</h2></div>
+                    <div>
+                        <h2 className="text-2xl font-bold text-gray-900">現場カンバン</h2>
+                        <p className="text-xs text-gray-500 mt-1">カードをドラッグして次の列へ移動できます。</p>
+                    </div>
                     <button onClick={()=>{handleResetPos(); setAdminTab('POS');}} className="bg-gray-900 text-white px-5 py-2.5 rounded-lg text-sm font-bold hover:bg-[#D32F2F] transition shadow-sm">＋ 飛込受付</button>
                  </header>
                  <div className="flex-1 flex gap-5 overflow-x-auto min-h-0 pb-4">
-                     <div className="flex-none w-[300px] flex flex-col bg-gray-100/60 rounded-2xl border border-gray-200 overflow-hidden">
+                     
+                     {/* 列1: RESERVED */}
+                     <div 
+                         className={`flex-none w-[300px] flex flex-col bg-gray-100/60 rounded-2xl border transition-all duration-200 overflow-hidden ${dragOverCol === 'RESERVED' ? 'border-gray-500 shadow-lg scale-[1.02] bg-gray-200/50' : 'border-gray-200'}`}
+                         onDragOver={(e) => handleDragOver(e, 'RESERVED')}
+                         onDragLeave={handleDragLeave}
+                         onDrop={(e) => handleDrop(e, 'RESERVED')}
+                     >
                          <div className="p-3.5 border-b border-gray-200 flex justify-between items-center bg-white shadow-sm z-10">
                              <span className="font-bold text-sm text-gray-800">① 来場待ち / 受付済</span><span className="bg-gray-200 text-gray-700 text-xs px-2.5 py-0.5 rounded-full font-bold">{reservedList.length}</span>
                          </div>
                          <div className="flex-1 p-3 space-y-3 overflow-y-auto">{reservedList.length === 0 ? <p className="text-xs text-gray-400 text-center py-8">現在予定はありません</p> : reservedList.map(res => renderCard(res, 'RESERVED'))}</div>
                      </div>
-                     <div className="flex-none w-[300px] flex flex-col bg-red-50/40 rounded-2xl border border-red-100 overflow-hidden">
+
+                     {/* 列2: PROCESSING */}
+                     <div 
+                         className={`flex-none w-[300px] flex flex-col bg-red-50/40 rounded-2xl border transition-all duration-200 overflow-hidden ${dragOverCol === 'PROCESSING' ? 'border-[#D32F2F] shadow-lg scale-[1.02] bg-red-100/60' : 'border-red-100'}`}
+                         onDragOver={(e) => handleDragOver(e, 'PROCESSING')}
+                         onDragLeave={handleDragLeave}
+                         onDrop={(e) => handleDrop(e, 'PROCESSING')}
+                     >
                          <div className="p-3.5 border-b-2 border-b-[#D32F2F] flex justify-between items-center bg-white shadow-sm z-10">
                              <span className="font-bold text-sm text-[#D32F2F]">② 検収・計量中</span><span className="bg-[#D32F2F] text-white text-xs px-2.5 py-0.5 rounded-full font-bold shadow-sm">{processingList.length}</span>
                          </div>
                          <div className="flex-1 p-3 space-y-3 overflow-y-auto">{processingList.length === 0 ? <p className="text-xs text-gray-400 text-center py-8">現在計量中はありません</p> : processingList.map(res => renderCard(res, 'PROCESSING'))}</div>
                      </div>
-                     <div className="flex-none w-[300px] flex flex-col bg-blue-50/40 rounded-2xl border border-blue-100 overflow-hidden">
+
+                     {/* 列3: COMPLETED */}
+                     <div 
+                         className={`flex-none w-[300px] flex flex-col bg-blue-50/40 rounded-2xl border transition-all duration-200 overflow-hidden ${dragOverCol === 'COMPLETED' ? 'border-blue-500 shadow-lg scale-[1.02] bg-blue-100/60' : 'border-blue-100'}`}
+                         onDragOver={(e) => handleDragOver(e, 'COMPLETED')}
+                         onDragLeave={handleDragLeave}
+                         onDrop={(e) => handleDrop(e, 'COMPLETED')}
+                     >
                          <div className="p-3.5 border-b-2 border-b-blue-500 flex justify-between items-center bg-white shadow-sm z-10">
                              <span className="font-bold text-sm text-blue-600">③ ナゲット加工待ち</span><span className="bg-blue-500 text-white text-xs px-2.5 py-0.5 rounded-full font-bold shadow-sm">{completedList.length}</span>
                          </div>
@@ -369,7 +417,7 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
              </div>
          )}
 
-         {/* POS */}
+         {/* POS 省略せず保持 */}
          {adminTab === 'POS' && (
             <div className="h-full flex flex-col animate-in fade-in duration-300">
               <header className="mb-4 flex-shrink-0 flex justify-between items-end">
@@ -462,12 +510,7 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
                                        <div className="flex items-center gap-2">
                                            <label className="text-[10px] font-bold text-gray-400">実重量</label>
                                            <div className="relative">
-                                               <input 
-                                                   type="number" 
-                                                   className="w-24 bg-red-50 border border-red-200 p-2 rounded text-base font-black text-[#D32F2F] outline-none focus:ring-2 focus:ring-red-200 transition" 
-                                                   value={item.weight} 
-                                                   onChange={(e) => handleUpdateCartItemWeight(item.id, e.target.value)} 
-                                               />
+                                               <input type="number" className="w-24 bg-red-50 border border-red-200 p-2 rounded text-base font-black text-[#D32F2F] outline-none focus:ring-2 focus:ring-red-200 transition" value={item.weight} onChange={(e) => handleUpdateCartItemWeight(item.id, e.target.value)} />
                                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-[#D32F2F] font-bold">kg</span>
                                            </div>
                                            {editingResId && <Icons.Edit />}
