@@ -6,6 +6,7 @@ const Icons = {
   Home: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
   Kanban: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" /></svg>,
   Calc: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
+  Radar: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>,
   Check: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>,
   Plus: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>,
   Trash: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>,
@@ -209,11 +210,9 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
       const totalWeight = items ? items.reduce((sum:number, i:any) => sum + (Number(i.weight)||0), 0) : 0;
       const isMember = res.memberId && res.memberId !== 'GUEST';
       
-      // ★ 品目の中身をチェックして、バッジ（タグ）を生成する
       let hasWire = false;
       let hasCasting = false;
       items.forEach((it:any) => {
-          // 商品マスターと突き合わせてカテゴリを判定
           const isWire = data?.wires?.some((w:any) => w.name === it.product) || it.product.includes('線') || it.product.includes('MIX');
           if (isWire) hasWire = true; else hasCasting = true;
       });
@@ -245,7 +244,6 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
                 
                 <p className="font-bold text-gray-900 text-sm truncate pl-5 mb-1">{res.memberName}</p>
                 
-                {/* ★ ハイブリッド判定バッジ */}
                 <div className="flex gap-1 pl-5 mb-2">
                     {hasWire && <span className="text-[9px] bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded font-bold border border-indigo-100">🔌 剥線・ナゲット</span>}
                     {hasCasting && <span className="text-[9px] bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded font-bold border border-emerald-100">📦 非鉄ストック</span>}
@@ -281,7 +279,6 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
   return (
     <div className="h-screen w-full bg-[#F5F5F7] text-gray-900 font-sans flex flex-col md:flex-row overflow-hidden">
       
-      {/* 🔴 サイドバー */}
       <aside className="w-full md:w-64 bg-white border-r border-gray-200 flex flex-col shadow-sm z-10 flex-shrink-0">
         <div className="p-5 cursor-pointer border-b border-gray-50" onClick={()=>setView('LP')}>
             <h1 className="text-xl font-serif font-bold text-gray-900">FACTORY<span className="text-[#D32F2F]">OS</span></h1>
@@ -290,6 +287,8 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
             <button onClick={()=>setAdminTab('HOME')} className={`w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition flex items-center gap-3 ${adminTab==='HOME' ? 'bg-[#111] text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}><Icons.Home /> ホーム</button>
             <button onClick={()=>setAdminTab('OPERATIONS')} className={`w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition flex items-center gap-3 ${adminTab==='OPERATIONS' ? 'bg-[#111] text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}><Icons.Kanban /> 現場カンバン</button>
             <button onClick={()=>{handleResetPos(); setAdminTab('POS');}} className={`w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition flex items-center gap-3 ${adminTab==='POS' ? 'bg-[#111] text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}><Icons.Calc /> 受付・買取フロント</button>
+            {/* 競合AIタブの復活 */}
+            <button onClick={()=>setAdminTab('COMPETITOR')} className={`w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition flex items-center gap-3 ${adminTab==='COMPETITOR' ? 'bg-[#111] text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}><Icons.Radar /> 他社価格AI</button>
         </nav>
         {onLogout && (
             <div className="p-4 border-t border-gray-100 flex-shrink-0">
@@ -298,13 +297,47 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
         )}
       </aside>
 
-      {/* 🔴 メインエリア */}
       <main className="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col relative">
          
+         {/* HOME */}
          {adminTab === 'HOME' && (
              <div className="max-w-5xl mx-auto w-full animate-in fade-in zoom-in-95 duration-300 flex flex-col h-full">
-                 <header className="mb-6 flex-shrink-0"><h2 className="text-3xl font-bold text-gray-900 mb-2">工場長、お疲れ様です。</h2></header>
-                 {/* ... (HOME省略) ... */}
+                 <header className="mb-6 flex-shrink-0">
+                    <h2 className="text-3xl font-bold text-gray-900 mb-2">工場長、お疲れ様です。</h2>
+                 </header>
+                 <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm mb-6 flex-shrink-0">
+                    <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> 今月の買付目標と実績</h3>
+                    <div className="flex justify-between items-end mb-2">
+                        <span className="text-xs text-gray-500 font-bold">現在の総買付量</span>
+                        <span className="text-2xl font-black text-gray-900">{actualVolume.toLocaleString()} <span className="text-xs font-bold text-gray-400">/ {targetMonthly.toLocaleString()} kg</span></span>
+                    </div>
+                    <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden flex mb-2">
+                        <div className="bg-[#D32F2F] h-full transition-all duration-1000 ease-out" style={{width: `${progressActual}%`}}></div>
+                        <div className="bg-orange-300 h-full transition-all duration-1000 ease-out opacity-80" style={{width: `${progressForecast}%`}}></div>
+                    </div>
+                    <div className="flex justify-between text-[10px] text-gray-500 font-bold">
+                        <span>■ 確定実績: {actualVolume.toLocaleString()} kg</span>
+                        <span className="text-orange-500">■ 本日の見込み (受付中): +{forecastVolume.toLocaleString()} kg</span>
+                    </div>
+                 </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 flex-shrink-0">
+                     <button onClick={()=>{handleResetPos(); setAdminTab('POS');}} className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:border-[#D32F2F] hover:shadow-md transition text-left flex items-start gap-4 group">
+                         <div className="w-12 h-12 bg-red-50 text-[#D32F2F] rounded-full flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition"><Icons.Calc /></div>
+                         <div><h3 className="text-xl font-bold text-gray-900 mb-1">飛込受付・買取</h3><p className="text-xs text-gray-500">新規や予約なしのお客様の受付と明細発行</p></div>
+                     </button>
+                     <button onClick={()=>setAdminTab('OPERATIONS')} className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:border-orange-500 hover:shadow-md transition text-left flex items-start gap-4 group">
+                         <div className="w-12 h-12 bg-orange-50 text-orange-600 rounded-full flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition"><Icons.Kanban /></div>
+                         <div><h3 className="text-xl font-bold text-gray-900 mb-1">現場カンバン (進行状況)</h3><p className="text-xs text-gray-500">予約の確認、計量中の荷物、加工待ちのリスト管理</p></div>
+                     </button>
+                 </div>
+                 <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+                    <h3 className="text-sm font-bold text-gray-900 mb-4 border-b border-gray-100 pb-2">本日の状況サマリー</h3>
+                    <div className="grid grid-cols-3 gap-4">
+                        <div className="bg-gray-50 p-4 rounded-xl"><p className="text-[10px] text-gray-500 font-bold mb-1">来場予定・受付済</p><p className="text-2xl font-black text-gray-900">{reservedList.length} <span className="text-xs font-normal text-gray-500">件</span></p></div>
+                        <div className="bg-red-50 p-4 rounded-xl border border-red-100"><p className="text-[10px] text-[#D32F2F] font-bold mb-1">現在 検収・計量中</p><p className="text-2xl font-black text-[#D32F2F]">{processingList.length} <span className="text-xs font-normal text-red-300">件</span></p></div>
+                        <div className="bg-blue-50 p-4 rounded-xl border border-blue-100"><p className="text-[10px] text-blue-600 font-bold mb-1">計量完了 (ヤード保管)</p><p className="text-2xl font-black text-blue-600">{completedList.length} <span className="text-xs font-normal text-blue-300">件</span></p></div>
+                    </div>
+                 </div>
              </div>
          )}
 
@@ -340,7 +373,6 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
                          <div className="flex-1 p-3 space-y-3 overflow-y-auto">{processingList.length === 0 ? <p className="text-xs text-gray-400 text-center py-8">現在計量中はありません</p> : processingList.map(res => renderCard(res, 'PROCESSING'))}</div>
                      </div>
 
-                     {/* ★ ゴールの名前を変更！ */}
                      <div 
                          className={`flex-none w-[300px] flex flex-col bg-blue-50/40 rounded-2xl border transition-all duration-200 overflow-hidden ${dragOverCol === 'COMPLETED' ? 'border-blue-500 shadow-lg scale-[1.02] bg-blue-100/60' : 'border-blue-100'}`}
                          onDragOver={(e) => handleDragOver(e, 'COMPLETED')} onDragLeave={handleDragLeave} onDrop={(e) => handleDrop(e, 'COMPLETED')}
@@ -354,12 +386,144 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
              </div>
          )}
 
-         {/* POS (省略せず保持) */}
+         {/* ★ ここが抜けていました！完全なPOS画面のコードです */}
          {adminTab === 'POS' && (
-             // ...前回と同じPOSコード...
             <div className="h-full flex flex-col animate-in fade-in duration-300">
-               {/* フォーム内容は維持 */}
-            </div>
+              <header className="mb-4 flex-shrink-0 flex justify-between items-end">
+                <div>
+                    <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                        受付・買取フロント
+                        {editingResId && <span className="text-[10px] bg-red-100 text-[#D32F2F] px-2 py-1 rounded-full border border-red-200 animate-pulse">予約データの計量中</span>}
+                    </h2>
+                </div>
+                <button onClick={handleResetPos} className="text-sm font-bold text-[#D32F2F] bg-red-50 px-4 py-2 rounded-lg hover:bg-red-100 transition">入力をクリア</button>
+              </header>
+
+              <div className="flex-1 grid grid-cols-1 md:grid-cols-[1fr_1.2fr] gap-6 min-h-0">
+                 {/* 左：フォーム */}
+                 <div className="space-y-4 overflow-y-auto pr-2 pb-4">
+                    <div className={`bg-white p-5 rounded-xl border shadow-sm relative overflow-hidden transition ${editingResId ? 'border-[#D32F2F]' : 'border-gray-200'}`}>
+                       <div className="absolute top-0 left-0 w-1 h-full bg-[#D32F2F]"></div>
+                       <div className="flex justify-between items-center mb-4">
+                           <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2"><span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">STEP 1</span> お客様情報</h3>
+                           {clientType === 'MEMBER' && <span className="text-[10px] font-bold bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">会員企業</span>}
+                           {clientType === 'PAST_GUEST' && <span className="text-[10px] font-bold bg-gray-100 text-gray-600 px-2 py-1 rounded-full">過去に取引あり</span>}
+                           {clientType === 'NEW' && <span className="text-[10px] font-bold bg-red-100 text-[#D32F2F] px-2 py-1 rounded-full animate-pulse">新規のお客様</span>}
+                       </div>
+                       <div className="space-y-3">
+                           <div>
+                               <label className="text-[10px] text-gray-500 font-bold block mb-1">企業名 / お名前</label>
+                               <input list="client-list" className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900 text-sm focus:border-[#D32F2F] outline-none font-bold" value={posCompany} onChange={(e)=>setPosCompany(e.target.value)} />
+                               <datalist id="client-list">{allClients.map((c:any) => <option key={c.name} value={c.name} />)}</datalist>
+                           </div>
+                           <div>
+                               <label className="text-[10px] text-gray-500 font-bold block mb-1">引継ぎメモ (備考)</label>
+                               <input className={`w-full border p-3 rounded-lg text-sm outline-none transition ${clientType === 'NEW' ? 'bg-red-50 border-red-200 text-[#D32F2F] font-bold' : 'bg-gray-50 border-gray-200'}`} placeholder="注意事項" value={posMemo} onChange={(e)=>setPosMemo(e.target.value)} />
+                           </div>
+                       </div>
+                    </div>
+
+                    <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden">
+                       <div className="absolute top-0 left-0 w-1 h-full bg-gray-900"></div>
+                       <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">STEP 2</span> 新しい品目の追加</h3>
+                       <div className="space-y-3">
+                           <div>
+                               <label className="text-[10px] text-gray-500 font-bold block mb-1">銘柄</label>
+                               <select className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900 text-sm outline-none font-bold" value={currentProduct} onChange={(e)=>setCurrentProduct(e.target.value)}>
+                                  <option value="">-- 品物 --</option>
+                                  <optgroup label="電線">{wireOptions.map((p:any) => (<option key={p.id} value={p.id}>{p.name}</option>))}</optgroup>
+                                  <optgroup label="非鉄金属">{data?.castings?.map((p:any) => (<option key={p.id} value={p.id}>{p.name}</option>))}</optgroup>
+                               </select>
+                           </div>
+                           <div className="flex gap-3">
+                               <div className="flex-1 relative">
+                                   <label className="text-[10px] text-gray-500 font-bold block mb-1">重さ(kg)</label>
+                                   <input type="number" className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900 text-sm font-black outline-none" placeholder="0" value={currentWeight} onChange={(e)=>setCurrentWeight(e.target.value)} />
+                               </div>
+                               <div className="w-24">
+                                   <label className="text-[10px] text-gray-500 font-bold block mb-1">状態</label>
+                                   <select className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900 text-sm font-bold outline-none" value={currentRank} onChange={(e:any)=>setCurrentRank(e.target.value)}>
+                                      <option value="B">普通</option><option value="A">良</option><option value="C">劣</option>
+                                   </select>
+                               </div>
+                           </div>
+                           <button onClick={handleAddItem} disabled={!currentProduct || !currentWeight} className="w-full bg-gray-900 text-white p-3 rounded-lg font-bold hover:bg-[#D32F2F] transition disabled:bg-gray-300 flex justify-center mt-2"><Icons.Plus /> カートに追加</button>
+                       </div>
+                    </div>
+                 </div>
+
+                 {/* 右：明細 */}
+                 <div className="h-full pb-4">
+                    <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-lg h-full flex flex-col relative overflow-hidden">
+                       <div className="absolute top-0 left-0 w-full h-2 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cG9seWdvbiBwb2ludHM9IjAsMCA0LDggOCwwIiBmaWxsPSIjRjVGNUY3Ii8+Cjwvc3ZnPg==')] repeat-x"></div>
+                       <div className="text-center border-b border-dashed border-gray-300 pb-4 mb-4 mt-2 flex-shrink-0">
+                          <h4 className="font-bold text-xl text-gray-900 tracking-widest">{editingResId ? '買取明細 (計量・修正)' : '受付・買取明細'}</h4>
+                       </div>
+                       <div className="mb-2 flex-shrink-0">
+                           <div className="flex justify-between items-start">
+                               <div><p className="text-[10px] text-gray-400 font-bold mb-0.5">お客様</p><p className="text-base font-bold text-gray-900">{posCompany || '未入力'}</p></div>
+                               <div className="text-right"><p className="text-[10px] text-gray-400 font-bold mb-0.5">{editingResId ? '計量日' : '受付'}</p><p className="text-sm font-bold text-gray-900">{posDate ? posDate.replace('T', ' ') : '本日 (飛込)'}</p></div>
+                           </div>
+                       </div>
+                       
+                       <div className="flex-1 overflow-y-auto space-y-3 border-t border-b border-gray-100 py-4 min-h-[150px]">
+                           {cartItems.length === 0 ? <p className="text-center text-gray-400 text-sm mt-10">品物がありません</p> : cartItems.map((item) => (
+                               <div key={item.id} className={`bg-gray-50 p-4 rounded-xl border flex flex-col gap-3 transition ${editingResId ? 'border-[#D32F2F]/30 shadow-sm' : 'border-gray-200'}`}>
+                                   <div className="flex justify-between items-center">
+                                       <p className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                                           {item.productName}
+                                           <span className="text-[9px] font-mono text-gray-400 border px-1 rounded">R:{item.rank}</span>
+                                       </p>
+                                       <button onClick={() => handleRemoveItem(item.id)} className="text-gray-300 hover:text-red-500 p-1"><Icons.Trash /></button>
+                                   </div>
+                                   
+                                   <div className="flex justify-between items-center bg-white p-2 rounded border border-gray-100">
+                                       <div className="flex items-center gap-2">
+                                           <label className="text-[10px] font-bold text-gray-400">実重量</label>
+                                           <div className="relative">
+                                               <input 
+                                                   type="number" 
+                                                   className="w-24 bg-red-50 border border-red-200 p-2 rounded text-base font-black text-[#D32F2F] outline-none focus:ring-2 focus:ring-red-200 transition" 
+                                                   value={item.weight} 
+                                                   onChange={(e) => handleUpdateCartItemWeight(item.id, e.target.value)} 
+                                               />
+                                               <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-[#D32F2F] font-bold">kg</span>
+                                           </div>
+                                           {editingResId && <Icons.Edit />}
+                                       </div>
+                                       <div className="text-right">
+                                           <p className="text-[10px] font-bold text-gray-400 mb-0.5">金額</p>
+                                           <span className="font-bold text-gray-900">¥{item.price.toLocaleString()}</span>
+                                       </div>
+                                   </div>
+                               </div>
+                           ))}
+                       </div>
+
+                       <div className="pt-4 flex-shrink-0">
+                          <p className="text-[10px] text-gray-500 font-bold mb-1">お支払総額 (税込)</p>
+                          <div className="flex justify-between items-end mb-4 bg-red-50 p-3 rounded-lg border border-red-100">
+                              <span className="font-bold text-[#D32F2F] text-lg">¥</span><span className="text-4xl font-black text-[#D32F2F] tracking-tighter">{cartTotal.toLocaleString()}</span>
+                          </div>
+                          <button onClick={handleSubmitReservation} disabled={cartItems.length === 0 || !posCompany || isSubmitting} className="w-full bg-[#D32F2F] text-white py-3.5 rounded-xl font-bold hover:bg-red-700 transition shadow-md disabled:bg-gray-300 flex justify-center items-center gap-2">
+                              {isSubmitting ? <span className="animate-pulse">送信中...</span> : 
+                               (editingResId ? <><Icons.Check /> 計量を確定して保管へ送る</> : 
+                               <><Icons.Check /> 受付を完了して現場へ送る</>)}
+                          </button>
+                       </div>
+                    </div>
+                 </div>
+              </div>
+           </div>
+         )}
+         
+         {/* 他社価格AI（現在モック） */}
+         {adminTab === 'COMPETITOR' && (
+             <div className="text-center py-20 bg-white rounded-xl border border-gray-200">
+                 <div className="w-12 h-12 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-3"><Icons.Radar /></div>
+                 <h3 className="text-lg font-bold text-gray-900 mb-1">他社価格チェック (開発中)</h3>
+                 <p className="text-xs text-gray-500">競合サイトを自動巡回するAIの準備をしています。</p>
+             </div>
          )}
 
       </main>
