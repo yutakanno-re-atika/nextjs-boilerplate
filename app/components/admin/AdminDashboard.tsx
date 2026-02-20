@@ -32,18 +32,26 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<string | null>(null);
   const [editingResId, setEditingResId] = useState<string | null>(null);
-  
-  // ★ ドラッグ＆ドロップ用のステート（現在ホバーしている列を光らせるため）
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
+
+  // ★ 魔法のステート：GASから来たデータをフロントエンドに一時コピーし、遅延ゼロで操作する
+  const [localReservations, setLocalReservations] = useState<any[]>([]);
 
   const market = data?.market || {};
   const copperPrice = market.copper?.price || data?.config?.market_price || 0;
   const allClients = data?.clients || [];
   
-  const reservations = data?.reservations || [];
-  const reservedList = reservations.filter((r: any) => r.status === 'RESERVED');
-  const processingList = reservations.filter((r: any) => r.status === 'PROCESSING' || r.status === 'ARRIVED');
-  const completedList = reservations.filter((r: any) => r.status === 'COMPLETED');
+  // 初期ロード時にGASのデータを localReservations にコピー
+  useEffect(() => {
+      if (data?.reservations) {
+          setLocalReservations(data.reservations);
+      }
+  }, [data?.reservations]);
+
+  // 以降の計算や表示はすべて「localReservations（遅延ゼロのデータ）」を使う
+  const reservedList = localReservations.filter((r: any) => r.status === 'RESERVED');
+  const processingList = localReservations.filter((r: any) => r.status === 'PROCESSING' || r.status === 'ARRIVED');
+  const completedList = localReservations.filter((r: any) => r.status === 'COMPLETED');
 
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
@@ -191,34 +199,44 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
           const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
           const result = await res.json();
           if (result.status === 'success') {
-              handleResetPos(); setAdminTab('OPERATIONS'); window.location.reload(); 
+              handleResetPos(); setAdminTab('OPERATIONS'); 
+              // 新規追加や重量上書き時は全体のデータ更新が必要なためリロードする
+              window.location.reload(); 
           } else { alert('エラー: ' + result.message); }
       } catch (error) { alert('通信エラーが発生しました。'); }
       setIsSubmitting(false);
   };
 
+  // ==========================================
+  // ★ 魔法の発動：Optimistic UI Update (遅延ゼロステータス移動)
+  // ==========================================
   const handleUpdateStatus = async (resId: string, nextStatus: string) => {
+      // 1. 通信を待たずに、画面の見た目（localReservations）だけを一瞬で書き換える
+      setLocalReservations(prev => 
+          prev.map(res => res.id === resId ? { ...res, status: nextStatus } : res)
+      );
+      
+      // 2. 裏側でこっそりGASへ送信
       setIsUpdatingStatus(resId);
       try {
           const payload = { action: 'UPDATE_RESERVATION_STATUS', reservationId: resId, status: nextStatus };
-          const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-          const result = await res.json();
-          if (result.status === 'success') { window.location.reload(); } else { alert('ステータス更新エラー: ' + result.message); }
-      } catch (error) { alert('通信エラーが発生しました。'); }
+          await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+          // ★ window.location.reload() を削除！これで画面が白くなりません。
+      } catch (error) { 
+          alert('通信エラーが発生しました。カードが元の位置に戻る可能性があります。'); 
+      }
       setIsUpdatingStatus(null);
   };
 
-  // ==========================================
-  // ★ ドラッグ＆ドロップ機能のイベントハンドラ
-  // ==========================================
+  // ドラッグ＆ドロップイベント
   const handleDragStart = (e: React.DragEvent, resId: string) => {
       e.dataTransfer.setData('resId', resId);
       e.dataTransfer.effectAllowed = 'move';
   };
 
   const handleDragOver = (e: React.DragEvent, colStatus: string) => {
-      e.preventDefault(); // ドロップを許可するために必須
-      setDragOverCol(colStatus); // ホバーしている列を光らせる
+      e.preventDefault(); 
+      setDragOverCol(colStatus); 
   };
 
   const handleDragLeave = () => {
@@ -230,10 +248,9 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
       setDragOverCol(null);
       const resId = e.dataTransfer.getData('resId');
       if (resId) {
-          handleUpdateStatus(resId, newStatus);
+          handleUpdateStatus(resId, newStatus); // 遅延ゼロ移動を発動！
       }
   };
-  // ==========================================
 
   const renderCard = (res: any, currentStatus: string) => {
       let items: any[] = [];
@@ -351,21 +368,12 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
                          <div><h3 className="text-xl font-bold text-gray-900 mb-1">現場カンバン (進行状況)</h3><p className="text-xs text-gray-500">予約の確認、計量中の荷物、加工待ちのリスト管理</p></div>
                      </button>
                  </div>
-                 <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-                    <h3 className="text-sm font-bold text-gray-900 mb-4 border-b border-gray-100 pb-2">本日の状況サマリー</h3>
-                    <div className="grid grid-cols-3 gap-4">
-                        <div className="bg-gray-50 p-4 rounded-xl"><p className="text-[10px] text-gray-500 font-bold mb-1">来場予定・受付済</p><p className="text-2xl font-black text-gray-900">{reservedList.length} <span className="text-xs font-normal text-gray-500">件</span></p></div>
-                        <div className="bg-red-50 p-4 rounded-xl border border-red-100"><p className="text-[10px] text-[#D32F2F] font-bold mb-1">現在 検収・計量中</p><p className="text-2xl font-black text-[#D32F2F]">{processingList.length} <span className="text-xs font-normal text-red-300">件</span></p></div>
-                        <div className="bg-blue-50 p-4 rounded-xl border border-blue-100"><p className="text-[10px] text-blue-600 font-bold mb-1">ナゲット加工待ち</p><p className="text-2xl font-black text-blue-600">{completedList.length} <span className="text-xs font-normal text-blue-300">件</span></p></div>
-                    </div>
-                 </div>
              </div>
          )}
 
-         {/* ★ OPERATIONS: ドラッグ＆ドロップ完全対応 */}
+         {/* OPERATIONS */}
          {adminTab === 'OPERATIONS' && (
              <div className="flex flex-col h-full animate-in fade-in duration-300">
-                 
                  <header className="mb-6 flex justify-between items-center flex-shrink-0">
                     <div>
                         <h2 className="text-2xl font-bold text-gray-900">現場カンバン</h2>
@@ -375,7 +383,6 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
                  </header>
                  <div className="flex-1 flex gap-5 overflow-x-auto min-h-0 pb-4">
                      
-                     {/* 列1: RESERVED */}
                      <div 
                          className={`flex-none w-[300px] flex flex-col bg-gray-100/60 rounded-2xl border transition-all duration-200 overflow-hidden ${dragOverCol === 'RESERVED' ? 'border-gray-500 shadow-lg scale-[1.02] bg-gray-200/50' : 'border-gray-200'}`}
                          onDragOver={(e) => handleDragOver(e, 'RESERVED')}
@@ -388,7 +395,6 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
                          <div className="flex-1 p-3 space-y-3 overflow-y-auto">{reservedList.length === 0 ? <p className="text-xs text-gray-400 text-center py-8">現在予定はありません</p> : reservedList.map(res => renderCard(res, 'RESERVED'))}</div>
                      </div>
 
-                     {/* 列2: PROCESSING */}
                      <div 
                          className={`flex-none w-[300px] flex flex-col bg-red-50/40 rounded-2xl border transition-all duration-200 overflow-hidden ${dragOverCol === 'PROCESSING' ? 'border-[#D32F2F] shadow-lg scale-[1.02] bg-red-100/60' : 'border-red-100'}`}
                          onDragOver={(e) => handleDragOver(e, 'PROCESSING')}
@@ -401,7 +407,6 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
                          <div className="flex-1 p-3 space-y-3 overflow-y-auto">{processingList.length === 0 ? <p className="text-xs text-gray-400 text-center py-8">現在計量中はありません</p> : processingList.map(res => renderCard(res, 'PROCESSING'))}</div>
                      </div>
 
-                     {/* 列3: COMPLETED */}
                      <div 
                          className={`flex-none w-[300px] flex flex-col bg-blue-50/40 rounded-2xl border transition-all duration-200 overflow-hidden ${dragOverCol === 'COMPLETED' ? 'border-blue-500 shadow-lg scale-[1.02] bg-blue-100/60' : 'border-blue-100'}`}
                          onDragOver={(e) => handleDragOver(e, 'COMPLETED')}
@@ -417,7 +422,7 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
              </div>
          )}
 
-         {/* POS 省略せず保持 */}
+         {/* POS */}
          {adminTab === 'POS' && (
             <div className="h-full flex flex-col animate-in fade-in duration-300">
               <header className="mb-4 flex-shrink-0 flex justify-between items-end">
@@ -510,7 +515,12 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
                                        <div className="flex items-center gap-2">
                                            <label className="text-[10px] font-bold text-gray-400">実重量</label>
                                            <div className="relative">
-                                               <input type="number" className="w-24 bg-red-50 border border-red-200 p-2 rounded text-base font-black text-[#D32F2F] outline-none focus:ring-2 focus:ring-red-200 transition" value={item.weight} onChange={(e) => handleUpdateCartItemWeight(item.id, e.target.value)} />
+                                               <input 
+                                                   type="number" 
+                                                   className="w-24 bg-red-50 border border-red-200 p-2 rounded text-base font-black text-[#D32F2F] outline-none focus:ring-2 focus:ring-red-200 transition" 
+                                                   value={item.weight} 
+                                                   onChange={(e) => handleUpdateCartItemWeight(item.id, e.target.value)} 
+                                               />
                                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-[#D32F2F] font-bold">kg</span>
                                            </div>
                                            {editingResId && <Icons.Edit />}
