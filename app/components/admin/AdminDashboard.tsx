@@ -13,50 +13,45 @@ const Icons = {
   Check: () => <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>,
 };
 
-interface AdminProps {
-  data: MarketData | null;
-  setView: (view: any) => void;
-}
-
-export const AdminDashboard = ({ data, setView }: AdminProps) => {
+export const AdminDashboard = ({ data, setView }: { data: any; setView: any }) => {
   const [adminTab, setAdminTab] = useState<'HOME' | 'OPERATIONS' | 'POS' | 'COMPETITOR'>('HOME');
   
-  // (POSステート)
+  // POSステート
   const [posUser, setPosUser] = useState<string>('');
   const [posProduct, setPosProduct] = useState<string>('');
   const [posWeight, setPosWeight] = useState<string>('');
   const [posRank, setPosRank] = useState<'A'|'B'|'C'>('B');
   const [posResult, setPosResult] = useState<number | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
-  const [lastTxData, setLastTxData] = useState<any>(null);
   
-  const marketPrice = data?.config?.market_price || 0;
+  // ★ GASの全相場データを安全に抽出 (無い場合は0)
+  const market = data?.market || {};
+  const copperPrice = market.copper?.price || data?.config?.market_price || 0;
+  const brassPrice = market.brass?.price || 0;
+  const zincPrice = market.zinc?.price || 0;
+  const leadPrice = market.lead?.price || 0;
+  const tinPrice = market.tin?.price || 0;
+  const usdjpy = market.usdjpy || 0;
   
-  // 予約データのパース
+  // 予約データのパースと予測出来高計算
   const reservations = data?.reservations || [];
-  const reservedList = reservations.filter(r => r.status === 'RESERVED');
-  const processingList = reservations.filter(r => r.status === 'PROCESSING' || r.status === 'ARRIVED');
+  const reservedList = reservations.filter((r: any) => r.status === 'RESERVED');
+  const processingList = reservations.filter((r: any) => r.status === 'PROCESSING' || r.status === 'ARRIVED');
   
-  // 予測出来高計算
   let forecastVolume = 0;
-  reservedList.forEach(res => {
-     try {
-         const items = JSON.parse(res.items);
-         items.forEach(i => forecastVolume += (Number(i.weight) || 0));
-     } catch(e) {}
+  reservedList.forEach((res: any) => {
+     try { JSON.parse(res.items).forEach((i: any) => forecastVolume += (Number(i.weight) || 0)); } catch(e) {}
   });
 
-  const actualVolume = 18450; // モック実績
+  const actualVolume = 18450; 
   const targetMonthly = Number(data?.config?.target_monthly) || 30000;
   const progressActual = Math.min(100, (actualVolume / targetMonthly) * 100);
   const progressForecast = Math.min(100, ((actualVolume + forecastVolume) / targetMonthly) * 100);
 
   // POS計算ロジック
   const handlePosCalculate = () => {
-    if (!posProduct || !posWeight) { alert("品物と重量を入力してください"); return; }
-    const wire = data?.wires.find(p => p.id === posProduct);
-    const casting = data?.castings.find(p => p.id === posProduct);
+    if (!posProduct || !posWeight) return;
+    const wire = data?.wires?.find((p: any) => p.id === posProduct);
+    const casting = data?.castings?.find((p: any) => p.id === posProduct);
     const product = wire || casting;
     if (!product) return;
     
@@ -65,17 +60,16 @@ export const AdminDashboard = ({ data, setView }: AdminProps) => {
     
     let rawPrice = 0;
     if (casting) {
-        rawPrice = (marketPrice * (product.ratio / 100)) + (casting.price_offset || 0);
+        rawPrice = (copperPrice * (product.ratio / 100)) + (casting.price_offset || 0);
     } else {
-        rawPrice = (marketPrice * (product.ratio / 100) * 0.9) - 15;
+        rawPrice = (copperPrice * (product.ratio / 100) * 0.9) - 15;
     }
-    const adjustedPrice = rawPrice * rankBonus;
-    setPosResult(Math.floor(Math.max(0, Math.floor(adjustedPrice)) * weight));
+    setPosResult(Math.floor(Math.max(0, Math.floor(rawPrice * rankBonus)) * weight));
   };
 
-  // カンバンカードの描画ヘルパー
+  // カンバンカード描画
   const renderCard = (res: any, isProcessing: boolean = false) => {
-      let items = [];
+      let items: any[] = [];
       try { items = JSON.parse(res.items); } catch(e){}
       const mainItem = items[0] ? items[0].product : '不明な品目';
       const totalWeight = items.reduce((sum, i) => sum + (Number(i.weight)||0), 0);
@@ -87,11 +81,7 @@ export const AdminDashboard = ({ data, setView }: AdminProps) => {
               const rawStr = String(res.visitDate);
               const d = new Date(res.visitDate);
               if (!isNaN(d.getTime())) {
-                  const month = d.getMonth() + 1;
-                  const date = d.getDate();
-                  const hours = d.getHours().toString().padStart(2, '0');
-                  const minutes = d.getMinutes().toString().padStart(2, '0');
-                  timeStr = `${month}/${date} ${hours}:${minutes}`;
+                  timeStr = `${d.getMonth() + 1}/${d.getDate()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
               } else {
                   timeStr = rawStr.replace('T', ' ').substring(0, 16);
               }
@@ -99,170 +89,167 @@ export const AdminDashboard = ({ data, setView }: AdminProps) => {
       } catch(e){}
 
       return (
-        <div key={res.id} className={`bg-white p-4 rounded-xl shadow-sm border border-gray-100 transition hover:shadow-md ${isProcessing ? 'border-l-4 border-l-[#D32F2F]' : (isMember ? 'border-l-4 border-l-yellow-400' : 'border-l-4 border-l-gray-400')}`}>
-            <div className="flex justify-between items-start mb-2">
-                <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${isMember ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-600'}`}>
-                    {isMember ? '会員予約' : '非会員'}
+        <div key={res.id} className={`bg-white p-3 rounded-lg shadow-sm border border-gray-100 transition hover:shadow-md ${isProcessing ? 'border-l-4 border-l-[#D32F2F]' : (isMember ? 'border-l-4 border-l-yellow-400' : 'border-l-4 border-l-gray-400')}`}>
+            <div className="flex justify-between items-center mb-1">
+                <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${isMember ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-600'}`}>
+                    {isMember ? '会員' : '非会員'}
                 </span>
-                <span className="text-xs text-gray-500 font-bold">{timeStr} 予定</span>
+                <span className="text-[10px] text-gray-500 font-bold">{timeStr} 予定</span>
             </div>
-            <p className="font-bold text-gray-900 text-base mb-1">{res.memberName}</p>
-            <p className="text-sm text-gray-600">{mainItem} {items.length > 1 ? 'ほか' : ''} / 約 <span className="font-bold">{totalWeight}</span> kg</p>
-            {res.memo && <p className="text-xs text-gray-500 mt-2 bg-gray-50 p-2 rounded-md">📝 {res.memo}</p>}
-            
-            {isProcessing && (
-                <button onClick={()=>setAdminTab('POS')} className="mt-4 w-full bg-red-50 text-[#D32F2F] py-2 rounded-lg text-sm font-bold hover:bg-[#D32F2F] hover:text-white transition">
-                    この内容でレジへ進む
-                </button>
-            )}
-            {!isProcessing && (
-                <button className="mt-4 w-full bg-gray-50 text-gray-600 py-2 rounded-lg text-sm font-bold hover:bg-gray-100 transition">
-                    到着（計量へ進む）
-                </button>
+            <p className="font-bold text-gray-900 text-sm truncate">{res.memberName}</p>
+            <p className="text-xs text-gray-600 truncate">{mainItem} / 約 <span className="font-bold text-gray-900">{totalWeight}</span> kg</p>
+            {isProcessing ? (
+                <button onClick={()=>setAdminTab('POS')} className="mt-2 w-full bg-red-50 text-[#D32F2F] py-1.5 rounded text-xs font-bold hover:bg-[#D32F2F] hover:text-white transition">レジへ進む</button>
+            ) : (
+                <button className="mt-2 w-full bg-gray-50 text-gray-600 py-1.5 rounded text-xs font-bold hover:bg-gray-200 transition">到着（計量へ）</button>
             )}
         </div>
       );
   };
 
-  const wireOptions = data?.wires?.filter(w => w.name.includes('ミックス') || w.name.toUpperCase().includes('MIX')) || [];
-  const otherWires = data?.wires?.filter(w => !w.name.includes('ミックス') && !w.name.toUpperCase().includes('MIX')) || [];
+  const wireOptions = data?.wires?.filter((w: any) => w.name.includes('ミックス') || w.name.toUpperCase().includes('MIX')) || [];
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] text-gray-900 font-sans flex flex-col md:flex-row">
+    // ★ h-screen と overflow-hidden でアプリライクな「スクロールしない」外枠を作る
+    <div className="h-screen w-full bg-[#F5F5F7] text-gray-900 font-sans flex flex-col md:flex-row overflow-hidden">
       
-      {/* 🔴 サイドバー (クリーンな白ベース) */}
-      <aside className="w-full md:w-72 bg-white p-6 border-r border-gray-200 flex flex-col shadow-sm z-10">
-        <div className="mb-10 cursor-pointer" onClick={()=>setView('LP')}>
-            <h1 className="text-2xl font-serif font-bold text-gray-900">FACTORY<span className="text-[#D32F2F]">OS</span></h1>
-            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">管理メニュー</p>
+      {/* 🔴 サイドバー (相場ボード追加) */}
+      <aside className="w-full md:w-64 bg-white border-r border-gray-200 flex flex-col shadow-sm z-10 flex-shrink-0">
+        <div className="p-5 cursor-pointer border-b border-gray-50" onClick={()=>setView('LP')}>
+            <h1 className="text-xl font-serif font-bold text-gray-900">FACTORY<span className="text-[#D32F2F]">OS</span></h1>
         </div>
-        <nav className="space-y-2">
-            <button onClick={()=>setAdminTab('HOME')} className={`w-full text-left p-4 rounded-xl text-sm font-bold transition flex items-center gap-3 ${adminTab==='HOME' ? 'bg-[#111] text-white shadow-md' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}><Icons.Home /> ホーム</button>
-            <button onClick={()=>setAdminTab('OPERATIONS')} className={`w-full text-left p-4 rounded-xl text-sm font-bold transition flex items-center gap-3 ${adminTab==='OPERATIONS' ? 'bg-[#111] text-white shadow-md' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}><Icons.Kanban /> 現場の状況 (カンバン)</button>
-            <button onClick={()=>setAdminTab('POS')} className={`w-full text-left p-4 rounded-xl text-sm font-bold transition flex items-center gap-3 ${adminTab==='POS' ? 'bg-[#111] text-white shadow-md' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}><Icons.Calc /> 買取レジ (POS)</button>
-            <button onClick={()=>setAdminTab('COMPETITOR')} className={`w-full text-left p-4 rounded-xl text-sm font-bold transition flex items-center gap-3 ${adminTab==='COMPETITOR' ? 'bg-[#111] text-white shadow-md' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}><Icons.Radar /> 他社価格チェック</button>
+        
+        <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+            <button onClick={()=>setAdminTab('HOME')} className={`w-full text-left px-4 py-3 rounded-lg text-sm font-bold transition flex items-center gap-3 ${adminTab==='HOME' ? 'bg-[#111] text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}><Icons.Home /> ホーム</button>
+            <button onClick={()=>setAdminTab('OPERATIONS')} className={`w-full text-left px-4 py-3 rounded-lg text-sm font-bold transition flex items-center gap-3 ${adminTab==='OPERATIONS' ? 'bg-[#111] text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}><Icons.Kanban /> 現場カンバン</button>
+            <button onClick={()=>setAdminTab('POS')} className={`w-full text-left px-4 py-3 rounded-lg text-sm font-bold transition flex items-center gap-3 ${adminTab==='POS' ? 'bg-[#111] text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}><Icons.Calc /> 買取レジ</button>
+            <button onClick={()=>setAdminTab('COMPETITOR')} className={`w-full text-left px-4 py-3 rounded-lg text-sm font-bold transition flex items-center gap-3 ${adminTab==='COMPETITOR' ? 'bg-[#111] text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}><Icons.Radar /> 他社価格AI</button>
         </nav>
         
-        <div className="mt-auto pt-8 border-t border-gray-100">
-            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                <p className="text-[10px] text-gray-500 font-bold mb-1">現在の基準相場 (LME)</p>
-                <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                    <span className="text-lg font-black text-gray-900">${(data as any)?.market?.lme_copper_usd || 0}</span>
+        {/* ★ GAS直結：全相場ティッカーボード (スクロールさせず常に表示) */}
+        <div className="p-4 bg-gray-50 border-t border-gray-200 flex-shrink-0">
+            <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] text-gray-500 font-bold">本日の自動取得相場</p>
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+                <div className="bg-white p-2 rounded border border-gray-200">
+                    <span className="text-[9px] text-gray-400 block font-bold">銅建値</span>
+                    <span className="font-bold text-gray-900 text-sm">¥{copperPrice.toLocaleString()}</span>
+                </div>
+                <div className="bg-white p-2 rounded border border-gray-200">
+                    <span className="text-[9px] text-gray-400 block font-bold">真鍮 (Brass)</span>
+                    <span className="font-bold text-gray-900 text-sm">¥{brassPrice.toLocaleString()}</span>
+                </div>
+                <div className="bg-white p-2 rounded border border-gray-200">
+                    <span className="text-[9px] text-gray-400 block font-bold">亜鉛 (Zinc)</span>
+                    <span className="font-bold text-gray-900 text-sm">¥{zincPrice.toLocaleString()}</span>
+                </div>
+                <div className="bg-white p-2 rounded border border-gray-200">
+                    <span className="text-[9px] text-gray-400 block font-bold">鉛 (Lead)</span>
+                    <span className="font-bold text-gray-900 text-sm">¥{leadPrice.toLocaleString()}</span>
+                </div>
+                <div className="bg-white p-2 rounded border border-gray-200">
+                    <span className="text-[9px] text-gray-400 block font-bold">錫 (Tin)</span>
+                    <span className="font-bold text-gray-900 text-sm">¥{tinPrice.toLocaleString()}</span>
+                </div>
+                <div className="bg-white p-2 rounded border border-gray-200">
+                    <span className="text-[9px] text-gray-400 block font-bold">USD/JPY</span>
+                    <span className="font-bold text-gray-900 text-sm">¥{usdjpy}</span>
                 </div>
             </div>
         </div>
       </aside>
 
-      {/* 🔴 メインエリア */}
-      <main className="flex-1 p-6 md:p-10 overflow-y-auto">
+      {/* 🔴 メインエリア (タブの中身だけがスクロールする) */}
+      <main className="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col">
          
-         {/* 1. HOME (わかりやすいポータル画面) */}
+         {/* 1. HOME */}
          {adminTab === 'HOME' && (
-             <div className="max-w-5xl mx-auto animate-in fade-in zoom-in-95 duration-300">
-                 <header className="mb-10">
-                    <h2 className="text-3xl font-bold text-gray-900 mb-2">お疲れ様です、工場長。</h2>
-                    <p className="text-gray-500">本日の業務を選んでください。</p>
+             <div className="max-w-5xl mx-auto w-full animate-in fade-in zoom-in-95 duration-300 flex flex-col h-full">
+                 <header className="mb-6 flex-shrink-0">
+                    <h2 className="text-2xl font-bold text-gray-900">お疲れ様です。本日の業務を選択してください。</h2>
                  </header>
 
-                 {/* クイックアクション (迷わせない巨大ボタン) */}
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                     <button onClick={()=>setAdminTab('POS')} className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg hover:border-[#D32F2F] transition text-left group">
-                         <div className="w-12 h-12 bg-red-50 text-[#D32F2F] rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition"><Icons.Calc /></div>
-                         <h3 className="text-xl font-bold text-gray-900 mb-2">買取レジを開く</h3>
-                         <p className="text-sm text-gray-500">お客様が来場されたらこちらから計量・明細発行を行います。</p>
+                 {/* 3つのボタンをコンパクトに */}
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 flex-shrink-0">
+                     <button onClick={()=>setAdminTab('POS')} className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:border-[#D32F2F] transition text-left flex items-center gap-4 group">
+                         <div className="w-10 h-10 bg-red-50 text-[#D32F2F] rounded-full flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition"><Icons.Calc /></div>
+                         <div>
+                             <h3 className="font-bold text-gray-900">買取レジを開く</h3>
+                             <p className="text-[10px] text-gray-500">お客様の計量と明細発行</p>
+                         </div>
                      </button>
-                     <button onClick={()=>setAdminTab('OPERATIONS')} className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg hover:border-[#D32F2F] transition text-left group">
-                         <div className="w-12 h-12 bg-orange-50 text-orange-600 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition"><Icons.Kanban /></div>
-                         <h3 className="text-xl font-bold text-gray-900 mb-2">本日の予約を見る</h3>
-                         <p className="text-sm text-gray-500">これから来る予定のお客様や、現在作業中の荷物を確認します。</p>
+                     <button onClick={()=>setAdminTab('OPERATIONS')} className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:border-orange-500 transition text-left flex items-center gap-4 group">
+                         <div className="w-10 h-10 bg-orange-50 text-orange-600 rounded-full flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition"><Icons.Kanban /></div>
+                         <div>
+                             <h3 className="font-bold text-gray-900">本日の予約を見る</h3>
+                             <p className="text-[10px] text-gray-500">来場予定と作業進行の管理</p>
+                         </div>
                      </button>
-                     <button onClick={()=>setAdminTab('COMPETITOR')} className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg hover:border-[#D32F2F] transition text-left group">
-                         <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition"><Icons.Radar /></div>
-                         <h3 className="text-xl font-bold text-gray-900 mb-2">他社の価格を見る</h3>
-                         <p className="text-sm text-gray-500">近隣の競合他社の買取価格をAIが集計したレポートを確認します。</p>
+                     <button onClick={()=>setAdminTab('COMPETITOR')} className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:border-blue-500 transition text-left flex items-center gap-4 group">
+                         <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition"><Icons.Radar /></div>
+                         <div>
+                             <h3 className="font-bold text-gray-900">他社の価格を見る</h3>
+                             <p className="text-[10px] text-gray-500">競合サイトのAI自動監視</p>
+                         </div>
                      </button>
                  </div>
 
-                 {/* シンプルな実績パネル */}
-                 <h3 className="text-lg font-bold text-gray-900 mb-4">今月の目標と実績</h3>
-                 <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm">
-                    <div className="flex flex-col md:flex-row justify-between items-end gap-6">
-                        <div className="flex-1 w-full">
-                            <div className="flex justify-between items-end mb-2">
-                                <span className="text-sm text-gray-500 font-bold">現在の買付量</span>
-                                <span className="text-3xl font-black text-gray-900">{actualVolume.toLocaleString()} <span className="text-sm font-bold text-gray-400">/ {targetMonthly.toLocaleString()} kg</span></span>
-                            </div>
-                            <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden flex">
-                                <div className="bg-[#D32F2F] h-full transition-all" style={{width: `${progressActual}%`}}></div>
-                                <div className="bg-orange-300 h-full transition-all opacity-80" style={{width: `${progressForecast - progressActual}%`}}></div>
-                            </div>
-                            <p className="text-xs text-gray-400 mt-3">※ オレンジ色は本日の予約（これから来る予定）の見込み量です</p>
-                        </div>
-                        <div className="bg-gray-50 p-6 rounded-xl border border-gray-100 min-w-[250px] text-center">
-                            <p className="text-xs text-gray-500 font-bold mb-1">現在の銅建値 (相場)</p>
-                            <p className="text-4xl font-black text-gray-900">¥{marketPrice.toLocaleString()}</p>
-                        </div>
+                 {/* 目標と実績パネル */}
+                 <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex-shrink-0">
+                    <h3 className="text-sm font-bold text-gray-900 mb-4">月間 買付目標と実績</h3>
+                    <div className="flex justify-between items-end mb-2">
+                        <span className="text-sm text-gray-500 font-bold">現在の出来高</span>
+                        <span className="text-2xl font-black text-gray-900">{actualVolume.toLocaleString()} <span className="text-xs font-bold text-gray-400">/ {targetMonthly.toLocaleString()} kg</span></span>
                     </div>
+                    <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden flex mb-2">
+                        <div className="bg-[#D32F2F] h-full transition-all" style={{width: `${progressActual}%`}}></div>
+                        <div className="bg-orange-300 h-full transition-all opacity-80" style={{width: `${progressForecast - progressActual}%`}}></div>
+                    </div>
+                    <p className="text-[10px] text-gray-400 text-right">※ オレンジ色は本日の予約見込み（{forecastVolume}kg）</p>
                  </div>
              </div>
          )}
 
-         {/* 2. OPERATIONS (現場カンバン - 明るく見やすい) */}
+         {/* 2. OPERATIONS (全画面カンバン：この中でだけ縦スクロールさせる) */}
          {adminTab === 'OPERATIONS' && (
-             <div className="h-full flex flex-col animate-in fade-in duration-300">
-                 <header className="mb-8 flex justify-between items-end">
-                    <div>
-                        <h2 className="text-3xl font-bold text-gray-900 mb-2">現場の状況 (カンバン)</h2>
-                        <p className="text-gray-500">予約から加工までの流れを管理します。</p>
-                    </div>
-                    <button className="bg-gray-900 text-white px-6 py-3 rounded-lg font-bold hover:bg-[#D32F2F] transition shadow-md">
-                        ＋ 新しいお客様を受付する
-                    </button>
+             <div className="flex flex-col h-full animate-in fade-in duration-300">
+                 <header className="mb-4 flex justify-between items-center flex-shrink-0">
+                    <h2 className="text-xl font-bold text-gray-900">現場カンバン</h2>
+                    <button className="bg-gray-900 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-[#D32F2F] transition shadow-sm">＋ 飛込受付</button>
                  </header>
 
-                 <div className="flex-1 flex gap-6 overflow-x-auto pb-4">
+                 {/* カンバンエリア（画面の高さいっぱいに広がり、はみ出たカードだけスクロール） */}
+                 <div className="flex-1 flex gap-4 overflow-x-auto min-h-0">
                      
-                     {/* 列1: 来場待ち */}
-                     <div className="flex-none w-80 flex flex-col bg-gray-100 rounded-2xl border border-gray-200">
-                         <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t-2xl">
-                             <span className="font-bold text-gray-700">① 来場待ち</span>
-                             <span className="bg-gray-200 text-gray-600 text-xs px-3 py-1 rounded-full font-bold">{reservedList.length} 件</span>
+                     <div className="flex-none w-[280px] flex flex-col bg-gray-100/50 rounded-xl border border-gray-200 overflow-hidden">
+                         <div className="p-3 border-b border-gray-200 flex justify-between items-center bg-white">
+                             <span className="font-bold text-sm text-gray-700">① 来場待ち</span>
+                             <span className="bg-gray-100 text-gray-600 text-[10px] px-2 py-1 rounded-full font-bold">{reservedList.length}</span>
                          </div>
-                         <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-                             {reservedList.length === 0 ? (
-                                 <p className="text-sm text-gray-400 text-center py-10">現在、予定はありません</p>
-                             ) : (
-                                 reservedList.map(res => renderCard(res, false))
-                             )}
+                         <div className="flex-1 p-3 space-y-3 overflow-y-auto">
+                             {reservedList.length === 0 ? <p className="text-xs text-gray-400 text-center py-4">予定なし</p> : reservedList.map(res => renderCard(res, false))}
                          </div>
                      </div>
 
-                     {/* 列2: 計量中 */}
-                     <div className="flex-none w-80 flex flex-col bg-gray-100 rounded-2xl border border-gray-200">
-                         <div className="p-4 border-b-2 border-b-[#D32F2F] flex justify-between items-center bg-red-50 rounded-t-2xl">
-                             <span className="font-bold text-[#D32F2F]">② 検収・計量中</span>
-                             <span className="bg-[#D32F2F] text-white text-xs px-3 py-1 rounded-full font-bold">{processingList.length} 件</span>
+                     <div className="flex-none w-[280px] flex flex-col bg-red-50/30 rounded-xl border border-red-100 overflow-hidden">
+                         <div className="p-3 border-b-2 border-b-[#D32F2F] flex justify-between items-center bg-white">
+                             <span className="font-bold text-sm text-[#D32F2F]">② 検収・計量中</span>
+                             <span className="bg-[#D32F2F] text-white text-[10px] px-2 py-1 rounded-full font-bold">{processingList.length}</span>
                          </div>
-                         <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-                              {processingList.length === 0 ? (
-                                 <p className="text-sm text-gray-400 text-center py-10">計量中のお客様はいません</p>
-                             ) : (
-                                 processingList.map(res => renderCard(res, true))
-                             )}
+                         <div className="flex-1 p-3 space-y-3 overflow-y-auto">
+                              {processingList.length === 0 ? <p className="text-xs text-gray-400 text-center py-4">計量中なし</p> : processingList.map(res => renderCard(res, true))}
                          </div>
                      </div>
 
-                     {/* 列3: 加工待ち */}
-                     <div className="flex-none w-80 flex flex-col bg-gray-100 rounded-2xl border border-gray-200">
-                         <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t-2xl">
-                             <span className="font-bold text-gray-700">③ ナゲット加工待ち</span>
-                             <span className="bg-gray-200 text-gray-600 text-xs px-3 py-1 rounded-full font-bold">準備中</span>
+                     <div className="flex-none w-[280px] flex flex-col bg-gray-100/50 rounded-xl border border-gray-200 overflow-hidden">
+                         <div className="p-3 border-b border-gray-200 flex justify-between items-center bg-white">
+                             <span className="font-bold text-sm text-gray-700">③ ナゲット加工待ち</span>
+                             <span className="bg-gray-100 text-gray-600 text-[10px] px-2 py-1 rounded-full font-bold">0</span>
                          </div>
-                         <div className="flex-1 p-4 flex items-center justify-center">
-                             <p className="text-sm text-gray-400 border-2 border-dashed border-gray-300 p-8 rounded-xl w-full text-center">
-                                ここに計量完了した荷物が<br/>まとまって表示されます
-                             </p>
+                         <div className="flex-1 p-3 flex items-center justify-center">
+                             <p className="text-xs text-gray-400 border-2 border-dashed border-gray-300 p-4 rounded-lg text-center w-full mx-2">準備中</p>
                          </div>
                      </div>
 
@@ -270,107 +257,73 @@ export const AdminDashboard = ({ data, setView }: AdminProps) => {
              </div>
          )}
 
-         {/* 3. POS (極限までシンプルにしたiPadレジ風) */}
+         {/* 3. POS (スクロールを最小限にしたコンパクトレジ) */}
          {adminTab === 'POS' && (
-            <div className="max-w-5xl mx-auto animate-in fade-in zoom-in duration-300">
-              <header className="mb-8">
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">かんたん買取レジ</h2>
-                <p className="text-gray-500">順番に入力するだけで金額が計算されます。</p>
+            <div className="h-full flex flex-col animate-in fade-in duration-300">
+              <header className="mb-4 flex-shrink-0">
+                <h2 className="text-xl font-bold text-gray-900">かんたん買取レジ</h2>
               </header>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                 {/* 入力エリア */}
-                 <div className="space-y-6">
-                    
-                    <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-                       <h3 className="text-sm font-bold text-[#D32F2F] mb-4">① お客様のお名前・ID</h3>
-                       <input 
-                         className="w-full bg-gray-50 border border-gray-200 p-4 rounded-xl text-gray-900 text-lg focus:border-[#D32F2F] focus:ring-2 focus:ring-red-100 outline-none transition" 
-                         placeholder="例: 山田太郎 / 090-XXXX" 
-                         value={posUser} 
-                         onChange={(e)=>setPosUser(e.target.value)} 
-                       />
+              <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 min-h-0">
+                 <div className="space-y-4 overflow-y-auto pr-2 pb-4">
+                    <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                       <h3 className="text-xs font-bold text-[#D32F2F] mb-2">① お客様のお名前</h3>
+                       <input className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900 text-base focus:border-[#D32F2F] outline-none" placeholder="例: 山田太郎 / 090-XXXX" value={posUser} onChange={(e)=>setPosUser(e.target.value)} />
                     </div>
 
-                    <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-                       <h3 className="text-sm font-bold text-[#D32F2F] mb-4">② 持ち込まれた品物</h3>
-                       <select 
-                         className="w-full bg-gray-50 border border-gray-200 p-4 rounded-xl text-gray-900 text-lg mb-4 focus:border-[#D32F2F] focus:ring-2 focus:ring-red-100 outline-none cursor-pointer font-bold" 
-                         value={posProduct} 
-                         onChange={(e)=>setPosProduct(e.target.value)}
-                       >
+                    <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                       <h3 className="text-xs font-bold text-[#D32F2F] mb-2">② 持ち込まれた品物と重さ</h3>
+                       <select className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900 text-base mb-3 focus:border-[#D32F2F] outline-none font-bold" value={posProduct} onChange={(e)=>setPosProduct(e.target.value)}>
                           <option value="">-- 品物を選んでください --</option>
-                          <optgroup label="よく出る電線">
-                            {wireOptions.map(p => (<option key={p.id} value={p.id}>{p.name}</option>))}
-                          </optgroup>
-                          <optgroup label="非鉄金属">
-                            {data?.castings?.map(p => (<option key={p.id} value={p.id}>{p.name} ({p.type})</option>))}
-                          </optgroup>
+                          <optgroup label="電線">{wireOptions.map((p:any) => (<option key={p.id} value={p.id}>{p.name}</option>))}</optgroup>
+                          <optgroup label="非鉄金属">{data?.castings?.map((p:any) => (<option key={p.id} value={p.id}>{p.name}</option>))}</optgroup>
                        </select>
                        
-                       <div className="flex gap-4">
-                          <div className="flex-1">
-                             <label className="text-xs font-bold text-gray-500 block mb-2">重さ (kg)</label>
-                             <div className="relative">
-                               <input 
-                                 type="number" 
-                                 className="w-full bg-gray-50 border border-gray-200 p-4 rounded-xl text-gray-900 text-2xl font-black focus:border-[#D32F2F] focus:ring-2 focus:ring-red-100 outline-none" 
-                                 placeholder="0" 
-                                 value={posWeight} 
-                                 onChange={(e)=>setPosWeight(e.target.value)} 
-                               />
-                               <span className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-400 font-bold">kg</span>
-                             </div>
+                       <div className="flex gap-3">
+                          <div className="flex-1 relative">
+                             <input type="number" className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900 text-xl font-black focus:border-[#D32F2F] outline-none" placeholder="0" value={posWeight} onChange={(e)=>setPosWeight(e.target.value)} />
+                             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm">kg</span>
                           </div>
-                          <div className="w-1/3">
-                             <label className="text-xs font-bold text-gray-500 block mb-2">状態ランク</label>
-                             <select className="w-full bg-gray-50 border border-gray-200 p-4 rounded-xl text-gray-900 font-bold focus:border-[#D32F2F] outline-none h-[64px]" value={posRank} onChange={(e:any)=>setPosRank(e.target.value)}>
-                                <option value="B">普通 (B)</option>
-                                <option value="A">良品 (A)</option>
-                                <option value="C">劣化 (C)</option>
+                          <div className="w-24">
+                             <select className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-gray-900 font-bold focus:border-[#D32F2F] outline-none h-full" value={posRank} onChange={(e:any)=>setPosRank(e.target.value)}>
+                                <option value="B">普(B)</option><option value="A">良(A)</option><option value="C">劣(C)</option>
                              </select>
                           </div>
                        </div>
                     </div>
                     
-                    <button onClick={handlePosCalculate} className="w-full bg-gray-900 text-white py-5 rounded-2xl font-bold text-xl hover:bg-[#D32F2F] transition shadow-lg active:scale-95">
-                        ③ 計算する
-                    </button>
+                    <button onClick={handlePosCalculate} className="w-full bg-gray-900 text-white py-4 rounded-xl font-bold hover:bg-[#D32F2F] transition shadow-md active:scale-95">③ 金額を計算する</button>
                  </div>
 
-                 {/* レシートエリア */}
-                 <div className="h-full">
-                    <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-xl relative h-full flex flex-col">
-                       <div className="text-center border-b-2 border-dashed border-gray-200 pb-6 mb-6">
-                          <h4 className="font-bold text-2xl text-gray-900 mb-1">買取明細</h4>
-                          <p className="text-sm text-gray-400">月寒製作所 苫小牧工場</p>
+                 <div className="h-full pb-4">
+                    <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-lg h-full flex flex-col">
+                       <div className="text-center border-b border-dashed border-gray-200 pb-4 mb-4">
+                          <h4 className="font-bold text-xl text-gray-900">買取明細</h4>
                        </div>
                        
-                       <div className="flex-1 space-y-6">
+                       <div className="flex-1 space-y-4">
                           <div>
-                              <p className="text-xs text-gray-400 font-bold mb-1">お客様</p>
-                              <p className="text-lg font-bold text-gray-900">{posUser || '未入力'}</p>
+                              <p className="text-[10px] text-gray-400 font-bold mb-0.5">お客様</p>
+                              <p className="text-base font-bold text-gray-900">{posUser || '未入力'}</p>
                           </div>
-                          <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                              <p className="text-xs text-gray-400 font-bold mb-1">品物</p>
+                          <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                              <p className="text-[10px] text-gray-400 font-bold mb-1">品物 / 重さ</p>
                               <div className="flex justify-between items-center">
-                                  <span className="font-bold text-gray-900 text-lg">{data?.wires.find(x=>x.id===posProduct)?.name || data?.castings.find(x=>x.id===posProduct)?.name || '未選択'}</span>
-                                  <span className="text-gray-600 font-bold">{posWeight ? `${posWeight} kg` : '-'}</span>
+                                  <span className="font-bold text-gray-900 text-sm truncate">{data?.wires?.find((x:any)=>x.id===posProduct)?.name || data?.castings?.find((x:any)=>x.id===posProduct)?.name || '未選択'}</span>
+                                  <span className="text-gray-600 font-bold text-sm ml-2">{posWeight ? `${posWeight} kg` : '-'}</span>
                               </div>
                           </div>
                        </div>
 
-                       <div className="border-t-2 border-gray-900 pt-6 mt-6">
-                          <p className="text-sm text-gray-500 font-bold mb-1">合計お支払額 (税込)</p>
-                          <div className="flex justify-between items-end mb-8">
-                              <span className="font-bold text-gray-400 text-xl">¥</span>
-                              <span className="text-5xl font-black text-[#D32F2F] tracking-tighter">
-                                  {posResult !== null ? posResult.toLocaleString() : '0'}
-                              </span>
+                       <div className="border-t-2 border-gray-900 pt-4 mt-4">
+                          <p className="text-[10px] text-gray-500 font-bold mb-1">合計お支払額 (税込)</p>
+                          <div className="flex justify-between items-end mb-6">
+                              <span className="font-bold text-gray-400 text-lg">¥</span>
+                              <span className="text-4xl font-black text-[#D32F2F] tracking-tighter">{posResult !== null ? posResult.toLocaleString() : '0'}</span>
                           </div>
                           {posResult !== null && (
-                              <button disabled={isSubmitting} className="w-full bg-[#D32F2F] text-white py-4 rounded-xl font-bold text-lg hover:bg-red-700 transition shadow-md active:scale-95 flex justify-center items-center gap-2">
-                                  <Icons.Check /> {isSubmitting ? '処理中...' : '明細を発行して買取を完了する'}
+                              <button className="w-full bg-[#D32F2F] text-white py-3 rounded-lg font-bold hover:bg-red-700 transition shadow-sm active:scale-95 flex justify-center items-center gap-2">
+                                  <Icons.Check /> 明細を発行して完了
                               </button>
                           )}
                        </div>
@@ -380,12 +333,11 @@ export const AdminDashboard = ({ data, setView }: AdminProps) => {
            </div>
          )}
          
-         {/* 4. COMPETITOR (モック) */}
          {adminTab === 'COMPETITOR' && (
-             <div className="text-center py-20 bg-white rounded-2xl border border-gray-200">
-                 <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4"><Icons.Radar /></div>
-                 <h3 className="text-xl font-bold text-gray-900 mb-2">他社価格チェック (開発中)</h3>
-                 <p className="text-gray-500">競合サイトを自動巡回するAIの準備をしています。</p>
+             <div className="text-center py-20 bg-white rounded-xl border border-gray-200">
+                 <div className="w-12 h-12 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-3"><Icons.Radar /></div>
+                 <h3 className="text-lg font-bold text-gray-900 mb-1">他社価格チェック (開発中)</h3>
+                 <p className="text-xs text-gray-500">競合サイトを自動巡回するAIの準備をしています。</p>
              </div>
          )}
 
