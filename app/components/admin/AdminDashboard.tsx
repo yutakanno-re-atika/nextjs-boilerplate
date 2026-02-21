@@ -6,6 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { AdminHome } from './AdminHome';
 import { AdminKanban } from './AdminKanban';
 import { AdminPos } from './AdminPos';
+import { AdminCompetitor } from './AdminCompetitor';
 
 const Icons = {
   Home: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
@@ -87,13 +88,9 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
              />
          )}
 
-         {/* 他社価格AI（開発中モック） */}
+{/* 競合分析AI */}
          {adminTab === 'COMPETITOR' && (
-             <div className="text-center py-20 bg-white rounded-xl border border-gray-200">
-                 <div className="w-12 h-12 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-3"><Icons.Radar /></div>
-                 <h3 className="text-lg font-bold text-gray-900 mb-1">他社価格チェック (開発中)</h3>
-                 <p className="text-xs text-gray-500">競合サイトを自動巡回するAIの準備をしています。</p>
-             </div>
+             <AdminCompetitor data={data} />
          )}
 
       </main>
