@@ -8,22 +8,39 @@ const Icons = {
 
 export const AdminCompetitor = ({ data }: { data: any }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
-  
-  // ★ モックを廃止し、取得したデータを保持するステートに変更
   const [competitors, setCompetitors] = useState<any[]>([]);
 
-  // 自社の基準価格（銅建値から計算）
+  // 基準となる銅建値
   const copperPrice = data?.market?.copper?.price || 1450;
+  
+  // ★ 月寒製作所の価格シミュレート（10品目）
   const myPrices = {
-      "特1号銅線": Math.floor(copperPrice * 0.98), 
-      "ピカ線": Math.floor(copperPrice * 0.96),   
-      "VVF (VA)": Math.floor(copperPrice * 0.42) - 15, 
-      "雑線": Math.floor(copperPrice * 0.38) - 15      
+      "ピカ線": Math.floor(copperPrice * 0.96),
+      "2号銅線": Math.floor(copperPrice * 0.91),
+      "込銅": Math.floor(copperPrice * 0.88),
+      "VVF (VA)": Math.floor(copperPrice * 0.42) - 15,
+      "高歩留雑線 (60%~)": Math.floor(copperPrice * 0.60) - 15,
+      "雑線 (40%~)": Math.floor(copperPrice * 0.38) - 15,
+      "家電線": Math.floor(copperPrice * 0.28) - 15,
+      "ハーネス": Math.floor(copperPrice * 0.40) - 15,
+      "真鍮": Math.floor(copperPrice * 0.60), // ※仮の歩留まり
+      "砲金": Math.floor(copperPrice * 0.70)  // ※仮の歩留まり
   };
 
-  const targetItems = ["特1号銅線", "ピカ線", "VVF (VA)", "雑線"];
+  // ★ 監視する10品目リスト
+  const targetItems = [
+      "ピカ線", 
+      "2号銅線", 
+      "込銅", 
+      "VVF (VA)", 
+      "高歩留雑線 (60%~)", 
+      "雑線 (40%~)", 
+      "家電線", 
+      "ハーネス", 
+      "真鍮", 
+      "砲金"
+  ];
 
-  // ★ GASのAIクローラーを呼び出す処理
   const handleRefresh = async () => {
       setIsRefreshing(true);
       try {
@@ -34,7 +51,7 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
           });
           const result = await res.json();
           if (result.status === 'success' && result.data) {
-              setCompetitors(result.data); // 取得した3社のデータを画面にセット！
+              setCompetitors(result.data); 
           } else {
               alert('取得に失敗しました。');
           }
@@ -51,7 +68,7 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
             <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                 競合価格レーダー (AIリサーチ)
             </h2>
-            <p className="text-xs text-gray-500 mt-1">「札幌銅リサイクル」「REC環境サービス」「札幌金属興業」の最新価格を自動取得します。</p>
+            <p className="text-xs text-gray-500 mt-1">「札幌銅リサイクル」「REC環境サービス」「札幌金属興業」の主要10品目を自動取得します。</p>
         </div>
         <button 
             onClick={handleRefresh}
@@ -64,12 +81,12 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       </header>
 
       <div className="flex-1 bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-0">
-          <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                  <thead>
-                      <tr className="bg-gray-50 border-b border-gray-200">
+          <div className="overflow-y-auto">
+              <table className="w-full text-left border-collapse min-w-[800px]">
+                  <thead className="sticky top-0 z-10">
+                      <tr className="bg-gray-50 border-b border-gray-200 shadow-sm">
                           <th className="p-4 font-bold text-sm text-gray-500 w-[15%]">買取品目</th>
-                          <th className="p-4 font-black text-sm text-[#D32F2F] bg-red-50/50 w-[25%]">月寒製作所 (自社)</th>
+                          <th className="p-4 font-black text-sm text-[#D32F2F] bg-red-50/90 w-[20%] border-r border-red-100">月寒製作所 (自社)</th>
                           {competitors.length === 0 && (
                               <th className="p-4 font-bold text-sm text-gray-400">データ未取得（右上のボタンを押してください）</th>
                           )}
@@ -94,21 +111,24 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
 
                           return (
                               <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50 transition group">
-                                  <td className="p-4 font-bold text-gray-900 text-sm">
+                                  <td className="p-4 font-bold text-gray-900 text-sm whitespace-nowrap">
                                       {item}
                                   </td>
-                                  <td className="p-4 bg-red-50/30">
-                                      <div className="flex items-center justify-between gap-2">
+                                  <td className="p-4 bg-red-50/30 border-r border-red-50">
+                                      <div className="flex flex-col gap-1">
                                           <span className="text-lg font-black text-gray-900">¥{myPrice.toLocaleString()}</span>
-                                          {isLosing && (
-                                              <span className="text-[10px] font-bold text-orange-600 bg-orange-100 px-2 py-0.5 rounded-full border border-orange-200 animate-pulse">
-                                                  <Icons.Alert /> 他社に負けています
+                                          {isLosing ? (
+                                              <span className="text-[9px] font-bold text-orange-600 bg-orange-100 px-2 py-0.5 rounded border border-orange-200 inline-block w-max">
+                                                  <Icons.Alert /> 負けています
                                               </span>
-                                          )}
-                                          {!isLosing && maxCompetitorPrice > 0 && (
-                                              <span className="text-[10px] font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded-full border border-green-200">
-                                                  地域最高値
-                                              </span>
+                                          ) : (
+                                              maxCompetitorPrice > 0 ? (
+                                                  <span className="text-[9px] font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded border border-green-200 inline-block w-max">
+                                                      地域最高値
+                                                  </span>
+                                              ) : (
+                                                  <span className="text-[9px] text-gray-400">-</span>
+                                              )
                                           )}
                                       </div>
                                   </td>
