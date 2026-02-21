@@ -3,7 +3,8 @@ import React, { useState } from 'react';
 
 const Icons = {
   Alert: () => <svg className="w-4 h-4 text-orange-500 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
-  Refresh: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+  Refresh: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
+  Download: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
 };
 
 export const AdminCompetitor = ({ data }: { data: any }) => {
@@ -13,7 +14,7 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
   // 基準となる銅建値
   const copperPrice = data?.market?.copper?.price || 1450;
   
-  // ★ 月寒製作所の価格シミュレート（10品目）
+  // 月寒製作所の価格シミュレート
   const myPrices = {
       "ピカ線": Math.floor(copperPrice * 0.96),
       "2号銅線": Math.floor(copperPrice * 0.91),
@@ -23,22 +24,14 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       "雑線 (40%~)": Math.floor(copperPrice * 0.38) - 15,
       "家電線": Math.floor(copperPrice * 0.28) - 15,
       "ハーネス": Math.floor(copperPrice * 0.40) - 15,
-      "真鍮": Math.floor(copperPrice * 0.60), // ※仮の歩留まり
-      "砲金": Math.floor(copperPrice * 0.70)  // ※仮の歩留まり
+      "真鍮": Math.floor(copperPrice * 0.60), 
+      "砲金": Math.floor(copperPrice * 0.70)  
   };
 
-  // ★ 監視する10品目リスト
   const targetItems = [
-      "ピカ線", 
-      "2号銅線", 
-      "込銅", 
-      "VVF (VA)", 
-      "高歩留雑線 (60%~)", 
-      "雑線 (40%~)", 
-      "家電線", 
-      "ハーネス", 
-      "真鍮", 
-      "砲金"
+      "ピカ線", "2号銅線", "込銅", "VVF (VA)", 
+      "高歩留雑線 (60%~)", "雑線 (40%~)", "家電線", 
+      "ハーネス", "真鍮", "砲金"
   ];
 
   const handleRefresh = async () => {
@@ -61,6 +54,44 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       setIsRefreshing(false);
   };
 
+  // ★ CSVダウンロード機能
+  const handleDownloadCSV = () => {
+      if (competitors.length === 0) {
+          alert("先に「最新情報を取得」ボタンでデータを読み込んでください。");
+          return;
+      }
+
+      // 1. ヘッダー行の作成
+      const headers = ['品目名', '月寒製作所 (自社)', ...competitors.map(c => c.name)];
+      
+      // 2. データ行の作成
+      const rows = targetItems.map(item => {
+          const myPrice = myPrices[item] || '';
+          const compPrices = competitors.map(c => c.prices[item] !== null ? c.prices[item] : '');
+          return [item, myPrice, ...compPrices];
+      });
+
+      // 3. CSV文字列の結合
+      const csvContent = [
+          headers.join(','),
+          ...rows.map(r => r.join(','))
+      ].join('\n');
+
+      // 4. Excelで文字化けしないようにBOM(Byte Order Mark)を付与してダウンロード
+      const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+      const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      // ファイル名に現在時刻を入れる
+      const dateStr = new Date().toISOString().replace(/T/, '_').replace(/:/g, '-').slice(0, 16);
+      link.setAttribute('download', `competitor_prices_${dateStr}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+  };
+
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-300 max-w-6xl mx-auto w-full">
       <header className="mb-6 flex justify-between items-end flex-shrink-0">
@@ -70,14 +101,23 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
             </h2>
             <p className="text-xs text-gray-500 mt-1">「札幌銅リサイクル」「REC環境サービス」「札幌金属興業」の主要10品目を自動取得します。</p>
         </div>
-        <button 
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="bg-gray-900 text-white px-5 py-2.5 rounded-lg text-sm font-bold hover:bg-[#D32F2F] transition shadow-sm flex items-center gap-2 disabled:opacity-50"
-        >
-            <span className={isRefreshing ? "animate-spin" : ""}><Icons.Refresh /></span>
-            {isRefreshing ? 'AIサイト巡回中...' : '最新情報を取得 (クローラー起動)'}
-        </button>
+        <div className="flex gap-3">
+            {/* ★ CSVダウンロードボタンを追加 */}
+            <button 
+                onClick={handleDownloadCSV}
+                className="bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-lg text-sm font-bold hover:bg-gray-50 transition shadow-sm flex items-center gap-2"
+            >
+                <Icons.Download /> CSVで出力
+            </button>
+            <button 
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className="bg-gray-900 text-white px-5 py-2.5 rounded-lg text-sm font-bold hover:bg-[#D32F2F] transition shadow-sm flex items-center gap-2 disabled:opacity-50"
+            >
+                <span className={isRefreshing ? "animate-spin" : ""}><Icons.Refresh /></span>
+                {isRefreshing ? 'AIサイト巡回中...' : '最新情報を取得 (クローラー起動)'}
+            </button>
+        </div>
       </header>
 
       <div className="flex-1 bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-0">
@@ -102,11 +142,9 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                       {competitors.length > 0 && targetItems.map((item, idx) => {
                           const myPrice = myPrices[item];
                           
-                          // 競合の中で、数字が取れた（nullじゃない）一番高い価格を探す
                           const validCompetitorPrices = competitors.map(c => c.prices[item]).filter(p => p !== null);
                           const maxCompetitorPrice = validCompetitorPrices.length > 0 ? Math.max(...validCompetitorPrices) : 0;
                           
-                          // 自社が負けているか（他社最高値より安いか）
                           const isLosing = maxCompetitorPrice > 0 && myPrice < maxCompetitorPrice;
 
                           return (
