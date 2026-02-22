@@ -5,7 +5,8 @@ const Icons = {
   Factory: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>,
   Check: () => <svg className="w-5 h-5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>,
   ArrowDown: () => <svg className="w-6 h-6 mx-auto text-gray-400 my-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>,
-  Copper: () => <svg className="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+  Copper: () => <svg className="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>,
+  Alert: () => <svg className="w-4 h-4 text-orange-500 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
 };
 
 export const AdminProduction = ({ data, localReservations }: { data: any, localReservations: any[] }) => {
@@ -15,9 +16,12 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const productions = data?.productions || [];
+  const wiresMaster = data?.wires || [];
 
   // 1. ヤードに入庫済みの総重量を品目ごとに集計（計量完了分のみ）
   const incomingInventory: Record<string, number> = {};
+  let zeroWeightCount = 0; // 重量ゼロの荷物をカウント
+
   localReservations.filter(r => r.status === 'COMPLETED').forEach(res => {
       let items = [];
       try { 
@@ -26,9 +30,19 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
           if (typeof temp === 'string') temp = JSON.parse(temp);
           if (Array.isArray(temp)) items = temp;
       } catch(e) {}
+
+      // もしアイテムが空なら（POSレジを通していないなら）カウント
+      if (items.length === 0) zeroWeightCount++;
+
       items.forEach((it: any) => {
-          if (!incomingInventory[it.product]) incomingInventory[it.product] = 0;
-          incomingInventory[it.product] += (Number(it.weight) || 0);
+          const product = it.product || it.productName;
+          const weight = Number(it.weight) || 0;
+          if (weight === 0) zeroWeightCount++;
+          
+          if (product) {
+              if (!incomingInventory[product]) incomingInventory[product] = 0;
+              incomingInventory[product] += weight;
+          }
       });
   });
 
@@ -40,18 +54,23 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
       }
   });
 
-  // 3. 在庫リストを配列化して、在庫があるものだけを抽出
+  // 3. 在庫リストを配列化して、在庫があるものだけを抽出（フィルター緩和）
   const inventoryList = Object.entries(currentInventory)
-      .filter(([name, weight]) => weight > 0 && (name.includes('線') || name.includes('VVF') || name.includes('ケーブル') || name.includes('ハーネス')))
+      .filter(([name, weight]) => {
+          if (weight <= 0) return false; // 重量が0以下のものは表示しない
+          // 電線マスターに存在するか、名前に特定のキーワードが含まれるものを許可
+          const isWire = wiresMaster.some((w: any) => w.name === name);
+          const hasKeyword = name.includes('線') || name.includes('VVF') || name.includes('ケーブル') || name.includes('ハーネス') || name.includes('MIX') || name.toUpperCase().includes('VA');
+          return isWire || hasKeyword;
+      })
       .map(([name, weight]) => {
-          const productMaster = data?.wires?.find((w: any) => w.name === name);
+          const productMaster = wiresMaster.find((w: any) => w.name === name);
           const ratio = productMaster ? productMaster.ratio : 0;
           return { name, weight, expectedRatio: ratio };
       })
       .sort((a, b) => b.weight - a.weight);
 
-  // ★ 4. 【追加】加工後（ピカ銅ペレット）の総在庫を計算
-  // ※将来的にはここから「出荷した分」をマイナスする処理が入ります
+  // 4. 加工後（ピカ銅ペレット）の総在庫を計算
   const totalProducedCopper = productions.reduce((sum: number, p: any) => sum + (Number(p.outputCopper) || 0), 0);
 
   // 実歩留まり計算ロジック
@@ -101,6 +120,17 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                   <h3 className="font-bold text-gray-900">📦 現在のヤード在庫 (未加工)</h3>
                   <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-bold">受付データから自動計算</span>
               </div>
+              
+              {/* ★ 新設：重量未入力のアラート */}
+              {zeroWeightCount > 0 && (
+                  <div className="bg-orange-50 border-b border-orange-100 p-3 flex items-start gap-2">
+                      <Icons.Alert />
+                      <p className="text-[10px] text-orange-800 font-bold leading-relaxed">
+                          カンバンの「③ 保管」に、POSレジで重量が入力されていない（0kgの）荷物が {zeroWeightCount} 件あります。これらは在庫として合算されていません。
+                      </p>
+                  </div>
+              )}
+
               <div className="p-4 flex-1 overflow-y-auto space-y-3">
                   {inventoryList.length === 0 ? (
                       <p className="text-center text-gray-400 text-sm py-10">現在、加工待ちの在庫はありません。</p>
@@ -122,7 +152,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
           {/* 右側：製品在庫 ＆ 加工記録パネル */}
           <div className="flex flex-col gap-6">
               
-              {/* ★ 新設：加工後（製品）在庫パネル */}
+              {/* 加工後（製品）在庫パネル */}
               <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl border border-gray-700 shadow-lg p-5 text-white flex-shrink-0 relative overflow-hidden">
                   <div className="absolute top-0 right-0 p-4 opacity-10"><Icons.Copper /></div>
                   <h3 className="font-bold text-gray-300 mb-2 flex items-center gap-2">
@@ -135,7 +165,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                       <span className="text-lg text-gray-400 font-bold mb-1">kg</span>
                   </div>
                   <p className="text-[10px] text-gray-400 mt-3 border-t border-gray-700 pt-2">
-                      ※これまでにナゲット加工されて工場内に保管されているピカ銅の総量です。（※後日、出荷機能と連動します）
+                      ※これまでにナゲット加工されて工場内に保管されているピカ銅の総量です。
                   </p>
               </div>
 
