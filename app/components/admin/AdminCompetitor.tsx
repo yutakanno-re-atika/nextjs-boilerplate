@@ -14,24 +14,36 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
   // 基準となる銅建値
   const copperPrice = data?.market?.copper?.price || 1450;
   
-  // 月寒製作所の価格シミュレート
+  // ★ 月寒製作所の公式設定価格（仮の掛け目でシミュレート）
   const myPrices = {
-      "ピカ線": Math.floor(copperPrice * 0.96),
-      "2号銅線": Math.floor(copperPrice * 0.91),
-      "込銅": Math.floor(copperPrice * 0.88),
-      "VVF (VA)": Math.floor(copperPrice * 0.42) - 15,
-      "高歩留雑線 (60%~)": Math.floor(copperPrice * 0.60) - 15,
-      "雑線 (40%~)": Math.floor(copperPrice * 0.38) - 15,
-      "家電線": Math.floor(copperPrice * 0.28) - 15,
-      "ハーネス": Math.floor(copperPrice * 0.40) - 15,
-      "真鍮": Math.floor(copperPrice * 0.60), 
-      "砲金": Math.floor(copperPrice * 0.70)  
+      "光線（ピカ線、特号）": Math.floor(copperPrice * 0.96),
+      "1号線": Math.floor(copperPrice * 0.94),
+      "2号線": Math.floor(copperPrice * 0.91),
+      "上銅": Math.floor(copperPrice * 0.89),
+      "並銅": Math.floor(copperPrice * 0.87),
+      "下銅": Math.floor(copperPrice * 0.82),
+      "山行銅": Math.floor(copperPrice * 0.78),
+      "ビスマス砲金": Math.floor(copperPrice * 0.70),
+      "砲金": Math.floor(copperPrice * 0.68),
+      "メッキ砲金": Math.floor(copperPrice * 0.65),
+      "バルブ砲金": Math.floor(copperPrice * 0.63),
+      "込砲金": Math.floor(copperPrice * 0.60),
+      "込中": Math.floor(copperPrice * 0.58),
+      "山行中": Math.floor(copperPrice * 0.55),
+      "被覆線80%": Math.floor(copperPrice * 0.80) - 15,
+      "被覆線70%": Math.floor(copperPrice * 0.70) - 15,
+      "被覆線60%": Math.floor(copperPrice * 0.60) - 15,
+      "被覆線50%": Math.floor(copperPrice * 0.50) - 15,
+      "被覆線40%": Math.floor(copperPrice * 0.40) - 15,
+      "雑線": Math.floor(copperPrice * 0.35) - 15
   };
 
+  // ★ 監視する20品目リスト
   const targetItems = [
-      "ピカ線", "2号銅線", "込銅", "VVF (VA)", 
-      "高歩留雑線 (60%~)", "雑線 (40%~)", "家電線", 
-      "ハーネス", "真鍮", "砲金"
+      "光線（ピカ線、特号）", "1号線", "2号線", "上銅", "並銅", "下銅", "山行銅",
+      "ビスマス砲金", "砲金", "メッキ砲金", "バルブ砲金", "込砲金",
+      "込中", "山行中",
+      "被覆線80%", "被覆線70%", "被覆線60%", "被覆線50%", "被覆線40%", "雑線"
   ];
 
   const handleRefresh = async () => {
@@ -54,37 +66,26 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       setIsRefreshing(false);
   };
 
-  // ★ CSVダウンロード機能
+  // CSVダウンロード機能
   const handleDownloadCSV = () => {
       if (competitors.length === 0) {
           alert("先に「最新情報を取得」ボタンでデータを読み込んでください。");
           return;
       }
-
-      // 1. ヘッダー行の作成
       const headers = ['品目名', '月寒製作所 (自社)', ...competitors.map(c => c.name)];
-      
-      // 2. データ行の作成
       const rows = targetItems.map(item => {
           const myPrice = myPrices[item] || '';
           const compPrices = competitors.map(c => c.prices[item] !== null ? c.prices[item] : '');
           return [item, myPrice, ...compPrices];
       });
 
-      // 3. CSV文字列の結合
-      const csvContent = [
-          headers.join(','),
-          ...rows.map(r => r.join(','))
-      ].join('\n');
-
-      // 4. Excelで文字化けしないようにBOM(Byte Order Mark)を付与してダウンロード
+      const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
       const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
       const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       
       const link = document.createElement('a');
       link.setAttribute('href', url);
-      // ファイル名に現在時刻を入れる
       const dateStr = new Date().toISOString().replace(/T/, '_').replace(/:/g, '-').slice(0, 16);
       link.setAttribute('download', `competitor_prices_${dateStr}.csv`);
       document.body.appendChild(link);
@@ -99,10 +100,9 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
             <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                 競合価格レーダー (AIリサーチ)
             </h2>
-            <p className="text-xs text-gray-500 mt-1">「札幌銅リサイクル」「REC環境サービス」「札幌金属興業」の主要10品目を自動取得します。</p>
+            <p className="text-xs text-gray-500 mt-1">月寒製作所の公式20品目に基づいて、札幌近郊3社の価格を自動翻訳・比較します。</p>
         </div>
         <div className="flex gap-3">
-            {/* ★ CSVダウンロードボタンを追加 */}
             <button 
                 onClick={handleDownloadCSV}
                 className="bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-lg text-sm font-bold hover:bg-gray-50 transition shadow-sm flex items-center gap-2"
@@ -125,7 +125,7 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
               <table className="w-full text-left border-collapse min-w-[800px]">
                   <thead className="sticky top-0 z-10">
                       <tr className="bg-gray-50 border-b border-gray-200 shadow-sm">
-                          <th className="p-4 font-bold text-sm text-gray-500 w-[15%]">買取品目</th>
+                          <th className="p-4 font-bold text-sm text-gray-500 w-[20%]">買取品目 (公式)</th>
                           <th className="p-4 font-black text-sm text-[#D32F2F] bg-red-50/90 w-[20%] border-r border-red-100">月寒製作所 (自社)</th>
                           {competitors.length === 0 && (
                               <th className="p-4 font-bold text-sm text-gray-400">データ未取得（右上のボタンを押してください）</th>
