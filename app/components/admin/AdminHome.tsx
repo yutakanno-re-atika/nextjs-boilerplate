@@ -1,91 +1,230 @@
 // @ts-nocheck
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 
 const Icons = {
-  Kanban: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" /></svg>,
-  Calc: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
+  TrendingUp: () => <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>,
+  Scale: () => <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>,
+  Users: () => <svg className="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
+  Trophy: () => <svg className="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>,
+  Copper: () => <svg className="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
 };
 
-export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, localReservations: any[], onNavigate: (tab: string, resId?: string) => void }) => {
-  const reservedList = localReservations.filter((r: any) => r.status === 'RESERVED');
-  const processingList = localReservations.filter((r: any) => r.status === 'PROCESSING' || r.status === 'ARRIVED');
-  const completedList = localReservations.filter((r: any) => r.status === 'COMPLETED');
+export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, localReservations: any[], onNavigate: any }) => {
+  const [chartYear, setChartYear] = useState<number>(new Date().getFullYear());
 
-  // 実績と予測の計算ロジック
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
-  let actualVolume = 0;
-  completedList.forEach(res => {
-      const d = new Date(res.visitDate || new Date());
-      if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
-          let items = [];
-          try { 
-              let temp = res.items;
-              if (typeof temp === 'string') temp = JSON.parse(temp);
-              if (typeof temp === 'string') temp = JSON.parse(temp);
-              if (Array.isArray(temp)) items = temp;
-          } catch(e) {}
-          items.forEach((it: any) => { actualVolume += (Number(it.weight) || 0); });
+  const currentCopperPrice = data?.market?.copper?.price || 0;
+  const productions = data?.productions || [];
+
+  // ==========================================
+  // 1. 月別の買取実績データ（チャート用）の計算
+  // ==========================================
+  const monthlyData = useMemo(() => {
+    const months = Array.from({ length: 12 }, (_, i) => ({
+      month: i + 1,
+      weight: 0,
+      amount: 0,
+    }));
+
+    // アーカイブ済み、または完了（ヤード在庫）のデータを「買取実績」としてカウント
+    localReservations.filter(r => r.status === 'COMPLETED' || r.status === 'ARCHIVED').forEach(res => {
+      const date = new Date(res.visitDate || res.createdAt);
+      if (date.getFullYear() === chartYear) {
+        const mIndex = date.getMonth();
+        let totalW = 0;
+        try {
+          let items = res.items;
+          if (typeof items === 'string') items = JSON.parse(items);
+          if (typeof items === 'string') items = JSON.parse(items);
+          if (Array.isArray(items)) {
+            items.forEach((it: any) => { totalW += (Number(it.weight) || 0); });
+          }
+        } catch(e) {}
+
+        months[mIndex].weight += totalW;
+        months[mIndex].amount += (Number(res.totalEstimate) || 0);
       }
-  });
+    });
+    return months;
+  }, [localReservations, chartYear]);
 
-  let forecastVolume = 0;
-  [...reservedList, ...processingList].forEach(res => {
-      let items = [];
-      try { 
-          let temp = res.items;
-          if (typeof temp === 'string') temp = JSON.parse(temp);
-          if (typeof temp === 'string') temp = JSON.parse(temp);
-          if (Array.isArray(temp)) items = temp;
-      } catch(e) {}
-      items.forEach((it: any) => { forecastVolume += (Number(it.weight) || 0); });
-  });
+  const maxWeight = Math.max(...monthlyData.map(d => d.weight), 100); // ゼロ除算防止
 
-  const targetMonthly = Number(data?.config?.target_monthly) || 30000;
-  const progressActual = Math.min(100, (actualVolume / targetMonthly) * 100);
-  const progressForecast = Math.min(100, ((actualVolume + forecastVolume) / targetMonthly) * 100);
+  // 今月のデータ
+  const currentMonthIndex = new Date().getMonth();
+  const thisMonthData = monthlyData[currentMonthIndex];
+
+  // ==========================================
+  // 2. 顧客別「歩留まり」ランキングの計算
+  // ==========================================
+  const clientYieldRanking = useMemo(() => {
+      const clientStats: Record<string, { totalInput: number, yieldDiffSum: number, count: number }> = {};
+
+      productions.forEach((p: any) => {
+          if (!p.memberName || p.inputWeight <= 0) return;
+          const name = p.memberName;
+          if (!clientStats[name]) clientStats[name] = { totalInput: 0, yieldDiffSum: 0, count: 0 };
+          
+          // マスター想定との差分（プラスなら優良）
+          const actual = Number(p.actualRatio) || 0;
+          // マスターの歩留まりを探す（少し荒いですが、名前が一致するもので検索）
+          const master = data?.wires?.find((w:any) => w.name === p.materialName);
+          const expected = master ? Number(master.ratio) : 0;
+          
+          if (expected > 0 && actual > 0) {
+              clientStats[name].yieldDiffSum += (actual - expected);
+              clientStats[name].count += 1;
+              clientStats[name].totalInput += Number(p.inputWeight);
+          }
+      });
+
+      return Object.entries(clientStats)
+          .map(([name, stats]) => ({
+              name,
+              totalInput: stats.totalInput,
+              avgDiff: stats.count > 0 ? (stats.yieldDiffSum / stats.count) : 0
+          }))
+          .filter(c => c.count !== 0) // 加工実績がある顧客のみ
+          .sort((a, b) => b.avgDiff - a.avgDiff) // 差分（優秀な順）にソート
+          .slice(0, 5); // トップ5
+  }, [productions, data?.wires]);
+
+  // ==========================================
+  // 3. 製品在庫（ピカ銅）の資産価値
+  // ==========================================
+  const totalProducedCopper = productions.reduce((sum: number, p: any) => sum + (Number(p.outputCopper) || 0), 0);
+  const copperAssetValue = totalProducedCopper * currentCopperPrice;
 
   return (
-    <div className="max-w-5xl mx-auto w-full animate-in fade-in zoom-in-95 duration-300 flex flex-col h-full">
-        <header className="mb-6 flex-shrink-0">
-           <h2 className="text-3xl font-bold text-gray-900 mb-2">工場長、お疲れ様です。</h2>
-        </header>
-
-        <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm mb-6 flex-shrink-0">
-           <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> 今月の買付目標と実績</h3>
-           <div className="flex justify-between items-end mb-2">
-               <span className="text-xs text-gray-500 font-bold">現在の総買付量</span>
-               <span className="text-2xl font-black text-gray-900">{actualVolume.toLocaleString()} <span className="text-xs font-bold text-gray-400">/ {targetMonthly.toLocaleString()} kg</span></span>
-           </div>
-           <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden flex mb-2">
-               <div className="bg-[#D32F2F] h-full transition-all duration-1000 ease-out" style={{width: `${progressActual}%`}}></div>
-               <div className="bg-orange-300 h-full transition-all duration-1000 ease-out opacity-80" style={{width: `${progressForecast}%`}}></div>
-           </div>
-           <div className="flex justify-between text-[10px] text-gray-500 font-bold">
-               <span>■ 確定実績: {actualVolume.toLocaleString()} kg</span>
-               <span className="text-orange-500">■ 本日の見込み (受付中): +{forecastVolume.toLocaleString()} kg</span>
-           </div>
+    <div className="flex flex-col h-full animate-in fade-in duration-300 max-w-7xl mx-auto w-full space-y-6">
+      <header className="flex justify-between items-end">
+        <div>
+          <h2 className="text-3xl font-black text-gray-900 tracking-tight">経営ダッシュボード</h2>
+          <p className="text-sm text-gray-500 mt-1">過去の買取実績と、ナゲット加工による顧客評価（トレーサビリティ）を可視化します。</p>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 flex-shrink-0">
-            <button onClick={() => onNavigate('POS')} className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:border-[#D32F2F] hover:shadow-md transition text-left flex items-start gap-4 group">
-                <div className="w-12 h-12 bg-red-50 text-[#D32F2F] rounded-full flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition"><Icons.Calc /></div>
-                <div><h3 className="text-xl font-bold text-gray-900 mb-1">飛込受付・買取</h3><p className="text-xs text-gray-500">新規や予約なしのお客様の受付と明細発行</p></div>
-            </button>
-            <button onClick={() => onNavigate('OPERATIONS')} className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:border-orange-500 hover:shadow-md transition text-left flex items-start gap-4 group">
-                <div className="w-12 h-12 bg-orange-50 text-orange-600 rounded-full flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition"><Icons.Kanban /></div>
-                <div><h3 className="text-xl font-bold text-gray-900 mb-1">現場カンバン (進行状況)</h3><p className="text-xs text-gray-500">予約の確認、計量中の荷物、加工待ちのリスト管理</p></div>
-            </button>
+        <div className="flex gap-2">
+            <select 
+                value={chartYear} 
+                onChange={(e) => setChartYear(Number(e.target.value))}
+                className="bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-bold shadow-sm outline-none"
+            >
+                <option value={2026}>2026年度</option>
+                <option value={2025}>2025年度</option>
+            </select>
         </div>
+      </header>
 
-        <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-           <h3 className="text-sm font-bold text-gray-900 mb-4 border-b border-gray-100 pb-2">本日の状況サマリー</h3>
-           <div className="grid grid-cols-3 gap-4">
-               <div className="bg-gray-50 p-4 rounded-xl"><p className="text-[10px] text-gray-500 font-bold mb-1">来場予定・受付済</p><p className="text-2xl font-black text-gray-900">{reservedList.length} <span className="text-xs font-normal text-gray-500">件</span></p></div>
-               <div className="bg-red-50 p-4 rounded-xl border border-red-100"><p className="text-[10px] text-[#D32F2F] font-bold mb-1">現在 検収・計量中</p><p className="text-2xl font-black text-[#D32F2F]">{processingList.length} <span className="text-xs font-normal text-red-300">件</span></p></div>
-               <div className="bg-blue-50 p-4 rounded-xl border border-blue-100"><p className="text-[10px] text-blue-600 font-bold mb-1">計量完了 (ヤード保管)</p><p className="text-2xl font-black text-blue-600">{completedList.length} <span className="text-xs font-normal text-blue-300">件</span></p></div>
-           </div>
-        </div>
+      {/* 🔴 トップKPIカード群 */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between relative overflow-hidden group">
+              <div className="absolute -right-4 -top-4 opacity-5 group-hover:scale-110 transition duration-500"><Icons.Scale /></div>
+              <p className="text-xs font-bold text-gray-500 mb-1 flex items-center gap-1.5"><Icons.Scale /> 今月の総買取重量</p>
+              <div className="flex items-baseline gap-1 mt-2">
+                  <span className="text-3xl font-black text-gray-900">{thisMonthData.weight.toLocaleString()}</span>
+                  <span className="text-sm text-gray-500 font-bold">kg</span>
+              </div>
+          </div>
+          
+          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between relative overflow-hidden group">
+              <div className="absolute -right-4 -top-4 opacity-5 group-hover:scale-110 transition duration-500"><Icons.TrendingUp /></div>
+              <p className="text-xs font-bold text-gray-500 mb-1 flex items-center gap-1.5"><Icons.TrendingUp /> 今月の買取金額 (買掛)</p>
+              <div className="flex items-baseline gap-1 mt-2">
+                  <span className="text-3xl font-black text-gray-900">¥{thisMonthData.amount.toLocaleString()}</span>
+              </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-5 rounded-2xl border border-gray-700 shadow-lg flex flex-col justify-between relative overflow-hidden group text-white md:col-span-2">
+              <div className="absolute -right-4 -top-4 opacity-10 group-hover:scale-110 transition duration-500"><Icons.Copper /></div>
+              <div className="flex justify-between items-start">
+                  <p className="text-xs font-bold text-gray-400 mb-1 flex items-center gap-1.5"><Icons.Copper /> 現在のピカ銅（ペレット）資産価値</p>
+                  <span className="text-[10px] bg-gray-700 px-2 py-0.5 rounded text-gray-300">建値: ¥{currentCopperPrice}/kg</span>
+              </div>
+              <div className="flex items-baseline gap-3 mt-2">
+                  <span className="text-4xl font-black text-orange-400 tracking-tighter">¥{copperAssetValue.toLocaleString()}</span>
+                  <span className="text-sm text-gray-400 font-bold">({totalProducedCopper.toLocaleString()} kg)</span>
+              </div>
+          </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-[400px]">
+          
+          {/* 🔴 メインチャート：月別買取実績 */}
+          <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex flex-col">
+              <div className="flex justify-between items-center mb-6">
+                  <h3 className="font-bold text-gray-900">{chartYear}年 月別買取重量トレンド</h3>
+                  <span className="text-xs text-gray-500">単位: kg</span>
+              </div>
+              
+              <div className="flex-1 flex items-end gap-2 sm:gap-4 mt-4 relative">
+                  {/* 背景のグリッド線 */}
+                  <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-10">
+                      <div className="border-t border-gray-900 w-full h-0"></div>
+                      <div className="border-t border-gray-900 w-full h-0"></div>
+                      <div className="border-t border-gray-900 w-full h-0"></div>
+                      <div className="border-t border-gray-900 w-full h-0"></div>
+                  </div>
+
+                  {/* 棒グラフ本体 */}
+                  {monthlyData.map((data) => (
+                      <div key={data.month} className="flex-1 flex flex-col justify-end items-center group relative h-full">
+                          {/* ツールチップ (ホバー時表示) */}
+                          <div className="absolute -top-12 bg-gray-900 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap z-10 pointer-events-none">
+                              {data.weight.toLocaleString()} kg<br/>
+                              (¥{data.amount.toLocaleString()})
+                          </div>
+                          
+                          {/* グラフのバー */}
+                          <div 
+                              className={`w-full max-w-[40px] rounded-t-sm transition-all duration-500 ${data.month === currentMonthIndex + 1 ? 'bg-[#D32F2F]' : 'bg-red-100 group-hover:bg-red-200'}`}
+                              style={{ height: `${data.weight > 0 ? (data.weight / maxWeight) * 100 : 0}%`, minHeight: data.weight > 0 ? '4px' : '0' }}
+                          ></div>
+                          <span className="text-[10px] font-bold text-gray-400 mt-2">{data.month}月</span>
+                      </div>
+                  ))}
+              </div>
+          </div>
+
+          {/* 🔴 顧客別 優良歩留まりランキング */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex flex-col overflow-hidden">
+              <h3 className="font-bold text-gray-900 flex items-center gap-2 mb-1">
+                  <Icons.Trophy /> 優良顧客ランキング
+              </h3>
+              <p className="text-[10px] text-gray-500 mb-6">ナゲット加工時の「想定歩留まり」を上回った平均差分による評価</p>
+              
+              <div className="flex-1 overflow-y-auto pr-2 space-y-4">
+                  {clientYieldRanking.length === 0 ? (
+                      <div className="h-full flex flex-col items-center justify-center text-gray-400 opacity-50 space-y-2">
+                          <Icons.Trophy />
+                          <p className="text-xs font-bold text-center">加工実績データがありません。<br/>ナゲット製造画面から実績を記録してください。</p>
+                      </div>
+                  ) : (
+                      clientYieldRanking.map((client, idx) => (
+                          <div key={idx} className="flex items-center justify-between p-3 border border-gray-100 rounded-xl bg-gray-50 hover:bg-white hover:border-gray-200 transition shadow-sm">
+                              <div className="flex items-center gap-3">
+                                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${idx === 0 ? 'bg-yellow-100 text-yellow-700' : idx === 1 ? 'bg-gray-200 text-gray-700' : idx === 2 ? 'bg-orange-100 text-orange-800' : 'bg-white text-gray-400 border border-gray-200'}`}>
+                                      {idx + 1}
+                                  </div>
+                                  <div>
+                                      <p className="text-sm font-bold text-gray-900 truncate w-[120px]">{client.name}</p>
+                                      <p className="text-[9px] text-gray-500">総加工実績: {client.totalInput.toLocaleString()}kg</p>
+                                  </div>
+                              </div>
+                              <div className="text-right">
+                                  <p className={`text-sm font-black ${client.avgDiff > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                      {client.avgDiff > 0 ? '+' : ''}{client.avgDiff.toFixed(1)}%
+                                  </p>
+                                  <p className="text-[9px] text-gray-400">平均上振れ幅</p>
+                              </div>
+                          </div>
+                      ))
+                  )}
+              </div>
+              
+              <button onClick={() => onNavigate('PRODUCTION')} className="mt-4 w-full text-xs font-bold text-gray-500 bg-white border border-gray-200 py-2.5 rounded-lg hover:bg-gray-50 transition">
+                  製造・加工データを見る
+              </button>
+          </div>
+          
+      </div>
     </div>
   );
 };
