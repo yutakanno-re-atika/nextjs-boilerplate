@@ -2,8 +2,8 @@
 import React, { useMemo, useState } from 'react';
 
 const Icons = {
-  TrendingUp: () => <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>,
-  Scale: () => <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>,
+  TrendingUp: () => <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>,
+  Scale: () => <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>,
   Trophy: () => <svg className="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>,
   Copper: () => <svg className="w-6 h-6 text-orange-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>,
   ChevronRight: () => <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>,
@@ -22,9 +22,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
   // ==========================================
   const currentMonthStats = useMemo(() => {
     const now = new Date();
-    // 現実の「今月」と「先月」の文字列 (YYYY-MM形式)
     const thisMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    
     const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const lastMonthStr = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth() + 1).padStart(2, '0')}`;
 
@@ -125,31 +123,31 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
   const copperAssetValue = totalProducedCopper * currentCopperPrice;
 
   return (
-    <div className="flex flex-col h-full animate-in fade-in duration-300 max-w-7xl mx-auto w-full space-y-6">
+    <div className="flex flex-col h-full animate-in fade-in duration-300 max-w-7xl mx-auto w-full space-y-8 pb-8">
       
       {/* 🔴 ヘッダー領域 */}
-      <header className="flex justify-between items-end pb-2">
+      <header className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 pb-2 border-b border-gray-200">
         <div>
-          <h2 className="text-3xl font-black text-gray-900 tracking-tight">経営ダッシュボード</h2>
-          <p className="text-sm text-gray-500 mt-2">実績データとナゲット加工による顧客評価（トレーサビリティ）を可視化します。</p>
+          <h2 className="text-4xl font-black text-gray-900 tracking-tight">経営ダッシュボード</h2>
+          <p className="text-base text-gray-500 mt-2">過去の実績データと、ナゲット加工による顧客別の品質評価（トレーサビリティ）を可視化します。</p>
         </div>
       </header>
 
-      {/* 🔴 トップKPIカード群 (3等分グリッドに最適化) */}
+      {/* 🔴 トップKPIカード群 (3等分グリッド) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
           {/* 重量KPI */}
           <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-between relative overflow-hidden group">
               <div className="absolute -right-4 -top-4 opacity-5 group-hover:scale-110 transition duration-500"><Icons.Scale /></div>
-              <p className="text-sm font-bold text-gray-500 mb-2 flex items-center gap-2"><Icons.Scale /> 今月 ({currentMonthStats.monthNum}月) の買取重量</p>
+              <p className="text-base font-bold text-gray-600 mb-2 flex items-center gap-2"><Icons.Scale /> 今月 ({currentMonthStats.monthNum}月) の買取重量</p>
               <div>
                   <div className="flex items-baseline gap-1 mt-2">
                       <span className="text-4xl font-black text-gray-900">{currentMonthStats.thisWeight.toLocaleString()}</span>
-                      <span className="text-base text-gray-500 font-bold">kg</span>
+                      <span className="text-lg text-gray-500 font-bold">kg</span>
                   </div>
-                  {/* ★ 前月比バッジ */}
-                  <div className="mt-3">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold ${currentMonthStats.diffWeight >= 0 ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+                  {/* ★ 前月比バッジ (文字サイズUP) */}
+                  <div className="mt-4">
+                      <span className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-bold shadow-sm ${currentMonthStats.diffWeight >= 0 ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
                           {currentMonthStats.diffWeight >= 0 ? <Icons.ArrowUp /> : <Icons.ArrowDown />}
                           前月比 {currentMonthStats.diffWeight >= 0 ? '+' : ''}{currentMonthStats.diffWeight.toLocaleString()} kg
                       </span>
@@ -160,14 +158,14 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
           {/* 金額KPI */}
           <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-between relative overflow-hidden group">
               <div className="absolute -right-4 -top-4 opacity-5 group-hover:scale-110 transition duration-500"><Icons.TrendingUp /></div>
-              <p className="text-sm font-bold text-gray-500 mb-2 flex items-center gap-2"><Icons.TrendingUp /> 今月 ({currentMonthStats.monthNum}月) の買取金額</p>
+              <p className="text-base font-bold text-gray-600 mb-2 flex items-center gap-2"><Icons.TrendingUp /> 今月 ({currentMonthStats.monthNum}月) の買掛金額</p>
               <div>
                   <div className="flex items-baseline gap-1 mt-2">
                       <span className="text-4xl font-black text-gray-900">¥{currentMonthStats.thisAmount.toLocaleString()}</span>
                   </div>
-                  {/* ★ 前月比バッジ */}
-                  <div className="mt-3">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold ${currentMonthStats.diffAmount >= 0 ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-gray-100 text-gray-700 border border-gray-200'}`}>
+                  {/* ★ 前月比バッジ (文字サイズUP) */}
+                  <div className="mt-4">
+                      <span className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-bold shadow-sm ${currentMonthStats.diffAmount >= 0 ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-gray-100 text-gray-700 border border-gray-200'}`}>
                           {currentMonthStats.diffAmount >= 0 ? <Icons.ArrowUp /> : <Icons.ArrowDown />}
                           前月比 {currentMonthStats.diffAmount >= 0 ? '+' : ''}{currentMonthStats.diffAmount.toLocaleString()} 円
                       </span>
@@ -179,15 +177,15 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
           <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-6 rounded-2xl border border-gray-700 shadow-lg flex flex-col justify-between relative overflow-hidden group text-white">
               <div className="absolute -right-4 -top-4 opacity-10 group-hover:scale-110 transition duration-500"><Icons.Copper /></div>
               <div className="flex justify-between items-start mb-2">
-                  <p className="text-sm font-bold text-gray-300 flex items-center gap-2"><Icons.Copper /> ピカ銅 資産価値</p>
+                  <p className="text-base font-bold text-gray-300 flex items-center gap-2"><Icons.Copper /> ピカ銅 製品資産価値</p>
               </div>
               <div>
                   <div className="flex items-baseline gap-2 mt-2">
                       <span className="text-5xl font-black text-orange-400 tracking-tighter">¥{copperAssetValue.toLocaleString()}</span>
                   </div>
-                  <div className="mt-3 flex items-center gap-3">
-                      <span className="text-sm text-gray-300 font-bold">総在庫: {totalProducedCopper.toLocaleString()} kg</span>
-                      <span className="text-xs bg-gray-700 px-2 py-1 rounded-md text-gray-300 border border-gray-600">建値: ¥{currentCopperPrice}/kg</span>
+                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                      <span className="text-sm text-gray-300 font-bold bg-gray-800/50 px-2 py-1 rounded">総在庫: {totalProducedCopper.toLocaleString()} kg</span>
+                      <span className="text-sm bg-gray-700 px-3 py-1 rounded-md text-gray-200 border border-gray-600 font-bold">建値: ¥{currentCopperPrice}/kg</span>
                   </div>
               </div>
           </div>
@@ -197,13 +195,13 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-[450px]">
           
           {/* チャート */}
-          <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex flex-col">
-              <div className="flex justify-between items-center mb-8">
+          <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8 flex flex-col">
+              <div className="flex justify-between items-center mb-8 border-b border-gray-100 pb-4">
                   <div>
-                      <h3 className="text-lg font-bold text-gray-900">月別買取重量トレンド</h3>
-                      <span className="text-sm text-gray-500 mt-1 block">アーカイブ済みの完了データを集計しています</span>
+                      <h3 className="text-xl font-bold text-gray-900">月別買取重量トレンド</h3>
+                      <span className="text-sm text-gray-500 mt-1 block">アーカイブ済みの完了データを集計しています (単位: kg)</span>
                   </div>
-                  <select value={chartYear} onChange={(e) => setChartYear(Number(e.target.value))} className="bg-gray-50 border border-gray-200 text-gray-900 px-4 py-2 rounded-lg text-sm font-bold shadow-sm outline-none cursor-pointer hover:bg-gray-100 transition">
+                  <select value={chartYear} onChange={(e) => setChartYear(Number(e.target.value))} className="bg-white border border-gray-300 text-gray-900 px-5 py-2.5 rounded-xl text-base font-bold shadow-sm outline-none cursor-pointer hover:bg-gray-50 transition">
                       <option value={new Date().getFullYear()}>{new Date().getFullYear()}年度</option>
                       <option value={2025}>2025年度</option>
                   </select>
@@ -221,60 +219,62 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                   {/* 棒グラフ */}
                   {monthlyData.map((data) => (
                       <div key={data.month} className="flex-1 flex flex-col justify-end items-center group relative h-full">
-                          <div className="absolute -top-14 bg-gray-900 text-white text-xs py-1.5 px-3 rounded-md opacity-0 group-hover:opacity-100 transition whitespace-nowrap z-10 pointer-events-none shadow-lg">
-                              <span className="font-bold">{data.weight.toLocaleString()} kg</span><br/>
-                              <span className="text-gray-300">¥{data.amount.toLocaleString()}</span>
+                          {/* ツールチップの文字も大きく */}
+                          <div className="absolute -top-16 bg-gray-900 text-white text-sm py-2 px-3 rounded-lg opacity-0 group-hover:opacity-100 transition whitespace-nowrap z-10 pointer-events-none shadow-xl border border-gray-700 text-center">
+                              <span className="font-bold text-base">{data.weight.toLocaleString()} kg</span><br/>
+                              <span className="text-gray-400 font-bold">¥{data.amount.toLocaleString()}</span>
                           </div>
                           <div 
-                              className={`w-full max-w-[48px] rounded-t-sm transition-all duration-500 ${data.month === currentMonthStats.monthNum && chartYear === new Date().getFullYear() ? 'bg-[#D32F2F]' : 'bg-red-100 group-hover:bg-red-200'}`}
-                              style={{ height: `${data.weight > 0 ? (data.weight / maxWeight) * 100 : 0}%`, minHeight: data.weight > 0 ? '4px' : '0' }}
+                              className={`w-full max-w-[56px] rounded-t-md transition-all duration-500 ${data.month === currentMonthStats.monthNum && chartYear === new Date().getFullYear() ? 'bg-[#D32F2F] shadow-[0_0_15px_rgba(211,47,47,0.3)]' : 'bg-red-100 group-hover:bg-red-200'}`}
+                              style={{ height: `${data.weight > 0 ? (data.weight / maxWeight) * 100 : 0}%`, minHeight: data.weight > 0 ? '6px' : '0' }}
                           ></div>
-                          <span className="text-xs font-bold text-gray-500 mt-3">{data.month}月</span>
+                          <span className="text-sm font-bold text-gray-500 mt-4">{data.month}月</span>
                       </div>
                   ))}
               </div>
           </div>
 
           {/* ランキング */}
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex flex-col overflow-hidden">
-              <div className="mb-6">
-                  <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8 flex flex-col overflow-hidden">
+              <div className="mb-6 border-b border-gray-100 pb-4">
+                  <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                       <Icons.Trophy /> 優良顧客ランキング
                   </h3>
-                  <p className="text-xs text-gray-500 mt-2 leading-relaxed">
-                      ナゲット加工時の歩留まりが、当社のマスター設定より上振れした平均値で評価しています。
+                  <p className="text-sm text-gray-500 mt-2 leading-relaxed">
+                      ナゲット加工時の歩留まりが、マスター設定よりどれだけ上振れしたかの「平均値」で評価しています。
                   </p>
               </div>
               
-              <div className="flex-1 overflow-y-auto pr-2 space-y-3">
+              <div className="flex-1 overflow-y-auto pr-2 space-y-4">
                   {clientYieldRanking.length === 0 ? (
                       <div className="h-full flex flex-col items-center justify-center text-gray-400 opacity-60 space-y-3">
                           <Icons.Trophy />
-                          <p className="text-sm font-bold text-center leading-relaxed">加工実績データがありません。<br/>ナゲット製造から実績を記録してください。</p>
+                          <p className="text-base font-bold text-center leading-relaxed">加工実績データがありません。<br/>ナゲット製造から実績を記録してください。</p>
                       </div>
                   ) : (
                       clientYieldRanking.map((client, idx) => (
                           <div 
                               key={idx} 
                               onClick={() => onNavigate('CLIENT_DETAIL', client.name)}
-                              className="flex items-center justify-between p-4 border border-gray-100 rounded-xl bg-gray-50 hover:bg-red-50 hover:border-red-200 hover:shadow-md transition cursor-pointer group"
+                              className="flex items-center justify-between p-4 border border-gray-200 rounded-xl bg-gray-50 hover:bg-white hover:border-[#D32F2F] hover:shadow-md transition cursor-pointer group"
                           >
-                              <div className="flex items-center gap-3">
-                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shadow-sm ${idx === 0 ? 'bg-yellow-100 text-yellow-700 border border-yellow-200' : idx === 1 ? 'bg-gray-200 text-gray-700 border border-gray-300' : idx === 2 ? 'bg-orange-100 text-orange-800 border border-orange-200' : 'bg-white text-gray-400 border border-gray-200'}`}>
+                              <div className="flex items-center gap-4">
+                                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-black shadow-sm ${idx === 0 ? 'bg-yellow-100 text-yellow-700 border border-yellow-200' : idx === 1 ? 'bg-gray-200 text-gray-700 border border-gray-300' : idx === 2 ? 'bg-orange-100 text-orange-800 border border-orange-200' : 'bg-white text-gray-400 border border-gray-200'}`}>
                                       {idx + 1}
                                   </div>
                                   <div>
-                                      <p className="text-base font-bold text-gray-900 group-hover:text-[#D32F2F] transition truncate max-w-[120px]">{client.name}</p>
-                                      <p className="text-xs text-gray-500 mt-0.5">総加工: {client.totalInput.toLocaleString()}kg</p>
+                                      <p className="text-base font-bold text-gray-900 group-hover:text-[#D32F2F] transition truncate max-w-[140px]">{client.name}</p>
+                                      {/* 文字サイズを大きく */}
+                                      <p className="text-sm text-gray-500 mt-1 font-medium">総加工: <span className="font-bold">{client.totalInput.toLocaleString()}</span> kg</p>
                                   </div>
                               </div>
-                              <div className="text-right flex items-center gap-1">
+                              <div className="text-right flex items-center gap-2">
                                   <div>
-                                      <p className={`text-base font-black ${client.avgDiff > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                      <p className={`text-xl font-black ${client.avgDiff > 0 ? 'text-green-600' : 'text-red-600'}`}>
                                           {client.avgDiff > 0 ? '+' : ''}{client.avgDiff.toFixed(1)}%
                                       </p>
                                   </div>
-                                  <div className="opacity-0 group-hover:opacity-100 transition transform translate-x-[-5px] group-hover:translate-x-0">
+                                  <div className="text-gray-300 group-hover:text-[#D32F2F] transition transform translate-x-[-5px] group-hover:translate-x-0">
                                       <Icons.ChevronRight />
                                   </div>
                               </div>
