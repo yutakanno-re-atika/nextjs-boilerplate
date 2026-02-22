@@ -2,155 +2,141 @@
 import React, { useState } from 'react';
 
 const Icons = {
-  Calc: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
-  ArrowRight: () => <svg className="w-4 h-4 inline-block ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>,
-  DragGrip: () => <svg className="w-4 h-4 text-gray-300 cursor-grab active:cursor-grabbing" fill="currentColor" viewBox="0 0 24 24"><path d="M9 3H7v2h2V3zm0 4H7v2h2V7zm0 4H7v2h2v-2zm0 4H7v2h2v-2zm0 4H7v2h2v-2zm4-16h-2v2h2V3zm0 4h-2v2h2V7zm0 4h-2v2h2v-2zm0 4h-2v2h2v-2zm0 4h-2v2h2v-2z" /></svg>
+  Plus: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>,
+  ArrowRight: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>,
+  Check: () => <svg className="w-4 h-4 text-green-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>,
+  Archive: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>,
+  Calculator: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
 };
 
-export const AdminKanban = ({ data, localReservations, setLocalReservations, onOpenPos, onAddClick }: { data: any, localReservations: any[], setLocalReservations: any, onOpenPos: (resId: string) => void, onAddClick: () => void }) => {
-  const [isUpdatingStatus, setIsUpdatingStatus] = useState<string | null>(null);
-  const [dragOverCol, setDragOverCol] = useState<string | null>(null);
+export const AdminKanban = ({ data, localReservations, setLocalReservations, onOpenPos, onAddClick }: { data: any; localReservations: any[]; setLocalReservations: any; onOpenPos: (id: string) => void; onAddClick: () => void; }) => {
+  const [draggedId, setDraggedId] = useState<string | null>(null);
 
-  const reservedList = localReservations.filter((r: any) => r.status === 'RESERVED');
-  const processingList = localReservations.filter((r: any) => r.status === 'PROCESSING' || r.status === 'ARRIVED');
-  const completedList = localReservations.filter((r: any) => r.status === 'COMPLETED');
+  const updateStatus = async (id: string, newStatus: string) => {
+    // 画面上のステータスを即座に更新 (ラグなし)
+    const updated = localReservations.map(r => r.id === id ? { ...r, status: newStatus } : r);
+    setLocalReservations(updated);
 
-  const handleUpdateStatus = async (resId: string, nextStatus: string) => {
-      setLocalReservations((prev: any[]) => prev.map(res => res.id === resId ? { ...res, status: nextStatus } : res));
-      setIsUpdatingStatus(resId);
-      try {
-          const payload = { action: 'UPDATE_RESERVATION_STATUS', reservationId: resId, status: nextStatus };
-          await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      } catch (error) { alert('通信エラーが発生しました。'); }
-      setIsUpdatingStatus(null);
-  };
-
-  const handleDragStart = (e: React.DragEvent, resId: string) => { e.dataTransfer.setData('resId', resId); e.dataTransfer.effectAllowed = 'move'; };
-  const handleDragOver = (e: React.DragEvent, colStatus: string) => { e.preventDefault(); setDragOverCol(colStatus); };
-  const handleDragLeave = () => { setDragOverCol(null); };
-  const handleDrop = (e: React.DragEvent, newStatus: string) => {
-      e.preventDefault(); setDragOverCol(null);
-      const resId = e.dataTransfer.getData('resId');
-      if (resId) { handleUpdateStatus(resId, newStatus); }
-  };
-
-  const renderCard = (res: any, currentStatus: string) => {
-      let items: any[] = [];
-      try { 
-          let temp = res.items;
-          if (typeof temp === 'string') temp = JSON.parse(temp);
-          if (typeof temp === 'string') temp = JSON.parse(temp);
-          if (Array.isArray(temp)) items = temp;
-      } catch(e){}
-      
-      const totalWeight = items ? items.reduce((sum:number, i:any) => sum + (Number(i.weight)||0), 0) : 0;
-      const isMember = res.memberId && res.memberId !== 'GUEST';
-      
-      let hasWire = false;
-      let hasCasting = false;
-      items.forEach((it:any) => {
-          const isWire = data?.wires?.some((w:any) => w.name === it.product) || it.product.includes('線') || it.product.includes('MIX');
-          if (isWire) hasWire = true; else hasCasting = true;
+    // 裏側(GAS)へ非同期で送信
+    try {
+      await fetch('/api/gas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'UPDATE_RESERVATION_STATUS', reservationId: id, status: newStatus })
       });
-
-      let timeStr = "日時不明";
-      try {
-          if (res.visitDate) {
-              const d = new Date(res.visitDate);
-              timeStr = !isNaN(d.getTime()) ? `${d.getMonth() + 1}/${d.getDate()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}` : String(res.visitDate).replace('T', ' ').substring(0, 16);
-          }
-      } catch(e){}
-
-      return (
-        <div 
-          key={res.id} 
-          draggable
-          onDragStart={(e) => handleDragStart(e, res.id)}
-          className={`bg-white p-3 rounded-xl shadow-sm border transition relative overflow-hidden group cursor-grab active:cursor-grabbing ${isUpdatingStatus === res.id ? 'opacity-50 scale-95 border-dashed border-gray-400' : 'border-gray-100 hover:shadow-md hover:border-gray-300'}`}
-        >
-            <div className={`absolute left-0 top-0 bottom-0 w-1 ${currentStatus === 'PROCESSING' ? 'bg-[#D32F2F]' : currentStatus === 'COMPLETED' ? 'bg-blue-500' : isMember ? 'bg-yellow-400' : 'bg-gray-400'}`}></div>
-            <div className="pl-2">
-                <div className="flex justify-between items-center mb-1">
-                    <div className="flex items-center gap-1">
-                        <Icons.DragGrip />
-                        <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${isMember ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-600'}`}>{isMember ? '会員' : '非会員'}</span>
-                    </div>
-                    <span className="text-[10px] text-gray-500 font-bold">{timeStr}</span>
-                </div>
-                
-                <p className="font-bold text-gray-900 text-sm truncate pl-5 mb-1">{res.memberName}</p>
-                
-                <div className="flex gap-1 pl-5 mb-2">
-                    {hasWire && <span className="text-[9px] bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded font-bold border border-indigo-100">🔌 剥線・ナゲット</span>}
-                    {hasCasting && <span className="text-[9px] bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded font-bold border border-emerald-100">📦 非鉄ストック</span>}
-                </div>
-
-                <div className="mb-2 bg-gray-50 rounded p-1.5 border border-gray-100 max-h-16 overflow-y-auto ml-5">
-                    {items.map((it:any, idx:number) => (
-                        <p key={idx} className="text-[10px] text-gray-600 truncate flex justify-between"><span>{it.product}</span><span className="font-mono">{it.weight}kg</span></p>
-                    ))}
-                    <div className="border-t border-gray-200 mt-1 pt-1 text-right"><span className="text-[10px] font-bold text-gray-900">計 {totalWeight} kg</span></div>
-                </div>
-                {res.memo && <p className={`text-[9px] mb-2 p-1 rounded font-bold truncate ml-5 ${res.memo.includes('【新規】') ? 'bg-red-50 text-[#D32F2F]' : 'bg-yellow-50 text-yellow-800'}`}>{res.memo}</p>}
-                
-                <div className="ml-5">
-                    {currentStatus === 'RESERVED' && (
-                        <button onClick={() => handleUpdateStatus(res.id, 'PROCESSING')} disabled={isUpdatingStatus === res.id} className="w-full bg-red-50 text-[#D32F2F] py-1.5 rounded-lg text-xs font-bold hover:bg-[#D32F2F] hover:text-white transition flex items-center justify-center">
-                            {isUpdatingStatus === res.id ? '移動中...' : <>検収・計量へ <Icons.ArrowRight /></>}
-                        </button>
-                    )}
-                    {currentStatus === 'PROCESSING' && (
-                        <button onClick={() => onOpenPos(res.id)} disabled={isUpdatingStatus === res.id} className="w-full bg-red-50 text-[#D32F2F] py-1.5 rounded-lg text-xs font-bold hover:bg-[#D32F2F] hover:text-white transition flex items-center justify-center border border-red-100">
-                            <Icons.Calc /> レジで計量を確定する
-                        </button>
-                    )}
-                </div>
-            </div>
-        </div>
-      );
+    } catch (e) {
+      console.error('Failed to update status in DB', e);
+    }
   };
+
+  const onDragStart = (e: React.DragEvent, id: string) => {
+    setDraggedId(id);
+    e.dataTransfer.setData('text/plain', id);
+  };
+
+  const onDragOver = (e: React.DragEvent) => { e.preventDefault(); };
+
+  const onDrop = (e: React.DragEvent, newStatus: string) => {
+    e.preventDefault();
+    const id = e.dataTransfer.getData('text/plain');
+    if (id && id !== draggedId) { updateStatus(id, newStatus); }
+    setDraggedId(null);
+  };
+
+  // ★ アーカイブ処理（完了としてボードから消す）
+  const handleArchive = (id: string) => {
+      if(window.confirm('この荷物はナゲット加工・または出荷が完了しましたか？\n「OK」を押すとカンバンから非表示になり、実績データとして保存されます。')) {
+          updateStatus(id, 'ARCHIVED');
+      }
+  };
+
+  const parseItems = (items: any) => {
+    try {
+      let parsed = items;
+      if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+      if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch(e) { return []; }
+  };
+
+  // ★ ボードに表示するのは「ARCHIVED」以外のものだけ
+  const columns = [
+    { id: 'RESERVED', title: '① 受付・来店待ち', color: 'border-blue-200 bg-blue-50/30' },
+    { id: 'IN_PROGRESS', title: '② 検収・計量中', color: 'border-yellow-200 bg-yellow-50/30' },
+    { id: 'COMPLETED', title: '③ ヤード在庫 (加工/出荷待ち)', color: 'border-green-200 bg-green-50/30' }
+  ];
 
   return (
-      <div className="flex flex-col h-full animate-in fade-in duration-300">
-          <header className="mb-6 flex justify-between items-center flex-shrink-0">
-            <div>
-                <h2 className="text-2xl font-bold text-gray-900">現場カンバン</h2>
-                <p className="text-xs text-gray-500 mt-1">カードをドラッグして次の列へ移動できます。</p>
+    <div className="flex flex-col h-full animate-in fade-in duration-300">
+      <header className="mb-6 flex justify-between items-center flex-shrink-0">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">現場カンバン (進行管理)</h2>
+          <p className="text-sm text-gray-500 mt-1">ドラッグ＆ドロップで状況を更新し、処理が終わったものは「アーカイブ」して実績化します。</p>
+        </div>
+        <button onClick={onAddClick} className="bg-[#D32F2F] text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-red-700 transition flex items-center gap-2 shadow-sm">
+          <Icons.Plus /> 飛び込み受付・新規登録
+        </button>
+      </header>
+
+      <div className="flex-1 flex gap-6 overflow-x-auto pb-4 min-h-0">
+        {columns.map(col => (
+          <div key={col.id} className={`flex-1 min-w-[320px] rounded-2xl border ${col.color} flex flex-col overflow-hidden shadow-sm`} onDragOver={onDragOver} onDrop={(e) => onDrop(e, col.id)}>
+            <div className="p-4 border-b border-gray-200/50 bg-white/50 backdrop-blur-sm flex justify-between items-center flex-shrink-0">
+              <h3 className="font-bold text-gray-800">{col.title}</h3>
+              <span className="bg-white text-gray-600 px-2.5 py-1 rounded-full text-xs font-bold border border-gray-200 shadow-sm">
+                {localReservations.filter(r => r.status === col.id).length}
+              </span>
             </div>
-            <button onClick={onAddClick} className="bg-gray-900 text-white px-5 py-2.5 rounded-lg text-sm font-bold hover:bg-[#D32F2F] transition shadow-sm">＋ 飛込受付</button>
-          </header>
-          <div className="flex-1 flex gap-5 overflow-x-auto min-h-0 pb-4">
-              
-              <div 
-                  className={`flex-none w-[300px] flex flex-col bg-gray-100/60 rounded-2xl border transition-all duration-200 overflow-hidden ${dragOverCol === 'RESERVED' ? 'border-gray-500 shadow-lg scale-[1.02] bg-gray-200/50' : 'border-gray-200'}`}
-                  onDragOver={(e) => handleDragOver(e, 'RESERVED')} onDragLeave={handleDragLeave} onDrop={(e) => handleDrop(e, 'RESERVED')}
-              >
-                  <div className="p-3.5 border-b border-gray-200 flex justify-between items-center bg-white shadow-sm z-10">
-                      <span className="font-bold text-sm text-gray-800">① 来場待ち / 受付済</span><span className="bg-gray-200 text-gray-700 text-xs px-2.5 py-0.5 rounded-full font-bold">{reservedList.length}</span>
-                  </div>
-                  <div className="flex-1 p-3 space-y-3 overflow-y-auto">{reservedList.length === 0 ? <p className="text-xs text-gray-400 text-center py-8">現在予定はありません</p> : reservedList.map(res => renderCard(res, 'RESERVED'))}</div>
-              </div>
+            
+            <div className="p-4 flex-1 overflow-y-auto space-y-4">
+              {localReservations.filter(r => r.status === col.id).map(res => {
+                const items = parseItems(res.items);
+                return (
+                  <div key={res.id} draggable onDragStart={(e) => onDragStart(e, res.id)} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md transition group relative">
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-[10px] font-mono text-gray-400">{res.visitDate ? String(res.visitDate).substring(5, 16) : ''}</span>
+                      <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-bold">{res.id}</span>
+                    </div>
+                    <h4 className="font-bold text-gray-900 mb-3">{res.memberName}</h4>
+                    
+                    <div className="space-y-1.5 mb-4">
+                      {items.length > 0 ? items.map((item: any, idx: number) => (
+                        <div key={idx} className="flex justify-between text-xs items-center bg-gray-50 p-1.5 rounded border border-gray-100">
+                          <span className="text-gray-700 truncate pr-2 flex-1">{item.productName || item.product}</span>
+                          <span className="font-bold text-[#D32F2F] whitespace-nowrap">{item.weight ? `${item.weight} kg` : '未計量'}</span>
+                        </div>
+                      )) : (
+                        <p className="text-xs text-gray-400 bg-gray-50 p-1.5 rounded border border-gray-100 text-center">品目未登録</p>
+                      )}
+                    </div>
 
-              <div 
-                  className={`flex-none w-[300px] flex flex-col bg-red-50/40 rounded-2xl border transition-all duration-200 overflow-hidden ${dragOverCol === 'PROCESSING' ? 'border-[#D32F2F] shadow-lg scale-[1.02] bg-red-100/60' : 'border-red-100'}`}
-                  onDragOver={(e) => handleDragOver(e, 'PROCESSING')} onDragLeave={handleDragLeave} onDrop={(e) => handleDrop(e, 'PROCESSING')}
-              >
-                  <div className="p-3.5 border-b-2 border-b-[#D32F2F] flex justify-between items-center bg-white shadow-sm z-10">
-                      <span className="font-bold text-sm text-[#D32F2F]">② 検収・計量中</span><span className="bg-[#D32F2F] text-white text-xs px-2.5 py-0.5 rounded-full font-bold shadow-sm">{processingList.length}</span>
+                    <div className="flex justify-between items-end pt-3 border-t border-gray-100">
+                      <p className="text-sm font-black text-gray-900">¥{(res.totalEstimate || 0).toLocaleString()}</p>
+                      
+                      {/* ステータスに応じたアクションボタン */}
+                      {col.id === 'RESERVED' && (
+                          <button onClick={() => updateStatus(res.id, 'IN_PROGRESS')} className="text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition flex items-center gap-1">
+                              計量へ進む <Icons.ArrowRight />
+                          </button>
+                      )}
+                      {col.id === 'IN_PROGRESS' && (
+                          <button onClick={() => onOpenPos(res.id)} className="text-xs font-bold text-white bg-gray-900 hover:bg-black px-3 py-1.5 rounded-lg transition flex items-center gap-1 shadow-md">
+                              <Icons.Calculator /> レジで計量・確定
+                          </button>
+                      )}
+                      {col.id === 'COMPLETED' && (
+                          <button onClick={() => handleArchive(res.id)} className="text-[10px] font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 hover:text-gray-800 px-2.5 py-1.5 rounded border border-gray-200 transition flex items-center gap-1">
+                              <Icons.Archive /> アーカイブ (実績へ)
+                          </button>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex-1 p-3 space-y-3 overflow-y-auto">{processingList.length === 0 ? <p className="text-xs text-gray-400 text-center py-8">現在計量中はありません</p> : processingList.map(res => renderCard(res, 'PROCESSING'))}</div>
-              </div>
-
-              <div 
-                  className={`flex-none w-[300px] flex flex-col bg-blue-50/40 rounded-2xl border transition-all duration-200 overflow-hidden ${dragOverCol === 'COMPLETED' ? 'border-blue-500 shadow-lg scale-[1.02] bg-blue-100/60' : 'border-blue-100'}`}
-                  onDragOver={(e) => handleDragOver(e, 'COMPLETED')} onDragLeave={handleDragLeave} onDrop={(e) => handleDrop(e, 'COMPLETED')}
-              >
-                  <div className="p-3.5 border-b-2 border-b-blue-500 flex justify-between items-center bg-white shadow-sm z-10">
-                      <span className="font-bold text-sm text-blue-600">③ 計量完了 (ヤード保管)</span><span className="bg-blue-500 text-white text-xs px-2.5 py-0.5 rounded-full font-bold shadow-sm">{completedList.length}</span>
-                  </div>
-                  <div className="flex-1 p-3 space-y-3 overflow-y-auto">{completedList.length === 0 ? <p className="text-xs text-blue-300 text-center py-8">現在完了した荷物はありません</p> : completedList.map(res => renderCard(res, 'COMPLETED'))}</div>
-              </div>
+                );
+              })}
+            </div>
           </div>
+        ))}
       </div>
+    </div>
   );
 };
