@@ -7,7 +7,8 @@ import { AdminHome } from './AdminHome';
 import { AdminKanban } from './AdminKanban';
 import { AdminPos } from './AdminPos';
 import { AdminCompetitor } from './AdminCompetitor';
-import { AdminProduction } from './AdminProduction'; // ★ 製造ダッシュボードを追加
+import { AdminProduction } from './AdminProduction';
+import { AdminDatabase } from './AdminDatabase';
 
 const Icons = {
   Home: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
@@ -54,7 +55,7 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
             
             {/* ★ ここに追加されました！ */}
             <button onClick={()=>handleNavigate('PRODUCTION')} className={`w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition flex items-center gap-3 ${adminTab==='PRODUCTION' ? 'bg-[#111] text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}><Icons.Factory /> ナゲット製造・在庫</button>
-            
+            <button onClick={()=>handleNavigate('DATABASE')} className={`w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition flex items-center gap-3 ${adminTab==='DATABASE' ? 'bg-[#111] text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}><Icons.Database /> DB管理・マスタ設定</button>
             <button onClick={()=>handleNavigate('COMPETITOR')} className={`w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition flex items-center gap-3 ${adminTab==='COMPETITOR' ? 'bg-[#111] text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}><Icons.Radar /> 競合価格レーダー</button>
         </nav>
         {onLogout && (
@@ -69,7 +70,7 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
          {adminTab === 'HOME' && <AdminHome data={data} localReservations={localReservations} onNavigate={handleNavigate} />}
          {adminTab === 'OPERATIONS' && <AdminKanban data={data} localReservations={localReservations} setLocalReservations={setLocalReservations} onOpenPos={(resId) => handleNavigate('POS', resId)} onAddClick={() => handleNavigate('POS')} />}
          {adminTab === 'POS' && <AdminPos data={data} editingResId={editingResId} localReservations={localReservations} onSuccess={handlePosSuccess} onClear={() => setEditingResId(null)} />}
-         
+         {adminTab === 'DATABASE' && <AdminDatabase data={data} />}
          {/* ★ ここに追加されました！ */}
          {adminTab === 'PRODUCTION' && <AdminProduction data={data} localReservations={localReservations} />}
          
