@@ -14,14 +14,14 @@ export const AdminClientDetail = ({ data, clientName, onBack }: { data: any, cli
   const clientReservations = useMemo(() => {
       return (data?.reservations || [])
           .filter((r: any) => r.memberName === clientName && (r.status === 'COMPLETED' || r.status === 'ARCHIVED'))
-          .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          .sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
   }, [data?.reservations, clientName]);
 
   // 該当顧客のナゲット加工履歴
   const clientProductions = useMemo(() => {
       return (data?.productions || [])
           .filter((p: any) => p.memberName === clientName)
-          .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+          .sort((a: any, b: any) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
   }, [data?.productions, clientName]);
 
   // 総計データの算出
@@ -105,7 +105,8 @@ export const AdminClientDetail = ({ data, clientName, onBack }: { data: any, cli
                       clientReservations.map(res => (
                           <div key={res.id} className="border border-gray-100 rounded-xl p-3 bg-gray-50">
                               <div className="flex justify-between text-xs text-gray-500 mb-2">
-                                  <span>{res.createdAt.substring(0, 16)}</span>
+                                  {/* ★ ここを修正（undefined対策） */}
+                                  <span>{res.createdAt ? String(res.createdAt).substring(0, 16) : '日時不明'}</span>
                                   <span className="font-mono">{res.id}</span>
                               </div>
                               <p className="text-lg font-black text-gray-900 text-right mb-2">¥{Number(res.totalEstimate).toLocaleString()}</p>
@@ -136,6 +137,9 @@ export const AdminClientDetail = ({ data, clientName, onBack }: { data: any, cli
                           let expected = master ? Number(master.ratio) : 0;
                           if (expected === 0 && prod.materialName) {
                               if (prod.materialName.includes('80')) expected = 80;
+                              else if (prod.materialName.includes('70')) expected = 70;
+                              else if (prod.materialName.includes('60')) expected = 60;
+                              else if (prod.materialName.includes('50')) expected = 50;
                               else if (prod.materialName.includes('40')) expected = 40;
                               else if (prod.materialName.includes('雑線')) expected = 35;
                           }
@@ -144,7 +148,8 @@ export const AdminClientDetail = ({ data, clientName, onBack }: { data: any, cli
                           return (
                               <div key={prod.id} className="border border-gray-100 rounded-xl p-3 hover:bg-gray-50 transition">
                                   <div className="flex justify-between text-[10px] text-gray-500 mb-1">
-                                      <span>{prod.date.substring(0, 16)}</span>
+                                      {/* ★ ここを修正（undefined対策） */}
+                                      <span>{prod.date ? String(prod.date).substring(0, 16) : '日時不明'}</span>
                                       <span className="font-mono">元荷物: {prod.reservationId}</span>
                                   </div>
                                   <div className="flex justify-between items-center mb-2">
