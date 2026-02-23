@@ -9,24 +9,18 @@ const Icons = {
   ChevronRight: () => <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>,
   ArrowUp: () => <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>,
   ArrowDown: () => <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>,
-  Banknotes: () => <svg className="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-  Tag: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>
+  Banknotes: () => <svg className="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
 };
 
 export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, localReservations: any[], onNavigate: any }) => {
   const [chartYear, setChartYear] = useState<number>(new Date().getFullYear());
-  
-  // ★ 粗利率（会社として何％抜くか）のシミュレーション用ステート（初期値15%）
   const [targetMargin, setTargetMargin] = useState<number>(15);
 
   const currentCopperPrice = data?.market?.copper?.price || 0;
   const currentZincPrice = data?.market?.zinc?.price || 0;
-  const currentBrassPrice = data?.market?.brass?.price || 0;
-  
   const productions = data?.productions || [];
   const wiresMaster = data?.wires || [];
 
-  // 1. 今月と先月のデータを比較計算
   const currentMonthStats = useMemo(() => {
     const now = new Date();
     const thisMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -48,15 +42,9 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
       else if (mStr === lastMonthStr) { lastWeight += totalW; lastAmount += (Number(res.totalEstimate) || 0); }
     });
 
-    return {
-      monthNum: now.getMonth() + 1,
-      thisWeight, thisAmount,
-      diffWeight: thisWeight - lastWeight,
-      diffAmount: thisAmount - lastAmount
-    };
+    return { monthNum: now.getMonth() + 1, thisWeight, thisAmount, diffWeight: thisWeight - lastWeight, diffAmount: thisAmount - lastAmount };
   }, [localReservations]);
 
-  // 2. 月別チャートデータ
   const monthlyData = useMemo(() => {
     const months = Array.from({ length: 12 }, (_, i) => ({ month: i + 1, weight: 0, amount: 0 }));
     localReservations.filter(r => r.status === 'COMPLETED' || r.status === 'ARCHIVED').forEach(res => {
@@ -77,7 +65,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
   }, [localReservations, chartYear]);
   const maxWeight = Math.max(...monthlyData.map(d => d.weight), 100);
 
-  // 3. 顧客別歩留まりランキング
   const clientYieldRanking = useMemo(() => {
       const clientStats: Record<string, { totalInput: number, yieldDiffSum: number, count: number }> = {};
       productions.forEach((p: any) => {
@@ -101,39 +88,28 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
               clientStats[name].totalInput += Number(p.inputWeight);
           }
       });
-      return Object.entries(clientStats)
-          .map(([name, stats]) => ({ name, totalInput: stats.totalInput, avgDiff: stats.count > 0 ? (stats.yieldDiffSum / stats.count) : 0 }))
-          .filter(c => c.count !== 0)
-          .sort((a, b) => b.avgDiff - a.avgDiff).slice(0, 5);
+      return Object.entries(clientStats).map(([name, stats]) => ({ name, totalInput: stats.totalInput, avgDiff: stats.count > 0 ? (stats.yieldDiffSum / stats.count) : 0 }))
+          .filter(c => c.count !== 0).sort((a, b) => b.avgDiff - a.avgDiff).slice(0, 5);
   }, [productions, wiresMaster]);
 
   const totalProducedCopper = productions.reduce((sum: number, p: any) => sum + (Number(p.outputCopper) || 0), 0);
   const copperAssetValue = totalProducedCopper * currentCopperPrice;
 
-  // ★ 4. 建値連動：本日の適正買取単価の自動計算
+  // ★ リスト生成時に maker, sq, core を含める
   const currentPricesList = useMemo(() => {
       if (currentCopperPrice === 0) return [];
-      const userMarginRatio = (100 - targetMargin) / 100; // 例: 15%抜くなら 0.85
-      
+      const userMarginRatio = (100 - targetMargin) / 100; 
       return wiresMaster.map((w: any) => {
           const ratio = Number(w.ratio) || 0;
-          const theoreticalValue = currentCopperPrice * (ratio / 100); // 銅の含有価値
-          const purchasePrice = Math.floor(theoreticalValue * userMarginRatio); // 利益を抜いた買取単価
-          const profit = Math.floor(theoreticalValue - purchasePrice); // 1kgあたりの粗利
-          
-          return {
-              name: w.name,
-              ratio: ratio,
-              theoreticalValue,
-              purchasePrice,
-              profit
-          };
-      }).sort((a, b) => b.ratio - a.ratio); // 銅率が高い順
+          const theoreticalValue = currentCopperPrice * (ratio / 100); 
+          const purchasePrice = Math.floor(theoreticalValue * userMarginRatio); 
+          const profit = Math.floor(theoreticalValue - purchasePrice); 
+          return { name: w.name, maker: w.maker, sq: w.sq, core: w.core, ratio: ratio, theoreticalValue, purchasePrice, profit };
+      }).sort((a, b) => b.ratio - a.ratio); 
   }, [currentCopperPrice, wiresMaster, targetMargin]);
 
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-300 max-w-7xl mx-auto w-full space-y-8 pb-8">
-      
       <header className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 pb-2 border-b border-gray-200">
         <div>
           <h2 className="text-4xl font-black text-gray-900 tracking-tight">経営ダッシュボード</h2>
@@ -141,10 +117,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
         </div>
       </header>
 
-      {/* 🔴 トップKPI：建値と資産を最優先に配置 (4等分グリッドに変更) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          
-          {/* 1. 本日の主要建値ボード */}
           <div className="bg-gradient-to-br from-[#D32F2F] to-red-800 p-6 rounded-2xl shadow-lg flex flex-col justify-between relative overflow-hidden text-white">
               <div className="absolute -right-4 -top-4 opacity-10"><Icons.Banknotes /></div>
               <p className="text-base font-bold text-red-100 mb-2 flex items-center gap-2"><Icons.Banknotes /> 本日の主要建値</p>
@@ -160,7 +133,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
               </div>
           </div>
 
-          {/* 2. 資産価値KPI */}
           <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-6 rounded-2xl border border-gray-700 shadow-lg flex flex-col justify-between relative overflow-hidden group text-white">
               <div className="absolute -right-4 -top-4 opacity-10 group-hover:scale-110 transition duration-500"><Icons.Copper /></div>
               <p className="text-base font-bold text-gray-300 mb-2 flex items-center gap-2"><Icons.Copper /> ピカ銅 製品資産</p>
@@ -174,7 +146,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
               </div>
           </div>
 
-          {/* 3. 重量KPI */}
           <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-between relative overflow-hidden group">
               <div className="absolute -right-4 -top-4 opacity-5 group-hover:scale-110 transition duration-500"><Icons.Scale /></div>
               <p className="text-sm font-bold text-gray-600 mb-2 flex items-center gap-2"><Icons.Scale /> 今月 ({currentMonthStats.monthNum}月) 買取重量</p>
@@ -185,14 +156,12 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                   </div>
                   <div className="mt-3">
                       <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold shadow-sm ${currentMonthStats.diffWeight >= 0 ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
-                          {currentMonthStats.diffWeight >= 0 ? <Icons.ArrowUp /> : <Icons.ArrowDown />}
-                          前月比 {currentMonthStats.diffWeight >= 0 ? '+' : ''}{currentMonthStats.diffWeight.toLocaleString()} kg
+                          {currentMonthStats.diffWeight >= 0 ? <Icons.ArrowUp /> : <Icons.ArrowDown />}前月比 {currentMonthStats.diffWeight >= 0 ? '+' : ''}{currentMonthStats.diffWeight.toLocaleString()} kg
                       </span>
                   </div>
               </div>
           </div>
           
-          {/* 4. 金額KPI */}
           <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-between relative overflow-hidden group">
               <div className="absolute -right-4 -top-4 opacity-5 group-hover:scale-110 transition duration-500"><Icons.TrendingUp /></div>
               <p className="text-sm font-bold text-gray-600 mb-2 flex items-center gap-2"><Icons.TrendingUp /> 今月 ({currentMonthStats.monthNum}月) 買掛金額</p>
@@ -202,21 +171,16 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                   </div>
                   <div className="mt-3">
                       <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold shadow-sm ${currentMonthStats.diffAmount >= 0 ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-gray-100 text-gray-700 border border-gray-200'}`}>
-                          {currentMonthStats.diffAmount >= 0 ? <Icons.ArrowUp /> : <Icons.ArrowDown />}
-                          前月比 {currentMonthStats.diffAmount >= 0 ? '+' : ''}{currentMonthStats.diffAmount.toLocaleString()} 円
+                          {currentMonthStats.diffAmount >= 0 ? <Icons.ArrowUp /> : <Icons.ArrowDown />}前月比 {currentMonthStats.diffAmount >= 0 ? '+' : ''}{currentMonthStats.diffAmount.toLocaleString()} 円
                       </span>
                   </div>
               </div>
           </div>
-
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
-          
-          {/* 左側カラム：チャート と 買取単価表 */}
           <div className="lg:col-span-2 flex flex-col gap-6">
               
-              {/* 月別チャート */}
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8 flex flex-col">
                   <div className="flex justify-between items-center mb-8 border-b border-gray-100 pb-4">
                       <div>
@@ -228,7 +192,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                           <option value={2025}>2025年度</option>
                       </select>
                   </div>
-                  
                   <div className="flex-1 flex items-end gap-3 sm:gap-6 mt-4 relative h-[250px]">
                       <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-10">
                           <div className="border-t border-gray-900 w-full h-0"></div><div className="border-t border-gray-900 w-full h-0"></div><div className="border-t border-gray-900 w-full h-0"></div><div className="border-t border-gray-900 w-full h-0"></div>
@@ -249,7 +212,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                   </div>
               </div>
 
-              {/* ★ 新設：建値連動・本日の買取基準単価表 */}
+              {/* 建値連動・買取単価表（詳細情報バッジ付き） */}
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col overflow-hidden">
                   <div className="p-6 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
                       <div>
@@ -259,7 +222,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                           <p className="text-sm text-gray-500 mt-1">銅建値({currentCopperPrice}円) × 歩留まり% から自動算出</p>
                       </div>
                       <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-xl border border-gray-200 shadow-sm">
-                          <label className="text-sm font-bold text-gray-700">目標粗利(抜く割合):</label>
+                          <label className="text-sm font-bold text-gray-700">目標粗利:</label>
                           <div className="flex items-center gap-2">
                               <input type="range" min="5" max="30" step="1" value={targetMargin} onChange={(e) => setTargetMargin(Number(e.target.value))} className="w-24 accent-[#D32F2F]" />
                               <span className="text-lg font-black text-[#D32F2F] w-10 text-right">{targetMargin}%</span>
@@ -267,23 +230,31 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                       </div>
                   </div>
                   
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
                       <table className="w-full text-left border-collapse">
-                          <thead className="bg-white border-b border-gray-100">
+                          <thead className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
                               <tr>
-                                  <th className="p-4 text-sm font-bold text-gray-500">品目名</th>
+                                  <th className="p-4 text-sm font-bold text-gray-500">品目名 / 詳細</th>
                                   <th className="p-4 text-sm font-bold text-gray-500 text-center">銅率 (歩留)</th>
                                   <th className="p-4 text-sm font-bold text-gray-500 text-right">含有価値</th>
                                   <th className="p-4 text-sm font-bold text-[#D32F2F] text-right">適正買取単価</th>
                                   <th className="p-4 text-sm font-bold text-gray-500 text-right">想定粗利/kg</th>
                               </tr>
                           </thead>
-                          <tbody className="divide-y divide-gray-50">
+                          <tbody className="divide-y divide-gray-100">
                               {currentPricesList.length === 0 ? (
                                   <tr><td colSpan={5} className="p-8 text-center text-gray-400 font-bold">建値が取得できていません</td></tr>
                               ) : currentPricesList.map((item, idx) => (
                                   <tr key={idx} className="hover:bg-gray-50 transition">
-                                      <td className="p-4 font-bold text-gray-900 text-base">{item.name}</td>
+                                      {/* ★ ここに詳細情報を追加 */}
+                                      <td className="p-4">
+                                          <div className="font-bold text-gray-900 text-base">{item.name}</div>
+                                          <div className="text-xs text-gray-500 mt-1 flex flex-wrap gap-1.5 font-medium">
+                                              {item.maker && <span className="bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">{item.maker}</span>}
+                                              {item.sq && <span className="bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">{item.sq}</span>}
+                                              {item.core && <span className="bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">{item.core}</span>}
+                                          </div>
+                                      </td>
                                       <td className="p-4 text-center">
                                           <span className="bg-gray-100 text-gray-700 px-2.5 py-1 rounded-md text-sm font-bold border border-gray-200">{item.ratio}%</span>
                                       </td>
@@ -321,8 +292,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                   ) : (
                       clientYieldRanking.map((client, idx) => (
                           <div 
-                              key={idx} 
-                              onClick={() => onNavigate('CLIENT_DETAIL', client.name)}
+                              key={idx} onClick={() => onNavigate('CLIENT_DETAIL', client.name)}
                               className="flex items-center justify-between p-4 border border-gray-200 rounded-xl bg-gray-50 hover:bg-white hover:border-[#D32F2F] hover:shadow-md transition cursor-pointer group"
                           >
                               <div className="flex items-center gap-4">
@@ -349,7 +319,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                   )}
               </div>
           </div>
-          
       </div>
     </div>
   );
