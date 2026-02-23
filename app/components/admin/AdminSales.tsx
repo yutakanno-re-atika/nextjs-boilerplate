@@ -12,14 +12,13 @@ const Icons = {
 };
 
 export const AdminSales = ({ data }: { data: any }) => {
-  // 検索・フィルター用ステート
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPriority, setFilterPriority] = useState('');
-  const [filterStatus, setFilterStatus] = useState('未確認'); // デフォルトは「未確認」を表示
+  // ★ 初期値を「未確認」から「空っぽ（全件表示）」に変更しました
+  const [filterStatus, setFilterStatus] = useState(''); 
   const [filterArea, setFilterArea] = useState('');
   const [filterIndustry, setFilterIndustry] = useState('');
 
-  // 編集用ステート
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editStatus, setEditStatus] = useState('');
   const [editMemo, setEditMemo] = useState('');
@@ -27,9 +26,6 @@ export const AdminSales = ({ data }: { data: any }) => {
 
   const targets = data?.salesTargets || [];
 
-  // ==========================================
-  // 1. ダッシュボード用：各種統計データの算出
-  // ==========================================
   const stats = useMemo(() => {
       const areaCount: Record<string, number> = {};
       const industryCount: Record<string, number> = {};
@@ -43,20 +39,14 @@ export const AdminSales = ({ data }: { data: any }) => {
           if (statusCount[t.status as keyof typeof statusCount] !== undefined) statusCount[t.status as keyof typeof statusCount]++;
       });
 
-      // エリア上位5件
       const topAreas = Object.entries(areaCount).sort((a, b) => b[1] - a[1]).slice(0, 5);
       const maxArea = topAreas.length > 0 ? topAreas[0][1] : 1;
-
-      // 業種上位5件
       const topIndustries = Object.entries(industryCount).sort((a, b) => b[1] - a[1]).slice(0, 5);
       const maxIndustry = topIndustries.length > 0 ? topIndustries[0][1] : 1;
 
       return { topAreas, maxArea, topIndustries, maxIndustry, priorityCount, statusCount, total: targets.length };
   }, [targets]);
 
-  // ==========================================
-  // 2. リスト用：フィルター処理
-  // ==========================================
   const filteredTargets = useMemo(() => {
     return targets.filter((t: any) => {
       const matchSearch = t.company.toLowerCase().includes(searchTerm.toLowerCase()) || t.address.includes(searchTerm);
@@ -76,7 +66,6 @@ export const AdminSales = ({ data }: { data: any }) => {
 
   const handleSave = async (id: string) => {
     setIsSaving(true);
-    // CSV列構成: ID(0),会社(1),住所(2),エリア(3),優先度(4),業種(5),排出量(6),根拠(7),提案(8),WN(9),ステータス(10),連絡先(11),Web(12),メモ(13)
     const updates = { 10: editStatus, 13: editMemo };
     try {
       const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'UPDATE_DB_RECORD', sheetName: 'SalesTargets', recordId: id, updates }) });
@@ -89,8 +78,6 @@ export const AdminSales = ({ data }: { data: any }) => {
 
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-300 max-w-7xl mx-auto w-full pb-8">
-      
-      {/* 🔴 ヘッダー */}
       <header className="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4 border-b border-gray-200 pb-4">
         <div>
           <h2 className="text-3xl font-black text-gray-900 flex items-center gap-3"><Icons.Briefcase /> 営業戦略ダッシュボード</h2>
@@ -98,10 +85,7 @@ export const AdminSales = ({ data }: { data: any }) => {
         </div>
       </header>
 
-      {/* 🔴 戦略ダッシュボード・パネル群 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          
-          {/* 1. 優先度＆進捗サマリー */}
           <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-6 rounded-2xl border border-gray-700 shadow-lg text-white flex flex-col justify-between relative overflow-hidden">
               <div className="absolute -right-2 -top-2 opacity-10"><Icons.Fire /></div>
               <h3 className="text-base font-bold text-gray-300 flex items-center gap-2 mb-4"><Icons.Fire /> ターゲット優先度 (熱量)</h3>
@@ -121,7 +105,6 @@ export const AdminSales = ({ data }: { data: any }) => {
               </div>
           </div>
 
-          {/* 2. エリア別 分布 */}
           <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex flex-col">
               <h3 className="text-base font-bold text-gray-700 flex items-center gap-2 mb-4"><Icons.Location /> 主要ターゲットエリア</h3>
               <div className="space-y-3 flex-1">
@@ -139,7 +122,6 @@ export const AdminSales = ({ data }: { data: any }) => {
               </div>
           </div>
 
-          {/* 3. 業種別 分布 */}
           <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex flex-col">
               <h3 className="text-base font-bold text-gray-700 flex items-center gap-2 mb-4"><Icons.Building /> ターゲット業種</h3>
               <div className="space-y-3 flex-1">
@@ -158,7 +140,6 @@ export const AdminSales = ({ data }: { data: any }) => {
           </div>
       </div>
 
-      {/* 🔴 リスト操作・フィルターバー */}
       <div className="bg-white p-5 rounded-t-2xl border-t border-l border-r border-gray-200 shadow-sm flex flex-col lg:flex-row gap-4 items-center">
         <div className="flex-1 relative w-full">
             <div className="absolute left-3 top-1/2 -translate-y-1/2"><Icons.Search /></div>
@@ -184,7 +165,6 @@ export const AdminSales = ({ data }: { data: any }) => {
         </div>
       </div>
 
-      {/* 🔴 ターゲットリスト本体 */}
       <div className="bg-white rounded-b-2xl border border-gray-200 shadow-sm flex-1 overflow-hidden flex flex-col">
           <div className="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
               <span className="text-sm font-bold text-gray-600">表示中のターゲット: <span className="text-lg font-black text-gray-900">{filteredTargets.length}</span> 社</span>
@@ -222,7 +202,6 @@ export const AdminSales = ({ data }: { data: any }) => {
                                   <p className="text-sm text-gray-900 font-bold">{target.reason}</p>
                                   <p className="text-xs text-gray-500 mt-1.5 leading-relaxed bg-gray-50 p-2 rounded-md border border-gray-100">💡 {target.proposal}</p>
                               </td>
-                              
                               <td className="p-4">
                                   {editingId === target.id ? (
                                       <div className="space-y-2">
@@ -243,7 +222,6 @@ export const AdminSales = ({ data }: { data: any }) => {
                                       </div>
                                   )}
                               </td>
-
                               <td className="p-4 text-right">
                                   {editingId === target.id ? (
                                       <div className="flex flex-col gap-2 items-end">
