@@ -53,7 +53,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
     const lastMonthStr = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth() + 1).padStart(2, '0')}`;
     let thisWeight = 0, thisAmount = 0, lastWeight = 0, lastAmount = 0;
 
-    localReservations.forEach(res => {
+    localReservations.forEach((res: any) => {
       if (res.status !== 'COMPLETED' && res.status !== 'ARCHIVED') return;
       const d = new Date(res.visitDate || res.createdAt);
       const mStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -72,7 +72,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
   // 2. チャートデータ
   const monthlyData = useMemo(() => {
     const months = Array.from({ length: 12 }, (_, i) => ({ month: i + 1, weight: 0, amount: 0 }));
-    localReservations.filter(r => r.status === 'COMPLETED' || r.status === 'ARCHIVED').forEach(res => {
+    localReservations.filter((r: any) => r.status === 'COMPLETED' || r.status === 'ARCHIVED').forEach((res: any) => {
       const date = new Date(res.visitDate || res.createdAt);
       if (date.getFullYear() === chartYear) {
         const mIndex = date.getMonth();
@@ -88,7 +88,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
     });
     return months;
   }, [localReservations, chartYear]);
-  const maxWeight = Math.max(...monthlyData.map(d => d.weight), 100);
+  const maxWeight = Math.max(...monthlyData.map((d: any) => d.weight), 100);
 
   // 3. ランキング
   const clientYieldRanking = useMemo(() => {
@@ -110,14 +110,14 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
           }
       });
       return Object.entries(clientStats)
-          .map(([name, stats]) => ({ name, totalInput: stats.totalInput, count: stats.count, avgDiff: stats.count > 0 ? (stats.yieldDiffSum / stats.count) : 0 }))
-          .filter(c => c.count !== 0).sort((a: any, b: any) => b.avgDiff - a.avgDiff).slice(0, 5);
+          .map(([name, stats]: any) => ({ name, totalInput: stats.totalInput, count: stats.count, avgDiff: stats.count > 0 ? (stats.yieldDiffSum / stats.count) : 0 }))
+          .filter((c: any) => c.count !== 0).sort((a: any, b: any) => b.avgDiff - a.avgDiff).slice(0, 5);
   }, [productions, wiresMaster]);
 
   // 4. 在庫
   const lotInventory = useMemo(() => {
       let inventory: any[] = [];
-      localReservations.filter(r => r.status === 'COMPLETED').forEach(res => {
+      localReservations.filter((r: any) => r.status === 'COMPLETED').forEach((res: any) => {
           let items = [];
           try { 
               let temp = res.items; if (typeof temp === 'string') temp = JSON.parse(temp); if (typeof temp === 'string') temp = JSON.parse(temp);
@@ -169,7 +169,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
   const diffAmount = Math.abs(netProfitProcessing - wholesaleTotal);
 
   return (
-    // ★ h-full を外して自然なスクロールを許可！
     <div className="flex flex-col animate-in fade-in duration-500 max-w-[1400px] mx-auto w-full space-y-6 pb-12 font-sans text-gray-800">
       
       {/* ヘッダー */}
@@ -275,7 +274,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                   <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-5">
                       <div className="border-t border-gray-900 w-full h-0"></div><div className="border-t border-gray-900 w-full h-0"></div><div className="border-t border-gray-900 w-full h-0"></div><div className="border-t border-gray-900 w-full h-0"></div>
                   </div>
-                  {monthlyData.map((data) => (
+                  {monthlyData.map((data: any) => (
                       <div key={data.month} className="flex-1 flex flex-col justify-end items-center group relative h-full">
                           <div className="absolute -top-12 bg-gray-800 text-white text-[11px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap z-10 pointer-events-none text-center shadow-md">
                               <span className="font-semibold">{data.weight.toLocaleString()} kg</span><br/>
@@ -304,7 +303,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                           <p className="text-xs font-medium text-center">データなし</p>
                       </div>
                   ) : (
-                      clientYieldRanking.map((client, idx) => (
+                      clientYieldRanking.map((client: any, idx: number) => (
                           <div key={idx} onClick={() => onNavigate('CLIENT_DETAIL', client.name)} className="flex items-center justify-between p-2.5 border border-transparent rounded-md hover:bg-gray-50 transition cursor-pointer">
                               <div className="flex items-center gap-3">
                                   <div className={`w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold ${idx === 0 ? 'bg-amber-100 text-amber-700' : idx === 1 ? 'bg-slate-100 text-slate-600' : idx === 2 ? 'bg-orange-50 text-orange-700' : 'bg-gray-100 text-gray-500'}`}>
@@ -327,7 +326,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
           </div>
       </div>
 
-      {/* 🔴 下段ブロック1：シミュレーション・ツールボックス (★絶対潰れない) */}
+      {/* 下段ブロック1：シミュレーション・ツールボックス */}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden flex-shrink-0">
           <div className="bg-white px-6 pt-5 pb-3 border-b border-gray-100">
               <div className="inline-flex p-1 bg-gray-100 rounded-md">
@@ -363,7 +362,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                                   </tr>
                               </thead>
                               <tbody className="divide-y divide-gray-100">
-                                  {currentPricesList.map((item, idx) => (
+                                  {currentPricesList.map((item: any, idx: number) => (
                                       <tr key={idx} className="hover:bg-gray-50 transition">
                                           <td className="py-3 px-6">
                                               <div className="font-semibold text-gray-800 text-xs">{item.name}</div>
@@ -454,7 +453,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
           </div>
       </div>
 
-      {/* 🔴 下段ブロック2：現場アナリティクス (★絶対潰れない) */}
+      {/* 下段ブロック2：現場アナリティクス */}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden flex-shrink-0">
           <div className="bg-white px-6 pt-5 pb-3 border-b border-gray-100">
               <div className="inline-flex p-1 bg-gray-100 rounded-md">
@@ -504,7 +503,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                           </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
-                          {lotInventory.length === 0 ? (<tr><td colSpan={4} className="py-8 text-center text-xs text-gray-400 font-medium">現在、未加工の在庫はありません</td></tr>) : lotInventory.map((lot, idx) => (
+                          {lotInventory.length === 0 ? (<tr><td colSpan={4} className="py-8 text-center text-xs text-gray-400 font-medium">現在、未加工の在庫はありません</td></tr>) : lotInventory.map((lot: any, idx: number) => (
                               <tr key={idx} className="hover:bg-gray-50 transition">
                                   <td className="py-3 px-6"><div className="text-[10px] text-gray-400 font-mono">{lot.date}</div><div className="text-xs font-semibold text-gray-800">{lot.memberName}</div></td>
                                   <td className="py-3 px-6 text-xs font-semibold text-gray-600">{lot.product}</td>
