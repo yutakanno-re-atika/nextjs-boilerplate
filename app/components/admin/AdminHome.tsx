@@ -90,7 +90,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
   }, [localReservations, chartYear]);
   const maxWeight = Math.max(...monthlyData.map(d => d.weight), 100);
 
-  // 3. ランキング
+  // 3. ランキング (★修正箇所：countをオブジェクトに含める)
   const clientYieldRanking = useMemo(() => {
       const clientStats: Record<string, { totalInput: number, yieldDiffSum: number, count: number }> = {};
       productions.forEach((p: any) => {
@@ -109,8 +109,15 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
               clientStats[name].totalInput += Number(p.inputWeight);
           }
       });
-      return Object.entries(clientStats).map(([name, stats]) => ({ name, totalInput: stats.totalInput, avgDiff: stats.count > 0 ? (stats.yieldDiffSum / stats.count) : 0 }))
-          .filter(c => c.count !== 0).sort((a, b) => b.avgDiff - a.avgDiff).slice(0, 5);
+      return Object.entries(clientStats)
+          .map(([name, stats]) => ({ 
+              name, 
+              totalInput: stats.totalInput, 
+              count: stats.count, // ★ここでcountを渡す
+              avgDiff: stats.count > 0 ? (stats.yieldDiffSum / stats.count) : 0 
+          }))
+          .filter(c => c.count !== 0)
+          .sort((a, b) => b.avgDiff - a.avgDiff).slice(0, 5);
   }, [productions, wiresMaster]);
 
   // 4. 在庫
