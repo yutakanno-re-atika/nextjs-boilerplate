@@ -9,7 +9,8 @@ const Icons = {
   Location: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
   Building: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>,
   Fire: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z" /></svg>,
-  XCircle: () => <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+  XCircle: () => <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+  UserAdd: () => <svg className="w-5 h-5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
 };
 
 export const AdminSales = ({ data }: { data: any }) => {
@@ -29,17 +30,14 @@ export const AdminSales = ({ data }: { data: any }) => {
   const masterStats = useMemo(() => {
       const areaCount: Record<string, number> = {};
       const industryCount: Record<string, number> = {};
-      
       targets.forEach((t: any) => {
           const a = (t.area || '').trim();
           const i = (t.industry || '').trim();
           if (a) areaCount[a] = (areaCount[a] || 0) + 1;
           if (i) industryCount[i] = (industryCount[i] || 0) + 1;
       });
-
       const topAreas = Object.entries(areaCount).sort((a, b) => b[1] - a[1]).slice(0, 5).map(x => x[0]);
       const topIndustries = Object.entries(industryCount).sort((a, b) => b[1] - a[1]).slice(0, 5).map(x => x[0]);
-
       return { topAreas, topIndustries, total: targets.length };
   }, [targets]);
 
@@ -100,6 +98,22 @@ export const AdminSales = ({ data }: { data: any }) => {
       const result = await res.json();
       if (result.status === 'success') { setEditingId(null); window.location.reload(); }
       else { alert('エラー: ' + result.message); }
+    } catch (e) { alert('通信エラーが発生しました'); }
+    setIsSaving(false);
+  };
+
+  // ★ 新規追加：マスター登録アクション
+  const handleConvertToClient = async (target: any) => {
+    if(!window.confirm(`${target.company} を顧客マスターに登録しますか？\n（営業リストのステータスも「既存取引先」に自動変更されます）`)) return;
+    setIsSaving(true);
+    try {
+        const res = await fetch('/api/gas', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'CONVERT_TARGET_TO_CLIENT', targetId: target.id })
+        });
+        const result = await res.json();
+        if (result.status === 'success') { window.location.reload(); } 
+        else { alert('エラー: ' + result.message); }
     } catch (e) { alert('通信エラーが発生しました'); }
     setIsSaving(false);
   };
@@ -223,8 +237,8 @@ export const AdminSales = ({ data }: { data: any }) => {
                           <th className="p-4 text-sm font-bold text-gray-500 w-[25%]">企業情報</th>
                           <th className="p-4 text-sm font-bold text-gray-500 w-[10%] text-center">優先度</th>
                           <th className="p-4 text-sm font-bold text-gray-500 w-[25%]">営業根拠・アプローチ提案</th>
-                          <th className="p-4 text-sm font-bold text-gray-500 w-[25%]">ステータス / 営業メモ</th>
-                          <th className="p-4 text-sm font-bold text-gray-500 w-[15%] text-right">操作</th>
+                          <th className="p-4 text-sm font-bold text-gray-500 w-[20%]">ステータス / 営業メモ</th>
+                          <th className="p-4 text-sm font-bold text-gray-500 w-[20%] text-right">操作</th>
                       </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -272,12 +286,16 @@ export const AdminSales = ({ data }: { data: any }) => {
                               <td className="p-4 text-right">
                                   {editingId === target.id ? (
                                       <div className="flex flex-col gap-2 items-end">
-                                          <button onClick={() => handleSave(target.id)} disabled={isSaving} className="bg-[#D32F2F] text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-700 shadow-sm w-full flex justify-center items-center"><Icons.Save /> 保存</button>
+                                          <button onClick={() => handleSave(target.id)} disabled={isSaving} className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-black shadow-sm w-full flex justify-center items-center"><Icons.Save /> 記録保存</button>
+                                          {/* ★ ここにマスター登録ボタンを追加 */}
+                                          {target.status !== '既存取引先' && (
+                                              <button onClick={() => handleConvertToClient(target)} disabled={isSaving} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 shadow-sm w-full flex justify-center items-center"><Icons.UserAdd /> 顧客マスター登録</button>
+                                          )}
                                           <button onClick={() => setEditingId(null)} className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-200 border border-gray-200 w-full">取消</button>
                                       </div>
                                   ) : (
                                       <button onClick={() => handleEdit(target)} className="text-gray-600 hover:text-[#D32F2F] hover:bg-red-50 font-bold text-sm bg-white border border-gray-300 px-4 py-2.5 rounded-xl transition shadow-sm w-full">
-                                          営業記録を入力
+                                          アクション
                                       </button>
                                   )}
                               </td>
