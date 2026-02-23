@@ -1,5 +1,5 @@
-"use client";
 // @ts-nocheck
+"use client";
 import React, { useMemo, useState, useEffect } from 'react';
 
 const Icons = {
@@ -90,7 +90,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
   }, [localReservations, chartYear]);
   const maxWeight = Math.max(...monthlyData.map(d => d.weight), 100);
 
-  // 3. ランキング (★修正箇所：countをオブジェクトに含める)
+  // 3. ランキング (★修正箇所：a:any, b:anyを追加)
   const clientYieldRanking = useMemo(() => {
       const clientStats: Record<string, { totalInput: number, yieldDiffSum: number, count: number }> = {};
       productions.forEach((p: any) => {
@@ -113,14 +113,14 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
           .map(([name, stats]) => ({ 
               name, 
               totalInput: stats.totalInput, 
-              count: stats.count, // ★ここでcountを渡す
+              count: stats.count, 
               avgDiff: stats.count > 0 ? (stats.yieldDiffSum / stats.count) : 0 
           }))
           .filter(c => c.count !== 0)
-          .sort((a, b) => b.avgDiff - a.avgDiff).slice(0, 5);
+          .sort((a: any, b: any) => b.avgDiff - a.avgDiff).slice(0, 5); // ★ここでany追加
   }, [productions, wiresMaster]);
 
-  // 4. 在庫
+  // 4. 在庫 (★修正箇所：a:any, b:anyを追加)
   const lotInventory = useMemo(() => {
       let inventory: any[] = [];
       localReservations.filter(r => r.status === 'COMPLETED').forEach(res => {
@@ -148,12 +148,13 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
               }
           });
       });
-      return inventory.sort((a, b) => b.remainingWeight - a.remainingWeight);
+      return inventory.sort((a: any, b: any) => b.remainingWeight - a.remainingWeight); // ★ここでany追加
   }, [localReservations, productions, wiresMaster]);
 
   const totalProducedCopper = productions.reduce((sum: number, p: any) => sum + (Number(p.outputCopper) || 0), 0);
   const copperAssetValue = totalProducedCopper * currentCopperPrice;
 
+  // PRICING計算 (★修正箇所：a:any, b:anyを追加)
   const currentPricesList = useMemo(() => {
       if (currentCopperPrice === 0) return [];
       const userMarginRatio = (100 - targetMargin) / 100; 
@@ -163,7 +164,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
           const purchasePrice = Math.floor(theoreticalValue * userMarginRatio); 
           const profit = Math.floor(theoreticalValue - purchasePrice); 
           return { name: w.name, maker: w.maker, sq: w.sq, core: w.core, ratio: ratio, theoreticalValue, purchasePrice, profit };
-      }).sort((a, b) => b.ratio - a.ratio); 
+      }).sort((a: any, b: any) => b.ratio - a.ratio); // ★ここでany追加
   }, [currentCopperPrice, wiresMaster, targetMargin]);
 
   const roiSelectedWire = wiresMaster.find((w:any) => w.name === roiWire) || wiresMaster[0];
