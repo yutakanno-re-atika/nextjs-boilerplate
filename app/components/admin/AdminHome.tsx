@@ -1,5 +1,5 @@
-"use client";
 // @ts-nocheck
+"use client";
 import React, { useMemo, useState, useEffect } from 'react';
 
 const Icons = {
@@ -22,10 +22,8 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
   const [bottomTab, setBottomTab] = useState<'PRICING' | 'ROI'>('PRICING');
   const [analyticsTab, setAnalyticsTab] = useState<'LOG' | 'INVENTORY'>('LOG');
   
-  // PRICING State
   const [targetMargin, setTargetMargin] = useState<number>(15);
   
-  // ROI State
   const [roiWire, setRoiWire] = useState('');
   const [roiWeight, setRoiWeight] = useState(500);
   const [roiWage, setRoiWage] = useState(2000);
@@ -45,7 +43,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
     if (wiresMaster.length > 0 && !roiWire) { setRoiWire(wiresMaster[0].name); }
   }, [wiresMaster, roiWire]);
 
-  // 1. KPI集計
   const currentMonthStats = useMemo(() => {
     const now = new Date();
     const thisMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -69,7 +66,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
     return { monthNum: now.getMonth() + 1, thisWeight, thisAmount, diffWeight: thisWeight - lastWeight, diffAmount: thisAmount - lastAmount };
   }, [localReservations]);
 
-  // 2. チャートデータ
   const monthlyData = useMemo(() => {
     const months = Array.from({ length: 12 }, (_, i) => ({ month: i + 1, weight: 0, amount: 0 }));
     localReservations.filter((r: any) => r.status === 'COMPLETED' || r.status === 'ARCHIVED').forEach((res: any) => {
@@ -90,7 +86,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
   }, [localReservations, chartYear]);
   const maxWeight = Math.max(...monthlyData.map((d: any) => d.weight), 100);
 
-  // 3. ランキング
   const clientYieldRanking = useMemo(() => {
       const clientStats: Record<string, { totalInput: number, yieldDiffSum: number, count: number }> = {};
       productions.forEach((p: any) => {
@@ -114,7 +109,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
           .filter((c: any) => c.count !== 0).sort((a: any, b: any) => b.avgDiff - a.avgDiff).slice(0, 5);
   }, [productions, wiresMaster]);
 
-  // 4. 在庫
   const lotInventory = useMemo(() => {
       let inventory: any[] = [];
       localReservations.filter((r: any) => r.status === 'COMPLETED').forEach((res: any) => {
@@ -145,7 +139,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
   const totalProducedCopper = productions.reduce((sum: number, p: any) => sum + (Number(p.outputCopper) || 0), 0);
   const copperAssetValue = totalProducedCopper * currentCopperPrice;
 
-  // PRICING計算
   const currentPricesList = useMemo(() => {
       if (currentCopperPrice === 0) return [];
       const userMarginRatio = (100 - targetMargin) / 100; 
@@ -169,22 +162,22 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
   const diffAmount = Math.abs(netProfitProcessing - wholesaleTotal);
 
   return (
-    <div className="flex flex-col animate-in fade-in duration-500 max-w-[1400px] mx-auto w-full space-y-6 pb-12 font-sans text-gray-800">
+    <div className="flex flex-col animate-in fade-in duration-500 max-w-[1400px] mx-auto w-full space-y-4 md:space-y-6 pb-12 font-sans text-gray-800">
       
-      {/* ヘッダー */}
-      <header className="flex flex-col md:flex-row md:justify-between md:items-end pb-3 border-b border-gray-200/60 flex-shrink-0">
+      {/* 🔴 ヘッダー */}
+      <header className="flex flex-col md:flex-row md:justify-between md:items-end pb-2 md:pb-3 border-b border-gray-200/60 flex-shrink-0">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Dashboard</h2>
-          <p className="text-sm text-gray-500 mt-1">相場連動プライシングと経営実績の統合ビュー</p>
+          <h2 className="text-xl md:text-2xl font-bold text-gray-900 tracking-tight">Dashboard</h2>
+          <p className="text-xs md:text-sm text-gray-500 mt-1">相場連動プライシングと経営実績の統合ビュー</p>
         </div>
       </header>
 
-      {/* トップKPI */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 flex-shrink-0">
-          <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm flex flex-col justify-between">
+      {/* 🔴 トップKPI (赤アクセントに変更) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 flex-shrink-0">
+          <div className="bg-white p-4 md:p-5 rounded-lg border border-gray-200 shadow-sm flex flex-col justify-between">
               <div className="flex justify-between items-center mb-3">
                   <h6 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">本日の主要建値</h6>
-                  <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded"><Icons.Banknotes /></div>
+                  <div className="p-1.5 bg-red-50 text-[#D32F2F] rounded"><Icons.Banknotes /></div>
               </div>
               <div className="flex flex-col gap-2">
                   <div className="flex justify-between items-end border-b border-gray-100 pb-1.5">
@@ -206,32 +199,32 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
               </div>
           </div>
 
-          <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 p-5 rounded-lg shadow-sm flex flex-col justify-between text-white relative overflow-hidden">
-              <div className="absolute right-0 bottom-0 opacity-10 transform translate-x-1/4 translate-y-1/4 scale-150"><Icons.Copper /></div>
+          <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-4 md:p-5 rounded-lg shadow-sm flex flex-col justify-between text-white relative overflow-hidden">
+              <div className="absolute right-0 bottom-0 opacity-10 transform translate-x-1/4 translate-y-1/4 scale-150 text-orange-500"><Icons.Copper /></div>
               <div className="flex justify-between items-center mb-4 z-10">
-                  <h6 className="text-[11px] font-bold text-indigo-200 uppercase tracking-wider">ピカ銅 製品資産</h6>
-                  <div className="p-1.5 bg-indigo-500/50 text-white rounded"><Icons.Copper /></div>
+                  <h6 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">ピカ銅 製品資産</h6>
+                  <div className="p-1.5 bg-gray-800 text-orange-500 rounded"><Icons.Copper /></div>
               </div>
               <div className="z-10">
                   <div className="flex items-baseline gap-1 mt-2">
-                      <span className="text-3xl font-bold tracking-tight">¥{copperAssetValue.toLocaleString()}</span>
+                      <span className="text-2xl md:text-3xl font-bold tracking-tight">¥{copperAssetValue.toLocaleString()}</span>
                   </div>
                   <div className="mt-3">
-                      <span className="text-xs font-medium bg-indigo-900/40 px-2 py-1 rounded">総在庫: {totalProducedCopper.toLocaleString()} kg</span>
+                      <span className="text-[11px] font-medium bg-gray-800 px-2 py-1 rounded border border-gray-700 text-gray-300">総在庫: {totalProducedCopper.toLocaleString()} kg</span>
                   </div>
               </div>
           </div>
 
-          <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm flex flex-col justify-between">
+          <div className="bg-white p-4 md:p-5 rounded-lg border border-gray-200 shadow-sm flex flex-col justify-between">
               <div className="flex justify-between items-start mb-4">
                   <div>
                       <h6 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">今月 ({currentMonthStats.monthNum}月) 買取重量</h6>
-                      <h3 className="text-2xl font-bold text-gray-900">{currentMonthStats.thisWeight.toLocaleString()} <span className="text-xs font-medium text-gray-500">kg</span></h3>
+                      <h3 className="text-xl md:text-2xl font-bold text-gray-900">{currentMonthStats.thisWeight.toLocaleString()} <span className="text-xs font-medium text-gray-500">kg</span></h3>
                   </div>
-                  <div className="p-1.5 bg-teal-50 text-teal-600 rounded"><Icons.Scale /></div>
+                  <div className="p-1.5 bg-gray-50 text-gray-600 rounded"><Icons.Scale /></div>
               </div>
               <div className="flex items-center text-xs font-medium mt-auto">
-                  <span className={`flex items-center ${currentMonthStats.diffWeight >= 0 ? 'text-teal-600' : 'text-rose-500'}`}>
+                  <span className={`flex items-center ${currentMonthStats.diffWeight >= 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
                       {currentMonthStats.diffWeight >= 0 ? <Icons.ArrowUp /> : <Icons.ArrowDown />}
                       {currentMonthStats.diffWeight >= 0 ? '+' : ''}{currentMonthStats.diffWeight.toLocaleString()} kg
                   </span>
@@ -239,16 +232,16 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
               </div>
           </div>
           
-          <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm flex flex-col justify-between">
+          <div className="bg-white p-4 md:p-5 rounded-lg border border-gray-200 shadow-sm flex flex-col justify-between">
               <div className="flex justify-between items-start mb-4">
                   <div>
                       <h6 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">今月 ({currentMonthStats.monthNum}月) 買掛金額</h6>
-                      <h3 className="text-2xl font-bold text-gray-900">¥{currentMonthStats.thisAmount.toLocaleString()}</h3>
+                      <h3 className="text-xl md:text-2xl font-bold text-gray-900">¥{currentMonthStats.thisAmount.toLocaleString()}</h3>
                   </div>
-                  <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded"><Icons.TrendingUp /></div>
+                  <div className="p-1.5 bg-gray-50 text-gray-600 rounded"><Icons.TrendingUp /></div>
               </div>
               <div className="flex items-center text-xs font-medium mt-auto">
-                  <span className={`flex items-center ${currentMonthStats.diffAmount >= 0 ? 'text-teal-600' : 'text-rose-500'}`}>
+                  <span className={`flex items-center ${currentMonthStats.diffAmount >= 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
                       {currentMonthStats.diffAmount >= 0 ? <Icons.ArrowUp /> : <Icons.ArrowDown />}
                       {currentMonthStats.diffAmount >= 0 ? '+' : ''}{currentMonthStats.diffAmount.toLocaleString()} 円
                   </span>
@@ -257,65 +250,65 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
           </div>
       </div>
 
-      {/* 中段：チャート ＆ ランキング */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 flex-shrink-0">
-          <div className="lg:col-span-2 bg-white rounded-lg border border-gray-200 shadow-sm p-6 flex flex-col min-h-[300px]">
+      {/* 🔴 中段：チャート ＆ ランキング */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-5 flex-shrink-0">
+          <div className="lg:col-span-2 bg-white rounded-lg border border-gray-200 shadow-sm p-4 md:p-6 flex flex-col min-h-[250px] md:min-h-[300px]">
               <div className="flex justify-between items-center mb-6">
                   <div>
-                      <h3 className="text-base font-bold text-gray-900">月別買取トレンド</h3>
-                      <p className="text-[11px] text-gray-400 mt-0.5">単位: kg (完了・アーカイブ済データ)</p>
+                      <h3 className="text-sm md:text-base font-bold text-gray-900">月別買取トレンド</h3>
+                      <p className="text-[10px] md:text-[11px] text-gray-400 mt-0.5">単位: kg (完了・アーカイブ済データ)</p>
                   </div>
-                  <select value={chartYear} onChange={(e) => setChartYear(Number(e.target.value))} className="bg-white border border-gray-200 text-gray-600 px-3 py-1.5 rounded-md text-xs font-semibold outline-none cursor-pointer focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                  <select value={chartYear} onChange={(e) => setChartYear(Number(e.target.value))} className="bg-white border border-gray-200 text-gray-600 px-2 md:px-3 py-1.5 rounded-md text-xs font-semibold outline-none cursor-pointer focus:border-[#D32F2F] focus:ring-1 focus:ring-red-500">
                       <option value={new Date().getFullYear()}>{new Date().getFullYear()}年度</option>
                       <option value={2025}>2025年度</option>
                   </select>
               </div>
-              <div className="flex-1 flex items-end gap-2 md:gap-4 mt-2 relative">
+              <div className="flex-1 flex items-end gap-1.5 md:gap-4 mt-2 relative">
                   <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-5">
                       <div className="border-t border-gray-900 w-full h-0"></div><div className="border-t border-gray-900 w-full h-0"></div><div className="border-t border-gray-900 w-full h-0"></div><div className="border-t border-gray-900 w-full h-0"></div>
                   </div>
                   {monthlyData.map((data: any) => (
                       <div key={data.month} className="flex-1 flex flex-col justify-end items-center group relative h-full">
-                          <div className="absolute -top-12 bg-gray-800 text-white text-[11px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap z-10 pointer-events-none text-center shadow-md">
+                          <div className="absolute -top-12 bg-gray-800 text-white text-[10px] md:text-[11px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap z-10 pointer-events-none text-center shadow-md">
                               <span className="font-semibold">{data.weight.toLocaleString()} kg</span><br/>
                               <span className="text-gray-300">¥{data.amount.toLocaleString()}</span>
                           </div>
                           <div className="w-full h-full flex items-end bg-gray-50 rounded-t-sm">
                               <div 
-                                  className={`w-full rounded-t-sm transition-all duration-500 ${data.month === currentMonthStats.monthNum && chartYear === new Date().getFullYear() ? 'bg-indigo-500' : 'bg-indigo-300 group-hover:bg-indigo-400'}`}
+                                  className={`w-full rounded-t-sm transition-all duration-500 ${data.month === currentMonthStats.monthNum && chartYear === new Date().getFullYear() ? 'bg-[#D32F2F]' : 'bg-red-200 group-hover:bg-red-300'}`}
                                   style={{ height: `${data.weight > 0 ? (data.weight / maxWeight) * 100 : 0}%`, minHeight: data.weight > 0 ? '4px' : '0' }}
                               ></div>
                           </div>
-                          <span className="text-[11px] font-semibold text-gray-400 mt-2">{data.month}月</span>
+                          <span className="text-[9px] md:text-[11px] font-semibold text-gray-400 mt-2">{data.month}月</span>
                       </div>
                   ))}
               </div>
           </div>
 
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 flex flex-col min-h-[300px]">
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 md:p-6 flex flex-col min-h-[250px] md:min-h-[300px]">
               <div className="mb-4">
-                  <h3 className="text-base font-bold text-gray-900">品質・歩留まりランキング</h3>
-                  <p className="text-[11px] text-gray-400 mt-0.5">マスター想定に対する実質上振れ</p>
+                  <h3 className="text-sm md:text-base font-bold text-gray-900">品質・歩留まりランキング</h3>
+                  <p className="text-[10px] md:text-[11px] text-gray-400 mt-0.5">マスター想定に対する実質上振れ</p>
               </div>
-              <div className="flex-1 overflow-y-auto pr-2 space-y-1.5">
+              <div className="flex-1 overflow-y-auto pr-1 md:pr-2 space-y-1.5">
                   {clientYieldRanking.length === 0 ? (
                       <div className="h-full flex flex-col items-center justify-center text-gray-300">
                           <p className="text-xs font-medium text-center">データなし</p>
                       </div>
                   ) : (
                       clientYieldRanking.map((client: any, idx: number) => (
-                          <div key={idx} onClick={() => onNavigate('CLIENT_DETAIL', client.name)} className="flex items-center justify-between p-2.5 border border-transparent rounded-md hover:bg-gray-50 transition cursor-pointer">
-                              <div className="flex items-center gap-3">
-                                  <div className={`w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold ${idx === 0 ? 'bg-amber-100 text-amber-700' : idx === 1 ? 'bg-slate-100 text-slate-600' : idx === 2 ? 'bg-orange-50 text-orange-700' : 'bg-gray-100 text-gray-500'}`}>
+                          <div key={idx} onClick={() => onNavigate('CLIENT_DETAIL', client.name)} className="flex items-center justify-between p-2 md:p-2.5 border border-transparent rounded-md hover:bg-gray-50 transition cursor-pointer">
+                              <div className="flex items-center gap-2 md:gap-3">
+                                  <div className={`w-5 h-5 md:w-6 md:h-6 rounded flex items-center justify-center text-[9px] md:text-[10px] font-bold ${idx === 0 ? 'bg-amber-100 text-amber-700' : idx === 1 ? 'bg-slate-100 text-slate-600' : idx === 2 ? 'bg-orange-50 text-orange-700' : 'bg-gray-100 text-gray-500'}`}>
                                       {idx + 1}
                                   </div>
                                   <div>
-                                      <p className="text-xs font-semibold text-gray-800 truncate max-w-[130px]">{client.name}</p>
-                                      <p className="text-[10px] text-gray-400 mt-0.5">総加工: {client.totalInput.toLocaleString()}kg</p>
+                                      <p className="text-[11px] md:text-xs font-semibold text-gray-800 truncate max-w-[100px] md:max-w-[130px]">{client.name}</p>
+                                      <p className="text-[9px] md:text-[10px] text-gray-400 mt-0.5">総加工: {client.totalInput.toLocaleString()}kg</p>
                                   </div>
                               </div>
                               <div className="text-right flex items-center">
-                                  <p className={`text-xs font-bold ${client.avgDiff > 0 ? 'text-teal-600' : 'text-rose-500'}`}>
+                                  <p className={`text-[11px] md:text-xs font-bold ${client.avgDiff > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
                                       {client.avgDiff > 0 ? '+' : ''}{client.avgDiff.toFixed(1)}%
                                   </p>
                               </div>
@@ -326,14 +319,14 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
           </div>
       </div>
 
-      {/* 下段ブロック1：シミュレーション・ツールボックス */}
+      {/* 🔴 下段ブロック1：シミュレーション・ツールボックス */}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden flex-shrink-0">
-          <div className="bg-white px-6 pt-5 pb-3 border-b border-gray-100">
-              <div className="inline-flex p-1 bg-gray-100 rounded-md">
-                  <button onClick={() => setBottomTab('PRICING')} className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded transition-all ${bottomTab === 'PRICING' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+          <div className="bg-white px-4 md:px-6 pt-4 md:pt-5 pb-3 border-b border-gray-100 overflow-x-auto">
+              <div className="inline-flex p-1 bg-gray-100 rounded-md whitespace-nowrap">
+                  <button onClick={() => setBottomTab('PRICING')} className={`flex items-center gap-1 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-bold rounded transition-all ${bottomTab === 'PRICING' ? 'bg-white text-[#D32F2F] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
                       <Icons.Banknotes /> 適正単価計算
                   </button>
-                  <button onClick={() => setBottomTab('ROI')} className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded transition-all ${bottomTab === 'ROI' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                  <button onClick={() => setBottomTab('ROI')} className={`flex items-center gap-1 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-bold rounded transition-all ${bottomTab === 'ROI' ? 'bg-white text-[#D32F2F] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
                       <Icons.Calculator /> 加工損益(ROI)
                   </button>
               </div>
@@ -342,39 +335,41 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
           <div className="p-0">
               {bottomTab === 'PRICING' && (
                   <div className="animate-in fade-in duration-300">
-                      <div className="p-4 bg-gray-50/50 flex flex-wrap justify-between items-center border-b border-gray-100 gap-4">
-                          <p className="text-xs text-gray-500 font-medium">銅建値と歩留まりから含有価値を算出し、目標マージンを差し引きます。</p>
-                          <div className="flex items-center gap-3 bg-white px-3 py-1.5 rounded border border-gray-200 shadow-sm">
-                              <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">目標マージン</label>
-                              <input type="range" min="5" max="30" step="1" value={targetMargin} onChange={(e) => setTargetMargin(Number(e.target.value))} className="w-24 accent-indigo-600 cursor-pointer" />
-                              <span className="text-sm font-bold text-gray-800 w-8 text-right">{targetMargin}%</span>
+                      <div className="p-4 bg-gray-50/50 flex flex-col md:flex-row md:justify-between md:items-center border-b border-gray-100 gap-3 md:gap-4">
+                          <p className="text-[11px] md:text-xs text-gray-500 font-medium">銅建値と歩留まりから含有価値を算出し、目標マージンを差し引きます。</p>
+                          <div className="flex items-center justify-between md:justify-start gap-3 bg-white px-3 py-1.5 rounded border border-gray-200 shadow-sm w-full md:w-auto">
+                              <label className="text-[10px] md:text-[11px] font-bold text-gray-500 uppercase tracking-wider">目標マージン</label>
+                              <div className="flex items-center gap-2">
+                                  <input type="range" min="5" max="30" step="1" value={targetMargin} onChange={(e) => setTargetMargin(Number(e.target.value))} className="w-20 md:w-24 accent-[#D32F2F] cursor-pointer" />
+                                  <span className="text-xs md:text-sm font-bold text-gray-800 w-6 md:w-8 text-right">{targetMargin}%</span>
+                              </div>
                           </div>
                       </div>
-                      <div className="max-h-[500px] overflow-y-auto">
-                          <table className="w-full text-left border-collapse">
+                      <div className="max-h-[500px] overflow-x-auto overflow-y-auto">
+                          <table className="w-full text-left border-collapse min-w-[500px]">
                               <thead className="bg-white sticky top-0 shadow-sm z-10 border-b border-gray-200">
                                   <tr>
-                                      <th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-wider">品目 / 詳細</th>
-                                      <th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-center">歩留まり</th>
-                                      <th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">含有価値</th>
-                                      <th className="py-3 px-6 text-[10px] font-bold text-gray-800 uppercase tracking-wider text-right">適正買取単価</th>
-                                      <th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">粗利/kg</th>
+                                      <th className="py-2.5 md:py-3 px-4 md:px-6 text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wider">品目 / 詳細</th>
+                                      <th className="py-2.5 md:py-3 px-4 md:px-6 text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wider text-center">歩留まり</th>
+                                      <th className="py-2.5 md:py-3 px-4 md:px-6 text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">含有価値</th>
+                                      <th className="py-2.5 md:py-3 px-4 md:px-6 text-[9px] md:text-[10px] font-bold text-gray-800 uppercase tracking-wider text-right">適正単価</th>
+                                      <th className="py-2.5 md:py-3 px-4 md:px-6 text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">粗利/kg</th>
                                   </tr>
                               </thead>
                               <tbody className="divide-y divide-gray-100">
                                   {currentPricesList.map((item: any, idx: number) => (
                                       <tr key={idx} className="hover:bg-gray-50 transition">
-                                          <td className="py-3 px-6">
-                                              <div className="font-semibold text-gray-800 text-xs">{item.name}</div>
-                                              <div className="text-[10px] text-gray-400 mt-1 flex gap-1 font-medium">
+                                          <td className="py-2 md:py-3 px-4 md:px-6">
+                                              <div className="font-semibold text-gray-800 text-[11px] md:text-xs">{item.name}</div>
+                                              <div className="text-[9px] md:text-[10px] text-gray-400 mt-1 flex gap-1 font-medium">
                                                   {item.maker && <span>{item.maker}</span>}
                                                   {item.sq && <span>| {item.sq}</span>}
                                               </div>
                                           </td>
-                                          <td className="py-3 px-6 text-center"><span className="text-xs font-semibold text-gray-600">{item.ratio}%</span></td>
-                                          <td className="py-3 px-6 text-right text-gray-500 text-xs font-mono">¥{item.theoreticalValue.toFixed(0)}</td>
-                                          <td className="py-3 px-6 text-right"><span className="text-sm font-bold text-indigo-600">¥{item.purchasePrice}</span></td>
-                                          <td className="py-3 px-6 text-right text-xs font-semibold text-teal-600">+¥{item.profit}</td>
+                                          <td className="py-2 md:py-3 px-4 md:px-6 text-center"><span className="text-[11px] md:text-xs font-semibold text-gray-600">{item.ratio}%</span></td>
+                                          <td className="py-2 md:py-3 px-4 md:px-6 text-right text-gray-500 text-[11px] md:text-xs font-mono">¥{item.theoreticalValue.toFixed(0)}</td>
+                                          <td className="py-2 md:py-3 px-4 md:px-6 text-right"><span className="text-xs md:text-sm font-bold text-[#D32F2F]">¥{item.purchasePrice}</span></td>
+                                          <td className="py-2 md:py-3 px-4 md:px-6 text-right text-[11px] md:text-xs font-semibold text-emerald-600">+¥{item.profit}</td>
                                       </tr>
                                   ))}
                               </tbody>
@@ -384,65 +379,65 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
               )}
 
               {bottomTab === 'ROI' && (
-                  <div className="p-6 animate-in fade-in duration-300 grid grid-cols-1 lg:grid-cols-3 gap-8 bg-gray-50/30">
+                  <div className="p-4 md:p-6 animate-in fade-in duration-300 grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 bg-gray-50/30">
                       <div className="space-y-4">
                           <div>
-                              <label className="text-[11px] font-semibold text-gray-500 mb-1 block">対象の電線</label>
-                              <select className="w-full p-2.5 bg-white border border-gray-200 rounded-md text-xs font-semibold outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500" value={roiWire} onChange={e => setRoiWire(e.target.value)}>
+                              <label className="text-[10px] md:text-[11px] font-semibold text-gray-500 mb-1 block">対象の電線</label>
+                              <select className="w-full p-2.5 bg-white border border-gray-200 rounded-md text-[11px] md:text-xs font-semibold outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500" value={roiWire} onChange={e => setRoiWire(e.target.value)}>
                                   {wiresMaster.map((w:any) => <option key={w.id} value={w.name}>{w.name} (銅率: {w.ratio}%)</option>)}
                               </select>
                           </div>
                           <div>
-                              <label className="text-[11px] font-semibold text-gray-500 mb-1 block">加工重量 (kg)</label>
-                              <input type="number" className="w-full p-2.5 bg-white border border-gray-200 rounded-md text-xs font-semibold outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500" value={roiWeight} onChange={e => setRoiWeight(Number(e.target.value))} />
+                              <label className="text-[10px] md:text-[11px] font-semibold text-gray-500 mb-1 block">加工重量 (kg)</label>
+                              <input type="number" className="w-full p-2.5 bg-white border border-gray-200 rounded-md text-[11px] md:text-xs font-semibold outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500" value={roiWeight} onChange={e => setRoiWeight(Number(e.target.value))} />
                           </div>
                           <div className="grid grid-cols-2 gap-3">
                               <div>
-                                  <label className="text-[11px] font-semibold text-gray-500 mb-1 block">作業時間 (h)</label>
-                                  <input type="number" step="0.5" className="w-full p-2.5 bg-white border border-gray-200 rounded-md text-xs font-semibold outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500" value={roiHours} onChange={e => setRoiHours(Number(e.target.value))} />
+                                  <label className="text-[10px] md:text-[11px] font-semibold text-gray-500 mb-1 block">作業時間 (h)</label>
+                                  <input type="number" step="0.5" className="w-full p-2.5 bg-white border border-gray-200 rounded-md text-[11px] md:text-xs font-semibold outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500" value={roiHours} onChange={e => setRoiHours(Number(e.target.value))} />
                               </div>
                               <div>
-                                  <label className="text-[11px] font-semibold text-gray-500 mb-1 block">時給 (円)</label>
-                                  <input type="number" className="w-full p-2.5 bg-white border border-gray-200 rounded-md text-xs font-semibold outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500" value={roiWage} onChange={e => setRoiWage(Number(e.target.value))} />
+                                  <label className="text-[10px] md:text-[11px] font-semibold text-gray-500 mb-1 block">時給 (円)</label>
+                                  <input type="number" className="w-full p-2.5 bg-white border border-gray-200 rounded-md text-[11px] md:text-xs font-semibold outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500" value={roiWage} onChange={e => setRoiWage(Number(e.target.value))} />
                               </div>
                           </div>
                           <div>
-                              <label className="text-[11px] font-semibold text-gray-500 mb-1 block">その他経費 (円)</label>
-                              <input type="number" className="w-full p-2.5 bg-white border border-gray-200 rounded-md text-xs font-semibold outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500" value={roiPower} onChange={e => setRoiPower(Number(e.target.value))} />
+                              <label className="text-[10px] md:text-[11px] font-semibold text-gray-500 mb-1 block">その他経費 (円)</label>
+                              <input type="number" className="w-full p-2.5 bg-white border border-gray-200 rounded-md text-[11px] md:text-xs font-semibold outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500" value={roiPower} onChange={e => setRoiPower(Number(e.target.value))} />
                           </div>
                       </div>
 
-                      <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-5 content-start">
-                          <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm flex flex-col justify-between">
+                      <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5 content-start">
+                          <div className="bg-white rounded-lg p-4 md:p-5 border border-gray-200 shadow-sm flex flex-col justify-between">
                               <div>
-                                  <h4 className="text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">そのまま売却</h4>
-                                  <p className="text-[10px] text-gray-400">卸単価: ¥{wholesalePricePerKg} / kg</p>
+                                  <h4 className="text-[11px] md:text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">そのまま売却</h4>
+                                  <p className="text-[9px] md:text-[10px] text-gray-400">卸単価: ¥{wholesalePricePerKg} / kg</p>
                               </div>
-                              <div className="mt-5 border-t border-gray-100 pt-3">
-                                  <p className="text-xl font-bold text-gray-800">¥{wholesaleTotal.toLocaleString()}</p>
-                                  <p className="text-[10px] text-gray-400 mt-0.5">売上 (＝粗利)</p>
+                              <div className="mt-4 md:mt-5 border-t border-gray-100 pt-3">
+                                  <p className="text-lg md:text-xl font-bold text-gray-800">¥{wholesaleTotal.toLocaleString()}</p>
+                                  <p className="text-[9px] md:text-[10px] text-gray-400 mt-0.5">売上 (＝粗利)</p>
                               </div>
                           </div>
 
-                          <div className={`rounded-lg p-5 border shadow-sm flex flex-col justify-between ${isProcessingBetter ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-gray-200'}`}>
+                          <div className={`rounded-lg p-4 md:p-5 border shadow-sm flex flex-col justify-between ${isProcessingBetter ? 'bg-red-50 border-red-200' : 'bg-white border-gray-200'}`}>
                               <div>
-                                  <h4 className={`text-xs font-bold mb-1 flex items-center gap-1 uppercase tracking-wider ${isProcessingBetter ? 'text-indigo-700' : 'text-gray-600'}`}><Icons.LightningBolt /> 加工・ピカ線売却</h4>
-                                  <p className="text-[10px] text-gray-400">銅回収: {theoreticalCopperWeight.toFixed(1)}kg / 経費: ¥{processingCost.toLocaleString()}</p>
+                                  <h4 className={`text-[11px] md:text-xs font-bold mb-1 flex items-center gap-1 uppercase tracking-wider ${isProcessingBetter ? 'text-[#D32F2F]' : 'text-gray-600'}`}><Icons.LightningBolt /> 加工・ピカ線売却</h4>
+                                  <p className="text-[9px] md:text-[10px] text-gray-400">銅回収: {theoreticalCopperWeight.toFixed(1)}kg / 経費: ¥{processingCost.toLocaleString()}</p>
                               </div>
-                              <div className="mt-5 border-t border-gray-100 pt-3">
-                                  <p className={`text-xl font-bold ${isProcessingBetter ? 'text-indigo-700' : 'text-gray-800'}`}>¥{netProfitProcessing.toLocaleString()}</p>
-                                  <p className="text-[10px] text-gray-400 mt-0.5">純利益 (売上 - 経費)</p>
+                              <div className="mt-4 md:mt-5 border-t border-gray-100 pt-3">
+                                  <p className={`text-lg md:text-xl font-bold ${isProcessingBetter ? 'text-[#D32F2F]' : 'text-gray-800'}`}>¥{netProfitProcessing.toLocaleString()}</p>
+                                  <p className="text-[9px] md:text-[10px] text-gray-400 mt-0.5">純利益 (売上 - 経費)</p>
                               </div>
                           </div>
 
-                          <div className="sm:col-span-2 mt-2 bg-gray-800 rounded-lg p-5 flex justify-between items-center text-white shadow-sm border border-gray-700">
+                          <div className="sm:col-span-2 mt-2 bg-gray-900 rounded-lg p-4 md:p-5 flex justify-between items-center text-white shadow-sm border border-gray-800">
                               <div>
-                                  <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">AI Recommendation</p>
-                                  <p className="text-sm font-semibold mt-1 text-gray-100">{isProcessingBetter ? '自社で加工した方が利益が最大化されます' : '人件費負けします。そのまま売却してください'}</p>
+                                  <p className="text-[9px] md:text-[10px] text-gray-400 font-medium uppercase tracking-wider">AI Recommendation</p>
+                                  <p className="text-xs md:text-sm font-semibold mt-1 text-gray-100">{isProcessingBetter ? '自社で加工した方が利益が最大化されます' : '人件費負けします。そのまま売却してください'}</p>
                               </div>
                               <div className="text-right">
-                                  <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Profit Diff</p>
-                                  <p className={`text-lg font-bold mt-1 ${isProcessingBetter ? 'text-teal-400' : 'text-rose-400'}`}>
+                                  <p className="text-[9px] md:text-[10px] text-gray-400 font-medium uppercase tracking-wider">Profit Diff</p>
+                                  <p className={`text-base md:text-lg font-bold mt-1 ${isProcessingBetter ? 'text-emerald-400' : 'text-rose-400'}`}>
                                       {isProcessingBetter ? '+' : '-'}¥{diffAmount.toLocaleString()}
                                   </p>
                               </div>
@@ -453,39 +448,39 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
           </div>
       </div>
 
-      {/* 下段ブロック2：現場アナリティクス */}
+      {/* 🔴 下段ブロック2：現場アナリティクス */}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden flex-shrink-0">
-          <div className="bg-white px-6 pt-5 pb-3 border-b border-gray-100">
-              <div className="inline-flex p-1 bg-gray-100 rounded-md">
-                  <button onClick={() => setAnalyticsTab('LOG')} className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded transition-all ${analyticsTab === 'LOG' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+          <div className="bg-white px-4 md:px-6 pt-4 md:pt-5 pb-3 border-b border-gray-100 overflow-x-auto">
+              <div className="inline-flex p-1 bg-gray-100 rounded-md whitespace-nowrap">
+                  <button onClick={() => setAnalyticsTab('LOG')} className={`flex items-center gap-1 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-bold rounded transition-all ${analyticsTab === 'LOG' ? 'bg-white text-[#D32F2F] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
                       <Icons.ClipboardList /> 最近の加工実績
                   </button>
-                  <button onClick={() => setAnalyticsTab('INVENTORY')} className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded transition-all ${analyticsTab === 'INVENTORY' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-                      <Icons.Box /> 未加工在庫 <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-[10px] ml-1">{lotInventory.length}</span>
+                  <button onClick={() => setAnalyticsTab('INVENTORY')} className={`flex items-center gap-1 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-bold rounded transition-all ${analyticsTab === 'INVENTORY' ? 'bg-white text-[#D32F2F] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                      <Icons.Box /> 未加工在庫 <span className="bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded text-[10px] ml-1">{lotInventory.length}</span>
                   </button>
               </div>
           </div>
 
-          <div className="max-h-[500px] overflow-y-auto p-0">
+          <div className="max-h-[500px] overflow-x-auto overflow-y-auto p-0">
               {analyticsTab === 'LOG' && (
-                  <table className="w-full text-left border-collapse animate-in fade-in duration-300">
+                  <table className="w-full text-left border-collapse min-w-[500px] animate-in fade-in duration-300">
                       <thead className="bg-white sticky top-0 z-10 border-b border-gray-200">
                           <tr>
-                              <th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-wider">加工日 / 顧客</th>
-                              <th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-wider">品目</th>
-                              <th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">投入量</th>
-                              <th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">銅回収量</th>
-                              <th className="py-3 px-6 text-[10px] font-bold text-gray-800 uppercase tracking-wider text-right">実質歩留</th>
+                              <th className="py-2.5 md:py-3 px-4 md:px-6 text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wider">加工日 / 顧客</th>
+                              <th className="py-2.5 md:py-3 px-4 md:px-6 text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wider">品目</th>
+                              <th className="py-2.5 md:py-3 px-4 md:px-6 text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">投入量</th>
+                              <th className="py-2.5 md:py-3 px-4 md:px-6 text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">銅回収量</th>
+                              <th className="py-2.5 md:py-3 px-4 md:px-6 text-[9px] md:text-[10px] font-bold text-gray-800 uppercase tracking-wider text-right">実質歩留</th>
                           </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
                           {productions.slice(-15).reverse().map((p: any, idx: number) => (
                               <tr key={idx} className="hover:bg-gray-50 transition">
-                                  <td className="py-3 px-6"><div className="text-[10px] text-gray-400 font-mono">{String(p.date).substring(5,16)}</div><div className="text-xs font-semibold text-gray-800">{p.memberName}</div></td>
-                                  <td className="py-3 px-6 text-xs font-semibold text-gray-600">{p.materialName}</td>
-                                  <td className="py-3 px-6 text-right text-xs font-medium text-gray-500">{p.inputWeight} kg</td>
-                                  <td className="py-3 px-6 text-right text-xs font-semibold text-gray-800">{p.outputCopper} kg</td>
-                                  <td className="py-3 px-6 text-right"><span className="text-sm font-bold text-indigo-600">{p.actualRatio}%</span></td>
+                                  <td className="py-2 md:py-3 px-4 md:px-6"><div className="text-[9px] md:text-[10px] text-gray-400 font-mono">{String(p.date).substring(5,16)}</div><div className="text-[11px] md:text-xs font-semibold text-gray-800">{p.memberName}</div></td>
+                                  <td className="py-2 md:py-3 px-4 md:px-6 text-[11px] md:text-xs font-semibold text-gray-600">{p.materialName}</td>
+                                  <td className="py-2 md:py-3 px-4 md:px-6 text-right text-[11px] md:text-xs font-medium text-gray-500">{p.inputWeight} kg</td>
+                                  <td className="py-2 md:py-3 px-4 md:px-6 text-right text-[11px] md:text-xs font-semibold text-gray-800">{p.outputCopper} kg</td>
+                                  <td className="py-2 md:py-3 px-4 md:px-6 text-right"><span className="text-xs md:text-sm font-bold text-[#D32F2F]">{p.actualRatio}%</span></td>
                               </tr>
                           ))}
                       </tbody>
@@ -493,22 +488,22 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
               )}
 
               {analyticsTab === 'INVENTORY' && (
-                  <table className="w-full text-left border-collapse animate-in fade-in duration-300">
+                  <table className="w-full text-left border-collapse min-w-[500px] animate-in fade-in duration-300">
                       <thead className="bg-white sticky top-0 z-10 border-b border-gray-200">
                           <tr>
-                              <th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-wider">入荷日 / 顧客</th>
-                              <th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-wider">品目</th>
-                              <th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-center">想定歩留</th>
-                              <th className="py-3 px-6 text-[10px] font-bold text-gray-800 uppercase tracking-wider text-right">未加工残量</th>
+                              <th className="py-2.5 md:py-3 px-4 md:px-6 text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wider">入荷日 / 顧客</th>
+                              <th className="py-2.5 md:py-3 px-4 md:px-6 text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wider">品目</th>
+                              <th className="py-2.5 md:py-3 px-4 md:px-6 text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wider text-center">想定歩留</th>
+                              <th className="py-2.5 md:py-3 px-4 md:px-6 text-[9px] md:text-[10px] font-bold text-gray-800 uppercase tracking-wider text-right">未加工残量</th>
                           </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
                           {lotInventory.length === 0 ? (<tr><td colSpan={4} className="py-8 text-center text-xs text-gray-400 font-medium">現在、未加工の在庫はありません</td></tr>) : lotInventory.map((lot: any, idx: number) => (
                               <tr key={idx} className="hover:bg-gray-50 transition">
-                                  <td className="py-3 px-6"><div className="text-[10px] text-gray-400 font-mono">{lot.date}</div><div className="text-xs font-semibold text-gray-800">{lot.memberName}</div></td>
-                                  <td className="py-3 px-6 text-xs font-semibold text-gray-600">{lot.product}</td>
-                                  <td className="py-3 px-6 text-center"><span className="text-xs font-semibold text-gray-500">{lot.expectedRatio}%</span></td>
-                                  <td className="py-3 px-6 text-right"><span className="text-sm font-bold text-gray-900">{lot.remainingWeight.toFixed(1)} <span className="text-[10px] text-gray-500 font-medium">kg</span></span></td>
+                                  <td className="py-2 md:py-3 px-4 md:px-6"><div className="text-[9px] md:text-[10px] text-gray-400 font-mono">{lot.date}</div><div className="text-[11px] md:text-xs font-semibold text-gray-800">{lot.memberName}</div></td>
+                                  <td className="py-2 md:py-3 px-4 md:px-6 text-[11px] md:text-xs font-semibold text-gray-600">{lot.product}</td>
+                                  <td className="py-2 md:py-3 px-4 md:px-6 text-center"><span className="text-[11px] md:text-xs font-semibold text-gray-500">{lot.expectedRatio}%</span></td>
+                                  <td className="py-2 md:py-3 px-4 md:px-6 text-right"><span className="text-xs md:text-sm font-bold text-gray-900">{lot.remainingWeight.toFixed(1)} <span className="text-[9px] md:text-[10px] text-gray-500 font-medium">kg</span></span></td>
                               </tr>
                           ))}
                       </tbody>
