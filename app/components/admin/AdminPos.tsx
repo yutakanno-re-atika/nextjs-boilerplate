@@ -27,21 +27,13 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           if (typeof parsed === 'string') parsed = JSON.parse(parsed);
           if (typeof parsed === 'string') parsed = JSON.parse(parsed);
           if (Array.isArray(parsed)) {
-            const formatted = parsed.map(it => ({
-              product: it.product || it.productName || '',
-              weight: it.weight || '',
-              price: it.price || it.unitPrice || '',
-            }));
+            const formatted = parsed.map(it => ({ product: it.product || it.productName || '', weight: it.weight || '', price: it.price || it.unitPrice || '' }));
             setItems(formatted.length > 0 ? formatted : [{ product: '', weight: '', price: '' }]);
-          } else {
-            setItems([{ product: '', weight: '', price: '' }]);
-          }
+          } else { setItems([{ product: '', weight: '', price: '' }]); }
         } catch(e) { setItems([{ product: '', weight: '', price: '' }]); }
       }
     } else {
-      setClientName('');
-      setMemo('');
-      setItems([{ product: '', weight: '', price: '' }]);
+      setClientName(''); setMemo(''); setItems([{ product: '', weight: '', price: '' }]);
     }
   }, [editingResId, localReservations]);
 
@@ -53,7 +45,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         if (master) {
             const copperPrice = Number(data?.market?.copper?.price || 1450);
             const ratio = Number(master.ratio || 0) / 100;
-            // 粗利を抜いた想定単価を自動セット（少し安めに設定）
             newItems[index].price = Math.floor(copperPrice * ratio * 0.85); 
         }
     }
@@ -70,39 +61,26 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
     setIsSubmitting(true);
     
     const payload = editingResId ? {
-      action: 'UPDATE_RESERVATION',
-      reservationId: editingResId,
-      memberName: clientName,
-      items: items,
-      totalEstimate: totalAmount,
-      status: 'COMPLETED', // 計量完了してヤード在庫へ
-      memo: memo
-    } : {
-      action: 'REGISTER_RESERVATION',
-      memberName: clientName,
-      items: items,
-      totalEstimate: totalAmount,
-      memo: memo
-    };
+      action: 'UPDATE_RESERVATION', reservationId: editingResId, memberName: clientName, items: items, totalEstimate: totalAmount, status: 'COMPLETED', memo: memo
+    } : { action: 'REGISTER_RESERVATION', memberName: clientName, items: items, totalEstimate: totalAmount, memo: memo };
 
     try {
       const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const result = await res.json();
-      if (result.status === 'success') { onSuccess(); } 
-      else { alert('エラー: ' + result.message); }
+      if (result.status === 'success') { onSuccess(); } else { alert('エラー: ' + result.message); }
     } catch(e) { alert('通信エラーが発生しました'); }
     setIsSubmitting(false);
   };
 
   return (
-    <div className="flex flex-col h-full animate-in fade-in duration-300 max-w-4xl mx-auto w-full">
+    <div className="flex flex-col h-full animate-in fade-in duration-300 max-w-5xl mx-auto w-full">
       <header className="mb-6 flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">{editingResId ? '検収・計量 (POS)' : '新規受付 (POS)'}</h2>
-          <p className="text-sm text-gray-500 mt-1">重量と単価を入力して買掛金額を確定します。</p>
+          <h2 className="text-3xl font-black text-gray-900">{editingResId ? '検収・計量 (POS)' : '新規受付 (POS)'}</h2>
+          <p className="text-base text-gray-500 mt-2">重量と単価を入力して買掛金額を確定します。</p>
         </div>
         {editingResId && (
-            <button onClick={onClear} className="text-gray-500 hover:text-gray-900 transition flex items-center gap-1 font-bold text-sm bg-white border border-gray-200 px-3 py-2 rounded-lg">
+            <button onClick={onClear} className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition flex items-center gap-2 font-bold text-sm bg-white border border-gray-300 px-4 py-2.5 rounded-xl shadow-sm">
                 <Icons.Close /> 閉じる
             </button>
         )}
@@ -111,62 +89,66 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col flex-1">
           <div className="p-6 border-b border-gray-100 bg-gray-50 flex gap-6">
               <div className="flex-1">
-                  {/* ★ 極小フォントだった部分を text-sm に修正 */}
-                  <label className="text-sm text-gray-600 font-bold block mb-1.5">お客様 (業者名)</label>
-                  <input type="text" className="w-full border border-gray-300 p-3 rounded-xl text-base font-bold outline-none focus:border-[#D32F2F] focus:ring-2 focus:ring-red-100 transition" placeholder="持込業者名を入力" value={clientName} onChange={e => setClientName(e.target.value)} />
+                  <label className="text-sm text-gray-600 font-bold block mb-2">お客様 (業者名)</label>
+                  <input type="text" className="w-full border border-gray-300 p-3.5 rounded-xl text-lg font-bold outline-none focus:border-[#D32F2F] focus:ring-2 focus:ring-red-100 transition" placeholder="持込業者名を入力" value={clientName} onChange={e => setClientName(e.target.value)} />
               </div>
               <div className="w-1/3">
-                  <label className="text-sm text-gray-600 font-bold block mb-1.5">引継ぎメモ</label>
-                  <input type="text" className="w-full border border-gray-300 p-3 rounded-xl text-sm outline-none focus:border-[#D32F2F] focus:ring-2 focus:ring-red-100 transition" placeholder="例：泥汚れ多め" value={memo} onChange={e => setMemo(e.target.value)} />
+                  <label className="text-sm text-gray-600 font-bold block mb-2">引継ぎメモ</label>
+                  <input type="text" className="w-full border border-gray-300 p-3.5 rounded-xl text-base outline-none focus:border-[#D32F2F] focus:ring-2 focus:ring-red-100 transition" placeholder="例：泥汚れ多め" value={memo} onChange={e => setMemo(e.target.value)} />
               </div>
           </div>
 
           <div className="p-6 flex-1 overflow-y-auto bg-gray-50/30">
               <div className="flex text-sm font-bold text-gray-500 mb-3 px-2">
-                  <div className="flex-1">持込品目</div>
-                  <div className="w-32 text-right">重量 (kg)</div>
-                  <div className="w-32 text-right">買取単価 (円)</div>
-                  <div className="w-32 text-right">金額</div>
+                  <div className="flex-1">持込品目 (メーカー / 太さ / 芯数)</div>
+                  <div className="w-36 text-right">重量 (kg)</div>
+                  <div className="w-40 text-right">買取単価 (円)</div>
+                  <div className="w-40 text-right">金額</div>
                   <div className="w-12"></div>
               </div>
               
-              <div className="space-y-3">
+              <div className="space-y-4">
                   {items.map((item, idx) => (
-                      <div key={idx} className="flex gap-3 items-center bg-white p-2 rounded-xl border border-gray-200 shadow-sm group">
+                      <div key={idx} className="flex gap-4 items-center bg-white p-3 rounded-xl border border-gray-200 shadow-sm group hover:border-[#D32F2F] transition">
                           <div className="flex-1">
-                              <select className="w-full bg-transparent p-2 text-base font-bold outline-none cursor-pointer" value={item.product} onChange={e => handleItemChange(idx, 'product', e.target.value)}>
-                                  <option value="">品目を選択</option>
-                                  {wiresMaster.map((w:any) => <option key={w.name} value={w.name}>{w.name}</option>)}
+                              {/* ★ セレクトボックスの中に詳細情報を表示 */}
+                              <select className="w-full bg-transparent p-2 text-base font-bold outline-none cursor-pointer text-gray-900" value={item.product} onChange={e => handleItemChange(idx, 'product', e.target.value)}>
+                                  <option value="">-- 品目を選択 --</option>
+                                  {wiresMaster.map((w:any) => {
+                                      const details = [w.maker, w.sq, w.core].filter(Boolean).join(' | ');
+                                      const label = details ? `${w.name} [${details}]` : w.name;
+                                      return <option key={w.id} value={w.name}>{label} - 銅率{w.ratio}%</option>;
+                                  })}
                                   <option value="雑線">雑線 (手入力)</option>
                                   <option value="その他">その他 (手入力)</option>
                               </select>
                           </div>
-                          <div className="w-32 relative">
-                              <input type="number" className="w-full bg-gray-50 border border-gray-200 p-2 pr-8 rounded-lg text-lg font-black text-right outline-none focus:border-[#D32F2F]" placeholder="0" value={item.weight} onChange={e => handleItemChange(idx, 'weight', e.target.value)} />
-                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-bold">kg</span>
+                          <div className="w-36 relative">
+                              <input type="number" className="w-full bg-gray-50 border border-gray-200 p-3 pr-8 rounded-xl text-xl font-black text-right outline-none focus:border-[#D32F2F] focus:bg-white" placeholder="0" value={item.weight} onChange={e => handleItemChange(idx, 'weight', e.target.value)} />
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-bold">kg</span>
                           </div>
-                          <div className="w-32 relative">
-                              <input type="number" className="w-full bg-gray-50 border border-gray-200 p-2 pr-6 rounded-lg text-lg font-bold text-right outline-none focus:border-[#D32F2F]" placeholder="0" value={item.price} onChange={e => handleItemChange(idx, 'price', e.target.value)} />
-                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-bold">円</span>
+                          <div className="w-40 relative">
+                              <input type="number" className="w-full bg-gray-50 border border-gray-200 p-3 pr-6 rounded-xl text-xl font-bold text-right outline-none focus:border-[#D32F2F] focus:bg-white" placeholder="0" value={item.price} onChange={e => handleItemChange(idx, 'price', e.target.value)} />
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-bold">円</span>
                           </div>
-                          <div className="w-32 text-right px-2">
-                              <p className="text-xl font-black text-gray-900">¥{(Number(item.weight) * Number(item.price) || 0).toLocaleString()}</p>
+                          <div className="w-40 text-right px-2">
+                              <p className="text-2xl font-black text-gray-900">¥{(Number(item.weight) * Number(item.price) || 0).toLocaleString()}</p>
                           </div>
                           <div className="w-12 text-center">
-                              <button onClick={() => removeItem(idx)} className="text-gray-300 hover:text-red-500 transition p-2"><Icons.Trash /></button>
+                              <button onClick={() => removeItem(idx)} className="text-gray-300 hover:text-red-500 hover:bg-red-50 transition p-2.5 rounded-lg"><Icons.Trash /></button>
                           </div>
                       </div>
                   ))}
               </div>
               
-              <button onClick={addItem} className="mt-4 text-sm font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-4 py-2.5 rounded-xl transition flex items-center gap-1 border border-blue-200 border-dashed w-full justify-center">
+              <button onClick={addItem} className="mt-6 text-sm font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-3.5 rounded-xl transition flex items-center gap-2 border border-blue-200 border-dashed w-full justify-center">
                   <Icons.Plus /> 品目を追加する
               </button>
           </div>
 
           <div className="p-6 border-t border-gray-200 bg-white flex justify-between items-end">
               <div>
-                  <p className="text-sm font-bold text-gray-500 mb-1">合計 買掛金額</p>
+                  <p className="text-sm font-bold text-gray-500 mb-2">合計 買掛金額</p>
                   <p className="text-5xl font-black text-gray-900 tracking-tight">¥{totalAmount.toLocaleString()}</p>
               </div>
               <button onClick={handleSubmit} disabled={isSubmitting || !clientName} className="bg-[#D32F2F] text-white px-8 py-4 rounded-xl text-lg font-bold hover:bg-red-700 transition shadow-lg flex items-center gap-2 disabled:bg-gray-300 disabled:shadow-none">
