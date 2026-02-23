@@ -42,6 +42,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                       lotInventory.push({
                           lotId: `${res.id}-${idx}`, reservationId: res.id, memberName: res.memberName || '名称未設定',
                           date: res.visitDate ? String(res.visitDate).substring(5, 16) : '不明', product: product,
+                          maker: productMaster?.maker, sq: productMaster?.sq, core: productMaster?.core, // ★ 追加
                           remainingWeight: remainingWeight, expectedRatio: productMaster ? productMaster.ratio : 0
                       });
                   }
@@ -88,7 +89,6 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 flex-1 min-h-0">
           
-          {/* 左側：ロット別 未加工在庫リスト */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col overflow-hidden">
               <div className="p-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center flex-shrink-0">
                   <h3 className="text-lg font-bold text-gray-900">📦 個別ロット在庫 (入荷順)</h3>
@@ -112,18 +112,24 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                                   <p className="text-2xl font-black text-[#D32F2F]">{lot.remainingWeight.toFixed(1)} <span className="text-sm text-gray-500 font-bold">kg</span></p>
                               </div>
                           </div>
-                          <div className="flex justify-between items-center bg-white p-2.5 rounded-lg border border-gray-100">
-                              <p className="text-sm font-bold text-gray-800 flex items-center"><Icons.Tag /> {lot.product}</p>
-                              <p className="text-xs text-gray-500 font-bold">想定歩留: <span className="text-gray-800">{lot.expectedRatio}%</span></p>
+                          <div className="bg-white p-3 rounded-lg border border-gray-100">
+                              <div className="flex justify-between items-center">
+                                  <p className="text-base font-bold text-gray-800 flex items-center"><Icons.Tag /> {lot.product}</p>
+                                  <p className="text-sm text-gray-500 font-bold">想定: <span className="text-gray-800">{lot.expectedRatio}%</span></p>
+                              </div>
+                              {/* ★ ここに詳細情報を追加 */}
+                              <div className="flex gap-2 mt-2">
+                                  {lot.maker && <span className="text-xs font-medium bg-gray-100 text-gray-600 px-2 py-0.5 rounded border border-gray-200">{lot.maker}</span>}
+                                  {lot.sq && <span className="text-xs font-medium bg-gray-100 text-gray-600 px-2 py-0.5 rounded border border-gray-200">{lot.sq}</span>}
+                                  {lot.core && <span className="text-xs font-medium bg-gray-100 text-gray-600 px-2 py-0.5 rounded border border-gray-200">{lot.core}</span>}
+                              </div>
                           </div>
                       </div>
                   ))}
               </div>
           </div>
 
-          {/* 右側：製品在庫 ＆ 加工記録パネル */}
           <div className="flex flex-col gap-8">
-              
               <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl border border-gray-700 shadow-lg p-6 text-white flex-shrink-0 relative overflow-hidden">
                   <div className="absolute top-0 right-0 p-4 opacity-10"><Icons.Copper /></div>
                   <h3 className="text-lg font-bold text-gray-300 mb-2 flex items-center gap-2"><Icons.Copper /> ピカ銅（ペレット） 製品在庫</h3>
@@ -145,9 +151,17 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                       ) : (
                           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                               <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 shadow-sm">
-                                  <p className="text-xs text-gray-500 font-bold mb-1">ターゲット顧客</p>
+                                  <p className="text-sm text-gray-500 font-bold mb-1">ターゲット顧客</p>
                                   <p className="text-lg font-black text-gray-900">{selectedLot.memberName}</p>
-                                  <p className="text-base font-bold text-[#D32F2F] mt-1 flex items-center"><Icons.Tag /> {selectedLot.product}</p>
+                                  <div className="flex items-center gap-2 mt-2">
+                                      <p className="text-base font-bold text-[#D32F2F] flex items-center"><Icons.Tag /> {selectedLot.product}</p>
+                                      {/* ★ ここにも詳細情報を追加 */}
+                                      <div className="flex gap-1.5">
+                                          {selectedLot.maker && <span className="text-[10px] font-bold bg-white text-gray-500 px-1.5 py-0.5 rounded border border-gray-200">{selectedLot.maker}</span>}
+                                          {selectedLot.sq && <span className="text-[10px] font-bold bg-white text-gray-500 px-1.5 py-0.5 rounded border border-gray-200">{selectedLot.sq}</span>}
+                                          {selectedLot.core && <span className="text-[10px] font-bold bg-white text-gray-500 px-1.5 py-0.5 rounded border border-gray-200">{selectedLot.core}</span>}
+                                      </div>
+                                  </div>
                               </div>
 
                               <div className="bg-red-50 p-5 rounded-2xl border border-red-100 relative shadow-inner">
