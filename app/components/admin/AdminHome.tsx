@@ -10,9 +10,9 @@ const Icons = {
   ChevronRight: () => <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>,
   Banknotes: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   Calculator: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
-  LightningBolt: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>,
-  ClipboardList: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>,
-  Box: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>,
+  LightningBolt: () => <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>,
+  ClipboardList: () => <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>,
+  Box: () => <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>,
   ArrowUp: () => <svg className="w-3.5 h-3.5 mr-0.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>,
   ArrowDown: () => <svg className="w-3.5 h-3.5 mr-0.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>,
 };
@@ -22,10 +22,8 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
   const [bottomTab, setBottomTab] = useState<'PRICING' | 'ROI'>('PRICING');
   const [analyticsTab, setAnalyticsTab] = useState<'LOG' | 'INVENTORY'>('LOG');
   
-  // PRICING State
   const [targetMargin, setTargetMargin] = useState<number>(15);
   
-  // ROI State
   const [roiWire, setRoiWire] = useState('');
   const [roiWeight, setRoiWeight] = useState(500);
   const [roiWage, setRoiWage] = useState(2000);
@@ -45,7 +43,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
     if (wiresMaster.length > 0 && !roiWire) { setRoiWire(wiresMaster[0].name); }
   }, [wiresMaster, roiWire]);
 
-  // 1. KPI集計
   const currentMonthStats = useMemo(() => {
     const now = new Date();
     const thisMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -69,7 +66,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
     return { monthNum: now.getMonth() + 1, thisWeight, thisAmount, diffWeight: thisWeight - lastWeight, diffAmount: thisAmount - lastAmount };
   }, [localReservations]);
 
-  // 2. チャートデータ
   const monthlyData = useMemo(() => {
     const months = Array.from({ length: 12 }, (_, i) => ({ month: i + 1, weight: 0, amount: 0 }));
     localReservations.filter(r => r.status === 'COMPLETED' || r.status === 'ARCHIVED').forEach(res => {
@@ -90,7 +86,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
   }, [localReservations, chartYear]);
   const maxWeight = Math.max(...monthlyData.map(d => d.weight), 100);
 
-  // 3. ランキング (★修正箇所：a:any, b:anyを追加)
   const clientYieldRanking = useMemo(() => {
       const clientStats: Record<string, { totalInput: number, yieldDiffSum: number, count: number }> = {};
       productions.forEach((p: any) => {
@@ -110,17 +105,10 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
           }
       });
       return Object.entries(clientStats)
-          .map(([name, stats]) => ({ 
-              name, 
-              totalInput: stats.totalInput, 
-              count: stats.count, 
-              avgDiff: stats.count > 0 ? (stats.yieldDiffSum / stats.count) : 0 
-          }))
-          .filter(c => c.count !== 0)
-          .sort((a: any, b: any) => b.avgDiff - a.avgDiff).slice(0, 5); // ★ここでany追加
+          .map(([name, stats]) => ({ name, totalInput: stats.totalInput, count: stats.count, avgDiff: stats.count > 0 ? (stats.yieldDiffSum / stats.count) : 0 }))
+          .filter(c => c.count !== 0).sort((a: any, b: any) => b.avgDiff - a.avgDiff).slice(0, 5);
   }, [productions, wiresMaster]);
 
-  // 4. 在庫 (★修正箇所：a:any, b:anyを追加)
   const lotInventory = useMemo(() => {
       let inventory: any[] = [];
       localReservations.filter(r => r.status === 'COMPLETED').forEach(res => {
@@ -139,22 +127,18 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                       const remainingWeight = initialWeight - processedWeight;
                       if (remainingWeight > 0) {
                           const productMaster = wiresMaster.find((w: any) => w.name === product);
-                          inventory.push({
-                              reservationId: res.id, memberName: res.memberName || '名称未設定', date: res.visitDate ? String(res.visitDate).substring(5, 16) : '不明',
-                              product: product, remainingWeight: remainingWeight, expectedRatio: productMaster ? productMaster.ratio : 0
-                          });
+                          inventory.push({ reservationId: res.id, memberName: res.memberName || '名称未設定', date: res.visitDate ? String(res.visitDate).substring(5, 16) : '不明', product: product, remainingWeight: remainingWeight, expectedRatio: productMaster ? productMaster.ratio : 0 });
                       }
                   }
               }
           });
       });
-      return inventory.sort((a: any, b: any) => b.remainingWeight - a.remainingWeight); // ★ここでany追加
+      return inventory.sort((a: any, b: any) => b.remainingWeight - a.remainingWeight);
   }, [localReservations, productions, wiresMaster]);
 
   const totalProducedCopper = productions.reduce((sum: number, p: any) => sum + (Number(p.outputCopper) || 0), 0);
   const copperAssetValue = totalProducedCopper * currentCopperPrice;
 
-  // PRICING計算 (★修正箇所：a:any, b:anyを追加)
   const currentPricesList = useMemo(() => {
       if (currentCopperPrice === 0) return [];
       const userMarginRatio = (100 - targetMargin) / 100; 
@@ -164,10 +148,10 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
           const purchasePrice = Math.floor(theoreticalValue * userMarginRatio); 
           const profit = Math.floor(theoreticalValue - purchasePrice); 
           return { name: w.name, maker: w.maker, sq: w.sq, core: w.core, ratio: ratio, theoreticalValue, purchasePrice, profit };
-      }).sort((a: any, b: any) => b.ratio - a.ratio); // ★ここでany追加
+      }).sort((a: any, b: any) => b.ratio - a.ratio); 
   }, [currentCopperPrice, wiresMaster, targetMargin]);
 
-  const roiSelectedWire = wiresMaster.find((w:any) => w.name === roiWire) || wiresMaster[0];
+  const roiSelectedWire = wiresMaster.find((w:any) => w.name === roiWire) || wiresMaster?.[0] || {};
   const theoreticalCopperWeight = roiWeight * ((roiSelectedWire?.ratio || 0) / 100);
   const processingCost = (roiWage * roiHours) + roiPower;
   const wholesalePricePerKg = Math.floor(currentCopperPrice * ((roiSelectedWire?.ratio || 0) / 100) * 0.85);
@@ -188,10 +172,8 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
         </div>
       </header>
 
-      {/* 🔴 Azia風 トップKPI (シャープな角丸・フラットデザイン) */}
+      {/* 🔴 トップKPI */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-          
-          {/* 1. 建値 (リストスタイル) */}
           <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm flex flex-col justify-between">
               <div className="flex justify-between items-center mb-3">
                   <h6 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">本日の主要建値</h6>
@@ -217,7 +199,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
               </div>
           </div>
 
-          {/* 2. ピカ銅資産 (インディゴグラデーション) */}
           <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 p-5 rounded-lg shadow-sm flex flex-col justify-between text-white relative overflow-hidden">
               <div className="absolute right-0 bottom-0 opacity-10 transform translate-x-1/4 translate-y-1/4 scale-150"><Icons.Copper /></div>
               <div className="flex justify-between items-center mb-4 z-10">
@@ -234,7 +215,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
               </div>
           </div>
 
-          {/* 3. 買取重量 */}
           <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm flex flex-col justify-between">
               <div className="flex justify-between items-start mb-4">
                   <div>
@@ -252,7 +232,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
               </div>
           </div>
           
-          {/* 4. 買掛金額 */}
           <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm flex flex-col justify-between">
               <div className="flex justify-between items-start mb-4">
                   <div>
@@ -284,7 +263,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                       <option value={2025}>2025年度</option>
                   </select>
               </div>
-              {/* Azia風 細身のバーチャート */}
               <div className="flex-1 flex items-end gap-2 md:gap-4 mt-2 relative min-h-[180px]">
                   <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-5">
                       <div className="border-t border-gray-900 w-full h-0"></div><div className="border-t border-gray-900 w-full h-0"></div><div className="border-t border-gray-900 w-full h-0"></div><div className="border-t border-gray-900 w-full h-0"></div>
@@ -341,17 +319,17 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
           </div>
       </div>
 
-      {/* 🔴 下段ブロック1：シミュレーション・ツールボックス (Azia風タブ) */}
+      {/* 🔴 下段ブロック1：シミュレーション・ツールボックス (★絶対表示されるピル型タブ) */}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden">
-          <div className="border-b border-gray-200 bg-white px-6 pt-4">
-              <nav className="-mb-px flex space-x-6">
-                  <button onClick={() => setBottomTab('PRICING')} className={`whitespace-nowrap pb-3 px-1 border-b-2 font-semibold text-sm transition-colors duration-200 flex items-center gap-1.5 ${bottomTab === 'PRICING' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>
+          <div className="bg-white px-6 pt-5 pb-3 border-b border-gray-100">
+              <div className="inline-flex p-1 bg-gray-100 rounded-md">
+                  <button onClick={() => setBottomTab('PRICING')} className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded transition-all ${bottomTab === 'PRICING' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
                       <Icons.Banknotes /> 適正単価計算
                   </button>
-                  <button onClick={() => setBottomTab('ROI')} className={`whitespace-nowrap pb-3 px-1 border-b-2 font-semibold text-sm transition-colors duration-200 flex items-center gap-1.5 ${bottomTab === 'ROI' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>
+                  <button onClick={() => setBottomTab('ROI')} className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded transition-all ${bottomTab === 'ROI' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
                       <Icons.Calculator /> 加工損益(ROI)
                   </button>
-              </nav>
+              </div>
           </div>
           
           <div className="p-0">
@@ -468,17 +446,17 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
           </div>
       </div>
 
-      {/* 🔴 下段ブロック2：現場アナリティクス */}
+      {/* 🔴 下段ブロック2：現場アナリティクス (★絶対表示されるピル型タブ) */}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden">
-          <div className="border-b border-gray-200 bg-white px-6 pt-4">
-              <nav className="-mb-px flex space-x-6">
-                  <button onClick={() => setAnalyticsTab('LOG')} className={`whitespace-nowrap pb-3 px-1 border-b-2 font-semibold text-sm transition-colors duration-200 flex items-center gap-1.5 ${analyticsTab === 'LOG' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>
+          <div className="bg-white px-6 pt-5 pb-3 border-b border-gray-100">
+              <div className="inline-flex p-1 bg-gray-100 rounded-md">
+                  <button onClick={() => setAnalyticsTab('LOG')} className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded transition-all ${analyticsTab === 'LOG' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
                       <Icons.ClipboardList /> 最近の加工実績
                   </button>
-                  <button onClick={() => setAnalyticsTab('INVENTORY')} className={`whitespace-nowrap pb-3 px-1 border-b-2 font-semibold text-sm transition-colors duration-200 flex items-center gap-1.5 ${analyticsTab === 'INVENTORY' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>
+                  <button onClick={() => setAnalyticsTab('INVENTORY')} className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded transition-all ${analyticsTab === 'INVENTORY' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
                       <Icons.Box /> 未加工在庫 <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-[10px] ml-1">{lotInventory.length}</span>
                   </button>
-              </nav>
+              </div>
           </div>
 
           <div className="max-h-[350px] overflow-y-auto p-0">
