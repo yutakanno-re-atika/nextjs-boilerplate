@@ -1,5 +1,5 @@
-// @ts-nocheck
 "use client";
+// @ts-nocheck
 import React, { useMemo, useState, useEffect } from 'react';
 
 const Icons = {
@@ -11,8 +11,8 @@ const Icons = {
   Banknotes: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   Calculator: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
   LightningBolt: () => <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>,
-  ClipboardList: () => <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>,
-  Box: () => <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>,
+  ClipboardList: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>,
+  Box: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>,
   ArrowUp: () => <svg className="w-3.5 h-3.5 mr-0.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>,
   ArrowDown: () => <svg className="w-3.5 h-3.5 mr-0.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>,
 };
@@ -22,8 +22,10 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
   const [bottomTab, setBottomTab] = useState<'PRICING' | 'ROI'>('PRICING');
   const [analyticsTab, setAnalyticsTab] = useState<'LOG' | 'INVENTORY'>('LOG');
   
+  // PRICING State
   const [targetMargin, setTargetMargin] = useState<number>(15);
   
+  // ROI State
   const [roiWire, setRoiWire] = useState('');
   const [roiWeight, setRoiWeight] = useState(500);
   const [roiWage, setRoiWage] = useState(2000);
@@ -43,6 +45,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
     if (wiresMaster.length > 0 && !roiWire) { setRoiWire(wiresMaster[0].name); }
   }, [wiresMaster, roiWire]);
 
+  // 1. KPI集計
   const currentMonthStats = useMemo(() => {
     const now = new Date();
     const thisMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -66,6 +69,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
     return { monthNum: now.getMonth() + 1, thisWeight, thisAmount, diffWeight: thisWeight - lastWeight, diffAmount: thisAmount - lastAmount };
   }, [localReservations]);
 
+  // 2. チャートデータ
   const monthlyData = useMemo(() => {
     const months = Array.from({ length: 12 }, (_, i) => ({ month: i + 1, weight: 0, amount: 0 }));
     localReservations.filter(r => r.status === 'COMPLETED' || r.status === 'ARCHIVED').forEach(res => {
@@ -86,6 +90,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
   }, [localReservations, chartYear]);
   const maxWeight = Math.max(...monthlyData.map(d => d.weight), 100);
 
+  // 3. ランキング
   const clientYieldRanking = useMemo(() => {
       const clientStats: Record<string, { totalInput: number, yieldDiffSum: number, count: number }> = {};
       productions.forEach((p: any) => {
@@ -109,6 +114,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
           .filter(c => c.count !== 0).sort((a: any, b: any) => b.avgDiff - a.avgDiff).slice(0, 5);
   }, [productions, wiresMaster]);
 
+  // 4. 在庫
   const lotInventory = useMemo(() => {
       let inventory: any[] = [];
       localReservations.filter(r => r.status === 'COMPLETED').forEach(res => {
@@ -139,6 +145,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
   const totalProducedCopper = productions.reduce((sum: number, p: any) => sum + (Number(p.outputCopper) || 0), 0);
   const copperAssetValue = totalProducedCopper * currentCopperPrice;
 
+  // PRICING計算
   const currentPricesList = useMemo(() => {
       if (currentCopperPrice === 0) return [];
       const userMarginRatio = (100 - targetMargin) / 100; 
@@ -162,18 +169,19 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
   const diffAmount = Math.abs(netProfitProcessing - wholesaleTotal);
 
   return (
-    <div className="flex flex-col h-full animate-in fade-in duration-500 max-w-[1400px] mx-auto w-full space-y-6 pb-12 font-sans text-gray-800">
+    // ★ h-full を外して自然なスクロールを許可！
+    <div className="flex flex-col animate-in fade-in duration-500 max-w-[1400px] mx-auto w-full space-y-6 pb-12 font-sans text-gray-800">
       
-      {/* 🔴 Azia風 ヘッダー */}
-      <header className="flex flex-col md:flex-row md:justify-between md:items-end pb-3 border-b border-gray-200/60">
+      {/* ヘッダー */}
+      <header className="flex flex-col md:flex-row md:justify-between md:items-end pb-3 border-b border-gray-200/60 flex-shrink-0">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Dashboard</h2>
           <p className="text-sm text-gray-500 mt-1">相場連動プライシングと経営実績の統合ビュー</p>
         </div>
       </header>
 
-      {/* 🔴 トップKPI */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+      {/* トップKPI */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 flex-shrink-0">
           <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm flex flex-col justify-between">
               <div className="flex justify-between items-center mb-3">
                   <h6 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">本日の主要建値</h6>
@@ -250,9 +258,9 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
           </div>
       </div>
 
-      {/* 🔴 中段：実績チャート ＆ ランキング */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          <div className="lg:col-span-2 bg-white rounded-lg border border-gray-200 shadow-sm p-6 flex flex-col">
+      {/* 中段：チャート ＆ ランキング */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 flex-shrink-0">
+          <div className="lg:col-span-2 bg-white rounded-lg border border-gray-200 shadow-sm p-6 flex flex-col min-h-[300px]">
               <div className="flex justify-between items-center mb-6">
                   <div>
                       <h3 className="text-base font-bold text-gray-900">月別買取トレンド</h3>
@@ -263,7 +271,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                       <option value={2025}>2025年度</option>
                   </select>
               </div>
-              <div className="flex-1 flex items-end gap-2 md:gap-4 mt-2 relative min-h-[180px]">
+              <div className="flex-1 flex items-end gap-2 md:gap-4 mt-2 relative">
                   <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-5">
                       <div className="border-t border-gray-900 w-full h-0"></div><div className="border-t border-gray-900 w-full h-0"></div><div className="border-t border-gray-900 w-full h-0"></div><div className="border-t border-gray-900 w-full h-0"></div>
                   </div>
@@ -285,7 +293,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
               </div>
           </div>
 
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 flex flex-col">
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 flex flex-col min-h-[300px]">
               <div className="mb-4">
                   <h3 className="text-base font-bold text-gray-900">品質・歩留まりランキング</h3>
                   <p className="text-[11px] text-gray-400 mt-0.5">マスター想定に対する実質上振れ</p>
@@ -319,8 +327,8 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
           </div>
       </div>
 
-      {/* 🔴 下段ブロック1：シミュレーション・ツールボックス (★絶対表示されるピル型タブ) */}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden">
+      {/* 🔴 下段ブロック1：シミュレーション・ツールボックス (★絶対潰れない) */}
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden flex-shrink-0">
           <div className="bg-white px-6 pt-5 pb-3 border-b border-gray-100">
               <div className="inline-flex p-1 bg-gray-100 rounded-md">
                   <button onClick={() => setBottomTab('PRICING')} className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded transition-all ${bottomTab === 'PRICING' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
@@ -343,7 +351,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                               <span className="text-sm font-bold text-gray-800 w-8 text-right">{targetMargin}%</span>
                           </div>
                       </div>
-                      <div className="max-h-[350px] overflow-y-auto">
+                      <div className="max-h-[500px] overflow-y-auto">
                           <table className="w-full text-left border-collapse">
                               <thead className="bg-white sticky top-0 shadow-sm z-10 border-b border-gray-200">
                                   <tr>
@@ -446,8 +454,8 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
           </div>
       </div>
 
-      {/* 🔴 下段ブロック2：現場アナリティクス (★絶対表示されるピル型タブ) */}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden">
+      {/* 🔴 下段ブロック2：現場アナリティクス (★絶対潰れない) */}
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col overflow-hidden flex-shrink-0">
           <div className="bg-white px-6 pt-5 pb-3 border-b border-gray-100">
               <div className="inline-flex p-1 bg-gray-100 rounded-md">
                   <button onClick={() => setAnalyticsTab('LOG')} className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded transition-all ${analyticsTab === 'LOG' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
@@ -459,7 +467,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
               </div>
           </div>
 
-          <div className="max-h-[350px] overflow-y-auto p-0">
+          <div className="max-h-[500px] overflow-y-auto p-0">
               {analyticsTab === 'LOG' && (
                   <table className="w-full text-left border-collapse animate-in fade-in duration-300">
                       <thead className="bg-white sticky top-0 z-10 border-b border-gray-200">
