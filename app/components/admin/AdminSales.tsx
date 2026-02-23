@@ -26,7 +26,6 @@ export const AdminSales = ({ data }: { data: any }) => {
 
   const targets = data?.salesTargets || [];
 
-  // 1. 全件のマスター集計 (グラフのベース枠を作るため)
   const masterStats = useMemo(() => {
       const areaCount: Record<string, number> = {};
       const industryCount: Record<string, number> = {};
@@ -44,10 +43,9 @@ export const AdminSales = ({ data }: { data: any }) => {
       return { topAreas, topIndustries, total: targets.length };
   }, [targets]);
 
-  // 2. フィルタリング処理（安全な文字列比較）
   const filteredTargets = useMemo(() => {
     return targets.filter((t: any) => {
-      const tCompany = (t.company || '').toLowerCase().replace(/　/g, ' '); // 全角スペース対策
+      const tCompany = (t.company || '').toLowerCase().replace(/　/g, ' '); 
       const tAddress = (t.address || '').toLowerCase();
       const tPriority = (t.priority || '').trim();
       const tStatus = (t.status || '未確認').trim();
@@ -64,21 +62,18 @@ export const AdminSales = ({ data }: { data: any }) => {
     });
   }, [targets, searchTerm, filterPriority, filterStatus, filterArea, filterIndustry]);
 
-  // ★ 3. ダッシュボード動的連動：現在表示されている結果の集計
   const currentStats = useMemo(() => {
       const areaCount: Record<string, number> = {};
       const industryCount: Record<string, number> = {};
       const priorityCount = { S: 0, A: 0, B: 0, All_S: 0, All_A: 0, All_B: 0 };
       
-      // 全体の優先度数を取得
-      targets.forEach(t => {
+      targets.forEach((t: any) => {
           const p = (t.priority || '').trim();
           if (p === 'S') priorityCount.All_S++;
           if (p === 'A') priorityCount.All_A++;
           if (p === 'B') priorityCount.All_B++;
       });
 
-      // 絞り込まれた後の数を取得
       filteredTargets.forEach((t: any) => {
           const p = (t.priority || '').trim();
           const a = (t.area || '').trim();
@@ -123,8 +118,6 @@ export const AdminSales = ({ data }: { data: any }) => {
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          
-          {/* 1. 優先度パネル (ダイナミック表示) */}
           <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-6 rounded-2xl border border-gray-700 shadow-lg text-white flex flex-col justify-between relative overflow-hidden">
               <div className="absolute -right-2 -top-2 opacity-10"><Icons.Fire /></div>
               <h3 className="text-base font-bold text-gray-300 flex items-center gap-2 mb-4"><Icons.Fire /> 現在の該当ターゲット</h3>
@@ -147,15 +140,14 @@ export const AdminSales = ({ data }: { data: any }) => {
               </div>
           </div>
 
-          {/* 2. エリア別 分布 (ダイナミックゲージ) */}
           <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex flex-col">
               <h3 className="text-base font-bold text-gray-700 flex items-center gap-2 mb-4"><Icons.Location /> エリア分布 (現在該当分)</h3>
               <div className="space-y-3 flex-1">
                   {masterStats.topAreas.map((area) => {
                       const isActive = filterArea === area;
                       const isDimmed = filterArea !== '' && filterArea !== area;
-                      const count = currentStats.areaCount[area] || 0; // 現在の条件での件数
-                      const maxTarget = Math.max(...Object.values(currentStats.areaCount), 1); // ゲージの最大値
+                      const count = currentStats.areaCount[area] || 0; 
+                      const maxTarget = Math.max(...Object.values(currentStats.areaCount), 1); 
                       return (
                           <div key={area} className={`group cursor-pointer transition ${isDimmed ? 'opacity-40' : 'opacity-100'}`} onClick={() => setFilterArea(isActive ? '' : area)}>
                               <div className="flex justify-between items-center text-sm font-bold mb-1">
@@ -171,7 +163,6 @@ export const AdminSales = ({ data }: { data: any }) => {
               </div>
           </div>
 
-          {/* 3. 業種別 分布 (ダイナミックゲージ) */}
           <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex flex-col">
               <h3 className="text-base font-bold text-gray-700 flex items-center gap-2 mb-4"><Icons.Building /> 業種分布 (現在該当分)</h3>
               <div className="space-y-3 flex-1">
@@ -240,7 +231,6 @@ export const AdminSales = ({ data }: { data: any }) => {
                       {filteredTargets.length === 0 ? (
                           <tr><td colSpan={5} className="p-10 text-center text-gray-400 font-bold bg-gray-50">条件に一致するターゲットが見つかりません</td></tr>
                       ) : filteredTargets.map((target: any, idx: number) => (
-                          {/* ★ keyを target.id と idx の複合にして残像バグを完全に排除 */}
                           <tr key={`${target.id}-${idx}`} className="hover:bg-blue-50/30 transition">
                               <td className="p-4">
                                   <p className="font-bold text-gray-900 text-base">{target.company}</p>
