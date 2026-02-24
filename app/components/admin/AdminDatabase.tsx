@@ -34,13 +34,21 @@ export const AdminDatabase = ({ data }: { data: any }) => {
   const handleAddClick = () => {
       setIsAdding(true);
       setEditingId(null);
-      setFormState({ type: 'BRASS' }); // デフォルト値など
+      setFormState({ type: 'BRASS', rank: 'NORMAL', points: 0 }); // デフォルト値
   };
 
   const getSheetName = () => {
       if (activeTab === 'CLIENTS') return 'Clients';
       if (activeTab === 'WIRES') return 'Products_Wire';
       return 'Products_Casting';
+  };
+
+  const formatUpdates = (sheetName: string, form: any) => {
+      // スプレッドシートの列（1始まり）に合わせる
+      if (sheetName === 'Clients') return { 1: form.name, 2: form.rank, 4: form.phone, 5: form.loginId, 6: form.password, 7: form.points, 8: form.memo };
+      if (sheetName === 'Products_Wire') return { 2: form.name, 6: form.ratio };
+      if (sheetName === 'Products_Casting') return { 1: form.name, 4: form.ratio, 2: form.type };
+      return {};
   };
 
   const handleSave = async (isNew: boolean, id?: string) => {
@@ -72,15 +80,8 @@ export const AdminDatabase = ({ data }: { data: any }) => {
       setIsSaving(false);
   };
 
-  const formatUpdates = (sheetName: string, form: any) => {
-      if (sheetName === 'Clients') return { 1: form.name, 4: form.phone, 8: form.memo };
-      if (sheetName === 'Products_Wire') return { 2: form.name, 6: form.ratio };
-      if (sheetName === 'Products_Casting') return { 1: form.name, 4: form.ratio, 2: form.type };
-      return {};
-  };
-
   return (
-    <div className="flex flex-col h-full animate-in fade-in duration-300 max-w-6xl mx-auto w-full">
+    <div className="flex flex-col h-full animate-in fade-in duration-300 max-w-7xl mx-auto w-full">
       <header className="mb-8 flex-shrink-0 border-b border-gray-200 pb-4 flex justify-between items-end">
         <div>
             <h2 className="text-3xl font-black text-gray-900 flex items-center gap-3">
@@ -101,11 +102,17 @@ export const AdminDatabase = ({ data }: { data: any }) => {
 
       <div className="flex-1 bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-0 relative">
           <div className="overflow-y-auto flex-1 p-0">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full text-left border-collapse min-w-max">
                   <thead className="sticky top-0 bg-gray-50 shadow-sm z-10 border-b border-gray-200">
                       <tr>
                           {activeTab === 'CLIENTS' && (
-                              <><th className="p-4 text-sm font-bold text-gray-500 w-[25%]">顧客名・社名</th><th className="p-4 text-sm font-bold text-gray-500 w-[20%]">電話番号</th><th className="p-4 text-sm font-bold text-gray-500 w-[35%]">引継ぎメモ</th></>
+                              <>
+                                  <th className="p-4 text-sm font-bold text-gray-500 w-[20%]">顧客名・社名</th>
+                                  <th className="p-4 text-sm font-bold text-gray-500 w-[15%]">ランク / Pt</th>
+                                  <th className="p-4 text-sm font-bold text-gray-500 w-[15%]">連絡先</th>
+                                  <th className="p-4 text-sm font-bold text-gray-500 w-[20%]">ログイン情報</th>
+                                  <th className="p-4 text-sm font-bold text-gray-500 w-[15%]">メモ</th>
+                              </>
                           )}
                           {activeTab === 'WIRES' && (
                               <><th className="p-4 text-sm font-bold text-gray-500 w-[50%]">品名 / 詳細</th><th className="p-4 text-sm font-bold text-gray-500 w-[30%]">マスター歩留まり (%)</th></>
@@ -113,27 +120,35 @@ export const AdminDatabase = ({ data }: { data: any }) => {
                           {activeTab === 'CASTINGS' && (
                               <><th className="p-4 text-sm font-bold text-gray-500 w-[30%]">品名</th><th className="p-4 text-sm font-bold text-gray-500 w-[20%]">種別 (相場)</th><th className="p-4 text-sm font-bold text-gray-500 w-[30%]">マスター歩留まり (%)</th></>
                           )}
-                          <th className="p-4 text-sm font-bold text-gray-500 w-[20%] text-right">操作</th>
+                          <th className="p-4 text-sm font-bold text-gray-500 w-[15%] text-right">操作</th>
                       </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                       
-                      {/* ★ 新規追加用の一行フォーム (isAdding が true の時だけ一番上に表示) */}
+                      {/* ★ 新規追加用フォーム */}
                       {isAdding && (
                           <tr className="bg-blue-50/50">
                               {activeTab === 'CLIENTS' && (
-                                  <><td className="p-3"><input autoFocus placeholder="会社名" className="w-full border p-2.5 rounded-lg font-bold outline-none focus:border-blue-500" onChange={e => setFormState({...formState, name: e.target.value})} /></td>
-                                  <td className="p-3"><input placeholder="090-0000-0000" className="w-full border p-2.5 rounded-lg outline-none focus:border-blue-500" onChange={e => setFormState({...formState, phone: e.target.value})} /></td>
-                                  <td className="p-3"><input placeholder="メモ" className="w-full border p-2.5 rounded-lg outline-none focus:border-blue-500" onChange={e => setFormState({...formState, memo: e.target.value})} /></td></>
+                                  <>
+                                      <td className="p-3"><input autoFocus placeholder="会社名" className="w-full border p-2.5 rounded-lg font-bold outline-none focus:border-blue-500" onChange={e => setFormState({...formState, name: e.target.value})} /></td>
+                                      <td className="p-3 space-y-2">
+                                          <select className="w-full border p-2 rounded outline-none focus:border-blue-500 font-bold text-xs" onChange={e => setFormState({...formState, rank: e.target.value})} defaultValue="NORMAL">
+                                              <option value="NORMAL">NORMAL</option>
+                                              <option value="GOLD">GOLD</option>
+                                          </select>
+                                          <input type="number" placeholder="初期Pt: 0" className="w-full border p-2 rounded text-xs outline-none focus:border-blue-500" onChange={e => setFormState({...formState, points: e.target.value})} />
+                                      </td>
+                                      <td className="p-3"><input placeholder="090-0000-0000" className="w-full border p-2.5 rounded-lg text-sm outline-none focus:border-blue-500" onChange={e => setFormState({...formState, phone: e.target.value})} /></td>
+                                      <td className="p-3 space-y-2">
+                                          <input placeholder="ログインID" className="w-full border p-2 rounded text-xs outline-none focus:border-blue-500" onChange={e => setFormState({...formState, loginId: e.target.value})} />
+                                          <input placeholder="パスワード" className="w-full border p-2 rounded text-xs outline-none focus:border-blue-500" onChange={e => setFormState({...formState, password: e.target.value})} />
+                                      </td>
+                                      <td className="p-3"><input placeholder="メモ" className="w-full border p-2.5 rounded-lg text-sm outline-none focus:border-blue-500" onChange={e => setFormState({...formState, memo: e.target.value})} /></td>
+                                  </>
                               )}
                               {activeTab === 'WIRES' && (
                                   <><td className="p-3 space-y-2">
                                       <input autoFocus placeholder="品名 (例: VVF)" className="w-full border p-2.5 rounded-lg font-bold outline-none focus:border-blue-500" onChange={e => setFormState({...formState, name: e.target.value})} />
-                                      <div className="flex gap-2">
-                                          <input placeholder="メーカー" className="w-1/3 border p-2 rounded text-xs outline-none" onChange={e => setFormState({...formState, maker: e.target.value})} />
-                                          <input placeholder="太さ(sq)" className="w-1/3 border p-2 rounded text-xs outline-none" onChange={e => setFormState({...formState, sq: e.target.value})} />
-                                          <input placeholder="芯数(C)" className="w-1/3 border p-2 rounded text-xs outline-none" onChange={e => setFormState({...formState, core: e.target.value})} />
-                                      </div>
                                   </td>
                                   <td className="p-3"><input type="number" placeholder="40" className="w-32 border p-2.5 rounded-lg font-black text-[#D32F2F] outline-none focus:border-blue-500" onChange={e => setFormState({...formState, ratio: e.target.value})} /></td></>
                               )}
@@ -164,9 +179,22 @@ export const AdminDatabase = ({ data }: { data: any }) => {
                               {editingId === record.id ? (
                                   <>
                                       {activeTab === 'CLIENTS' && (
-                                          <><td className="p-3"><input type="text" className="w-full border p-2.5 rounded-lg text-base font-bold outline-none focus:border-[#D32F2F]" value={formState.name} onChange={e => setFormState({...formState, name: e.target.value})} /></td>
-                                          <td className="p-3"><input type="text" className="w-full border p-2.5 rounded-lg text-sm outline-none focus:border-[#D32F2F]" value={formState.phone} onChange={e => setFormState({...formState, phone: e.target.value})} /></td>
-                                          <td className="p-3"><input type="text" className="w-full border p-2.5 rounded-lg text-sm outline-none focus:border-[#D32F2F]" value={formState.memo} onChange={e => setFormState({...formState, memo: e.target.value})} /></td></>
+                                          <>
+                                              <td className="p-3"><input type="text" className="w-full border p-2.5 rounded-lg text-base font-bold outline-none focus:border-[#D32F2F]" value={formState.name} onChange={e => setFormState({...formState, name: e.target.value})} /></td>
+                                              <td className="p-3 space-y-2">
+                                                  <select className="w-full border p-2 rounded outline-none focus:border-[#D32F2F] font-bold text-xs" value={formState.rank} onChange={e => setFormState({...formState, rank: e.target.value})}>
+                                                      <option value="NORMAL">NORMAL</option>
+                                                      <option value="GOLD">GOLD</option>
+                                                  </select>
+                                                  <input type="number" className="w-full border p-2 rounded text-xs outline-none focus:border-[#D32F2F]" value={formState.points} onChange={e => setFormState({...formState, points: e.target.value})} />
+                                              </td>
+                                              <td className="p-3"><input type="text" className="w-full border p-2.5 rounded-lg text-sm outline-none focus:border-[#D32F2F]" value={formState.phone} onChange={e => setFormState({...formState, phone: e.target.value})} /></td>
+                                              <td className="p-3 space-y-2">
+                                                  <input type="text" className="w-full border p-2 rounded text-xs outline-none focus:border-[#D32F2F]" value={formState.loginId} onChange={e => setFormState({...formState, loginId: e.target.value})} />
+                                                  <input type="text" className="w-full border p-2 rounded text-xs outline-none focus:border-[#D32F2F]" value={formState.password} onChange={e => setFormState({...formState, password: e.target.value})} />
+                                              </td>
+                                              <td className="p-3"><input type="text" className="w-full border p-2.5 rounded-lg text-sm outline-none focus:border-[#D32F2F]" value={formState.memo} onChange={e => setFormState({...formState, memo: e.target.value})} /></td>
+                                          </>
                                       )}
                                       {activeTab === 'WIRES' && (
                                           <><td className="p-3"><input type="text" className="w-full border p-2.5 rounded-lg text-base font-bold outline-none focus:border-[#D32F2F]" value={formState.name} onChange={e => setFormState({...formState, name: e.target.value})} /></td>
@@ -194,9 +222,19 @@ export const AdminDatabase = ({ data }: { data: any }) => {
                               /* --- 通常表示モード --- */
                                   <>
                                       {activeTab === 'CLIENTS' && (
-                                          <><td className="p-4 font-bold text-gray-900 text-base">{record.name}</td>
-                                          <td className="p-4 text-sm text-gray-600 font-mono">{record.phone || '-'}</td>
-                                          <td className="p-4 text-sm text-gray-500">{record.memo || '-'}</td></>
+                                          <>
+                                              <td className="p-4 font-bold text-gray-900 text-base">{record.name}</td>
+                                              <td className="p-4">
+                                                  <span className={`text-xs px-2 py-1 rounded font-bold border ${record.rank === 'GOLD' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : 'bg-gray-50 text-gray-600 border-gray-200'}`}>{record.rank}</span>
+                                                  <div className="text-sm font-bold text-blue-600 mt-1">{record.points} pt</div>
+                                              </td>
+                                              <td className="p-4 text-sm text-gray-600 font-mono">{record.phone || '-'}</td>
+                                              <td className="p-4 text-xs font-mono text-gray-500 space-y-1">
+                                                  <div>ID: <span className="text-gray-900 font-bold">{record.loginId}</span></div>
+                                                  <div>PW: <span className="text-gray-900 font-bold">{record.password}</span></div>
+                                              </td>
+                                              <td className="p-4 text-sm text-gray-500">{record.memo || '-'}</td>
+                                          </>
                                       )}
                                       {activeTab === 'WIRES' && (
                                           <><td className="p-4 font-bold text-gray-900 text-base">{record.name}</td>
