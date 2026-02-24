@@ -9,18 +9,20 @@ const Icons = {
 };
 
 export const AdminDatabase = ({ data }: { data: any }) => {
-  const [activeTab, setActiveTab] = useState<'CLIENTS' | 'WIRES'>('CLIENTS');
+  const [activeTab, setActiveTab] = useState<'CLIENTS' | 'WIRES' | 'CASTINGS'>('CLIENTS');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<any>({});
   const [isSaving, setIsSaving] = useState(false);
 
   const clients = data?.clients || [];
   const wires = data?.wires || [];
+  const castings = data?.castings || []; // ★ 非鉄マスターを追加
 
-  const handleEditClick = (record: any, type: 'CLIENTS' | 'WIRES') => {
+  const handleEditClick = (record: any, type: 'CLIENTS' | 'WIRES' | 'CASTINGS') => {
       setEditingId(record.id);
       if (type === 'CLIENTS') setEditForm({ name: record.name, phone: record.phone, memo: record.memo });
-      else setEditForm({ name: record.name, ratio: record.ratio });
+      else if (type === 'WIRES') setEditForm({ name: record.name, ratio: record.ratio });
+      else if (type === 'CASTINGS') setEditForm({ name: record.name, ratio: record.ratio, type: record.type });
   };
 
   const handleSave = async (sheetName: string, id: string) => {
@@ -28,6 +30,7 @@ export const AdminDatabase = ({ data }: { data: any }) => {
       let updates = {};
       if (sheetName === 'Clients') updates = { 1: editForm.name, 4: editForm.phone, 8: editForm.memo };
       else if (sheetName === 'Products_Wire') updates = { 2: editForm.name, 6: editForm.ratio };
+      else if (sheetName === 'Products_Casting') updates = { 1: editForm.name, 4: editForm.ratio }; // ★ 非鉄の更新設定
 
       try {
           const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'UPDATE_DB_RECORD', sheetName: sheetName, recordId: id, updates: updates }) });
@@ -47,13 +50,15 @@ export const AdminDatabase = ({ data }: { data: any }) => {
         <p className="text-base text-gray-500 mt-2">スプレッドシートを開かずに、顧客データやマスター設定を直接書き換えます。</p>
       </header>
 
-      <div className="flex gap-3 mb-6 flex-shrink-0">
-          <button onClick={() => { setActiveTab('CLIENTS'); setEditingId(null); }} className={`px-6 py-3 rounded-xl text-sm font-bold transition shadow-sm ${activeTab === 'CLIENTS' ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>👥 顧客データベース</button>
-          <button onClick={() => { setActiveTab('WIRES'); setEditingId(null); }} className={`px-6 py-3 rounded-xl text-sm font-bold transition shadow-sm ${activeTab === 'WIRES' ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>🔌 品目マスター (銅率設定)</button>
+      <div className="flex gap-3 mb-6 flex-shrink-0 overflow-x-auto pb-2">
+          <button onClick={() => { setActiveTab('CLIENTS'); setEditingId(null); }} className={`whitespace-nowrap px-6 py-3 rounded-xl text-sm font-bold transition shadow-sm ${activeTab === 'CLIENTS' ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>👥 顧客データベース</button>
+          <button onClick={() => { setActiveTab('WIRES'); setEditingId(null); }} className={`whitespace-nowrap px-6 py-3 rounded-xl text-sm font-bold transition shadow-sm ${activeTab === 'WIRES' ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>🔌 電線マスター (銅率)</button>
+          <button onClick={() => { setActiveTab('CASTINGS'); setEditingId(null); }} className={`whitespace-nowrap px-6 py-3 rounded-xl text-sm font-bold transition shadow-sm ${activeTab === 'CASTINGS' ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>⚙️ 非鉄マスター (歩留まり)</button>
       </div>
 
       <div className="flex-1 bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-0 relative">
           
+          {/* CLIENTS タブ */}
           {activeTab === 'CLIENTS' && (
               <div className="overflow-y-auto flex-1 p-0">
                   <table className="w-full text-left border-collapse">
@@ -97,6 +102,7 @@ export const AdminDatabase = ({ data }: { data: any }) => {
               </div>
           )}
 
+          {/* WIRES タブ */}
           {activeTab === 'WIRES' && (
               <div className="overflow-y-auto flex-1 p-0">
                   <table className="w-full text-left border-collapse">
@@ -126,7 +132,6 @@ export const AdminDatabase = ({ data }: { data: any }) => {
                                       </>
                                   ) : (
                                       <>
-                                          {/* ★ ここに詳細情報を追加 */}
                                           <td className="p-4">
                                               <div className="font-bold text-gray-900 text-base">{wire.name}</div>
                                               <div className="text-xs text-gray-500 mt-1.5 flex gap-2 font-medium">
@@ -142,6 +147,61 @@ export const AdminDatabase = ({ data }: { data: any }) => {
                                           </td>
                                           <td className="p-4 text-right">
                                               <button onClick={() => handleEditClick(wire, 'WIRES')} className="text-gray-400 hover:text-[#D32F2F] transition flex items-center justify-end gap-1 ml-auto text-sm font-bold">
+                                                  <Icons.Edit /> 編集
+                                              </button>
+                                          </td>
+                                      </>
+                                  )}
+                              </tr>
+                          ))}
+                      </tbody>
+                  </table>
+              </div>
+          )}
+
+          {/* ★ 新規: CASTINGS タブ */}
+          {activeTab === 'CASTINGS' && (
+              <div className="overflow-y-auto flex-1 p-0">
+                  <table className="w-full text-left border-collapse">
+                      <thead className="sticky top-0 bg-gray-50 shadow-sm z-10 border-b border-gray-200">
+                          <tr>
+                              <th className="p-4 text-sm font-bold text-gray-500 w-[40%]">品名 / 種別</th>
+                              <th className="p-4 text-sm font-bold text-gray-500 w-[40%]">マスター歩留まり (%)</th>
+                              <th className="p-4 text-sm font-bold text-gray-500 w-[20%] text-right">操作</th>
+                          </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                          {castings.map((casting: any) => (
+                              <tr key={casting.id} className="hover:bg-gray-50 transition">
+                                  {editingId === casting.id ? (
+                                      <>
+                                          <td className="p-3"><input type="text" className="w-full border p-2.5 rounded-lg text-base font-bold outline-none focus:border-[#D32F2F]" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} /></td>
+                                          <td className="p-3">
+                                              <div className="relative w-32">
+                                                  <input type="number" className="w-full border p-2.5 pr-8 rounded-lg text-lg font-black text-[#D32F2F] outline-none focus:border-[#D32F2F]" value={editForm.ratio} onChange={e => setEditForm({...editForm, ratio: e.target.value})} />
+                                                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">%</span>
+                                              </div>
+                                          </td>
+                                          <td className="p-3 text-right space-x-2">
+                                              <button onClick={() => handleSave('Products_Casting', casting.id)} disabled={isSaving} className="bg-[#D32F2F] text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-700"><Icons.Save /> 保存</button>
+                                              <button onClick={() => setEditingId(null)} className="bg-gray-200 text-gray-700 p-2 rounded-lg hover:bg-gray-300"><Icons.Cancel /></button>
+                                          </td>
+                                      </>
+                                  ) : (
+                                      <>
+                                          <td className="p-4">
+                                              <div className="font-bold text-gray-900 text-base">{casting.name}</div>
+                                              <div className="text-xs text-gray-500 mt-1 flex gap-2 font-medium">
+                                                  <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-md">{casting.type}</span>
+                                              </div>
+                                          </td>
+                                          <td className="p-4">
+                                              <span className="bg-red-50 text-[#D32F2F] px-3 py-1.5 rounded-lg text-base font-black border border-red-100 shadow-sm">
+                                                  {casting.ratio} %
+                                              </span>
+                                          </td>
+                                          <td className="p-4 text-right">
+                                              <button onClick={() => handleEditClick(casting, 'CASTINGS')} className="text-gray-400 hover:text-[#D32F2F] transition flex items-center justify-end gap-1 ml-auto text-sm font-bold">
                                                   <Icons.Edit /> 編集
                                               </button>
                                           </td>
