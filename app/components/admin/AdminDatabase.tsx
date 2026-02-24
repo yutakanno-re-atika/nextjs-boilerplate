@@ -6,213 +6,224 @@ const Icons = {
   Edit: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>,
   Save: () => <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>,
   Cancel: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>,
+  Trash: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
+  Plus: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
 };
 
 export const AdminDatabase = ({ data }: { data: any }) => {
   const [activeTab, setActiveTab] = useState<'CLIENTS' | 'WIRES' | 'CASTINGS'>('CLIENTS');
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState<any>({});
+  const [isAdding, setIsAdding] = useState(false);
+  const [formState, setFormState] = useState<any>({});
   const [isSaving, setIsSaving] = useState(false);
 
   const clients = data?.clients || [];
   const wires = data?.wires || [];
-  const castings = data?.castings || []; // ★ 非鉄マスターを追加
+  const castings = data?.castings || [];
 
-  const handleEditClick = (record: any, type: 'CLIENTS' | 'WIRES' | 'CASTINGS') => {
-      setEditingId(record.id);
-      if (type === 'CLIENTS') setEditForm({ name: record.name, phone: record.phone, memo: record.memo });
-      else if (type === 'WIRES') setEditForm({ name: record.name, ratio: record.ratio });
-      else if (type === 'CASTINGS') setEditForm({ name: record.name, ratio: record.ratio, type: record.type });
+  const handleTabChange = (tab: any) => {
+      setActiveTab(tab); setEditingId(null); setIsAdding(false); setFormState({});
   };
 
-  const handleSave = async (sheetName: string, id: string) => {
+  const handleEditClick = (record: any) => {
+      setEditingId(record.id);
+      setIsAdding(false);
+      setFormState({ ...record });
+  };
+
+  const handleAddClick = () => {
+      setIsAdding(true);
+      setEditingId(null);
+      setFormState({ type: 'BRASS' }); // デフォルト値など
+  };
+
+  const getSheetName = () => {
+      if (activeTab === 'CLIENTS') return 'Clients';
+      if (activeTab === 'WIRES') return 'Products_Wire';
+      return 'Products_Casting';
+  };
+
+  const handleSave = async (isNew: boolean, id?: string) => {
       setIsSaving(true);
-      let updates = {};
-      if (sheetName === 'Clients') updates = { 1: editForm.name, 4: editForm.phone, 8: editForm.memo };
-      else if (sheetName === 'Products_Wire') updates = { 2: editForm.name, 6: editForm.ratio };
-      else if (sheetName === 'Products_Casting') updates = { 1: editForm.name, 4: editForm.ratio }; // ★ 非鉄の更新設定
+      const sheetName = getSheetName();
+      
+      const payload = isNew 
+        ? { action: 'ADD_DB_RECORD', sheetName, data: formState }
+        : { action: 'UPDATE_DB_RECORD', sheetName, recordId: id, updates: formatUpdates(sheetName, formState) };
 
       try {
-          const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'UPDATE_DB_RECORD', sheetName: sheetName, recordId: id, updates: updates }) });
+          const res = await fetch('/api/gas', { method: 'POST', body: JSON.stringify(payload) });
           const result = await res.json();
-          if (result.status === 'success') { setEditingId(null); window.location.reload(); } 
-          else { alert('保存に失敗しました: ' + result.message); }
+          if (result.status === 'success') { window.location.reload(); } 
+          else { alert('エラー: ' + result.message); }
       } catch (error) { alert('通信エラーが発生しました'); }
       setIsSaving(false);
   };
 
+  const handleDelete = async (id: string) => {
+      if (!window.confirm("本当にこのデータを削除しますか？\n（元には戻せません）")) return;
+      setIsSaving(true);
+      try {
+          const res = await fetch('/api/gas', { method: 'POST', body: JSON.stringify({ action: 'DELETE_DB_RECORD', sheetName: getSheetName(), recordId: id }) });
+          const result = await res.json();
+          if (result.status === 'success') { window.location.reload(); } 
+          else { alert('エラー: ' + result.message); }
+      } catch (error) { alert('通信エラーが発生しました'); }
+      setIsSaving(false);
+  };
+
+  const formatUpdates = (sheetName: string, form: any) => {
+      if (sheetName === 'Clients') return { 1: form.name, 4: form.phone, 8: form.memo };
+      if (sheetName === 'Products_Wire') return { 2: form.name, 6: form.ratio };
+      if (sheetName === 'Products_Casting') return { 1: form.name, 4: form.ratio, 2: form.type };
+      return {};
+  };
+
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-300 max-w-6xl mx-auto w-full">
-      <header className="mb-8 flex-shrink-0 border-b border-gray-200 pb-4">
-        <h2 className="text-3xl font-black text-gray-900 flex items-center gap-3">
-            <Icons.Database /> データベース管理
-        </h2>
-        <p className="text-base text-gray-500 mt-2">スプレッドシートを開かずに、顧客データやマスター設定を直接書き換えます。</p>
+      <header className="mb-8 flex-shrink-0 border-b border-gray-200 pb-4 flex justify-between items-end">
+        <div>
+            <h2 className="text-3xl font-black text-gray-900 flex items-center gap-3">
+                <Icons.Database /> データベース管理
+            </h2>
+            <p className="text-base text-gray-500 mt-2">ブラウザから直接、顧客データやマスター設定を自由に追加・編集・削除できます。</p>
+        </div>
+        <button onClick={handleAddClick} disabled={isAdding || editingId !== null} className="bg-[#111] text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-[#D32F2F] transition shadow-md flex items-center gap-2 disabled:opacity-50">
+            <Icons.Plus /> 新規追加
+        </button>
       </header>
 
       <div className="flex gap-3 mb-6 flex-shrink-0 overflow-x-auto pb-2">
-          <button onClick={() => { setActiveTab('CLIENTS'); setEditingId(null); }} className={`whitespace-nowrap px-6 py-3 rounded-xl text-sm font-bold transition shadow-sm ${activeTab === 'CLIENTS' ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>👥 顧客データベース</button>
-          <button onClick={() => { setActiveTab('WIRES'); setEditingId(null); }} className={`whitespace-nowrap px-6 py-3 rounded-xl text-sm font-bold transition shadow-sm ${activeTab === 'WIRES' ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>🔌 電線マスター (銅率)</button>
-          <button onClick={() => { setActiveTab('CASTINGS'); setEditingId(null); }} className={`whitespace-nowrap px-6 py-3 rounded-xl text-sm font-bold transition shadow-sm ${activeTab === 'CASTINGS' ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>⚙️ 非鉄マスター (歩留まり)</button>
+          <button onClick={() => handleTabChange('CLIENTS')} className={`whitespace-nowrap px-6 py-3 rounded-xl text-sm font-bold transition shadow-sm ${activeTab === 'CLIENTS' ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>👥 顧客データベース</button>
+          <button onClick={() => handleTabChange('WIRES')} className={`whitespace-nowrap px-6 py-3 rounded-xl text-sm font-bold transition shadow-sm ${activeTab === 'WIRES' ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>🔌 電線マスター</button>
+          <button onClick={() => handleTabChange('CASTINGS')} className={`whitespace-nowrap px-6 py-3 rounded-xl text-sm font-bold transition shadow-sm ${activeTab === 'CASTINGS' ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>⚙️ 非鉄マスター</button>
       </div>
 
       <div className="flex-1 bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-0 relative">
-          
-          {/* CLIENTS タブ */}
-          {activeTab === 'CLIENTS' && (
-              <div className="overflow-y-auto flex-1 p-0">
-                  <table className="w-full text-left border-collapse">
-                      <thead className="sticky top-0 bg-gray-50 shadow-sm z-10 border-b border-gray-200">
-                          <tr>
-                              <th className="p-4 text-sm font-bold text-gray-500 w-[25%]">顧客名・社名</th>
-                              <th className="p-4 text-sm font-bold text-gray-500 w-[20%]">電話番号</th>
-                              <th className="p-4 text-sm font-bold text-gray-500 w-[40%]">引継ぎメモ</th>
-                              <th className="p-4 text-sm font-bold text-gray-500 w-[15%] text-right">操作</th>
+          <div className="overflow-y-auto flex-1 p-0">
+              <table className="w-full text-left border-collapse">
+                  <thead className="sticky top-0 bg-gray-50 shadow-sm z-10 border-b border-gray-200">
+                      <tr>
+                          {activeTab === 'CLIENTS' && (
+                              <><th className="p-4 text-sm font-bold text-gray-500 w-[25%]">顧客名・社名</th><th className="p-4 text-sm font-bold text-gray-500 w-[20%]">電話番号</th><th className="p-4 text-sm font-bold text-gray-500 w-[35%]">引継ぎメモ</th></>
+                          )}
+                          {activeTab === 'WIRES' && (
+                              <><th className="p-4 text-sm font-bold text-gray-500 w-[50%]">品名 / 詳細</th><th className="p-4 text-sm font-bold text-gray-500 w-[30%]">マスター歩留まり (%)</th></>
+                          )}
+                          {activeTab === 'CASTINGS' && (
+                              <><th className="p-4 text-sm font-bold text-gray-500 w-[30%]">品名</th><th className="p-4 text-sm font-bold text-gray-500 w-[20%]">種別 (相場)</th><th className="p-4 text-sm font-bold text-gray-500 w-[30%]">マスター歩留まり (%)</th></>
+                          )}
+                          <th className="p-4 text-sm font-bold text-gray-500 w-[20%] text-right">操作</th>
+                      </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                      
+                      {/* ★ 新規追加用の一行フォーム (isAdding が true の時だけ一番上に表示) */}
+                      {isAdding && (
+                          <tr className="bg-blue-50/50">
+                              {activeTab === 'CLIENTS' && (
+                                  <><td className="p-3"><input autoFocus placeholder="会社名" className="w-full border p-2.5 rounded-lg font-bold outline-none focus:border-blue-500" onChange={e => setFormState({...formState, name: e.target.value})} /></td>
+                                  <td className="p-3"><input placeholder="090-0000-0000" className="w-full border p-2.5 rounded-lg outline-none focus:border-blue-500" onChange={e => setFormState({...formState, phone: e.target.value})} /></td>
+                                  <td className="p-3"><input placeholder="メモ" className="w-full border p-2.5 rounded-lg outline-none focus:border-blue-500" onChange={e => setFormState({...formState, memo: e.target.value})} /></td></>
+                              )}
+                              {activeTab === 'WIRES' && (
+                                  <><td className="p-3 space-y-2">
+                                      <input autoFocus placeholder="品名 (例: VVF)" className="w-full border p-2.5 rounded-lg font-bold outline-none focus:border-blue-500" onChange={e => setFormState({...formState, name: e.target.value})} />
+                                      <div className="flex gap-2">
+                                          <input placeholder="メーカー" className="w-1/3 border p-2 rounded text-xs outline-none" onChange={e => setFormState({...formState, maker: e.target.value})} />
+                                          <input placeholder="太さ(sq)" className="w-1/3 border p-2 rounded text-xs outline-none" onChange={e => setFormState({...formState, sq: e.target.value})} />
+                                          <input placeholder="芯数(C)" className="w-1/3 border p-2 rounded text-xs outline-none" onChange={e => setFormState({...formState, core: e.target.value})} />
+                                      </div>
+                                  </td>
+                                  <td className="p-3"><input type="number" placeholder="40" className="w-32 border p-2.5 rounded-lg font-black text-[#D32F2F] outline-none focus:border-blue-500" onChange={e => setFormState({...formState, ratio: e.target.value})} /></td></>
+                              )}
+                              {activeTab === 'CASTINGS' && (
+                                  <><td className="p-3"><input autoFocus placeholder="品名 (例: 込真鍮)" className="w-full border p-2.5 rounded-lg font-bold outline-none focus:border-blue-500" onChange={e => setFormState({...formState, name: e.target.value})} /></td>
+                                  <td className="p-3">
+                                      <select className="w-full border p-2.5 rounded-lg outline-none focus:border-blue-500 font-bold" value={formState.type} onChange={e => setFormState({...formState, type: e.target.value})}>
+                                          <option value="BRASS">真鍮相場 (BRASS)</option>
+                                          <option value="COPPER">銅相場 (COPPER)</option>
+                                          <option value="ZINC">亜鉛相場 (ZINC)</option>
+                                          <option value="LEAD">鉛相場 (LEAD)</option>
+                                      </select>
+                                  </td>
+                                  <td className="p-3"><input type="number" placeholder="100" className="w-32 border p-2.5 rounded-lg font-black text-[#D32F2F] outline-none focus:border-blue-500" onChange={e => setFormState({...formState, ratio: e.target.value})} /></td></>
+                              )}
+                              <td className="p-3 text-right space-x-2">
+                                  <button onClick={() => handleSave(true)} disabled={isSaving} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700">追加</button>
+                                  <button onClick={() => setIsAdding(false)} className="bg-gray-200 text-gray-700 p-2 rounded-lg hover:bg-gray-300"><Icons.Cancel /></button>
+                              </td>
                           </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                          {clients.map((client: any) => (
-                              <tr key={client.id} className="hover:bg-gray-50 transition">
-                                  {editingId === client.id ? (
-                                      <>
-                                          <td className="p-3"><input type="text" className="w-full border p-2.5 rounded-lg text-base font-bold outline-none focus:border-[#D32F2F]" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} /></td>
-                                          <td className="p-3"><input type="text" className="w-full border p-2.5 rounded-lg text-sm outline-none focus:border-[#D32F2F]" value={editForm.phone} onChange={e => setEditForm({...editForm, phone: e.target.value})} /></td>
-                                          <td className="p-3"><input type="text" className="w-full border p-2.5 rounded-lg text-sm outline-none focus:border-[#D32F2F]" value={editForm.memo} onChange={e => setEditForm({...editForm, memo: e.target.value})} /></td>
-                                          <td className="p-3 text-right space-x-2">
-                                              <button onClick={() => handleSave('Clients', client.id)} disabled={isSaving} className="bg-[#D32F2F] text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-700"><Icons.Save /> 保存</button>
-                                              <button onClick={() => setEditingId(null)} className="bg-gray-200 text-gray-700 p-2 rounded-lg hover:bg-gray-300"><Icons.Cancel /></button>
-                                          </td>
-                                      </>
-                                  ) : (
-                                      <>
-                                          <td className="p-4 font-bold text-gray-900 text-base">{client.name}</td>
-                                          <td className="p-4 text-sm text-gray-600 font-mono">{client.phone || '-'}</td>
-                                          <td className="p-4 text-sm text-gray-500">{client.memo || '-'}</td>
-                                          <td className="p-4 text-right">
-                                              <button onClick={() => handleEditClick(client, 'CLIENTS')} className="text-gray-400 hover:text-[#D32F2F] transition flex items-center justify-end gap-1 ml-auto text-sm font-bold">
-                                                  <Icons.Edit /> 編集
-                                              </button>
-                                          </td>
-                                      </>
-                                  )}
-                              </tr>
-                          ))}
-                      </tbody>
-                  </table>
-              </div>
-          )}
+                      )}
 
-          {/* WIRES タブ */}
-          {activeTab === 'WIRES' && (
-              <div className="overflow-y-auto flex-1 p-0">
-                  <table className="w-full text-left border-collapse">
-                      <thead className="sticky top-0 bg-gray-50 shadow-sm z-10 border-b border-gray-200">
-                          <tr>
-                              <th className="p-4 text-sm font-bold text-gray-500 w-[50%]">品名 / 詳細 (メーカー・サイズ・芯数)</th>
-                              <th className="p-4 text-sm font-bold text-gray-500 w-[30%]">マスター歩留まり (銅率 %)</th>
-                              <th className="p-4 text-sm font-bold text-gray-500 w-[20%] text-right">操作</th>
-                          </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                          {wires.map((wire: any) => (
-                              <tr key={wire.id} className="hover:bg-gray-50 transition">
-                                  {editingId === wire.id ? (
-                                      <>
-                                          <td className="p-3"><input type="text" className="w-full border p-2.5 rounded-lg text-base font-bold outline-none focus:border-[#D32F2F]" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} /></td>
+                      {/* 既存データのリスト表示 */}
+                      {(activeTab === 'CLIENTS' ? clients : activeTab === 'WIRES' ? wires : castings).map((record: any) => (
+                          <tr key={record.id} className="hover:bg-gray-50 transition">
+                              
+                              {/* --- 編集モード --- */}
+                              {editingId === record.id ? (
+                                  <>
+                                      {activeTab === 'CLIENTS' && (
+                                          <><td className="p-3"><input type="text" className="w-full border p-2.5 rounded-lg text-base font-bold outline-none focus:border-[#D32F2F]" value={formState.name} onChange={e => setFormState({...formState, name: e.target.value})} /></td>
+                                          <td className="p-3"><input type="text" className="w-full border p-2.5 rounded-lg text-sm outline-none focus:border-[#D32F2F]" value={formState.phone} onChange={e => setFormState({...formState, phone: e.target.value})} /></td>
+                                          <td className="p-3"><input type="text" className="w-full border p-2.5 rounded-lg text-sm outline-none focus:border-[#D32F2F]" value={formState.memo} onChange={e => setFormState({...formState, memo: e.target.value})} /></td></>
+                                      )}
+                                      {activeTab === 'WIRES' && (
+                                          <><td className="p-3"><input type="text" className="w-full border p-2.5 rounded-lg text-base font-bold outline-none focus:border-[#D32F2F]" value={formState.name} onChange={e => setFormState({...formState, name: e.target.value})} /></td>
+                                          <td className="p-3"><input type="number" className="w-32 border p-2.5 rounded-lg text-lg font-black text-[#D32F2F] outline-none focus:border-[#D32F2F]" value={formState.ratio} onChange={e => setFormState({...formState, ratio: e.target.value})} /></td></>
+                                      )}
+                                      {activeTab === 'CASTINGS' && (
+                                          <><td className="p-3"><input type="text" className="w-full border p-2.5 rounded-lg text-base font-bold outline-none focus:border-[#D32F2F]" value={formState.name} onChange={e => setFormState({...formState, name: e.target.value})} /></td>
                                           <td className="p-3">
-                                              <div className="relative w-32">
-                                                  <input type="number" className="w-full border p-2.5 pr-8 rounded-lg text-lg font-black text-[#D32F2F] outline-none focus:border-[#D32F2F]" value={editForm.ratio} onChange={e => setEditForm({...editForm, ratio: e.target.value})} />
-                                                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">%</span>
-                                              </div>
+                                              <select className="w-full border p-2.5 rounded-lg outline-none focus:border-blue-500 font-bold" value={formState.type} onChange={e => setFormState({...formState, type: e.target.value})}>
+                                                  <option value="BRASS">真鍮相場 (BRASS)</option>
+                                                  <option value="COPPER">銅相場 (COPPER)</option>
+                                                  <option value="ZINC">亜鉛相場 (ZINC)</option>
+                                                  <option value="LEAD">鉛相場 (LEAD)</option>
+                                              </select>
                                           </td>
-                                          <td className="p-3 text-right space-x-2">
-                                              <button onClick={() => handleSave('Products_Wire', wire.id)} disabled={isSaving} className="bg-[#D32F2F] text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-700"><Icons.Save /> 保存</button>
-                                              <button onClick={() => setEditingId(null)} className="bg-gray-200 text-gray-700 p-2 rounded-lg hover:bg-gray-300"><Icons.Cancel /></button>
-                                          </td>
-                                      </>
-                                  ) : (
-                                      <>
-                                          <td className="p-4">
-                                              <div className="font-bold text-gray-900 text-base">{wire.name}</div>
-                                              <div className="text-xs text-gray-500 mt-1.5 flex gap-2 font-medium">
-                                                  {wire.maker && <span className="bg-white border border-gray-200 px-2 py-0.5 rounded-md">{wire.maker}</span>}
-                                                  {wire.sq && <span className="bg-white border border-gray-200 px-2 py-0.5 rounded-md">{wire.sq}</span>}
-                                                  {wire.core && <span className="bg-white border border-gray-200 px-2 py-0.5 rounded-md">{wire.core}</span>}
-                                              </div>
-                                          </td>
-                                          <td className="p-4">
-                                              <span className="bg-red-50 text-[#D32F2F] px-3 py-1.5 rounded-lg text-base font-black border border-red-100 shadow-sm">
-                                                  {wire.ratio} %
-                                              </span>
-                                          </td>
-                                          <td className="p-4 text-right">
-                                              <button onClick={() => handleEditClick(wire, 'WIRES')} className="text-gray-400 hover:text-[#D32F2F] transition flex items-center justify-end gap-1 ml-auto text-sm font-bold">
+                                          <td className="p-3"><input type="number" className="w-32 border p-2.5 rounded-lg text-lg font-black text-[#D32F2F] outline-none focus:border-[#D32F2F]" value={formState.ratio} onChange={e => setFormState({...formState, ratio: e.target.value})} /></td></>
+                                      )}
+                                      <td className="p-3 text-right space-x-2">
+                                          <button onClick={() => handleSave(false, record.id)} disabled={isSaving} className="bg-[#D32F2F] text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-700"><Icons.Save /> 保存</button>
+                                          <button onClick={() => setEditingId(null)} className="bg-gray-200 text-gray-700 p-2 rounded-lg hover:bg-gray-300"><Icons.Cancel /></button>
+                                      </td>
+                                  </>
+                              ) : (
+                              
+                              /* --- 通常表示モード --- */
+                                  <>
+                                      {activeTab === 'CLIENTS' && (
+                                          <><td className="p-4 font-bold text-gray-900 text-base">{record.name}</td>
+                                          <td className="p-4 text-sm text-gray-600 font-mono">{record.phone || '-'}</td>
+                                          <td className="p-4 text-sm text-gray-500">{record.memo || '-'}</td></>
+                                      )}
+                                      {activeTab === 'WIRES' && (
+                                          <><td className="p-4 font-bold text-gray-900 text-base">{record.name}</td>
+                                          <td className="p-4"><span className="bg-red-50 text-[#D32F2F] px-3 py-1.5 rounded-lg font-black border border-red-100">{record.ratio} %</span></td></>
+                                      )}
+                                      {activeTab === 'CASTINGS' && (
+                                          <><td className="p-4 font-bold text-gray-900 text-base">{record.name}</td>
+                                          <td className="p-4"><span className="bg-blue-50 text-blue-700 px-2 py-1 rounded border border-blue-200 text-xs font-bold">{record.type}</span></td>
+                                          <td className="p-4"><span className="bg-red-50 text-[#D32F2F] px-3 py-1.5 rounded-lg font-black border border-red-100">{record.ratio} %</span></td></>
+                                      )}
+                                      <td className="p-4 text-right">
+                                          <div className="flex items-center justify-end gap-3">
+                                              <button onClick={() => handleEditClick(record)} className="text-gray-400 hover:text-blue-600 transition flex items-center gap-1 text-sm font-bold">
                                                   <Icons.Edit /> 編集
                                               </button>
-                                          </td>
-                                      </>
-                                  )}
-                              </tr>
-                          ))}
-                      </tbody>
-                  </table>
-              </div>
-          )}
-
-          {/* ★ 新規: CASTINGS タブ */}
-          {activeTab === 'CASTINGS' && (
-              <div className="overflow-y-auto flex-1 p-0">
-                  <table className="w-full text-left border-collapse">
-                      <thead className="sticky top-0 bg-gray-50 shadow-sm z-10 border-b border-gray-200">
-                          <tr>
-                              <th className="p-4 text-sm font-bold text-gray-500 w-[40%]">品名 / 種別</th>
-                              <th className="p-4 text-sm font-bold text-gray-500 w-[40%]">マスター歩留まり (%)</th>
-                              <th className="p-4 text-sm font-bold text-gray-500 w-[20%] text-right">操作</th>
-                          </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                          {castings.map((casting: any) => (
-                              <tr key={casting.id} className="hover:bg-gray-50 transition">
-                                  {editingId === casting.id ? (
-                                      <>
-                                          <td className="p-3"><input type="text" className="w-full border p-2.5 rounded-lg text-base font-bold outline-none focus:border-[#D32F2F]" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} /></td>
-                                          <td className="p-3">
-                                              <div className="relative w-32">
-                                                  <input type="number" className="w-full border p-2.5 pr-8 rounded-lg text-lg font-black text-[#D32F2F] outline-none focus:border-[#D32F2F]" value={editForm.ratio} onChange={e => setEditForm({...editForm, ratio: e.target.value})} />
-                                                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">%</span>
-                                              </div>
-                                          </td>
-                                          <td className="p-3 text-right space-x-2">
-                                              <button onClick={() => handleSave('Products_Casting', casting.id)} disabled={isSaving} className="bg-[#D32F2F] text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-700"><Icons.Save /> 保存</button>
-                                              <button onClick={() => setEditingId(null)} className="bg-gray-200 text-gray-700 p-2 rounded-lg hover:bg-gray-300"><Icons.Cancel /></button>
-                                          </td>
-                                      </>
-                                  ) : (
-                                      <>
-                                          <td className="p-4">
-                                              <div className="font-bold text-gray-900 text-base">{casting.name}</div>
-                                              <div className="text-xs text-gray-500 mt-1 flex gap-2 font-medium">
-                                                  <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-md">{casting.type}</span>
-                                              </div>
-                                          </td>
-                                          <td className="p-4">
-                                              <span className="bg-red-50 text-[#D32F2F] px-3 py-1.5 rounded-lg text-base font-black border border-red-100 shadow-sm">
-                                                  {casting.ratio} %
-                                              </span>
-                                          </td>
-                                          <td className="p-4 text-right">
-                                              <button onClick={() => handleEditClick(casting, 'CASTINGS')} className="text-gray-400 hover:text-[#D32F2F] transition flex items-center justify-end gap-1 ml-auto text-sm font-bold">
-                                                  <Icons.Edit /> 編集
+                                              <button onClick={() => handleDelete(record.id)} className="text-gray-300 hover:text-red-600 transition">
+                                                  <Icons.Trash />
                                               </button>
-                                          </td>
-                                      </>
-                                  )}
-                              </tr>
-                          ))}
-                      </tbody>
-                  </table>
-              </div>
-          )}
+                                          </div>
+                                      </td>
+                                  </>
+                              )}
+                          </tr>
+                      ))}
+                  </tbody>
+              </table>
+          </div>
       </div>
     </div>
   );
