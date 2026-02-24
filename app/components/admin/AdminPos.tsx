@@ -14,7 +14,9 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   const [memo, setMemo] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // ★ 電線と非鉄のマスタを両方取得
   const wiresMaster = data?.wires || [];
+  const castingsMaster = data?.castings || [];
 
   useEffect(() => {
     if (editingResId) {
@@ -24,8 +26,13 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         setMemo(res.memo || '');
         try {
           let parsed = res.items;
-          if (typeof parsed === 'string') parsed = JSON.parse(parsed);
-          if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+          // ※ビルドエラーの原因だった重複行を削除し、安全なパース処理に修正
+          if (typeof parsed === 'string') {
+              try { parsed = JSON.parse(parsed); } catch(e) {}
+          }
+          if (typeof parsed === 'string') {
+              try { parsed = JSON.parse(parsed); } catch(e) {}
+          }
           if (Array.isArray(parsed)) {
             const formatted = parsed.map(it => ({ product: it.product || it.productName || '', weight: it.weight || '', price: it.price || it.unitPrice || '' }));
             setItems(formatted.length > 0 ? formatted : [{ product: '', weight: '', price: '' }]);
@@ -40,12 +47,25 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   const handleItemChange = (index: number, field: string, value: string) => {
     const newItems = [...items];
     newItems[index][field] = value;
+    
+    // ★ 選ばれた品目から、相場×歩留まりを自動計算
     if (field === 'product') {
-        const master = wiresMaster.find((w:any) => w.name === value);
-        if (master) {
+        const wire = wiresMaster.find((w:any) => w.name === value);
+        const casting = castingsMaster.find((c:any) => c.name === value);
+        
+        if (wire) {
             const copperPrice = Number(data?.market?.copper?.price || 1450);
-            const ratio = Number(master.ratio || 0) / 100;
-            newItems[index].price = Math.floor(copperPrice * ratio * 0.85); 
+            const ratio = Number(wire.ratio || 0) / 100;
+            newItems[index].price = Math.floor(copperPrice * ratio * 0.85); // 電線のマージン
+        } else if (casting) {
+            // 非鉄の種類に合わせて相場を切り替え
+            let basePrice = Number(data?.market?.copper?.price || 1450);
+            if (casting.type === 'BRASS') basePrice = Number(data?.market?.brass?.price || 980);
+            if (casting.type === 'ZINC') basePrice = Number(data?.market?.zinc?.price || 450);
+            if (casting.type === 'LEAD') basePrice = Number(data?.market?.lead?.price || 380);
+            
+            const ratio = Number(casting.ratio || 0) / 100;
+            newItems[index].price = Math.floor(basePrice * ratio * 0.90); // 非鉄のマージン
         }
     }
     setItems(newItems);
@@ -100,7 +120,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
 
           <div className="p-6 flex-1 overflow-y-auto bg-gray-50/30">
               <div className="flex text-sm font-bold text-gray-500 mb-3 px-2">
-                  <div className="flex-1">持込品目 (メーカー / 太さ / 芯数)</div>
+                  <div className="flex-1">持込品目</div>
                   <div className="w-36 text-right">重量 (kg)</div>
                   <div className="w-40 text-right">買取単価 (円)</div>
                   <div className="w-40 text-right">金額</div>
@@ -111,14 +131,14 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                   {items.map((item, idx) => (
                       <div key={idx} className="flex gap-4 items-center bg-white p-3 rounded-xl border border-gray-200 shadow-sm group hover:border-[#D32F2F] transition">
                           <div className="flex-1">
-                              {/* ★ セレクトボックスの中に詳細情報を表示 */}
                               <select className="w-full bg-transparent p-2 text-base font-bold outline-none cursor-pointer text-gray-900" value={item.product} onChange={e => handleItemChange(idx, 'product', e.target.value)}>
                                   <option value="">-- 品目を選択 --</option>
-                                  {wiresMaster.map((w:any) => {
-                                      const details = [w.maker, w.sq, w.core].filter(Boolean).join(' | ');
-                                      const label = details ? `${w.name} [${details}]` : w.name;
-                                      return <option key={w.id} value={w.name}>{label} - 銅率{w.ratio}%</option>;
-                                  })}
+                                  <optgroup label="電線類 (W/M)">
+                                      {wiresMaster.map((w:any) => <option key={`w-${w.id}`} value={w.name}>{w.name} [銅率{w.ratio}%]</option>)}
+                                  </optgroup>
+                                  <optgroup label="非鉄金属類 (C/M)">
+                                      {castingsMaster.map((c:any) => <option key={`c-${c.id}`} value={c.name}>{c.name} [{c.type}]</option>)}
+                                  </optgroup>
                                   <option value="雑線">雑線 (手入力)</option>
                                   <option value="その他">その他 (手入力)</option>
                               </select>
