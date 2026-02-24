@@ -10,21 +10,26 @@ export async function POST(req: Request) {
 
     // 1. GASから最新の相場データを取得 (カンペの用意)
     let marketContext = "現在、価格システムと通信中です。";
-    
-    // ★ ボスのGASウェブアプリURLを貼り付けてください（ダブルクォーテーション " " の中にURLを入れること！）
     const gasUrl = "https://script.google.com/macros/s/AKfycbxuE0iPCEruoQLretA8R0cmSnRyZPYT9qd6YqDGVCCCY1h0wRVJX8P-MZF20I1whF7Z/exec"; 
     
-    if (gasUrl && !gasUrl.includes("https://script.google.com/macros/s/AKfycbxuE0iPCEruoQLretA8R0cmSnRyZPYT9qd6YqDGVCCCY1h0wRVJX8P-MZF20I1whF7Z/exec")) {
+    // ★ 余計な論理チェックを外し、シンプルにURLがある時だけ通信するように修正！
+    if (gasUrl) {
         try {
             const gasRes = await fetch(gasUrl);
-            const gasData = await gasRes.json();
-            if (gasData.status === 'success') {
-                const config = gasData.config;
-                marketContext = `本日の参考相場（建値）: 銅=${config.market_price || 0}円/kg, 真鍮=${config.brass_price || 0}円/kg, 亜鉛=${config.zinc_price || 0}円/kg, 鉛=${config.lead_price || 0}円/kg.`;
+            
+            // 権限エラー(HTMLが返ってくる)の検知
+            const contentType = gasRes.headers.get("content-type");
+            if (contentType && contentType.includes("text/html")) {
+                 console.error("GAS Auth Error: 権限が「全員」になっていない可能性があります。");
+            } else {
+                const gasData = await gasRes.json();
+                if (gasData.status === 'success') {
+                    const config = gasData.config;
+                    marketContext = `本日の参考相場（建値）: 銅=${config.market_price || 0}円/kg, 真鍮=${config.brass_price || 0}円/kg, 亜鉛=${config.zinc_price || 0}円/kg, 鉛=${config.lead_price || 0}円/kg.`;
+                }
             }
         } catch (e: any) {
             console.error("GAS Fetch Error:", e);
-            marketContext = `相場取得エラーが発生しました: ${e.message}`;
         }
     }
 
@@ -57,7 +62,7 @@ export async function POST(req: Request) {
     const botResponse = result.text;
 
     // 3. 顧客インサイトの蓄積 (非同期でGASへ投げて記録させる)
-    if (gasUrl && !gasUrl.includes("https://script.google.com/macros/s/AKfycbxuE0iPCEruoQLretA8R0cmSnRyZPYT9qd6YqDGVCCCY1h0wRVJX8P-MZF20I1whF7Z/exec")) {
+    if (gasUrl) {
         fetch(gasUrl, {
             method: 'POST',
             body: JSON.stringify({
@@ -72,7 +77,6 @@ export async function POST(req: Request) {
     return Response.json({ text: botResponse });
   } catch (error: any) {
     console.error("AI Route Error:", error);
-    // ★ エラーの生データをフロントエンドに返す
     return Response.json({ 
         text: `【システムエラー報告】\nボス、以下のエラーが発生しました。\n\n${error.message}\n\nこの文面をツキサム（私）にコピペして教えてください！` 
     }, { status: 500 });
