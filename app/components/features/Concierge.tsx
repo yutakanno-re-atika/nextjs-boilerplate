@@ -77,14 +77,6 @@ export const Concierge = () => {
             <p className="text-xs font-bold leading-relaxed">
                 <span className="text-[#D32F2F]">本日の価格</span>や持ち込みについて、AIがすぐにお答えします！🤖
             </p>
-          <button onClick={async () => {
-    alert("FAQ生成を開始します。数十秒かかります...");
-    const res = await fetch('/api/faq', { method: 'POST' });
-    const data = await res.json();
-    alert(data.success ? "生成成功！ページをリロードしてください" : "エラー: " + data.message);
-}} className="fixed bottom-24 right-6 bg-blue-600 text-white p-2 rounded">
-    🔄 AI FAQ生成
-</button>
             <div className="absolute -bottom-2 right-5 w-4 h-4 bg-white border-b border-r border-gray-100 transform rotate-45"></div>
         </div>
       )}
