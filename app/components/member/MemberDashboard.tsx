@@ -26,6 +26,12 @@ export const MemberDashboard = ({ user, data, setView }: MemberProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const marketPrice = data?.config?.market_price || 0;
+  const myClientId = (user as any)?.clientId || (user as any)?.id;
+
+  // ★ GASのReservationsから自分の取引データだけを抽出（日付降順）
+  const myHistory = (data?.reservations || [])
+    .filter((r: any) => r.memberId === myClientId)
+    .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const getUnitPrice = () => {
     const product = data?.wires.find(x => x.id === reserveProduct) || data?.castings.find(x => x.id === reserveProduct);
@@ -48,10 +54,10 @@ export const MemberDashboard = ({ user, data, setView }: MemberProps) => {
       const payload = {
         action: 'REGISTER_RESERVATION',
         visitDate: reserveDate,
-        memberId: (user as any)?.clientId || (user as any)?.id,
+        memberId: myClientId,
         memberName: (user as any)?.companyName || (user as any)?.name,
         memo: reserveMemo,
-        items: [{ product: productObj?.name, weight: weight, unitPrice: unitPrice }],
+        items: [{ product: productObj?.name, weight: weight, price: unitPrice }], // price に統一
         totalEstimate: total
       };
       
@@ -61,6 +67,7 @@ export const MemberDashboard = ({ user, data, setView }: MemberProps) => {
           if(d.status === 'success') {
             alert('予約が完了しました。工場でお待ちしております。');
             setReserveProduct(''); setReserveWeight('');
+            // ページリロードなしで最新データを取得できるとベストですが、今回はアラートのみ
           } else {
             alert('予約エラー: ' + d.message);
           }
@@ -195,13 +202,79 @@ export const MemberDashboard = ({ user, data, setView }: MemberProps) => {
             </div>
          )}
          
+         {/* ★ 取引履歴（HISTORY）の実装 */}
          {memberTab === 'HISTORY' && (
             <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-in fade-in">
-               <div className="p-8 border-b border-gray-100"><h3 className="font-serif font-bold text-xl">取引履歴</h3></div>
-               <div className="p-16 text-center text-gray-400 flex flex-col items-center">
-                   <Icons.History />
-                   <p className="mt-4 font-bold">履歴データはGAS連携準備中です</p>
+               <div className="p-8 border-b border-gray-100 bg-gray-50">
+                   <h3 className="font-serif font-bold text-2xl text-[#111]">取引履歴</h3>
+                   <p className="text-sm text-gray-500 mt-2">過去のお持ち込み・計量実績をご確認いただけます。</p>
                </div>
+               
+               {myHistory.length === 0 ? (
+                   <div className="p-16 text-center text-gray-400 flex flex-col items-center">
+                       <Icons.History />
+                       <p className="mt-4 font-bold text-lg">まだ取引データがありません</p>
+                       <p className="text-sm mt-2">お持ち込みの予約や、計量が完了するとここに表示されます。</p>
+                   </div>
+               ) : (
+                   <div className="overflow-x-auto">
+                       <table className="w-full text-left">
+                           <thead className="bg-gray-50 text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-gray-200">
+                               <tr>
+                                   <th className="p-6">日付 / 受付ID</th>
+                                   <th className="p-6">品目・重量</th>
+                                   <th className="p-6 text-right">買掛金額</th>
+                                   <th className="p-6 text-center">ステータス</th>
+                               </tr>
+                           </thead>
+                           <tbody className="divide-y divide-gray-100">
+                               {myHistory.map((record: any) => {
+                                   let parsedItems: any[] = [];
+                                   try {
+                                       let raw = record.items;
+                                       if (typeof raw === 'string') raw = JSON.parse(raw);
+                                       if (typeof raw === 'string') raw = JSON.parse(raw); // 念のため2回
+                                       if (Array.isArray(raw)) parsedItems = raw;
+                                   } catch(e) {}
+
+                                   const isCompleted = record.status === 'COMPLETED';
+
+                                   return (
+                                       <tr key={record.id} className="hover:bg-gray-50 transition">
+                                           <td className="p-6">
+                                               <div className="font-bold text-gray-900">{new Date(record.createdAt).toLocaleDateString()}</div>
+                                               <div className="text-xs text-gray-400 mt-1 font-mono">{record.id}</div>
+                                           </td>
+                                           <td className="p-6">
+                                               {parsedItems.length > 0 ? (
+                                                   <div className="space-y-1">
+                                                       {parsedItems.map((item, i) => (
+                                                           <div key={i} className="text-sm font-bold text-gray-700">
+                                                               {item.product || item.productName} <span className="text-gray-400 mx-2">/</span> {item.weight} kg
+                                                           </div>
+                                                       ))}
+                                                   </div>
+                                               ) : (
+                                                   <span className="text-gray-400 text-sm">詳細なし</span>
+                                               )}
+                                           </td>
+                                           <td className="p-6 text-right">
+                                               <div className="text-lg font-black text-gray-900">
+                                                   ¥{(Number(record.totalEstimate) || 0).toLocaleString()}
+                                               </div>
+                                           </td>
+                                           <td className="p-6 text-center">
+                                               <span className={`px-3 py-1 rounded-full text-xs font-bold border ${isCompleted ? 'bg-green-50 text-green-700 border-green-200' : 'bg-orange-50 text-orange-700 border-orange-200'}`}>
+                                                   {isCompleted ? '計量完了 (支払済)' : '受付済・検収待ち'}
+                                               </span>
+                                           </td>
+                                       </tr>
+                                   );
+                               })}
+                           </tbody>
+                       </table>
+                   </div>
+               )}
             </div>
          )}
       </main>
