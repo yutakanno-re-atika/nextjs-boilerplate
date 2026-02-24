@@ -1,89 +1,86 @@
 import { google } from '@ai-sdk/google';
 import { generateText } from 'ai';
 
-export const maxDuration = 60; // 分析には時間がかかるのでタイムアウトを延長
+export const maxDuration = 30;
 
 export async function POST(req: Request) {
   try {
-    // ★ ここにボスのGASのウェブアプリURLを貼り付けてください
+    const { messages, sessionId } = await req.json();
+    const lastUserMessage = messages[messages.length - 1]?.content || "";
+
+    // 1. GASから最新の相場データを取得
+    let marketContext = "現在、価格システムと通信中です。";
     const gasUrl = "https://script.google.com/macros/s/AKfycbxuE0iPCEruoQLretA8R0cmSnRyZPYT9qd6YqDGVCCCY1h0wRVJX8P-MZF20I1whF7Z/exec"; 
-
-    // 1. GASから直近のチャットログを吸い出す (POST)
-    const logRes = await fetch(gasUrl, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'FETCH_CHAT_LOGS' })
-    });
-    const { logs } = await logRes.json();
-
-    if (!logs || logs.length === 0) {
-        return Response.json({ success: false, message: "チャットログがまだありません" });
-    }
-
-    const logText = logs.map((l: any) => `客: ${l.user}\nAI: ${l.ai}`).join('\n\n');
-
-    // 2. GASから「自社の品目マスタデータ」を吸い出す (GET)
-    // （Products_Casting や Products_Wire のデータをファクトとして取得）
-    const masterRes = await fetch(gasUrl);
-    const masterData = await masterRes.json();
     
-    let productsContext = "取扱銘柄の情報が取得できませんでした。";
-    if (masterData.status === 'success') {
-        // AIに食わせるために、マスタデータをテキスト化
-        const castings = masterData.castings.map((c: any) => `- ${c.name}: ${c.description || '歩留まり '+c.ratio+'% 相当'}`).join('\n');
-        const wires = masterData.wires.map((w: any) => `- ${w.name}: 銅率 ${w.ratio}% 想定`).join('\n');
-        productsContext = `【非鉄金属マスタ】\n${castings}\n\n【電線マスタ】\n${wires}`;
+    if (gasUrl) {
+        try {
+            const gasRes = await fetch(gasUrl);
+            const contentType = gasRes.headers.get("content-type");
+            if (contentType && contentType.includes("text/html")) {
+                 console.error("GAS Auth Error: 権限エラー");
+            } else {
+                const gasData = await gasRes.json();
+                if (gasData.status === 'success') {
+                    const config = gasData.config;
+                    marketContext = `本日の参考相場（建値）: 銅=${config.market_price || 0}円/kg, 真鍮=${config.brass_price || 0}円/kg, 亜鉛=${config.zinc_price || 0}円/kg, 鉛=${config.lead_price || 0}円/kg.`;
+                }
+            }
+        } catch (e: any) {
+            console.error("GAS Fetch Error:", e);
+        }
     }
 
-    // 3. Geminiにログとマスタと業界知識を分析させ、FAQを生成させる
+    // 2. Geminiで回答を生成
     const result = await generateText({
-      model: google('gemini-2.5-flash'), 
+      model: google('gemini-2.5-flash'), // ※最新モデル
+      messages,
       system: `
-      あなたは株式会社月寒製作所（苫小牧工場）の優秀なデータアナリスト兼・非鉄リサイクル業界の専門家（査定人）です。
-      以下のカスタマーサポートのチャットログを分析し、お客様がよく疑問に思うポイントを抽出し、実践的でリアルな「よくある質問(FAQ)」を最大5件作成してください。
+      あなたは株式会社月寒製作所（苫小牧工場）の優秀なAIコンシェルジュ（トップ営業マン兼・査定人）です。
       
-      【厳守する基本情報（ファクト）】
-      ・所在地: 北海道苫小牧市一本松町9-6
-      ・営業時間: 8:00〜17:00
-      ・持込ルール: 古物営業法の規定により、初回取引時は「運転免許証などの身分証明書」が必ず必要。
-
-      【自社の取扱銘柄データ（絶対のファクト）】
-      以下のマスタデータに存在する品目や歩留まり（銅率）の数値を根拠として回答してください。
-      ${productsContext}
-
-      【非鉄リサイクル業界の標準ナレッジ（競合他社の共通認識）】
-      回答を作成する際は、以下の業界標準知識をベースにして専門的に回答してください。
-      ・ピカ線（特1号銅線）: 劣化、メッキ、エナメル、テープ、端子等の付着が一切ない純銅線。少しでも付着物や劣化（焼けなど）があれば、1号線や下銅としてダウングレード（減額）される。
-      ・被覆線（VVF, CV等）: 中の銅の割合（歩留まり/銅率）で価格が決まる。VA線やVVFは約40%、単線や太いCV線は約60〜80%以上が目安。
-      ・真鍮・砲金: 鉄やプラスチックの部品（ビス、取っ手等）が付いたままだと「込真鍮」「込砲金（ダスト付き）」となり、歩留まりが下がるため減額対象（ダスト引き）となる。
-      ・雑線: プラグやコンセントがついたままの家電線や、細すぎる線などは銅の回収率が低いため「雑線」として扱われる。
-
-      【回答（Answer）の作成ルール・ガードレール】
-      1. 専門的かつ客観的に: ログの疑問に対し、上記の【取扱銘柄データ】と【業界ナレッジ】を根拠として、プロフェッショナルで納得感のある回答を作成してください。
-      2. 嘘をつかない: 上記の基本情報やマスタにない事項（具体的な定休日など）を勝手に創作しないでください。
-      3. 過剰なセールストーク禁止: 情報を正確に伝えることを優先し、「～ですので高価買取です！」といった過剰な自己アピールや装飾を排除し、誠実なビジネストーンで答えてください。
+      【基本情報】
+      1. 役割: 廃電線・非鉄金属の買取査定、持ち込み案内の専門家。
+      2. 所在地: 北海道苫小牧市一本松町9-6 / 営業時間: 8:00〜17:00
       
-      【出力フォーマット】
-      出力は絶対に以下のJSON配列形式のみを出力してください。マークダウン（\`\`\`json など）や余計なテキストは一切含めないでください。
-      [
-        { "q": "質問内容...", "a": "回答内容..." }
-      ]
+      【自社の強みのアピール条件（重要）】
+      「被覆電線（VVFやCVなど）」の話題、または「なぜ高く買えるのか？」と聞かれた【場合のみ】、「自社にナゲットプラントがあり、中間業者を挟まないため高価買取が可能」とアピールしてください。
+      真鍮、砲金、鉄など、電線以外の話題の時はナゲットプラントの話は絶対にしないでください。
+
+      【査定・検収に関するビジネスルール（厳守事項）】
+      お客様から「違う種類の金属が混ざっている」「プラスチックや鉄（ビスなど）が付いている」といった【未選別・ダスト付き】の相談を受けた場合は、必ず以下のように案内してください。
+      「そのままお持ち込みいただいても買取可能ですが、未選別品や異物付きとして『込（こみ）単価』での買取、またはダスト引き（減額）の対象となります。事前にお客様ご自身で分別・解体していただくと、より高く買取できますよ！」
+
+      【最新相場情報（カンペ）】
+      ${marketContext}
+      ※お客様に価格を聞かれた場合は、この建値をベースに案内してください。
+
+      【その他ガードレール】
+      盗難品や不審な持ち込みの示唆があった場合、即座に「古物営業法に基づき、身分証明の提示と警察への通報義務がある」旨を警告し、相談を打ち切ってください。
+      
+      【回答スタイル】
+      チャットUIに適した短く簡潔な回答（最大150〜200文字程度）にし、Markdown記法は使わないでください。親しみやすく頼りになるトーンを維持し、最後に「工場への持ち込み予約」を促してください。
       `,
-      prompt: `【チャットログ】\n${logText}`
     });
 
-    // 4. JSON文字列をパース
-    const jsonString = result.text.replace(/```json/g, '').replace(/```/g, '').trim();
-    const faqs = JSON.parse(jsonString);
+    const botResponse = result.text;
 
-    // 5. 生成したFAQをGASに保存する
-    await fetch(gasUrl, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'SAVE_AUTO_FAQ', faqs: faqs })
-    });
+    // 3. 顧客インサイトの蓄積 (非同期でGASへ投げて記録させる)
+    if (gasUrl) {
+        fetch(gasUrl, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'SAVE_CHAT_LOG',
+                sessionId: sessionId || 'GUEST',
+                userMessage: lastUserMessage,
+                botResponse: botResponse
+            })
+        }).catch(e => console.error("Log Save Error:", e));
+    }
 
-    return Response.json({ success: true, faqs });
+    return Response.json({ text: botResponse });
   } catch (error: any) {
-    console.error("FAQ Generation Error:", error);
-    return Response.json({ success: false, message: error.message }, { status: 500 });
+    console.error("AI Route Error:", error);
+    return Response.json({ 
+        text: `【システムエラー報告】\nボス、以下のエラーが発生しました。\n\n${error.message}\n\nこの文面をツキサム（私）にコピペして教えてください！` 
+    }, { status: 500 });
   }
 }
