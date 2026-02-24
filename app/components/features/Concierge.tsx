@@ -157,6 +157,15 @@ export const Concierge = () => {
             <span className="absolute inset-0 rounded-full bg-[#D32F2F] animate-ping opacity-20 duration-1000"></span>
             <ChatIcon />
           </button>
+
+      <button onClick={async () => {
+    alert("FAQ生成を開始します。数十秒かかります...");
+    const res = await fetch('/api/faq', { method: 'POST' });
+    const data = await res.json();
+    alert(data.success ? "生成成功！ページをリロードしてください" : "エラー: " + data.message);
+}} className="fixed bottom-24 right-6 bg-blue-600 text-white p-2 rounded">
+    🔄 AI FAQ生成
+</button>
       )}
     </div>
   );
