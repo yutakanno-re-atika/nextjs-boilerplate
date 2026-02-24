@@ -10,10 +10,11 @@ export async function POST(req: Request) {
 
     // 1. GASから最新の相場データを取得 (カンペの用意)
     let marketContext = "現在、価格システムと通信中です。";
-    // ★ NEXT_PUBLIC_GAS_URL はご自身のGASのデプロイURLに置き換わっている前提です
-    const gasUrl = process.env.NEXT_PUBLIC_GAS_URL || ""; 
     
-    if (gasUrl) {
+    // ★ ボスのGASウェブアプリURLを直接ここに貼り付けてください（ダブルクォーテーションで囲むのを忘れずに）
+    const gasUrl = "https://script.google.com/macros/s/AKfycbxuE0iPCEruoQLretA8R0cmSnRyZPYT9qd6YqDGVCCCY1h0wRVJX8P-MZF20I1whF7Z/exec"; 
+    
+    if (gasUrl && gasUrl !== "https://script.google.com/macros/s/AKfycbxuE0iPCEruoQLretA8R0cmSnRyZPYT9qd6YqDGVCCCY1h0wRVJX8P-MZF20I1whF7Z/exec") {
         try {
             const gasRes = await fetch(gasUrl);
             const gasData = await gasRes.json();
@@ -55,7 +56,7 @@ export async function POST(req: Request) {
     const botResponse = result.text;
 
     // 3. 顧客インサイトの蓄積 (非同期でGASへ投げて記録させる)
-    if (gasUrl) {
+    if (gasUrl && gasUrl !== "https://script.google.com/macros/s/AKfycbxuE0iPCEruoQLretA8R0cmSnRyZPYT9qd6YqDGVCCCY1h0wRVJX8P-MZF20I1whF7Z/exec") {
         fetch(gasUrl, {
             method: 'POST',
             body: JSON.stringify({
