@@ -35,7 +35,7 @@ export async function POST(req: Request) {
 
     // 2. Gemini 1.5 flashで回答を生成
     const result = await generateText({
-      model: google('gemini-1.5-flash-002'), 
+      model: google('gemini-2.5-flash'), 
       messages,
       system: `
       あなたは株式会社月寒製作所（苫小牧工場）のAIコンシェルジュです。
