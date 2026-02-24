@@ -6,15 +6,15 @@ export const maxDuration = 30;
 export async function POST(req: Request) {
   try {
     const { messages, sessionId } = await req.json();
-    const lastUserMessage = messages[messages.length - 1].content;
+    const lastUserMessage = messages[messages.length - 1]?.content || "";
 
     // 1. GASから最新の相場データを取得 (カンペの用意)
     let marketContext = "現在、価格システムと通信中です。";
     
-    // ★ ボスのGASウェブアプリURLを直接ここに貼り付けてください（ダブルクォーテーションで囲むのを忘れずに）
+    // ★ ボスのGASウェブアプリURLを貼り付けてください（ダブルクォーテーション " " の中にURLを入れること！）
     const gasUrl = "https://script.google.com/macros/s/AKfycbxuE0iPCEruoQLretA8R0cmSnRyZPYT9qd6YqDGVCCCY1h0wRVJX8P-MZF20I1whF7Z/exec"; 
     
-    if (gasUrl && gasUrl !== "https://script.google.com/macros/s/AKfycbxuE0iPCEruoQLretA8R0cmSnRyZPYT9qd6YqDGVCCCY1h0wRVJX8P-MZF20I1whF7Z/exec") {
+    if (gasUrl && !gasUrl.includes("https://script.google.com/macros/s/AKfycbxuE0iPCEruoQLretA8R0cmSnRyZPYT9qd6YqDGVCCCY1h0wRVJX8P-MZF20I1whF7Z/exec")) {
         try {
             const gasRes = await fetch(gasUrl);
             const gasData = await gasRes.json();
@@ -22,8 +22,9 @@ export async function POST(req: Request) {
                 const config = gasData.config;
                 marketContext = `本日の参考相場（建値）: 銅=${config.market_price || 0}円/kg, 真鍮=${config.brass_price || 0}円/kg, 亜鉛=${config.zinc_price || 0}円/kg, 鉛=${config.lead_price || 0}円/kg.`;
             }
-        } catch (e) {
+        } catch (e: any) {
             console.error("GAS Fetch Error:", e);
+            marketContext = `相場取得エラーが発生しました: ${e.message}`;
         }
     }
 
@@ -43,20 +44,20 @@ export async function POST(req: Request) {
 
       【最新相場情報（カンペ）】
       ${marketContext}
-      ※お客様に価格や目安を聞かれた場合は、この建値をベースに案内してください。（特別ルールのメンテナンス中の案内は解除されました）
+      ※お客様に価格や目安を聞かれた場合は、この建値をベースに案内してください。
 
       【ガードレール（厳守事項）】
       盗難品や不審な持ち込み（電柱から切ってきた電線など）の示唆があった場合、即座に「古物営業法に基づき、身分証明の提示と警察への通報義務がある」旨を厳格に警告し、買取の相談を打ち切ってください。
       
       【回答スタイル】
-      チャットUIに適した短く簡潔な回答（最大150〜200文字程度）にし、Markdown記法（**太字**など）は極力使わないでください。親しみやすく頼りになるトーンを維持し、最終的に「工場への持ち込み予約（シミュレーターの利用）」を促してください。
+      チャットUIに適した短く簡潔な回答（最大150〜200文字程度）にし、Markdown記法は極力使わないでください。親しみやすく頼りになるトーンを維持し、最終的に「工場への持ち込み予約（シミュレーターの利用）」を促してください。
       `,
     });
 
     const botResponse = result.text;
 
     // 3. 顧客インサイトの蓄積 (非同期でGASへ投げて記録させる)
-    if (gasUrl && gasUrl !== "https://script.google.com/macros/s/AKfycbxuE0iPCEruoQLretA8R0cmSnRyZPYT9qd6YqDGVCCCY1h0wRVJX8P-MZF20I1whF7Z/exec") {
+    if (gasUrl && !gasUrl.includes("https://script.google.com/macros/s/AKfycbxuE0iPCEruoQLretA8R0cmSnRyZPYT9qd6YqDGVCCCY1h0wRVJX8P-MZF20I1whF7Z/exec")) {
         fetch(gasUrl, {
             method: 'POST',
             body: JSON.stringify({
@@ -69,8 +70,11 @@ export async function POST(req: Request) {
     }
 
     return Response.json({ text: botResponse });
-  } catch (error) {
-    console.error(error);
-    return Response.json({ text: "申し訳ありません、現在AIシステムが混み合っております。少し時間をおいて再度お試しください。" }, { status: 500 });
+  } catch (error: any) {
+    console.error("AI Route Error:", error);
+    // ★ エラーの生データをフロントエンドに返す
+    return Response.json({ 
+        text: `【システムエラー報告】\nボス、以下のエラーが発生しました。\n\n${error.message}\n\nこの文面をツキサム（私）にコピペして教えてください！` 
+    }, { status: 500 });
   }
 }
