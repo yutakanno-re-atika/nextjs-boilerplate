@@ -20,6 +20,9 @@ import { PriceList } from './components/features/PriceList';
 // ★ ここで新入社員（コンシェルジュ）を呼び出しています
 import { Concierge } from './components/features/Concierge'; 
 
+// ★ 新規追加：自動生成FAQコンポーネント
+import { AutoFaq } from './components/features/AutoFaq';
+
 // Types
 import { MarketData, UserData } from './types';
 
@@ -39,10 +42,10 @@ export default function WireMasterCloud() {
   const [view, setView] = useState<'LP' | 'LOGIN' | 'ADMIN' | 'MEMBER' | 'FLOW' | 'MEMBERSHIP' | 'COMPANY' | 'CONTACT'>('LP');
   const [data, setData] = useState<MarketData | null>(null);
   const [user, setUser] = useState<UserData | null>(null);
-  const [isLoading, setIsLoading] = useState(true); // ★ 追加：ロード中ステート
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [loginError, setLoginError] = useState(''); // ★ 追加：ログインエラー表示用
-  const [isLoggingIn, setIsLoggingIn] = useState(false); // ★ 追加：ログイン中ボタン状態用
+  const [loginError, setLoginError] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   // ==========================================
   // ★ 1. 初期ロード時の「記憶復元」と「データ取得」
@@ -126,7 +129,6 @@ export default function WireMasterCloud() {
     );
   }
 
-  // ★ ダッシュボードには onLogout を渡す
   if (view === 'ADMIN') return <AdminDashboard data={data} setView={setView} onLogout={handleLogout} />;
   if (view === 'MEMBER') return <MemberDashboard user={user} data={data} setView={setView} onLogout={handleLogout} />;
   
@@ -147,7 +149,6 @@ export default function WireMasterCloud() {
     <div className="min-h-screen bg-white text-[#111] font-sans">
       <GlobalNav setView={setView} view={view} />
 
-      {/* ★ ログインモーダル（ボスのデザインにエラー表示などを追加） */}
       {view === 'LOGIN' && (
           <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
             <div className="bg-white w-full max-w-sm p-12 shadow-2xl relative border-t-4 border-[#D32F2F]">
@@ -171,7 +172,6 @@ export default function WireMasterCloud() {
           </div>
       )}
 
-      {/* ★ ボスのオリジナルLPデザイン */}
       {view === 'LP' && (
         <>
             <section className="relative min-h-[600px] flex items-center bg-[#D32F2F] text-white overflow-hidden py-20 lg:py-0">
@@ -241,6 +241,10 @@ export default function WireMasterCloud() {
 
             <PriceList data={data} marketPrice={marketPrice} />
             <ServiceCriteria />
+            
+            {/* ★ ここに追加：自動生成されたFAQ */}
+            <AutoFaq faqData={data?.faq} />
+            
             <div id="simulator"><Simulator marketPrice={marketPrice} /></div>
         </>
       )}
