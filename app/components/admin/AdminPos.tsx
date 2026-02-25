@@ -14,7 +14,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   const [memo, setMemo] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // ★ 電線と非鉄のマスタを両方取得
   const wiresMaster = data?.wires || [];
   const castingsMaster = data?.castings || [];
 
@@ -26,13 +25,8 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         setMemo(res.memo || '');
         try {
           let parsed = res.items;
-          // ※ビルドエラーの原因だった重複行を削除し、安全なパース処理に修正
-          if (typeof parsed === 'string') {
-              try { parsed = JSON.parse(parsed); } catch(e) {}
-          }
-          if (typeof parsed === 'string') {
-              try { parsed = JSON.parse(parsed); } catch(e) {}
-          }
+          if (typeof parsed === 'string') { try { parsed = JSON.parse(parsed); } catch(e) {} }
+          if (typeof parsed === 'string') { try { parsed = JSON.parse(parsed); } catch(e) {} }
           if (Array.isArray(parsed)) {
             const formatted = parsed.map(it => ({ product: it.product || it.productName || '', weight: it.weight || '', price: it.price || it.unitPrice || '' }));
             setItems(formatted.length > 0 ? formatted : [{ product: '', weight: '', price: '' }]);
@@ -48,7 +42,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
     const newItems = [...items];
     newItems[index][field] = value;
     
-    // ★ 選ばれた品目から、相場×歩留まりを自動計算
+    // 自動単価計算ロジック
     if (field === 'product') {
         const wire = wiresMaster.find((w:any) => w.name === value);
         const casting = castingsMaster.find((c:any) => c.name === value);
@@ -56,16 +50,15 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         if (wire) {
             const copperPrice = Number(data?.market?.copper?.price || 1450);
             const ratio = Number(wire.ratio || 0) / 100;
-            newItems[index].price = Math.floor(copperPrice * ratio * 0.85); // 電線のマージン
+            newItems[index].price = Math.floor(copperPrice * ratio * 0.85); 
         } else if (casting) {
-            // 非鉄の種類に合わせて相場を切り替え
             let basePrice = Number(data?.market?.copper?.price || 1450);
             if (casting.type === 'BRASS') basePrice = Number(data?.market?.brass?.price || 980);
             if (casting.type === 'ZINC') basePrice = Number(data?.market?.zinc?.price || 450);
             if (casting.type === 'LEAD') basePrice = Number(data?.market?.lead?.price || 380);
             
             const ratio = Number(casting.ratio || 0) / 100;
-            newItems[index].price = Math.floor(basePrice * ratio * 0.90); // 非鉄のマージン
+            newItems[index].price = Math.floor(basePrice * ratio * 0.90); 
         }
     }
     setItems(newItems);
@@ -87,7 +80,13 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
     try {
       const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const result = await res.json();
-      if (result.status === 'success') { onSuccess(); } else { alert('エラー: ' + result.message); }
+      if (result.status === 'success') { 
+          alert('受付・計量が完了しました！');
+          onSuccess(); 
+          window.location.reload(); // ★ 保存後に画面を更新してカンバンに即反映させる
+      } else { 
+          alert('エラー: ' + result.message); 
+      }
     } catch(e) { alert('通信エラーが発生しました'); }
     setIsSubmitting(false);
   };
@@ -107,19 +106,19 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       </header>
 
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col flex-1">
-          <div className="p-6 border-b border-gray-100 bg-gray-50 flex gap-6">
+          <div className="p-4 md:p-6 border-b border-gray-100 bg-gray-50 flex flex-col md:flex-row gap-4 md:gap-6">
               <div className="flex-1">
                   <label className="text-sm text-gray-600 font-bold block mb-2">お客様 (業者名)</label>
                   <input type="text" className="w-full border border-gray-300 p-3.5 rounded-xl text-lg font-bold outline-none focus:border-[#D32F2F] focus:ring-2 focus:ring-red-100 transition" placeholder="持込業者名を入力" value={clientName} onChange={e => setClientName(e.target.value)} />
               </div>
-              <div className="w-1/3">
+              <div className="md:w-1/3 w-full">
                   <label className="text-sm text-gray-600 font-bold block mb-2">引継ぎメモ</label>
                   <input type="text" className="w-full border border-gray-300 p-3.5 rounded-xl text-base outline-none focus:border-[#D32F2F] focus:ring-2 focus:ring-red-100 transition" placeholder="例：泥汚れ多め" value={memo} onChange={e => setMemo(e.target.value)} />
               </div>
           </div>
 
-          <div className="p-6 flex-1 overflow-y-auto bg-gray-50/30">
-              <div className="flex text-sm font-bold text-gray-500 mb-3 px-2">
+          <div className="p-4 md:p-6 flex-1 overflow-y-auto bg-gray-50/30">
+              <div className="hidden md:flex text-sm font-bold text-gray-500 mb-3 px-2">
                   <div className="flex-1">持込品目</div>
                   <div className="w-36 text-right">重量 (kg)</div>
                   <div className="w-40 text-right">買取単価 (円)</div>
@@ -129,9 +128,11 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
               
               <div className="space-y-4">
                   {items.map((item, idx) => (
-                      <div key={idx} className="flex gap-4 items-center bg-white p-3 rounded-xl border border-gray-200 shadow-sm group hover:border-[#D32F2F] transition">
-                          <div className="flex-1">
-                              <select className="w-full bg-transparent p-2 text-base font-bold outline-none cursor-pointer text-gray-900" value={item.product} onChange={e => handleItemChange(idx, 'product', e.target.value)}>
+                      <div key={idx} className="flex flex-col md:flex-row gap-3 md:gap-4 md:items-center bg-white p-4 md:p-3 rounded-xl border border-gray-200 shadow-sm group hover:border-[#D32F2F] transition">
+                          {/* スマホレイアウト対応のためにフレックス構成を調整 */}
+                          <div className="flex-1 w-full md:w-auto">
+                              <label className="md:hidden text-xs font-bold text-gray-500 mb-1 block">持込品目</label>
+                              <select className="w-full bg-transparent p-2 md:p-2 border md:border-transparent border-gray-300 rounded-lg text-base font-bold outline-none cursor-pointer text-gray-900" value={item.product} onChange={e => handleItemChange(idx, 'product', e.target.value)}>
                                   <option value="">-- 品目を選択 --</option>
                                   <optgroup label="電線類 (W/M)">
                                       {wiresMaster.map((w:any) => <option key={`w-${w.id}`} value={w.name}>{w.name} [銅率{w.ratio}%]</option>)}
@@ -143,19 +144,30 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                                   <option value="その他">その他 (手入力)</option>
                               </select>
                           </div>
-                          <div className="w-36 relative">
-                              <input type="number" className="w-full bg-gray-50 border border-gray-200 p-3 pr-8 rounded-xl text-xl font-black text-right outline-none focus:border-[#D32F2F] focus:bg-white" placeholder="0" value={item.weight} onChange={e => handleItemChange(idx, 'weight', e.target.value)} />
-                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-bold">kg</span>
+                          
+                          <div className="flex gap-3 items-end">
+                              <div className="flex-1 md:w-36 relative">
+                                  <label className="md:hidden text-xs font-bold text-gray-500 mb-1 block">重量 (kg)</label>
+                                  {/* ★ inputMode="decimal" でスマホの巨大テンキーを呼び出す */}
+                                  <input type="number" inputMode="decimal" pattern="[0-9]*" className="w-full bg-gray-50 border border-gray-200 p-3 pr-8 rounded-xl text-xl font-black text-right outline-none focus:border-[#D32F2F] focus:bg-white transition" placeholder="0" value={item.weight} onChange={e => handleItemChange(idx, 'weight', e.target.value)} />
+                                  <span className="absolute right-3 bottom-3 text-sm text-gray-500 font-bold">kg</span>
+                              </div>
+                              <div className="flex-1 md:w-40 relative">
+                                  <label className="md:hidden text-xs font-bold text-gray-500 mb-1 block">単価 (円)</label>
+                                  {/* ★ inputMode="decimal" を追加 */}
+                                  <input type="number" inputMode="decimal" pattern="[0-9]*" className="w-full bg-gray-50 border border-gray-200 p-3 pr-6 rounded-xl text-xl font-bold text-right outline-none focus:border-[#D32F2F] focus:bg-white transition" placeholder="0" value={item.price} onChange={e => handleItemChange(idx, 'price', e.target.value)} />
+                                  <span className="absolute right-3 bottom-3 text-sm text-gray-500 font-bold">円</span>
+                              </div>
                           </div>
-                          <div className="w-40 relative">
-                              <input type="number" className="w-full bg-gray-50 border border-gray-200 p-3 pr-6 rounded-xl text-xl font-bold text-right outline-none focus:border-[#D32F2F] focus:bg-white" placeholder="0" value={item.price} onChange={e => handleItemChange(idx, 'price', e.target.value)} />
-                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-bold">円</span>
-                          </div>
-                          <div className="w-40 text-right px-2">
-                              <p className="text-2xl font-black text-gray-900">¥{(Number(item.weight) * Number(item.price) || 0).toLocaleString()}</p>
-                          </div>
-                          <div className="w-12 text-center">
-                              <button onClick={() => removeItem(idx)} className="text-gray-300 hover:text-red-500 hover:bg-red-50 transition p-2.5 rounded-lg"><Icons.Trash /></button>
+
+                          <div className="flex justify-between items-center mt-2 md:mt-0 pt-3 md:pt-0 border-t md:border-0 border-dashed border-gray-200">
+                              <div className="md:w-40 md:text-right px-2">
+                                  <label className="md:hidden text-xs font-bold text-gray-500 block">金額</label>
+                                  <p className="text-2xl font-black text-gray-900">¥{(Number(item.weight) * Number(item.price) || 0).toLocaleString()}</p>
+                              </div>
+                              <div className="w-12 text-right md:text-center">
+                                  <button onClick={() => removeItem(idx)} className="text-gray-400 hover:text-red-500 bg-gray-50 hover:bg-red-50 transition p-3 md:p-2.5 rounded-lg"><Icons.Trash /></button>
+                              </div>
                           </div>
                       </div>
                   ))}
@@ -166,12 +178,12 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
               </button>
           </div>
 
-          <div className="p-6 border-t border-gray-200 bg-white flex justify-between items-end">
-              <div>
-                  <p className="text-sm font-bold text-gray-500 mb-2">合計 買掛金額</p>
-                  <p className="text-5xl font-black text-gray-900 tracking-tight">¥{totalAmount.toLocaleString()}</p>
+          <div className="p-4 md:p-6 border-t border-gray-200 bg-white flex flex-col md:flex-row md:justify-between items-center gap-4">
+              <div className="w-full md:w-auto text-center md:text-left">
+                  <p className="text-sm font-bold text-gray-500 mb-1">合計 買掛金額</p>
+                  <p className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight">¥{totalAmount.toLocaleString()}</p>
               </div>
-              <button onClick={handleSubmit} disabled={isSubmitting || !clientName} className="bg-[#D32F2F] text-white px-8 py-4 rounded-xl text-lg font-bold hover:bg-red-700 transition shadow-lg flex items-center gap-2 disabled:bg-gray-300 disabled:shadow-none">
+              <button onClick={handleSubmit} disabled={isSubmitting || !clientName} className="w-full md:w-auto bg-[#D32F2F] text-white px-8 py-4 rounded-xl text-lg font-bold hover:bg-red-700 transition shadow-lg flex items-center justify-center gap-2 disabled:bg-gray-300 disabled:shadow-none">
                   {isSubmitting ? '保存中...' : <><Icons.Save /> {editingResId ? '計量を確定しヤード在庫へ' : '新規受付を完了する'}</>}
               </button>
           </div>
