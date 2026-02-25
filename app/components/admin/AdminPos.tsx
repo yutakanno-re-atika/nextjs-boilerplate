@@ -95,21 +95,20 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
     setIsSubmitting(false);
   };
 
-  // デザイン: シャープな入力フィールド
   const inputClass = "w-full bg-white border border-gray-300 p-2.5 rounded-sm text-lg font-bold text-gray-900 outline-none focus:border-[#D32F2F] focus:ring-1 focus:ring-[#D32F2F] transition font-mono";
 
   return (
-    <div className="flex flex-col h-full animate-in fade-in duration-500 max-w-6xl mx-auto w-full">
+    <div className="flex flex-col h-full animate-in fade-in duration-500 max-w-6xl mx-auto w-full text-gray-800">
       <header className="mb-4 flex justify-between items-end flex-shrink-0 pb-4 border-b border-gray-200">
         <div>
-          <h2 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
+          <h2 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2 font-serif">
              <span className="w-1.5 h-6 bg-[#D32F2F]"></span>
-             POS Register
+             {editingResId ? '検収・計量 (POS)' : '新規受付 (POS)'}
           </h2>
-          <p className="text-xs text-gray-500 mt-1 font-mono tracking-wider ml-4">{editingResId ? 'EDIT MODE' : 'NEW ENTRY'}</p>
+          <p className="text-xs text-gray-500 mt-1 font-mono tracking-wider ml-3">{editingResId ? 'EDIT MODE' : 'NEW ENTRY'}</p>
         </div>
         {editingResId && (
-            <button onClick={onClear} className="text-gray-500 hover:text-gray-900 bg-white border border-gray-300 px-4 py-2 rounded-sm text-xs font-bold transition flex items-center gap-2">
+            <button onClick={onClear} className="text-gray-500 hover:text-gray-900 bg-white border border-gray-300 px-4 py-2 rounded-sm text-xs font-bold shadow-sm transition flex items-center gap-2">
                 <Icons.Close /> キャンセル
             </button>
         )}
@@ -119,12 +118,12 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           {/* 顧客情報エリア */}
           <div className="p-5 border-b border-gray-200 bg-gray-50 flex flex-col md:flex-row gap-6">
               <div className="flex-1 relative">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1">Customer</label>
+                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1">お客様 (業者名)</label>
                   <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Icons.Search /></div>
                       <input 
                           type="text" 
-                          className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-sm text-lg font-bold outline-none focus:border-[#D32F2F] focus:ring-1 focus:ring-[#D32F2F] transition" 
+                          className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-sm text-lg font-bold outline-none focus:border-[#D32F2F] focus:ring-1 focus:ring-[#D32F2F] transition shadow-inner" 
                           placeholder="業者名を検索..." 
                           value={clientName} 
                           onChange={handleNameChange} 
@@ -144,18 +143,18 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                   </div>
               </div>
               <div className="md:w-1/3 w-full">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1">Note</label>
-                  <input type="text" className="w-full border border-gray-300 p-2.5 rounded-sm text-base outline-none focus:border-[#D32F2F] transition" placeholder="備考" value={memo} onChange={e => setMemo(e.target.value)} />
+                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1">引継ぎメモ</label>
+                  <input type="text" className="w-full border border-gray-300 p-2.5 rounded-sm text-base outline-none focus:border-[#D32F2F] transition shadow-inner" placeholder="備考" value={memo} onChange={e => setMemo(e.target.value)} />
               </div>
           </div>
 
           {/* 明細エリア */}
           <div className="p-5 flex-1 overflow-y-auto bg-white">
-              <div className="hidden md:flex text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 px-2">
-                  <div className="flex-1">Item</div>
-                  <div className="w-36 text-right">Weight (kg)</div>
-                  <div className="w-40 text-right">Unit Price (¥)</div>
-                  <div className="w-40 text-right">Subtotal</div>
+              <div className="hidden md:flex text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 px-2">
+                  <div className="flex-1">持込品目</div>
+                  <div className="w-36 text-right">重量 (kg)</div>
+                  <div className="w-40 text-right">単価 (円)</div>
+                  <div className="w-40 text-right">金額</div>
                   <div className="w-12"></div>
               </div>
               
@@ -185,7 +184,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                               <p className="text-lg font-black text-gray-900 font-mono">¥{(Number(item.weight) * Number(item.price) || 0).toLocaleString()}</p>
                           </div>
                           <div className="w-12 text-right md:text-center">
-                              <button onClick={() => removeItem(idx)} className="text-gray-400 hover:text-red-500 transition p-2"><Icons.Trash /></button>
+                              <button onClick={() => removeItem(idx)} className="text-gray-400 hover:text-[#D32F2F] transition p-2"><Icons.Trash /></button>
                           </div>
                       </div>
                   ))}
@@ -199,11 +198,11 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           {/* フッター（合計＆保存） */}
           <div className="p-6 bg-[#111] text-white flex flex-col md:flex-row justify-between items-center gap-6">
               <div className="text-center md:text-left">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Payment</p>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">合計買掛金額</p>
                   <p className="text-4xl md:text-5xl font-black tracking-tighter font-mono">¥{totalAmount.toLocaleString()}</p>
               </div>
-              <button onClick={handleSubmit} disabled={isSubmitting || !clientName} className="w-full md:w-auto bg-[#D32F2F] text-white px-10 py-4 rounded-sm text-lg font-bold hover:bg-red-600 transition shadow-lg flex items-center justify-center gap-3 disabled:bg-gray-700 disabled:text-gray-500">
-                  {isSubmitting ? 'PROCESSING...' : <><Icons.Save /> 確定する</>}
+              <button onClick={handleSubmit} disabled={isSubmitting || !clientName} className="w-full md:w-auto bg-[#D32F2F] text-white px-10 py-4 rounded-sm text-lg font-bold hover:bg-red-600 transition shadow-sm flex items-center justify-center gap-3 disabled:bg-gray-700 disabled:text-gray-500">
+                  {isSubmitting ? '処理中...' : <><Icons.Save /> 確定する</>}
               </button>
           </div>
       </div>
