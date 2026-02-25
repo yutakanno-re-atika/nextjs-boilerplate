@@ -5,6 +5,8 @@ const Icons = {
   Alert: () => <svg className="w-3.5 h-3.5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
   Refresh: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
   Download: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>,
+  Banknotes: () => <svg className="w-4 h-4 text-gray-400 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+  Clock: () => <svg className="w-4 h-4 text-gray-400 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
 };
 
 export const AdminCompetitor = ({ data }: { data: any }) => {
@@ -19,7 +21,7 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
   const currentLeadPrice = data?.market?.lead?.price || 380;
   const currentTinPrice = data?.market?.tin?.price || 8900;
   
-  // 自社設定価格（仮）
+  // 自社価格シミュレーション
   const myPrices = {
       "光線（ピカ線、特号）": Math.floor(currentCopperPrice * 0.96),
       "1号線": Math.floor(currentCopperPrice * 0.94),
@@ -50,7 +52,6 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       "被覆線80%", "被覆線70%", "被覆線60%", "被覆線50%", "被覆線40%", "雑線"
   ];
 
-  // ★ ダッシュボードで監視する代表4品目
   const keyItems = ["光線（ピカ線、特号）", "並銅", "砲金", "込中"];
 
   useEffect(() => {
@@ -103,115 +104,112 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
   };
 
   return (
-    <div className="flex flex-col h-full animate-in fade-in duration-500 text-gray-900 pb-12">
-      <header className="mb-6 flex justify-between items-end flex-shrink-0 pb-4 border-b border-gray-200">
+    <div className="flex flex-col h-full animate-in fade-in duration-500 text-gray-900 pb-12 font-sans">
+      
+      {/* 🔴 ヘッダー */}
+      <header className="mb-6 flex flex-col sm:flex-row justify-between sm:items-end flex-shrink-0 pb-4 border-b border-gray-200 gap-4">
         <div>
             <h2 className="text-2xl font-black tracking-tight flex items-center gap-2 font-serif">
                 <span className="w-1.5 h-6 bg-[#D32F2F]"></span>
                 競合価格レーダー
             </h2>
-            <p className="text-xs text-gray-500 mt-1 font-mono tracking-wider ml-3">COMPETITOR RESEARCH</p>
+            <p className="text-xs text-gray-500 mt-1 font-mono tracking-wider ml-3">COMPETITOR RESEARCH DASHBOARD</p>
         </div>
-        <div className="flex gap-3">
-            <button onClick={handleDownloadCSV} className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-sm text-xs font-bold hover:bg-gray-50 transition shadow-sm flex items-center gap-2">
+        <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
+            <button onClick={handleDownloadCSV} className="flex-1 sm:flex-none justify-center bg-white border border-gray-300 text-gray-700 px-4 py-2.5 rounded-sm text-xs font-bold hover:bg-gray-50 transition shadow-sm flex items-center gap-2">
                 <Icons.Download /> CSV
             </button>
-            <button onClick={handleRefresh} disabled={isRefreshing} className="bg-[#111] text-white px-5 py-2 rounded-sm text-xs font-bold hover:bg-[#D32F2F] transition flex items-center gap-2 disabled:opacity-50">
+            <button onClick={handleRefresh} disabled={isRefreshing} className="flex-1 sm:flex-none justify-center bg-[#111] text-white px-5 py-2.5 rounded-sm text-xs font-bold hover:bg-[#D32F2F] transition flex items-center gap-2 disabled:opacity-50">
                 <span className={isRefreshing ? "animate-spin" : ""}><Icons.Refresh /></span>
-                {isRefreshing ? '取得中...' : '最新情報を取得'}
+                {isRefreshing ? '取得中...' : '情報を取得'}
             </button>
         </div>
       </header>
 
-      {/* 🔴 サマリーダッシュボード (色を抑えたミニマルデザイン) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6 flex-shrink-0">
+      {/* 🔴 サマリーダッシュボード */}
+      <div className="bg-white border border-gray-200 rounded-sm shadow-sm mb-6 flex flex-col flex-shrink-0">
           
-          {/* 左側: 本日の建値 */}
-          <div className="bg-white border border-gray-200 rounded-sm p-5 shadow-sm">
-              <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Official Market Price</h3>
-              <div className="grid grid-cols-2 gap-4">
-                  <div>
-                      <p className="text-[10px] text-gray-500 mb-1">銅 (JX)</p>
-                      <p className="text-xl font-black font-mono">¥{currentCopperPrice.toLocaleString()}</p>
+          {/* 上段：建値と取得情報 */}
+          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center p-4 md:p-5 border-b border-gray-100 bg-gray-50 gap-4">
+              <div className="flex flex-wrap gap-4 md:gap-8">
+                  <div className="flex flex-col min-w-[100px]">
+                      <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest flex items-center"><Icons.Banknotes /> 銅建値 (JX)</span>
+                      <span className="text-lg md:text-xl font-mono font-black text-[#D32F2F] mt-1">¥{currentCopperPrice.toLocaleString()}</span>
                   </div>
-                  <div>
-                      <p className="text-[10px] text-gray-500 mb-1">真鍮 (日本伸銅)</p>
-                      <p className="text-lg font-bold text-gray-700 font-mono">¥{currentBrassPrice.toLocaleString()}</p>
+                  <div className="flex flex-col border-l border-gray-200 pl-4 md:pl-8 min-w-[100px]">
+                      <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">真鍮 (日本伸銅)</span>
+                      <span className="text-base md:text-xl font-mono font-black text-gray-900 mt-1">¥{currentBrassPrice.toLocaleString()}</span>
                   </div>
-                  <div>
-                      <p className="text-[10px] text-gray-500 mb-1">亜鉛 (三井)</p>
-                      <p className="text-lg font-bold text-gray-700 font-mono">¥{currentZincPrice.toLocaleString()}</p>
+                  <div className="flex flex-col border-l border-gray-200 pl-4 md:pl-8 min-w-[100px]">
+                      <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">亜鉛 (三井)</span>
+                      <span className="text-base md:text-xl font-mono font-black text-gray-900 mt-1">¥{currentZincPrice.toLocaleString()}</span>
                   </div>
-                  <div>
-                      <p className="text-[10px] text-gray-500 mb-1">鉛 / 錫</p>
-                      <p className="text-sm font-bold text-gray-600 font-mono mt-1">¥{currentLeadPrice} / ¥{currentTinPrice.toLocaleString()}</p>
+                  <div className="flex flex-col border-l border-gray-200 pl-4 md:pl-8 min-w-[100px]">
+                      <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">鉛 / 錫</span>
+                      <span className="text-sm font-mono font-bold text-gray-600 mt-1.5 md:mt-2">¥{currentLeadPrice} / ¥{currentTinPrice.toLocaleString()}</span>
                   </div>
+              </div>
+              <div className="text-left md:text-right flex flex-row lg:flex-col items-center lg:items-end gap-3 lg:gap-1 border-t lg:border-t-0 border-gray-200 pt-4 lg:pt-0">
+                  <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest flex items-center"><Icons.Clock /> 最終取得</span>
+                  <span className="text-xs md:text-sm font-mono font-bold text-gray-800 bg-white px-2 md:px-3 py-1 border border-gray-200 rounded-sm shadow-sm">{lastFetchDate}</span>
               </div>
           </div>
 
-          {/* 右側: 代表4品目スコアボード */}
-          <div className="lg:col-span-2 bg-white border border-gray-200 rounded-sm p-5 shadow-sm">
-              <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Key Items Comparison</h3>
-                  <span className="text-[10px] font-mono text-gray-400">Last Fetch: {lastFetchDate}</span>
-              </div>
-              <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm whitespace-nowrap">
-                      <thead>
-                          <tr className="border-b border-gray-100">
-                              <th className="py-2 pr-4 font-normal text-[10px] text-gray-400">対象品目</th>
-                              <th className="py-2 px-4 font-bold text-[10px] text-gray-800 border-l border-r border-gray-100 bg-gray-50/50">自社設定</th>
-                              {competitors.map(c => (
-                                  <th key={c.name} className="py-2 px-4 font-normal text-[10px] text-gray-500">{c.name}</th>
-                              ))}
-                          </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-50">
-                          {keyItems.map(item => {
-                              const myPrice = myPrices[item] || 0;
-                              return (
-                                  <tr key={item} className="hover:bg-gray-50 transition">
-                                      <td className="py-2.5 pr-4 font-bold text-xs">{item.replace('（ピカ線、特号）', '')}</td>
-                                      <td className="py-2.5 px-4 font-mono font-black border-l border-r border-gray-100 bg-gray-50/50">¥{myPrice.toLocaleString()}</td>
-                                      {competitors.map(c => {
-                                          const price = c.prices[item];
-                                          const diff = myPrice - price;
-                                          return (
-                                              <td key={c.name} className="py-2.5 px-4 font-mono text-xs">
-                                                  {price ? (
-                                                      <div className="flex items-center gap-2">
-                                                          <span className={diff < 0 ? 'font-bold text-gray-900' : 'text-gray-600'}>¥{price.toLocaleString()}</span>
-                                                          <span className={`text-[10px] font-bold ${diff < 0 ? 'text-[#D32F2F]' : 'text-gray-400'}`}>
-                                                              {diff < 0 ? `(${(diff).toLocaleString()})` : ''}
-                                                          </span>
-                                                      </div>
-                                                  ) : <span className="text-gray-300">-</span>}
-                                              </td>
-                                          );
-                                      })}
-                                  </tr>
-                              );
-                          })}
-                      </tbody>
-                  </table>
-                  {competitors.length === 0 && <p className="text-xs text-gray-400 mt-2 text-center py-4">データがありません</p>}
-              </div>
+          {/* 下段：代表4品目 */}
+          <div className="p-0 overflow-x-auto">
+              <table className="w-full text-left text-sm whitespace-nowrap min-w-[600px]">
+                  <thead>
+                      <tr className="border-b border-gray-200">
+                          <th className="py-2.5 px-4 font-normal text-[10px] text-gray-400 bg-white w-[20%] tracking-widest">代表4品目</th>
+                          <th className="py-2.5 px-4 font-bold text-[10px] text-white bg-[#111] border-r border-gray-800 w-[20%] tracking-widest">月寒製作所 (自社)</th>
+                          {competitors.map(c => (
+                              <th key={c.name} className="py-2.5 px-4 font-normal text-[10px] text-gray-600 bg-gray-50 border-r border-gray-100 last:border-0">{c.name}</th>
+                          ))}
+                      </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                      {keyItems.map(item => {
+                          const myPrice = myPrices[item] || 0;
+                          return (
+                              <tr key={item} className="hover:bg-gray-50 transition">
+                                  <td className="py-3 px-4 font-bold text-xs border-r border-gray-100">{item.replace('（ピカ線、特号）', '')}</td>
+                                  <td className="py-3 px-4 font-mono font-black text-sm md:text-lg bg-[#111] text-white border-r border-gray-800 shadow-inner">¥{myPrice.toLocaleString()}</td>
+                                  {competitors.map(c => {
+                                      const price = c.prices[item];
+                                      const diff = price ? myPrice - price : 0;
+                                      return (
+                                          <td key={c.name} className="py-3 px-4 font-mono text-xs border-r border-gray-100 last:border-0 bg-white">
+                                              {price ? (
+                                                  <div className="flex items-center justify-between gap-2">
+                                                      <span className={`text-sm font-mono font-bold ${diff < 0 ? 'text-[#D32F2F]' : 'text-gray-800'}`}>¥{price.toLocaleString()}</span>
+                                                      {diff < 0 && <span className="text-[10px] font-bold text-[#D32F2F] bg-red-50 px-1.5 py-0.5 rounded-sm border border-red-100">劣勢 {(diff).toLocaleString()}円</span>}
+                                                  </div>
+                                              ) : <span className="text-gray-300">-</span>}
+                                          </td>
+                                      );
+                                  })}
+                              </tr>
+                          );
+                      })}
+                  </tbody>
+              </table>
+              {competitors.length === 0 && <div className="text-xs text-gray-400 text-center py-8 font-medium">データがありません。右上のボタンから取得してください。</div>}
           </div>
       </div>
 
-      {/* 🔴 メイン価格テーブル (色付けを排除し、テキストと記号のみで表現) */}
-      <div className="flex-1 bg-white rounded-sm border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-0">
-          <div className="overflow-y-auto">
-              <table className="w-full text-left border-collapse min-w-[900px]">
+      {/* 🔴 メイン価格テーブル (全20品目) ★ スマホで潰れないように min-h-[500px] と overflow-x-auto を追加 */}
+      <div className="flex-1 bg-white rounded-sm border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-[500px] md:min-h-0">
+          <div className="overflow-y-auto overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[800px] md:min-w-[900px]">
                   <thead className="sticky top-0 z-20 bg-gray-50 border-b border-gray-200 shadow-sm">
                       <tr>
-                          <th className="p-3 md:p-4 font-normal text-xs text-gray-500 w-[20%]">全20品目 詳細比較</th>
-                          <th className="p-3 md:p-4 font-bold text-xs text-gray-900 w-[20%] border-l border-r border-gray-200 bg-white shadow-sm">
+                          <th className="p-3 md:p-4 font-normal text-[10px] md:text-xs text-gray-500 w-[20%] tracking-widest whitespace-nowrap">全20品目 詳細比較</th>
+                          <th className="p-3 md:p-4 font-bold text-xs text-gray-900 w-[20%] border-l border-r border-gray-200 bg-white shadow-sm whitespace-nowrap">
                               月寒製作所 (自社)
                           </th>
                           {competitors.length === 0 && <th className="p-4 font-normal text-xs text-gray-400">データ未取得</th>}
                           {competitors.map((comp, idx) => (
-                              <th key={idx} className="p-3 md:p-4 font-normal text-xs text-gray-500 w-[20%] border-r border-gray-100 last:border-0">
+                              <th key={idx} className="p-3 md:p-4 font-normal text-[10px] md:text-xs text-gray-500 w-[20%] border-r border-gray-100 last:border-0 whitespace-nowrap">
                                   {comp.name}
                               </th>
                           ))}
@@ -226,12 +224,12 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
 
                           return (
                               <tr key={idx} className="hover:bg-gray-50 transition">
-                                  <td className="p-3 md:p-4 font-medium text-xs text-gray-800">{item}</td>
-                                  <td className="p-3 md:p-4 border-l border-r border-gray-200 bg-white">
-                                      <div className="flex items-center justify-between">
+                                  <td className="p-3 md:p-4 font-medium text-xs text-gray-800 whitespace-nowrap">{item}</td>
+                                  <td className="p-3 md:p-4 border-l border-r border-gray-200 bg-white whitespace-nowrap">
+                                      <div className="flex items-center justify-between gap-2">
                                           <span className="text-sm font-black text-gray-900 font-mono">¥{myPrice.toLocaleString()}</span>
                                           {isLosing && (
-                                              <span className="text-[9px] font-bold text-[#D32F2F] border border-red-200 bg-red-50 px-1.5 py-0.5 rounded-sm flex items-center">
+                                              <span className="text-[10px] font-bold text-[#D32F2F] border border-red-200 bg-red-50 px-1.5 py-0.5 rounded-sm flex items-center whitespace-nowrap">
                                                   <Icons.Alert /> 負け
                                               </span>
                                           )}
@@ -239,10 +237,10 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                                   </td>
                                   {competitors.map((comp, cIdx) => {
                                       const compPrice = comp.prices[item];
-                                      if (!compPrice) return <td key={cIdx} className="p-3 md:p-4 text-xs text-gray-300 font-mono border-r border-gray-100 last:border-0">-</td>;
+                                      if (!compPrice) return <td key={cIdx} className="p-3 md:p-4 text-xs text-gray-300 font-mono border-r border-gray-100 last:border-0 text-center">-</td>;
                                       const diff = myPrice - compPrice;
                                       return (
-                                          <td key={cIdx} className="p-3 md:p-4 border-r border-gray-100 last:border-0">
+                                          <td key={cIdx} className="p-3 md:p-4 border-r border-gray-100 last:border-0 whitespace-nowrap">
                                               <div className="flex items-center gap-2">
                                                   <span className={`text-sm font-mono ${compPrice > myPrice ? 'font-bold text-gray-900' : 'text-gray-600'}`}>
                                                       ¥{compPrice.toLocaleString()}
