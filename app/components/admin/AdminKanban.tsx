@@ -64,14 +64,13 @@ export const AdminKanban = ({ data, localReservations, setLocalReservations, onO
 
       <div className="flex-1 flex gap-4 overflow-x-auto pb-2 min-h-0">
         {columns.map(col => (
-          <div key={col.id} className={`flex-1 min-w-[320px] bg-white border border-gray-200 flex flex-col overflow-hidden shadow-sm ${col.borderTop}`} onDragOver={onDragOver} onDrop={(e) => onDrop(e, col.id)}>
+          <div key={col.id} className={`flex-1 min-w-[340px] bg-white border border-gray-200 flex flex-col overflow-hidden shadow-sm ${col.borderTop}`} onDragOver={onDragOver} onDrop={(e) => onDrop(e, col.id)}>
             
             <div className="px-4 py-3 border-b border-gray-100 flex justify-between items-center bg-white">
               <div>
-                  <h3 className="font-bold text-gray-900 text-sm">{col.title}</h3>
-                  <p className="text-[10px] font-mono text-gray-400 uppercase tracking-wider">{col.subtitle}</p>
+                  <h3 className="font-bold text-gray-900 text-base">{col.title}</h3>
               </div>
-              <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-sm text-xs font-mono font-bold border border-gray-200">
+              <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-sm text-sm font-mono font-bold border border-gray-200">
                 {localReservations.filter(r => r.status === col.id).length}
               </span>
             </div>
@@ -82,30 +81,31 @@ export const AdminKanban = ({ data, localReservations, setLocalReservations, onO
                 return (
                   <div key={res.id} draggable onDragStart={(e) => onDragStart(e, res.id)} className="bg-white p-4 border border-gray-200 shadow-sm cursor-grab active:cursor-grabbing hover:border-gray-400 transition-all duration-200 group relative rounded-sm">
                     <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center gap-2 text-[10px] text-gray-400 font-mono">
+                      <div className="flex items-center gap-2 text-xs text-gray-500 font-mono">
                           <Icons.Clock />
                           <span>{res.visitDate ? String(res.visitDate).substring(5, 16) : ''}</span>
                       </div>
-                      <span className="text-[10px] font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 border border-gray-200 rounded-sm">{res.id}</span>
+                      {/* ★ IDのフォントサイズを text-[10px] から text-xs に引き上げ、視認性を高めました */}
+                      <span className="text-xs font-mono text-gray-600 bg-gray-100 px-2 py-0.5 border border-gray-200 rounded-sm">{res.id}</span>
                     </div>
 
                     <h4 className="text-base font-bold text-gray-900 mb-3 line-clamp-1 border-b border-gray-100 pb-2">{res.memberName}</h4>
                     
                     <div className="space-y-1 mb-4">
                       {items.length > 0 ? items.map((item: any, idx: number) => (
-                        <div key={idx} className="flex justify-between text-xs items-center text-gray-700">
+                        <div key={idx} className="flex justify-between text-sm items-center text-gray-700">
                           <span className="truncate pr-2 flex-1 font-medium">{item.productName || item.product}</span>
                           <span className="font-mono font-bold whitespace-nowrap text-gray-900">{item.weight ? `${item.weight}kg` : '-'}</span>
                         </div>
                       )) : (
-                        <p className="text-[10px] text-gray-300 italic">品目未登録</p>
+                        <p className="text-xs text-gray-400 italic">品目未登録</p>
                       )}
                     </div>
 
                     <div className="flex justify-between items-center pt-2 border-t border-gray-100">
                       <div className="flex flex-col">
-                          <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">合計金額</span>
-                          <p className="text-lg font-black text-gray-900 tracking-tight font-mono">¥{(res.totalEstimate || 0).toLocaleString()}</p>
+                          <span className="text-xs text-gray-400 font-bold">合計金額</span>
+                          <p className="text-xl font-black text-gray-900 tracking-tight font-mono">¥{(res.totalEstimate || 0).toLocaleString()}</p>
                       </div>
                       
                       {col.id === 'RESERVED' && (
@@ -119,7 +119,7 @@ export const AdminKanban = ({ data, localReservations, setLocalReservations, onO
                           </button>
                       )}
                       {col.id === 'COMPLETED' && (
-                          <button onClick={() => handleArchive(res.id)} className="bg-white border border-gray-300 text-gray-600 px-3 py-1.5 rounded-sm text-xs font-bold hover:bg-gray-50 transition flex items-center gap-1">
+                          <button onClick={() => handleArchive(res.id)} className="bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded-sm text-xs font-bold hover:bg-gray-50 transition flex items-center gap-1">
                               <Icons.Archive /> 完了
                           </button>
                       )}
