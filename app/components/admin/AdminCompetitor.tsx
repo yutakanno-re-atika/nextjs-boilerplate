@@ -13,7 +13,6 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
 
   const copperPrice = data?.market?.copper?.price || 1450;
   
-  // 自社価格シミュレーション（仮）
   const myPrices = {
       "光線（ピカ線、特号）": Math.floor(copperPrice * 0.96),
       "1号線": Math.floor(copperPrice * 0.94),
@@ -75,38 +74,41 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
   };
 
   return (
-    <div className="flex flex-col h-full animate-in fade-in duration-500">
-      <header className="mb-6 flex justify-between items-end flex-shrink-0">
+    <div className="flex flex-col h-full animate-in fade-in duration-500 text-gray-800">
+      <header className="mb-6 flex justify-between items-end flex-shrink-0 pb-4 border-b border-gray-200">
         <div>
-            <h2 className="text-3xl font-serif font-bold text-gray-900 tracking-tight">Competitor Radar</h2>
-            <p className="text-sm text-gray-500 mt-1">AI価格調査・競合比較</p>
+            <h2 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2 font-serif">
+                <span className="w-1.5 h-6 bg-[#D32F2F]"></span>
+                競合価格レーダー
+            </h2>
+            <p className="text-xs text-gray-500 mt-1 font-mono tracking-wider ml-3">AI COMPETITOR RESEARCH</p>
         </div>
         <div className="flex gap-3">
-            <button onClick={handleDownloadCSV} className="bg-white border border-gray-300 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-gray-50 transition shadow-sm flex items-center gap-2">
+            <button onClick={handleDownloadCSV} className="bg-white border border-gray-300 text-gray-700 px-4 py-2.5 rounded-sm text-sm font-bold hover:bg-gray-50 transition shadow-sm flex items-center gap-2">
                 <Icons.Download /> CSV出力
             </button>
-            <button onClick={handleRefresh} disabled={isRefreshing} className="bg-[#111] text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-[#D32F2F] transition shadow-lg flex items-center gap-2 disabled:opacity-50">
+            <button onClick={handleRefresh} disabled={isRefreshing} className="bg-[#111] text-white px-5 py-2.5 rounded-sm text-sm font-bold hover:bg-[#D32F2F] transition shadow-sm flex items-center gap-2 disabled:opacity-50">
                 <span className={isRefreshing ? "animate-spin" : ""}><Icons.Refresh /></span>
                 {isRefreshing ? 'AI巡回中...' : '最新情報を取得'}
             </button>
         </div>
       </header>
 
-      <div className="flex-1 bg-white rounded-2xl border border-gray-200 shadow-xl overflow-hidden flex flex-col min-h-0">
+      <div className="flex-1 bg-white rounded-sm border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-0">
           <div className="overflow-y-auto">
               <table className="w-full text-left border-collapse min-w-[900px]">
                   <thead className="sticky top-0 z-20">
-                      <tr className="bg-gray-900 text-white shadow-md">
-                          <th className="p-4 font-bold text-xs uppercase tracking-wider w-[20%]">Target Item</th>
-                          <th className="p-4 font-bold text-xs uppercase tracking-wider bg-[#D32F2F] w-[20%] border-r border-red-800 relative">
-                              Tsukisamu Mfg.
+                      <tr className="bg-gray-900 text-white shadow-sm">
+                          <th className="p-4 font-bold text-sm tracking-wider w-[20%] border-r border-gray-700">対象品目</th>
+                          <th className="p-4 font-bold text-sm tracking-wider bg-[#D32F2F] w-[20%] border-r border-red-800 relative">
+                              月寒製作所 (自社)
                               <div className="absolute top-1/2 right-full transform -translate-y-1/2 translate-x-1/2 text-[#D32F2F]"><div className="w-2 h-2 bg-[#D32F2F] rotate-45"></div></div>
                           </th>
-                          {competitors.length === 0 && <th className="p-4 font-light text-xs text-gray-400">データ未取得</th>}
+                          {competitors.length === 0 && <th className="p-4 font-normal text-sm text-gray-400">データ未取得</th>}
                           {competitors.map((comp, idx) => (
-                              <th key={idx} className="p-4 font-bold text-xs uppercase tracking-wider text-gray-300 w-[20%]">
+                              <th key={idx} className="p-4 font-bold text-sm tracking-wider text-gray-200 w-[20%] border-r border-gray-700 last:border-0">
                                   {comp.name}
-                                  <div className="text-[9px] text-gray-500 font-normal mt-0.5 normal-case">Updated: {comp.lastUpdated}</div>
+                                  <div className="text-xs text-gray-400 font-mono font-normal mt-1">更新: {comp.lastUpdated}</div>
                               </th>
                           ))}
                       </tr>
@@ -121,27 +123,27 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                           return (
                               <tr key={idx} className="hover:bg-gray-50 transition group">
                                   <td className="p-4 font-bold text-gray-900 text-sm border-r border-gray-100">{item}</td>
-                                  <td className={`p-4 border-r border-gray-100 ${isLosing ? 'bg-red-50/50' : 'bg-green-50/30'}`}>
-                                      <div className="flex flex-col">
-                                          <span className="text-lg font-black text-gray-900">¥{myPrice.toLocaleString()}</span>
+                                  <td className={`p-4 border-r border-gray-200 ${isLosing ? 'bg-red-50' : 'bg-green-50/50'}`}>
+                                      <div className="flex flex-col gap-1">
+                                          <span className="text-xl font-black text-gray-900 font-mono">¥{myPrice.toLocaleString()}</span>
                                           {isLosing ? (
-                                              <span className="text-[10px] font-bold text-red-600 flex items-center gap-1"><Icons.Alert /> 劣勢 (-¥{(maxCompetitorPrice - myPrice)})</span>
+                                              <span className="text-xs font-bold text-red-600 flex items-center gap-1"><Icons.Alert /> 劣勢 (-¥{(maxCompetitorPrice - myPrice)})</span>
                                           ) : (
-                                              <span className="text-[10px] font-bold text-green-600">Best Price</span>
+                                              <span className="text-xs font-bold text-green-700">地域最高値</span>
                                           )}
                                       </div>
                                   </td>
                                   {competitors.map((comp, cIdx) => {
                                       const compPrice = comp.prices[item];
-                                      if (!compPrice) return <td key={cIdx} className="p-4 text-xs text-gray-300">-</td>;
+                                      if (!compPrice) return <td key={cIdx} className="p-4 text-sm text-gray-400 border-r border-gray-100 last:border-0">-</td>;
                                       const diff = myPrice - compPrice;
                                       return (
-                                          <td key={cIdx} className="p-4">
-                                              <div className="flex flex-col">
-                                                  <span className={`text-base font-bold ${compPrice > myPrice ? 'text-red-600' : 'text-gray-500'}`}>
+                                          <td key={cIdx} className="p-4 border-r border-gray-100 last:border-0">
+                                              <div className="flex flex-col gap-1">
+                                                  <span className={`text-lg font-bold font-mono ${compPrice > myPrice ? 'text-red-600' : 'text-gray-600'}`}>
                                                       ¥{compPrice.toLocaleString()}
                                                   </span>
-                                                  <span className={`text-[10px] font-bold ${diff > 0 ? 'text-green-500' : diff < 0 ? 'text-red-400' : 'text-gray-300'}`}>
+                                                  <span className={`text-xs font-bold font-mono ${diff > 0 ? 'text-green-600' : diff < 0 ? 'text-red-500' : 'text-gray-400'}`}>
                                                       {diff > 0 ? `+${diff}` : diff}
                                                   </span>
                                               </div>
@@ -154,9 +156,9 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                   </tbody>
               </table>
               {competitors.length === 0 && (
-                  <div className="p-20 text-center text-gray-400 flex flex-col items-center">
-                      <div className="mb-4 p-4 bg-gray-50 rounded-full"><Icons.Refresh /></div>
-                      <p className="text-sm font-bold">右上の「最新情報を取得」ボタンを押すと、AIが競合サイトを巡回します。</p>
+                  <div className="p-20 text-center text-gray-500 flex flex-col items-center">
+                      <div className="mb-4 p-4 bg-gray-100 rounded-full"><Icons.Refresh /></div>
+                      <p className="text-base font-bold">右上の「最新情報を取得」ボタンを押すと、AIが競合サイトを巡回します。</p>
                   </div>
               )}
           </div>
