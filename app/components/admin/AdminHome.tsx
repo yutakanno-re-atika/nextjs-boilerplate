@@ -15,6 +15,8 @@ const Icons = {
   Box: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>,
   ArrowUp: () => <svg className="w-3.5 h-3.5 mr-0.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>,
   ArrowDown: () => <svg className="w-3.5 h-3.5 mr-0.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>,
+  Users: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
+  Target: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>,
 };
 
 export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, localReservations: any[], onNavigate: any }) => {
@@ -42,6 +44,60 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
   useEffect(() => {
     if (wiresMaster.length > 0 && !roiWire) { setRoiWire(wiresMaster[0].name); }
   }, [wiresMaster, roiWire]);
+
+  // ★ 追加: ヤード在庫の計算（本日の状況用にも使用）
+  const lotInventory = useMemo(() => {
+      let inventory: any[] = [];
+      localReservations.filter((r: any) => r.status === 'COMPLETED').forEach((res: any) => {
+          let items = [];
+          try { 
+              let temp = res.items; if (typeof temp === 'string') temp = JSON.parse(temp); if (typeof temp === 'string') temp = JSON.parse(temp);
+              if (Array.isArray(temp)) items = temp;
+          } catch(e) {}
+          items.forEach((it: any) => {
+              const product = it.product || it.productName;
+              const initialWeight = Number(it.weight) || 0;
+              if (initialWeight > 0 && product) {
+                  const isWire = wiresMaster.some((w: any) => w.name === product) || product.includes('線') || product.includes('VVF') || product.includes('VA');
+                  if (isWire) {
+                      const processedWeight = productions.filter((p: any) => p.reservationId === res.id && p.materialName === product).reduce((sum: number, p: any) => sum + (Number(p.inputWeight) || 0), 0);
+                      const remainingWeight = initialWeight - processedWeight;
+                      if (remainingWeight > 0) {
+                          const productMaster = wiresMaster.find((w: any) => w.name === product);
+                          inventory.push({ reservationId: res.id, memberName: res.memberName || '名称未設定', date: res.visitDate ? String(res.visitDate).substring(5, 16) : '不明', product: product, remainingWeight: remainingWeight, expectedRatio: productMaster ? productMaster.ratio : 0 });
+                      }
+                  }
+              }
+          });
+      });
+      return inventory.sort((a: any, b: any) => b.remainingWeight - a.remainingWeight);
+  }, [localReservations, productions, wiresMaster]);
+
+  // ★ 追加: 本日の受付状況と全体サマリーの計算
+  const todaySummary = useMemo(() => {
+      const todayStr = new Date().toLocaleDateString('ja-JP');
+      const todaysReservations = localReservations.filter((r: any) => {
+          if (!r.createdAt && !r.visitDate) return false;
+          const d = new Date(r.createdAt || r.visitDate);
+          return d.toLocaleDateString('ja-JP') === todayStr;
+      });
+      const todaysCount = todaysReservations.length;
+      const todaysWeight = todaysReservations.reduce((sum, r) => {
+          let w = 0;
+          try {
+              let items = typeof r.items === 'string' ? JSON.parse(r.items) : r.items;
+              if (typeof items === 'string') items = JSON.parse(items);
+              if (Array.isArray(items)) { items.forEach((it: any) => { w += (Number(it.weight) || 0); }); }
+          } catch(e) {}
+          return sum + w;
+      }, 0);
+
+      const totalClients = data?.clients?.length || 0;
+      const activeTargets = data?.salesTargets?.filter((t: any) => t.status !== '既存取引先').length || 0;
+      const totalInventoryWeight = lotInventory.reduce((sum, lot) => sum + lot.remainingWeight, 0);
+
+      return { todaysCount, todaysWeight, totalClients, activeTargets, totalInventoryWeight };
+  }, [localReservations, data, lotInventory]);
 
   const currentMonthStats = useMemo(() => {
     const now = new Date();
@@ -109,33 +165,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
           .filter((c: any) => c.count !== 0).sort((a: any, b: any) => b.avgDiff - a.avgDiff).slice(0, 5);
   }, [productions, wiresMaster]);
 
-  const lotInventory = useMemo(() => {
-      let inventory: any[] = [];
-      localReservations.filter((r: any) => r.status === 'COMPLETED').forEach((res: any) => {
-          let items = [];
-          try { 
-              let temp = res.items; if (typeof temp === 'string') temp = JSON.parse(temp); if (typeof temp === 'string') temp = JSON.parse(temp);
-              if (Array.isArray(temp)) items = temp;
-          } catch(e) {}
-          items.forEach((it: any) => {
-              const product = it.product || it.productName;
-              const initialWeight = Number(it.weight) || 0;
-              if (initialWeight > 0 && product) {
-                  const isWire = wiresMaster.some((w: any) => w.name === product) || product.includes('線') || product.includes('VVF') || product.includes('VA');
-                  if (isWire) {
-                      const processedWeight = productions.filter((p: any) => p.reservationId === res.id && p.materialName === product).reduce((sum: number, p: any) => sum + (Number(p.inputWeight) || 0), 0);
-                      const remainingWeight = initialWeight - processedWeight;
-                      if (remainingWeight > 0) {
-                          const productMaster = wiresMaster.find((w: any) => w.name === product);
-                          inventory.push({ reservationId: res.id, memberName: res.memberName || '名称未設定', date: res.visitDate ? String(res.visitDate).substring(5, 16) : '不明', product: product, remainingWeight: remainingWeight, expectedRatio: productMaster ? productMaster.ratio : 0 });
-                      }
-                  }
-              }
-          });
-      });
-      return inventory.sort((a: any, b: any) => b.remainingWeight - a.remainingWeight);
-  }, [localReservations, productions, wiresMaster]);
-
   const totalProducedCopper = productions.reduce((sum: number, p: any) => sum + (Number(p.outputCopper) || 0), 0);
   const copperAssetValue = totalProducedCopper * currentCopperPrice;
 
@@ -172,7 +201,39 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
         </div>
       </header>
 
-      {/* 🔴 トップKPI (赤アクセントに変更) */}
+      {/* 🔴 本日の状況 & 全体サマリー (新規追加) */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 flex-shrink-0">
+          <div className="bg-white p-3 md:p-4 rounded-lg border border-gray-200 shadow-sm flex justify-between items-center cursor-pointer hover:border-blue-400 transition group" onClick={() => onNavigate('OPERATIONS')}>
+              <div>
+                  <p className="text-[10px] text-gray-500 font-bold tracking-wider group-hover:text-blue-600 transition">本日の受付</p>
+                  <p className="text-lg md:text-xl font-black text-gray-900 mt-0.5">{todaySummary.todaysCount} <span className="text-xs font-medium text-gray-500">件</span> <span className="text-sm font-bold text-[#D32F2F] ml-1">{todaySummary.todaysWeight.toLocaleString()}kg</span></p>
+              </div>
+              <div className="p-2 bg-blue-50 text-blue-600 rounded-lg group-hover:scale-110 transition"><Icons.ClipboardList /></div>
+          </div>
+          <div className="bg-white p-3 md:p-4 rounded-lg border border-gray-200 shadow-sm flex justify-between items-center cursor-pointer hover:border-orange-400 transition group" onClick={() => onNavigate('PRODUCTION')}>
+              <div>
+                  <p className="text-[10px] text-gray-500 font-bold tracking-wider group-hover:text-orange-600 transition">ヤード未加工在庫</p>
+                  <p className="text-lg md:text-xl font-black text-gray-900 mt-0.5">{todaySummary.totalInventoryWeight.toLocaleString()} <span className="text-xs font-medium text-gray-500">kg</span></p>
+              </div>
+              <div className="p-2 bg-orange-50 text-orange-600 rounded-lg group-hover:scale-110 transition"><Icons.Box /></div>
+          </div>
+          <div className="bg-white p-3 md:p-4 rounded-lg border border-gray-200 shadow-sm flex justify-between items-center cursor-pointer hover:border-green-400 transition group" onClick={() => onNavigate('DATABASE')}>
+              <div>
+                  <p className="text-[10px] text-gray-500 font-bold tracking-wider group-hover:text-green-600 transition">登録顧客 (会員)</p>
+                  <p className="text-lg md:text-xl font-black text-gray-900 mt-0.5">{todaySummary.totalClients} <span className="text-xs font-medium text-gray-500">社</span></p>
+              </div>
+              <div className="p-2 bg-green-50 text-green-600 rounded-lg group-hover:scale-110 transition"><Icons.Users /></div>
+          </div>
+          <div className="bg-white p-3 md:p-4 rounded-lg border border-gray-200 shadow-sm flex justify-between items-center cursor-pointer hover:border-red-400 transition group" onClick={() => onNavigate('SALES')}>
+              <div>
+                  <p className="text-[10px] text-gray-500 font-bold tracking-wider group-hover:text-red-600 transition">営業ターゲット</p>
+                  <p className="text-lg md:text-xl font-black text-gray-900 mt-0.5">{todaySummary.activeTargets} <span className="text-xs font-medium text-gray-500">社</span></p>
+              </div>
+              <div className="p-2 bg-red-50 text-[#D32F2F] rounded-lg group-hover:scale-110 transition"><Icons.Target /></div>
+          </div>
+      </div>
+
+      {/* 🔴 トップKPI (相場・月間業績) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 flex-shrink-0">
           <div className="bg-white p-4 md:p-5 rounded-lg border border-gray-200 shadow-sm flex flex-col justify-between">
               <div className="flex justify-between items-center mb-3">
