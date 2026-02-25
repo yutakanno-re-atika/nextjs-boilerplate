@@ -41,24 +41,23 @@ export const AdminKanban = ({ data, localReservations, setLocalReservations, onO
     } catch(e) { return []; }
   };
 
-  // デザイン定義: よりシャープで機能的な配色に変更
   const columns = [
-    { id: 'RESERVED', title: '01 受付・来店待ち', subtitle: 'Reception', borderTop: 'border-t-4 border-blue-600', bg: 'bg-gray-50' },
-    { id: 'IN_PROGRESS', title: '02 検収・計量中', subtitle: 'Processing', borderTop: 'border-t-4 border-yellow-500', bg: 'bg-gray-50' },
-    { id: 'COMPLETED', title: '03 ヤード在庫', subtitle: 'Inventory', borderTop: 'border-t-4 border-green-600', bg: 'bg-gray-50' }
+    { id: 'RESERVED', title: '01 受付・来店待ち', subtitle: '受付', borderTop: 'border-t-4 border-blue-600', bg: 'bg-gray-50' },
+    { id: 'IN_PROGRESS', title: '02 検収・計量中', subtitle: '計量', borderTop: 'border-t-4 border-yellow-500', bg: 'bg-gray-50' },
+    { id: 'COMPLETED', title: '03 ヤード在庫', subtitle: '在庫', borderTop: 'border-t-4 border-green-600', bg: 'bg-gray-50' }
   ];
 
   return (
-    <div className="flex flex-col h-full animate-in fade-in duration-300">
+    <div className="flex flex-col h-full animate-in fade-in duration-300 text-gray-800">
       <header className="mb-4 flex justify-between items-end flex-shrink-0 pb-4 border-b border-gray-200">
         <div>
-          <h2 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
+          <h2 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2 font-serif">
              <span className="w-1.5 h-6 bg-[#D32F2F]"></span>
-             Operation Board
+             現場カンバン
           </h2>
-          <p className="text-xs text-gray-500 mt-1 font-mono tracking-wider ml-4">REALTIME STATUS MONITOR</p>
+          <p className="text-xs text-gray-500 mt-1 font-mono tracking-wider ml-3">リアルタイム状況監視</p>
         </div>
-        <button onClick={onAddClick} className="bg-[#111] text-white px-4 py-2 rounded-md text-sm font-bold hover:bg-[#D32F2F] transition flex items-center gap-2 shadow-sm">
+        <button onClick={onAddClick} className="bg-[#111] text-white px-4 py-2 rounded-sm text-sm font-bold hover:bg-[#D32F2F] transition flex items-center gap-2 shadow-sm">
           <Icons.Plus /> 新規受付
         </button>
       </header>
@@ -67,36 +66,31 @@ export const AdminKanban = ({ data, localReservations, setLocalReservations, onO
         {columns.map(col => (
           <div key={col.id} className={`flex-1 min-w-[320px] bg-white border border-gray-200 flex flex-col overflow-hidden shadow-sm ${col.borderTop}`} onDragOver={onDragOver} onDrop={(e) => onDrop(e, col.id)}>
             
-            {/* カラムヘッダー: シンプルかつ機能的に */}
             <div className="px-4 py-3 border-b border-gray-100 flex justify-between items-center bg-white">
               <div>
                   <h3 className="font-bold text-gray-900 text-sm">{col.title}</h3>
                   <p className="text-[10px] font-mono text-gray-400 uppercase tracking-wider">{col.subtitle}</p>
               </div>
-              <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs font-mono font-bold border border-gray-200">
+              <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-sm text-xs font-mono font-bold border border-gray-200">
                 {localReservations.filter(r => r.status === col.id).length}
               </span>
             </div>
             
-            {/* カードエリア: 背景色でエリアを区別 */}
             <div className={`p-3 flex-1 overflow-y-auto space-y-3 ${col.bg}`}>
               {localReservations.filter(r => r.status === col.id).map(res => {
                 const items = parseItems(res.items);
                 return (
-                  <div key={res.id} draggable onDragStart={(e) => onDragStart(e, res.id)} className="bg-white p-4 border border-gray-200 shadow-sm cursor-grab active:cursor-grabbing hover:border-gray-400 hover:shadow-md transition-all duration-200 group relative rounded-sm">
-                    {/* カードヘッダー */}
+                  <div key={res.id} draggable onDragStart={(e) => onDragStart(e, res.id)} className="bg-white p-4 border border-gray-200 shadow-sm cursor-grab active:cursor-grabbing hover:border-gray-400 transition-all duration-200 group relative rounded-sm">
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex items-center gap-2 text-[10px] text-gray-400 font-mono">
                           <Icons.Clock />
                           <span>{res.visitDate ? String(res.visitDate).substring(5, 16) : ''}</span>
                       </div>
-                      <span className="text-[10px] font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 border border-gray-200">{res.id}</span>
+                      <span className="text-[10px] font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 border border-gray-200 rounded-sm">{res.id}</span>
                     </div>
 
-                    {/* 顧客名: Serifで強調 */}
                     <h4 className="text-base font-bold text-gray-900 mb-3 line-clamp-1 border-b border-gray-100 pb-2">{res.memberName}</h4>
                     
-                    {/* 品目リスト: 箇条書きでコンパクトに */}
                     <div className="space-y-1 mb-4">
                       {items.length > 0 ? items.map((item: any, idx: number) => (
                         <div key={idx} className="flex justify-between text-xs items-center text-gray-700">
@@ -104,23 +98,23 @@ export const AdminKanban = ({ data, localReservations, setLocalReservations, onO
                           <span className="font-mono font-bold whitespace-nowrap text-gray-900">{item.weight ? `${item.weight}kg` : '-'}</span>
                         </div>
                       )) : (
-                        <p className="text-[10px] text-gray-300 italic">No Items</p>
+                        <p className="text-[10px] text-gray-300 italic">品目未登録</p>
                       )}
                     </div>
 
-                    {/* フッターアクション: グリッドレイアウト */}
                     <div className="flex justify-between items-center pt-2 border-t border-gray-100">
                       <div className="flex flex-col">
-                          <p className="text-lg font-black text-gray-900 tracking-tight">¥{(res.totalEstimate || 0).toLocaleString()}</p>
+                          <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">合計金額</span>
+                          <p className="text-lg font-black text-gray-900 tracking-tight font-mono">¥{(res.totalEstimate || 0).toLocaleString()}</p>
                       </div>
                       
                       {col.id === 'RESERVED' && (
-                          <button onClick={() => updateStatus(res.id, 'IN_PROGRESS')} className="bg-blue-600 text-white px-3 py-1.5 rounded-sm text-xs font-bold hover:bg-blue-700 transition flex items-center gap-1">
+                          <button onClick={() => updateStatus(res.id, 'IN_PROGRESS')} className="bg-blue-600 text-white px-3 py-1.5 rounded-sm text-xs font-bold hover:bg-blue-700 transition flex items-center gap-1 shadow-sm">
                               計量へ <Icons.ArrowRight />
                           </button>
                       )}
                       {col.id === 'IN_PROGRESS' && (
-                          <button onClick={() => onOpenPos(res.id)} className="bg-gray-900 text-white px-3 py-1.5 rounded-sm text-xs font-bold hover:bg-black transition flex items-center gap-1">
+                          <button onClick={() => onOpenPos(res.id)} className="bg-gray-900 text-white px-3 py-1.5 rounded-sm text-xs font-bold hover:bg-black transition flex items-center gap-1 shadow-sm">
                               <Icons.Calculator /> POS入力
                           </button>
                       )}
