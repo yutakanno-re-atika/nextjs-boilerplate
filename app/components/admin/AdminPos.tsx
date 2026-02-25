@@ -10,18 +10,22 @@ const Icons = {
 
 export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onClear }: { data: any; editingResId: string | null; localReservations: any[]; onSuccess: () => void; onClear: () => void; }) => {
   const [clientName, setClientName] = useState('');
+  const [selectedClientId, setSelectedClientId] = useState('GUEST'); // ★ 顧客IDの保持
+  const [showSuggest, setShowSuggest] = useState(false); // ★ サジェスト表示フラグ
   const [items, setItems] = useState<any[]>([]);
   const [memo, setMemo] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const wiresMaster = data?.wires || [];
   const castingsMaster = data?.castings || [];
+  const clients = data?.clients || []; // ★ 顧客マスター
 
   useEffect(() => {
     if (editingResId) {
       const res = localReservations.find(r => r.id === editingResId);
       if (res) {
         setClientName(res.memberName || '');
+        setSelectedClientId(res.memberId || 'GUEST');
         setMemo(res.memo || '');
         try {
           let parsed = res.items;
@@ -34,19 +38,28 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         } catch(e) { setItems([{ product: '', weight: '', price: '' }]); }
       }
     } else {
-      setClientName(''); setMemo(''); setItems([{ product: '', weight: '', price: '' }]);
+      setClientName(''); setSelectedClientId('GUEST'); setMemo(''); setItems([{ product: '', weight: '', price: '' }]);
     }
   }, [editingResId, localReservations]);
+
+  // ★ 顧客名の入力とサジェスト処理
+  const handleNameChange = (e: any) => {
+      setClientName(e.target.value);
+      setSelectedClientId('GUEST'); // 手入力で変更されたら一旦GUEST（新規）に戻す
+      setShowSuggest(true);
+  };
+  const handleSelectClient = (client: any) => {
+      setClientName(client.name);
+      setSelectedClientId(client.id);
+      setShowSuggest(false);
+  };
 
   const handleItemChange = (index: number, field: string, value: string) => {
     const newItems = [...items];
     newItems[index][field] = value;
-    
-    // 自動単価計算ロジック
     if (field === 'product') {
         const wire = wiresMaster.find((w:any) => w.name === value);
         const casting = castingsMaster.find((c:any) => c.name === value);
-        
         if (wire) {
             const copperPrice = Number(data?.market?.copper?.price || 1450);
             const ratio = Number(wire.ratio || 0) / 100;
@@ -56,7 +69,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
             if (casting.type === 'BRASS') basePrice = Number(data?.market?.brass?.price || 980);
             if (casting.type === 'ZINC') basePrice = Number(data?.market?.zinc?.price || 450);
             if (casting.type === 'LEAD') basePrice = Number(data?.market?.lead?.price || 380);
-            
             const ratio = Number(casting.ratio || 0) / 100;
             newItems[index].price = Math.floor(basePrice * ratio * 0.90); 
         }
@@ -66,16 +78,16 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
 
   const addItem = () => setItems([...items, { product: '', weight: '', price: '' }]);
   const removeItem = (index: number) => setItems(items.filter((_, i) => i !== index));
-
   const totalAmount = items.reduce((sum, item) => sum + (Number(item.weight) * Number(item.price) || 0), 0);
 
   const handleSubmit = async () => {
     if (!clientName) return alert('お客様名を入力してください');
     setIsSubmitting(true);
     
+    // ★ memberId をペイロードに追加して紐付けを確実に
     const payload = editingResId ? {
-      action: 'UPDATE_RESERVATION', reservationId: editingResId, memberName: clientName, items: items, totalEstimate: totalAmount, status: 'COMPLETED', memo: memo
-    } : { action: 'REGISTER_RESERVATION', memberName: clientName, items: items, totalEstimate: totalAmount, memo: memo };
+      action: 'UPDATE_RESERVATION', reservationId: editingResId, memberId: selectedClientId, memberName: clientName, items: items, totalEstimate: totalAmount, status: 'COMPLETED', memo: memo
+    } : { action: 'REGISTER_RESERVATION', memberId: selectedClientId, memberName: clientName, items: items, totalEstimate: totalAmount, memo: memo };
 
     try {
       const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -83,10 +95,8 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       if (result.status === 'success') { 
           alert('受付・計量が完了しました！');
           onSuccess(); 
-          window.location.reload(); // ★ 保存後に画面を更新してカンバンに即反映させる
-      } else { 
-          alert('エラー: ' + result.message); 
-      }
+          window.location.reload(); 
+      } else { alert('エラー: ' + result.message); }
     } catch(e) { alert('通信エラーが発生しました'); }
     setIsSubmitting(false);
   };
@@ -107,9 +117,23 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
 
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col flex-1">
           <div className="p-4 md:p-6 border-b border-gray-100 bg-gray-50 flex flex-col md:flex-row gap-4 md:gap-6">
-              <div className="flex-1">
+              <div className="flex-1 relative">
                   <label className="text-sm text-gray-600 font-bold block mb-2">お客様 (業者名)</label>
-                  <input type="text" className="w-full border border-gray-300 p-3.5 rounded-xl text-lg font-bold outline-none focus:border-[#D32F2F] focus:ring-2 focus:ring-red-100 transition" placeholder="持込業者名を入力" value={clientName} onChange={e => setClientName(e.target.value)} />
+                  {/* ★ サジェスト付き入力欄 */}
+                  <input type="text" className="w-full border border-gray-300 p-3.5 rounded-xl text-lg font-bold outline-none focus:border-[#D32F2F] focus:ring-2 focus:ring-red-100 transition" placeholder="業者名を入力..." value={clientName} onChange={handleNameChange} onFocus={()=>setShowSuggest(true)} onBlur={()=>setTimeout(()=>setShowSuggest(false), 200)} />
+                  {showSuggest && clientName && (
+                      <ul className="absolute z-20 w-full bg-white border border-gray-200 mt-1 rounded-xl shadow-xl max-h-60 overflow-y-auto">
+                          {clients.filter((c:any) => c.name.includes(clientName)).map((c:any) => (
+                              <li key={c.id} onMouseDown={() => handleSelectClient(c)} className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0">
+                                  <div className="font-bold text-gray-900">{c.name}</div>
+                                  <div className="text-xs text-gray-500">{c.phone || '連絡先未登録'}</div>
+                              </li>
+                          ))}
+                          {clients.filter((c:any) => c.name.includes(clientName)).length === 0 && (
+                              <li className="p-3 text-sm text-gray-500 bg-gray-50">「{clientName}」で新規業者として登録されます</li>
+                          )}
+                      </ul>
+                  )}
               </div>
               <div className="md:w-1/3 w-full">
                   <label className="text-sm text-gray-600 font-bold block mb-2">引継ぎメモ</label>
@@ -129,7 +153,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
               <div className="space-y-4">
                   {items.map((item, idx) => (
                       <div key={idx} className="flex flex-col md:flex-row gap-3 md:gap-4 md:items-center bg-white p-4 md:p-3 rounded-xl border border-gray-200 shadow-sm group hover:border-[#D32F2F] transition">
-                          {/* スマホレイアウト対応のためにフレックス構成を調整 */}
                           <div className="flex-1 w-full md:w-auto">
                               <label className="md:hidden text-xs font-bold text-gray-500 mb-1 block">持込品目</label>
                               <select className="w-full bg-transparent p-2 md:p-2 border md:border-transparent border-gray-300 rounded-lg text-base font-bold outline-none cursor-pointer text-gray-900" value={item.product} onChange={e => handleItemChange(idx, 'product', e.target.value)}>
@@ -148,13 +171,11 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                           <div className="flex gap-3 items-end">
                               <div className="flex-1 md:w-36 relative">
                                   <label className="md:hidden text-xs font-bold text-gray-500 mb-1 block">重量 (kg)</label>
-                                  {/* ★ inputMode="decimal" でスマホの巨大テンキーを呼び出す */}
                                   <input type="number" inputMode="decimal" pattern="[0-9]*" className="w-full bg-gray-50 border border-gray-200 p-3 pr-8 rounded-xl text-xl font-black text-right outline-none focus:border-[#D32F2F] focus:bg-white transition" placeholder="0" value={item.weight} onChange={e => handleItemChange(idx, 'weight', e.target.value)} />
                                   <span className="absolute right-3 bottom-3 text-sm text-gray-500 font-bold">kg</span>
                               </div>
                               <div className="flex-1 md:w-40 relative">
                                   <label className="md:hidden text-xs font-bold text-gray-500 mb-1 block">単価 (円)</label>
-                                  {/* ★ inputMode="decimal" を追加 */}
                                   <input type="number" inputMode="decimal" pattern="[0-9]*" className="w-full bg-gray-50 border border-gray-200 p-3 pr-6 rounded-xl text-xl font-bold text-right outline-none focus:border-[#D32F2F] focus:bg-white transition" placeholder="0" value={item.price} onChange={e => handleItemChange(idx, 'price', e.target.value)} />
                                   <span className="absolute right-3 bottom-3 text-sm text-gray-500 font-bold">円</span>
                               </div>
@@ -172,7 +193,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                       </div>
                   ))}
               </div>
-              
               <button onClick={addItem} className="mt-6 text-sm font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-3.5 rounded-xl transition flex items-center gap-2 border border-blue-200 border-dashed w-full justify-center">
                   <Icons.Plus /> 品目を追加する
               </button>
