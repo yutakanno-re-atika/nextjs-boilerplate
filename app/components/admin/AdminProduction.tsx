@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 const Icons = {
   Factory: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>,
   Check: () => <svg className="w-5 h-5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>,
-  ArrowDown: () => <svg className="w-6 h-6 mx-auto text-gray-400 my-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>,
   Copper: () => <svg className="w-6 h-6 text-orange-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>,
   User: () => <svg className="w-4 h-4 inline-block mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>,
   Tag: () => <svg className="w-4 h-4 inline-block mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>,
@@ -16,15 +15,14 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
   const [selectedLot, setSelectedLot] = useState<any>(null);
   const [inputWeight, setInputWeight] = useState('');
   const [outputCopper, setOutputCopper] = useState('');
-  const [workTime, setWorkTime] = useState(''); // ★ 作業時間
-  const [memo, setMemo] = useState('');         // ★ メモ
+  const [workTime, setWorkTime] = useState(''); // ★ 追加: 作業時間
+  const [memo, setMemo] = useState('');         // ★ 追加: メモ
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const productions = data?.productions || [];
   const wiresMaster = data?.wires || [];
 
   let lotInventory: any[] = [];
-  // ★ "COMPLETED" (ヤード在庫) のものだけを加工対象とする
   localReservations.filter(r => r.status === 'COMPLETED').forEach(res => {
       let items = [];
       try { 
@@ -38,7 +36,6 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
           const product = it.product || it.productName;
           const initialWeight = Number(it.weight) || 0;
           if (initialWeight > 0 && product) {
-              // 「線」がつくもの、またはマスターにあるものを抽出
               const isWire = wiresMaster.some((w: any) => w.name === product) || product.includes('線') || product.includes('VVF') || product.includes('VA');
               if (isWire) {
                   const processedWeight = productions.filter((p: any) => p.reservationId === res.id && p.materialName === product).reduce((sum: number, p: any) => sum + (Number(p.inputWeight) || 0), 0);
@@ -88,12 +85,13 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
               inputWeight: parseFloat(inputWeight), 
               outputCopper: parseFloat(outputCopper),
               actualRatio: parseFloat(calcActualRatio()), 
-              memo: `時間: ${workTime || 0}分 | ${memo}` // ★ メモと時間を統合して送信
+              memo: `作業時間: ${workTime || 0}分 | ${memo}` // ★ メモと作業時間を結合して送信
           };
           const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
           const result = await res.json();
           if (result.status === 'success') { 
               alert('加工データを記録しました！');
+              setSelectedLot(null);
               window.location.reload(); 
           } else { 
               alert('エラー: ' + result.message); 
@@ -108,7 +106,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
         <h2 className="text-2xl md:text-3xl font-black text-gray-900 flex items-center gap-2 md:gap-3">
             <Icons.Factory /> ナゲット製造・加工報告
         </h2>
-        <p className="text-sm md:text-base text-gray-500 mt-2">1バッチ毎の作業時間と歩留まりを記録し、AIの査定精度を向上させます。</p>
+        <p className="text-sm md:text-base text-gray-500 mt-2">ヤード在庫（カンバンで③になったもの）を加工し、実測歩留まりを記録します。</p>
       </header>
 
       {/* サマリーパネル */}
@@ -121,15 +119,16 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
           </div>
       </div>
 
+      {/* ロットリスト */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col flex-1 overflow-hidden">
           <div className="p-4 md:p-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center flex-shrink-0">
-              <h3 className="text-base md:text-lg font-bold text-gray-900">📦 加工待ちロット一覧</h3>
+              <h3 className="text-base md:text-lg font-bold text-gray-900">📦 加工待ちヤード在庫 (入荷順)</h3>
               <span className="text-xs md:text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded-md font-bold border border-blue-200">全 {lotInventory.length} 件</span>
           </div>
 
           <div className="p-4 md:p-5 flex-1 overflow-y-auto space-y-3 md:space-y-4">
               {lotInventory.length === 0 ? (
-                  <p className="text-center text-gray-500 text-sm md:text-base py-10 font-bold">現在、加工待ちのロットはありません。<br/>（カンバンで「ヤード在庫」に移動したものが表示されます）</p>
+                  <p className="text-center text-gray-500 text-sm md:text-base py-10 font-bold">現在、加工待ちのロットはありません。</p>
               ) : lotInventory.map((lot) => (
                   <div 
                       key={lot.lotId} onClick={() => handleSelectLot(lot)}
