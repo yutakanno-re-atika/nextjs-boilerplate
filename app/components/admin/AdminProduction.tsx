@@ -9,14 +9,20 @@ const Icons = {
   Tag: () => <svg className="w-4 h-4 inline-block mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>,
   Close: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>,
   Clock: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+  Worker: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
+  Timeline: () => <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
 };
+
+// ★ 作業担当者のリスト（必要に応じて追加・変更してください）
+const WORKERS = ["未選択", "工場長", "佐藤", "鈴木", "高橋", "田中", "パートA"];
 
 export const AdminProduction = ({ data, localReservations }: { data: any, localReservations: any[] }) => {
   const [selectedLot, setSelectedLot] = useState<any>(null);
   const [inputWeight, setInputWeight] = useState('');
   const [outputCopper, setOutputCopper] = useState('');
-  const [workTime, setWorkTime] = useState(''); // ★ 追加: 作業時間
-  const [memo, setMemo] = useState('');         // ★ 追加: メモ
+  const [workTime, setWorkTime] = useState(''); 
+  const [workerName, setWorkerName] = useState('未選択'); // ★ 作業者
+  const [memo, setMemo] = useState('');         
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const productions = data?.productions || [];
@@ -44,7 +50,9 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                       const productMaster = wiresMaster.find((w: any) => w.name === product);
                       lotInventory.push({
                           lotId: `${res.id}-${idx}`, reservationId: res.id, memberName: res.memberName || '名称未設定',
-                          date: res.visitDate ? String(res.visitDate).substring(5, 16) : '不明', product: product,
+                          date: res.visitDate ? String(res.visitDate).substring(5, 16) : '不明', 
+                          createdAt: res.createdAt ? String(res.createdAt).substring(5, 16) : '不明', // ★ 受付日時の追加
+                          product: product,
                           maker: productMaster?.maker, sq: productMaster?.sq, core: productMaster?.core,
                           remainingWeight: remainingWeight, expectedRatio: productMaster ? productMaster.ratio : 0
                       });
@@ -68,6 +76,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
       setInputWeight(String(lot.remainingWeight)); 
       setOutputCopper(''); 
       setWorkTime('');
+      setWorkerName('未選択');
       setMemo('');
   };
 
@@ -85,7 +94,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
               inputWeight: parseFloat(inputWeight), 
               outputCopper: parseFloat(outputCopper),
               actualRatio: parseFloat(calcActualRatio()), 
-              memo: `作業時間: ${workTime || 0}分 | ${memo}` // ★ メモと作業時間を結合して送信
+              memo: `作業者: ${workerName} | 時間: ${workTime || 0}分 | ${memo}` // ★ 作業者情報も構造化して保存
           };
           const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
           const result = await res.json();
@@ -136,7 +145,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                   >
                       <div className="flex justify-between items-start">
                           <div>
-                              <span className="text-[10px] md:text-xs text-gray-500 font-mono font-bold bg-gray-100 px-2 py-0.5 rounded border border-gray-200">{lot.date} 入荷</span>
+                              <span className="text-[10px] md:text-xs text-gray-500 font-mono font-bold bg-gray-100 px-2 py-0.5 rounded border border-gray-200">{lot.date} 入庫</span>
                               <p className="font-black text-gray-900 text-sm md:text-base mt-2 flex items-center group-hover:text-blue-700 transition"><Icons.User /> {lot.memberName}</p>
                           </div>
                           <div className="text-right">
@@ -166,20 +175,36 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
           <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4 animate-in fade-in">
               <div className="bg-white rounded-t-3xl md:rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in slide-in-from-bottom-full md:zoom-in-95 flex flex-col max-h-[90vh]">
                   
-                  <div className="p-5 md:p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 flex-shrink-0">
+                  <div className="p-5 md:p-6 border-b border-gray-100 flex justify-between items-start bg-gray-50 flex-shrink-0">
                       <div>
                           <h3 className="text-lg md:text-xl font-black text-gray-900">🏭 加工報告</h3>
-                          <p className="text-xs md:text-sm text-gray-500 mt-1">{selectedLot.memberName} / {selectedLot.product}</p>
+                          <p className="text-xs md:text-sm text-gray-500 mt-1 font-bold">{selectedLot.memberName} / {selectedLot.product}</p>
+                          
+                          {/* ★ タイムライン・トレーサビリティ表示 */}
+                          <div className="mt-3 flex items-center gap-2 text-[10px] md:text-xs text-gray-500 bg-white px-2 py-1.5 rounded-lg border border-gray-200 inline-flex font-mono">
+                              <Icons.Timeline />
+                              <span>受付: {selectedLot.createdAt}</span>
+                              <span className="text-gray-300">|</span>
+                              <span className="text-blue-600 font-bold">ヤード移動: {selectedLot.date}</span>
+                          </div>
                       </div>
-                      <button onClick={() => setSelectedLot(null)} className="text-gray-400 hover:text-gray-900 bg-white p-2 rounded-full shadow-sm"><Icons.Close /></button>
+                      <button onClick={() => setSelectedLot(null)} className="text-gray-400 hover:text-gray-900 bg-white p-2 rounded-full shadow-sm border border-gray-100"><Icons.Close /></button>
                   </div>
                   
                   <div className="p-5 md:p-6 space-y-5 overflow-y-auto flex-1">
+                      
+                      {/* ★ 作業者選択 */}
+                      <div className="bg-blue-50 border border-blue-100 p-3 rounded-xl flex items-center gap-3">
+                          <label className="text-xs font-bold text-blue-800 flex items-center whitespace-nowrap"><Icons.Worker /> 担当者</label>
+                          <select className="w-full bg-white border border-blue-200 p-2 rounded-lg font-bold text-sm outline-none focus:border-blue-500" value={workerName} onChange={e => setWorkerName(e.target.value)}>
+                              {WORKERS.map(w => <option key={w} value={w}>{w}</option>)}
+                          </select>
+                      </div>
+
                       <div className="grid grid-cols-2 gap-3 md:gap-4">
                           <div>
                               <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5 md:mb-2">投入重量 (kg)</label>
                               <div className="relative">
-                                  {/* ★ inputMode="decimal" でスマホのテンキーを強制表示 */}
                                   <input type="number" inputMode="decimal" pattern="[0-9]*" className="w-full bg-gray-50 border border-gray-200 p-3 pr-8 rounded-xl text-lg md:text-xl font-black text-right outline-none focus:border-blue-500 focus:bg-white transition" value={inputWeight} onChange={e => setInputWeight(e.target.value)} />
                                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs md:text-sm text-gray-500 font-bold">kg</span>
                               </div>
@@ -202,7 +227,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                           </div>
                       </div>
 
-                      {/* ★ 作業時間とメモ */}
+                      {/* 作業時間とメモ */}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
                           <div className="md:col-span-1">
                               <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5 md:mb-2"><Icons.Clock /> 作業時間</label>
