@@ -116,7 +116,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
       {/* サマリーパネル */}
       <div className="bg-[#111] rounded-sm shadow-sm p-6 text-white mb-6 relative overflow-hidden">
           <div className="absolute top-0 right-0 p-4 opacity-10 transform scale-150 text-orange-500"><Icons.Copper /></div>
-          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-2">ピカ銅 製品在庫</h3>
+          <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-2">ピカ銅 製品在庫</h3>
           <div className="flex items-end gap-2 mt-2 relative z-10">
               <span className="text-4xl font-black text-white font-mono tracking-tighter">{totalProducedCopper.toLocaleString()}</span>
               <span className="text-lg text-gray-400 font-bold mb-1">kg</span>
@@ -127,7 +127,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
       <div className="bg-white rounded-sm border border-gray-200 shadow-sm flex flex-col flex-1 overflow-hidden">
           <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center flex-shrink-0">
               <h3 className="text-sm font-bold text-gray-900">加工待ちヤード在庫 (入荷順)</h3>
-              <span className="text-xs bg-white text-gray-800 px-3 py-1 rounded-sm font-bold border border-gray-300 shadow-sm">
+              <span className="text-sm bg-white text-gray-800 px-3 py-1 rounded-sm font-bold border border-gray-300 shadow-sm">
                   全 {lotInventory.length} 件
               </span>
           </div>
@@ -152,7 +152,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                       <div className="bg-gray-50 group-hover:bg-white p-3 rounded-sm border border-gray-100 transition">
                           <div className="flex justify-between items-center">
                               <p className="text-sm font-bold text-gray-800 flex items-center"><Icons.Tag /> {lot.product}</p>
-                              <p className="text-xs text-gray-500 font-bold">想定歩留: <span className="text-gray-900 ml-1">{lot.expectedRatio}%</span></p>
+                              <p className="text-sm text-gray-500 font-bold">想定歩留: <span className="text-gray-900 ml-1">{lot.expectedRatio}%</span></p>
                           </div>
                           <div className="flex gap-2 mt-2">
                               {lot.maker && <span className="text-xs font-medium bg-white text-gray-600 px-2 py-0.5 rounded-sm border border-gray-200">{lot.maker}</span>}
@@ -197,14 +197,14 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
 
                       <div className="grid grid-cols-2 gap-4">
                           <div>
-                              <label className="block text-xs font-bold text-gray-600 mb-2">投入重量 (kg)</label>
+                              <label className="block text-sm font-bold text-gray-600 mb-2">投入重量 (kg)</label>
                               <div className="relative">
                                   <input type="number" inputMode="decimal" pattern="[0-9]*" className="w-full bg-gray-50 border border-gray-300 p-3 pr-8 rounded-sm text-xl font-black font-mono text-right outline-none focus:border-[#D32F2F] focus:bg-white transition" value={inputWeight} onChange={e => setInputWeight(e.target.value)} />
                                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-bold">kg</span>
                               </div>
                           </div>
                           <div>
-                              <label className="block text-xs font-bold text-gray-600 mb-2">産出ピカ銅 (kg)</label>
+                              <label className="block text-sm font-bold text-gray-600 mb-2">産出ピカ銅 (kg)</label>
                               <div className="relative">
                                   <input type="number" inputMode="decimal" pattern="[0-9]*" className="w-full bg-orange-50 border border-orange-300 p-3 pr-8 rounded-sm text-xl font-black font-mono text-orange-700 text-right outline-none focus:border-[#D32F2F] focus:bg-white transition shadow-inner" value={outputCopper} onChange={e => setOutputCopper(e.target.value)} placeholder="0" />
                                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-orange-600 font-bold">kg</span>
@@ -214,7 +214,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
 
                       {/* 歩留まり表示 */}
                       <div className="bg-[#111] rounded-sm p-5 text-center text-white shadow-md border border-black">
-                          <p className="text-xs text-gray-400 font-bold mb-2 tracking-widest">実測歩留まり (想定: {selectedLot.expectedRatio}%)</p>
+                          <p className="text-sm text-gray-400 font-bold mb-2 tracking-widest">実測歩留まり (想定: {selectedLot.expectedRatio}%)</p>
                           <div className="flex justify-center items-baseline gap-1">
                               <span className={`text-4xl font-black font-mono ${parseFloat(calcActualRatio()) >= selectedLot.expectedRatio ? 'text-green-400' : 'text-red-400'}`}>{calcActualRatio()}</span>
                               <span className="text-xl text-gray-400 font-bold">%</span>
@@ -224,14 +224,14 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                       {/* 作業時間とメモ */}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <div className="md:col-span-1">
-                              <label className="block text-xs font-bold text-gray-600 mb-2"><Icons.Clock /> 作業時間</label>
+                              <label className="block text-sm font-bold text-gray-600 mb-2"><Icons.Clock /> 作業時間</label>
                               <div className="relative">
                                   <input type="number" inputMode="decimal" pattern="[0-9]*" className="w-full border border-gray-300 p-3 pr-8 rounded-sm outline-none focus:border-[#D32F2F] text-right font-bold text-base transition" placeholder="0" value={workTime} onChange={e => setWorkTime(e.target.value)} />
                                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-bold">分</span>
                               </div>
                           </div>
                           <div className="md:col-span-2">
-                              <label className="block text-xs font-bold text-gray-600 mb-2">作業メモ (刃の摩耗等)</label>
+                              <label className="block text-sm font-bold text-gray-600 mb-2">作業メモ (刃の摩耗等)</label>
                               <input type="text" className="w-full border border-gray-300 p-3 rounded-sm outline-none focus:border-[#D32F2F] text-base transition" placeholder="気づいた事などを記録" value={memo} onChange={e => setMemo(e.target.value)} />
                           </div>
                       </div>
