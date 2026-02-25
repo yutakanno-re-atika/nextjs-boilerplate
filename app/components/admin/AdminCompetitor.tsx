@@ -81,7 +81,7 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                 <span className="w-1.5 h-6 bg-[#D32F2F]"></span>
                 競合価格レーダー
             </h2>
-            <p className="text-xs text-gray-500 mt-1 font-mono tracking-wider ml-3">AI COMPETITOR RESEARCH</p>
+            <p className="text-sm text-gray-500 mt-1 font-mono tracking-wider ml-3">AI COMPETITOR RESEARCH</p>
         </div>
         <div className="flex gap-3">
             <button onClick={handleDownloadCSV} className="bg-white border border-gray-300 text-gray-700 px-4 py-2.5 rounded-sm text-sm font-bold hover:bg-gray-50 transition shadow-sm flex items-center gap-2">
@@ -108,7 +108,7 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                           {competitors.map((comp, idx) => (
                               <th key={idx} className="p-4 font-bold text-sm tracking-wider text-gray-200 w-[20%] border-r border-gray-700 last:border-0">
                                   {comp.name}
-                                  <div className="text-xs text-gray-400 font-mono font-normal mt-1">更新: {comp.lastUpdated}</div>
+                                  <div className="text-xs text-gray-400 font-mono font-normal mt-1 normal-case">更新: {comp.lastUpdated}</div>
                               </th>
                           ))}
                       </tr>
