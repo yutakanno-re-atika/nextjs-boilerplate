@@ -132,7 +132,8 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                       />
                       {showSuggest && clientName && (
                           <ul className="absolute z-20 w-full bg-white border border-gray-300 mt-1 shadow-lg max-h-60 overflow-y-auto rounded-sm">
-                              {clients.filter((c:any) => c.name.includes(clientName)).map((c:any) => (
+                              {/* ★空データ回避: String(c.name || '')で安全に変換してからincludesを実行 */}
+                              {clients.filter((c:any) => String(c.name || '').includes(clientName)).map((c:any) => (
                                   <li key={c.id} onMouseDown={() => handleSelectClient(c)} className="p-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-0 text-sm">
                                       <div className="font-bold text-gray-900">{c.name}</div>
                                       <div className="text-xs text-gray-500 font-mono">{c.phone}</div>
@@ -195,7 +196,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
               </button>
           </div>
 
-          {/* フッター（合計＆保存） */}
+          {/* フッター */}
           <div className="p-6 bg-[#111] text-white flex flex-col md:flex-row justify-between items-center gap-6">
               <div className="text-center md:text-left">
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">合計買掛金額</p>
