@@ -51,7 +51,8 @@ export const AdminDatabase = ({ data }: { data: any }) => {
   const formatUpdates = (sheetName: string, form: any) => {
       if (sheetName === 'Clients') return { 1: form.name, 2: form.rank, 4: form.phone, 5: form.loginId, 6: form.password, 7: form.points, 8: form.memo };
       if (sheetName === 'SalesTargets') return { 2: form.company, 4: form.area, 5: form.priority, 11: form.status, 12: form.contact, 14: form.memo };
-      if (sheetName === 'Products_Wire') return { 2: form.name, 6: form.ratio };
+      // ★ 修正: sq と core のカラムも更新対象に含める (Products_Wire.csv の構造に基づく: 4番目がsq, 5番目がcore)
+      if (sheetName === 'Products_Wire') return { 2: form.name, 4: form.sq, 5: form.core, 6: form.ratio }; 
       if (sheetName === 'Products_Casting') return { 1: form.name, 4: form.ratio, 2: form.type };
       return {};
   };
@@ -101,7 +102,6 @@ export const AdminDatabase = ({ data }: { data: any }) => {
         </button>
       </header>
 
-      {/* サマリーパネル */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-gray-200 border border-gray-200 rounded-sm overflow-hidden mb-6">
           <div className="bg-white p-4 flex items-center gap-4">
               <div className="p-2 bg-gray-50 rounded-sm"><Icons.Users /></div>
@@ -114,7 +114,7 @@ export const AdminDatabase = ({ data }: { data: any }) => {
               <div className="p-2 bg-red-50 rounded-sm"><Icons.Target /></div>
               <div>
                   <p className="text-[10px] text-gray-500 font-bold tracking-wider">営業ターゲット (未取引)</p>
-                  <p className="text-xl font-black text-gray-900 font-mono">{salesTargets.filter(t => t.status !== '既存取引先').length} <span className="text-xs font-bold text-gray-400">件</span></p>
+                  <p className="text-xl font-black text-gray-900 font-mono">{salesTargets.filter((t:any) => t.status !== '既存取引先').length} <span className="text-xs font-bold text-gray-400">件</span></p>
               </div>
           </div>
           <div className="bg-white p-4 flex items-center gap-4">
@@ -126,7 +126,6 @@ export const AdminDatabase = ({ data }: { data: any }) => {
           </div>
       </div>
 
-      {/* 操作タブ */}
       <div className="grid grid-cols-2 md:flex border-b border-gray-200 bg-gray-50 flex-shrink-0">
           <button onClick={() => handleTabChange('CLIENTS')} className={`px-4 py-3 text-xs font-bold tracking-widest transition-colors ${activeTab === 'CLIENTS' ? 'bg-white border-t-2 border-t-[#D32F2F] text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>顧客マスター</button>
           <button onClick={() => handleTabChange('SALES_TARGETS')} className={`px-4 py-3 text-xs font-bold tracking-widest transition-colors ${activeTab === 'SALES_TARGETS' ? 'bg-white border-t-2 border-t-[#D32F2F] text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>営業リスト</button>
@@ -134,7 +133,6 @@ export const AdminDatabase = ({ data }: { data: any }) => {
           <button onClick={() => handleTabChange('CASTINGS')} className={`px-4 py-3 text-xs font-bold tracking-widest transition-colors ${activeTab === 'CASTINGS' ? 'bg-white border-t-2 border-t-[#D32F2F] text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>非鉄マスター</button>
       </div>
 
-      {/* テーブル */}
       <div className="flex-1 bg-white border-x border-b border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-0 rounded-b-sm">
           <div className="overflow-x-auto overflow-y-auto flex-1 p-0">
               <table className="w-full text-left border-collapse min-w-[900px]">
@@ -147,7 +145,8 @@ export const AdminDatabase = ({ data }: { data: any }) => {
                               <><th className="p-3 text-[10px] font-bold text-gray-500 uppercase w-[25%]">企業名</th><th className="p-3 text-[10px] font-bold text-gray-500 uppercase w-[15%]">エリア / 優先度</th><th className="p-3 text-[10px] font-bold text-gray-500 uppercase w-[15%]">連絡先</th><th className="p-3 text-[10px] font-bold text-gray-500 uppercase w-[15%]">ステータス</th><th className="p-3 text-[10px] font-bold text-gray-500 uppercase w-[20%]">メモ / 提案内容</th></>
                           )}
                           {activeTab === 'WIRES' && (
-                              <><th className="p-3 text-[10px] font-bold text-gray-500 uppercase w-[50%]">品名 / 詳細</th><th className="p-3 text-[10px] font-bold text-gray-500 uppercase w-[30%] text-center">マスター歩留まり (%)</th></>
+                              // ★ 修正: ヘッダーにサイズ・芯数を明記
+                              <><th className="p-3 text-[10px] font-bold text-gray-500 uppercase w-[50%]">品名 / サイズ (sq) / 芯数 (C)</th><th className="p-3 text-[10px] font-bold text-gray-500 uppercase w-[30%] text-center">マスター歩留まり (%)</th></>
                           )}
                           {activeTab === 'CASTINGS' && (
                               <><th className="p-3 text-[10px] font-bold text-gray-500 uppercase w-[35%]">品名</th><th className="p-3 text-[10px] font-bold text-gray-500 uppercase w-[25%]">種別 (相場)</th><th className="p-3 text-[10px] font-bold text-gray-500 uppercase w-[25%] text-center">歩留まり (%)</th></>
@@ -178,7 +177,15 @@ export const AdminDatabase = ({ data }: { data: any }) => {
                                   </>
                               )}
                               {activeTab === 'WIRES' && (
-                                  <><td className="p-2"><input autoFocus placeholder="品名" className={inputClass} onChange={e => setFormState({...formState, name: e.target.value})} /></td><td className="p-2"><input type="number" inputMode="decimal" placeholder="40" className={`${inputClass} text-center text-[#D32F2F]`} onChange={e => setFormState({...formState, ratio: e.target.value})} /></td></>
+                                  // ★ 修正: 新規追加時も sq と core を入力可能に
+                                  <>
+                                    <td className="p-2 flex items-center gap-1">
+                                        <input autoFocus placeholder="品名 (例: IV)" className={inputClass} onChange={e => setFormState({...formState, name: e.target.value})} />
+                                        <input placeholder="sq (太さ)" className={inputClass + " w-20"} onChange={e => setFormState({...formState, sq: e.target.value})} />
+                                        <input placeholder="芯数" className={inputClass + " w-16"} onChange={e => setFormState({...formState, core: e.target.value})} />
+                                    </td>
+                                    <td className="p-2"><input type="number" inputMode="decimal" placeholder="40" className={`${inputClass} text-center text-[#D32F2F]`} onChange={e => setFormState({...formState, ratio: e.target.value})} /></td>
+                                  </>
                               )}
                               {activeTab === 'CASTINGS' && (
                                   <><td className="p-2"><input autoFocus placeholder="品名" className={inputClass} onChange={e => setFormState({...formState, name: e.target.value})} /></td><td className="p-2"><select className={inputClass} value={formState.type} onChange={e => setFormState({...formState, type: e.target.value})}><option value="BRASS">BRASS</option><option value="COPPER">COPPER</option><option value="ZINC">ZINC</option><option value="LEAD">LEAD</option></select></td><td className="p-2"><input type="number" inputMode="decimal" placeholder="100" className={`${inputClass} text-center text-[#D32F2F]`} onChange={e => setFormState({...formState, ratio: e.target.value})} /></td></>
@@ -199,27 +206,35 @@ export const AdminDatabase = ({ data }: { data: any }) => {
                                   <>
                                       {activeTab === 'CLIENTS' && (
                                           <>
-                                              <td className="p-2"><input type="text" className={inputClass} value={formState.name} onChange={e => setFormState({...formState, name: e.target.value})} /></td>
-                                              <td className="p-2 space-y-1"><select className={inputClass} value={formState.rank} onChange={e => setFormState({...formState, rank: e.target.value})}><option value="NORMAL">NORMAL</option><option value="GOLD">GOLD</option></select><input type="number" inputMode="decimal" className={inputClass} value={formState.points} onChange={e => setFormState({...formState, points: e.target.value})} /></td>
-                                              <td className="p-2"><input type="text" className={inputClass} value={formState.phone} onChange={e => setFormState({...formState, phone: e.target.value})} /></td>
-                                              <td className="p-2 space-y-1"><input type="text" className={inputClass} value={formState.loginId} onChange={e => setFormState({...formState, loginId: e.target.value})} /><input type="text" className={inputClass} value={formState.password} onChange={e => setFormState({...formState, password: e.target.value})} /></td>
-                                              <td className="p-2"><input type="text" className={inputClass} value={formState.memo} onChange={e => setFormState({...formState, memo: e.target.value})} /></td>
+                                              <td className="p-2"><input type="text" className={inputClass} value={formState.name || ''} onChange={e => setFormState({...formState, name: e.target.value})} /></td>
+                                              <td className="p-2 space-y-1"><select className={inputClass} value={formState.rank || 'NORMAL'} onChange={e => setFormState({...formState, rank: e.target.value})}><option value="NORMAL">NORMAL</option><option value="GOLD">GOLD</option></select><input type="number" inputMode="decimal" className={inputClass} value={formState.points || 0} onChange={e => setFormState({...formState, points: e.target.value})} /></td>
+                                              <td className="p-2"><input type="text" className={inputClass} value={formState.phone || ''} onChange={e => setFormState({...formState, phone: e.target.value})} /></td>
+                                              <td className="p-2 space-y-1"><input type="text" className={inputClass} value={formState.loginId || ''} onChange={e => setFormState({...formState, loginId: e.target.value})} /><input type="text" className={inputClass} value={formState.password || ''} onChange={e => setFormState({...formState, password: e.target.value})} /></td>
+                                              <td className="p-2"><input type="text" className={inputClass} value={formState.memo || ''} onChange={e => setFormState({...formState, memo: e.target.value})} /></td>
                                           </>
                                       )}
                                       {activeTab === 'SALES_TARGETS' && (
                                           <>
-                                              <td className="p-2"><input type="text" className={inputClass} value={formState.company} onChange={e => setFormState({...formState, company: e.target.value})} /></td>
-                                              <td className="p-2 space-y-1"><input type="text" className={inputClass} value={formState.area} onChange={e => setFormState({...formState, area: e.target.value})} /><select className={inputClass} value={formState.priority} onChange={e => setFormState({...formState, priority: e.target.value})}><option value="A">A</option><option value="B">B</option><option value="C">C</option></select></td>
-                                              <td className="p-2"><input type="text" className={inputClass} value={formState.contact} onChange={e => setFormState({...formState, contact: e.target.value})} /></td>
-                                              <td className="p-2"><select className={inputClass} value={formState.status} onChange={e => setFormState({...formState, status: e.target.value})}><option value="新規">新規</option><option value="アプローチ中">アプローチ中</option><option value="既存取引先">既存取引先</option></select></td>
-                                              <td className="p-2"><input type="text" className={inputClass} value={formState.memo} onChange={e => setFormState({...formState, memo: e.target.value})} /></td>
+                                              <td className="p-2"><input type="text" className={inputClass} value={formState.company || ''} onChange={e => setFormState({...formState, company: e.target.value})} /></td>
+                                              <td className="p-2 space-y-1"><input type="text" className={inputClass} value={formState.area || ''} onChange={e => setFormState({...formState, area: e.target.value})} /><select className={inputClass} value={formState.priority || 'B'} onChange={e => setFormState({...formState, priority: e.target.value})}><option value="S">S</option><option value="A">A</option><option value="B">B</option><option value="C">C</option></select></td>
+                                              <td className="p-2"><input type="text" className={inputClass} value={formState.contact || ''} onChange={e => setFormState({...formState, contact: e.target.value})} /></td>
+                                              <td className="p-2"><select className={inputClass} value={formState.status || '新規'} onChange={e => setFormState({...formState, status: e.target.value})}><option value="新規">新規</option><option value="アプローチ中">アプローチ中</option><option value="既存取引先">既存取引先</option></select></td>
+                                              <td className="p-2"><input type="text" className={inputClass} value={formState.memo || ''} onChange={e => setFormState({...formState, memo: e.target.value})} /></td>
                                           </>
                                       )}
                                       {activeTab === 'WIRES' && (
-                                          <><td className="p-2"><input type="text" className={inputClass} value={formState.name} onChange={e => setFormState({...formState, name: e.target.value})} /></td><td className="p-2"><input type="number" inputMode="decimal" className={`${inputClass} text-center text-[#D32F2F]`} value={formState.ratio} onChange={e => setFormState({...formState, ratio: e.target.value})} /></td></>
+                                          // ★ 修正: 編集時も sq と core を操作可能に
+                                          <>
+                                            <td className="p-2 flex items-center gap-1">
+                                                <input type="text" className={inputClass} value={formState.name || ''} onChange={e => setFormState({...formState, name: e.target.value})} />
+                                                <input type="text" placeholder="sq" className={inputClass + " w-20"} value={formState.sq === '-' ? '' : (formState.sq || '')} onChange={e => setFormState({...formState, sq: e.target.value})} />
+                                                <input type="text" placeholder="芯" className={inputClass + " w-16"} value={formState.core === '-' ? '' : (formState.core || '')} onChange={e => setFormState({...formState, core: e.target.value})} />
+                                            </td>
+                                            <td className="p-2"><input type="number" inputMode="decimal" className={`${inputClass} text-center text-[#D32F2F]`} value={formState.ratio || 0} onChange={e => setFormState({...formState, ratio: e.target.value})} /></td>
+                                          </>
                                       )}
                                       {activeTab === 'CASTINGS' && (
-                                          <><td className="p-2"><input type="text" className={inputClass} value={formState.name} onChange={e => setFormState({...formState, name: e.target.value})} /></td><td className="p-2"><select className={inputClass} value={formState.type} onChange={e => setFormState({...formState, type: e.target.value})}><option value="BRASS">BRASS</option><option value="COPPER">COPPER</option><option value="ZINC">ZINC</option><option value="LEAD">LEAD</option></select></td><td className="p-2"><input type="number" inputMode="decimal" className={`${inputClass} text-center text-[#D32F2F]`} value={formState.ratio} onChange={e => setFormState({...formState, ratio: e.target.value})} /></td></>
+                                          <><td className="p-2"><input type="text" className={inputClass} value={formState.name || ''} onChange={e => setFormState({...formState, name: e.target.value})} /></td><td className="p-2"><select className={inputClass} value={formState.type || 'BRASS'} onChange={e => setFormState({...formState, type: e.target.value})}><option value="BRASS">BRASS</option><option value="COPPER">COPPER</option><option value="ZINC">ZINC</option><option value="LEAD">LEAD</option></select></td><td className="p-2"><input type="number" inputMode="decimal" className={`${inputClass} text-center text-[#D32F2F]`} value={formState.ratio || 0} onChange={e => setFormState({...formState, ratio: e.target.value})} /></td></>
                                       )}
                                       <td className="p-2 text-right">
                                           <div className="flex flex-col gap-1 items-end">
@@ -249,8 +264,13 @@ export const AdminDatabase = ({ data }: { data: any }) => {
                                           </>
                                       )}
                                       {activeTab === 'WIRES' && (
+                                          // ★ 修正: 一覧表示時にも sq と 芯数 を見やすく結合して表示
                                           <>
-                                              <td className="p-3 align-top font-bold text-gray-900">{record.name}</td>
+                                              <td className="p-3 align-top font-bold text-gray-900">
+                                                  {record.name}
+                                                  {record.sq && record.sq !== '-' && <span className="ml-2 text-xs text-gray-500 font-mono">{record.sq}sq</span>}
+                                                  {record.core && record.core !== '-' && <span className="ml-1 text-xs text-gray-500 font-mono">{record.core}C</span>}
+                                              </td>
                                               <td className="p-3 align-top text-center"><span className="text-sm font-mono font-black text-[#D32F2F]">{record.ratio}%</span></td>
                                           </>
                                       )}
