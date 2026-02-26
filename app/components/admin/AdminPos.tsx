@@ -97,6 +97,14 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
 
   const inputClass = "w-full bg-white border border-gray-300 p-2.5 rounded-sm text-lg font-bold text-gray-900 outline-none focus:border-[#D32F2F] focus:ring-1 focus:ring-[#D32F2F] transition font-mono";
 
+  // ★ サジェスト用のフィルタリングロジック（エラー回避 ＆ 確実なマッチング）
+  const filteredClients = clients.filter((c: any) => {
+      if (!c || !c.name) return false;
+      const targetName = String(c.name).toLowerCase();
+      const searchWord = String(clientName).toLowerCase().trim();
+      return targetName.includes(searchWord);
+  });
+
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-500 max-w-6xl mx-auto w-full text-gray-800">
       <header className="mb-4 flex justify-between items-end flex-shrink-0 pb-4 border-b border-gray-200">
@@ -130,13 +138,12 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                           onFocus={()=>setShowSuggest(true)} 
                           onBlur={()=>setTimeout(()=>setShowSuggest(false), 200)} 
                       />
-                      {showSuggest && clientName && (
+                      {showSuggest && clientName && filteredClients.length > 0 && (
                           <ul className="absolute z-20 w-full bg-white border border-gray-300 mt-1 shadow-lg max-h-60 overflow-y-auto rounded-sm">
-                              {/* ★空データ回避: String(c.name || '')で安全に変換してからincludesを実行 */}
-                              {clients.filter((c:any) => String(c.name || '').includes(clientName)).map((c:any) => (
+                              {filteredClients.map((c:any) => (
                                   <li key={c.id} onMouseDown={() => handleSelectClient(c)} className="p-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-0 text-sm">
                                       <div className="font-bold text-gray-900">{c.name}</div>
-                                      <div className="text-xs text-gray-500 font-mono">{c.phone}</div>
+                                      <div className="text-xs text-gray-500 font-mono">{c.phone || '-'}</div>
                                   </li>
                               ))}
                           </ul>
