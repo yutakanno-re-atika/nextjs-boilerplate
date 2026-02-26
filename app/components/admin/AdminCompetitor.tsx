@@ -1,301 +1,138 @@
-// @ts-nocheck
-import React, { useState, useEffect } from 'react';
+import { google } from '@ai-sdk/google';
+import { generateObject } from 'ai';
+import { z } from 'zod';
 
-const Icons = {
-  Alert: () => <svg className="w-3.5 h-3.5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
-  Refresh: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
-  Download: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>,
-  Banknotes: () => <svg className="w-4 h-4 text-gray-400 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-  Clock: () => <svg className="w-4 h-4 text-gray-400 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+export const maxDuration = 60;
+
+// スクレイピング対象の定義
+const TARGETS: Record<string, { name: string, url: string }> = {
+  "sapporo": { name: "札幌銅リサイクル", url: "https://sapporo-recycle.com/" },
+  "rec": { name: "REC環境サービス", url: "http://colors.main.jp/" },
+  "ohata": { name: "大畑商事", url: "https://www.ohata.org/kakaku.html" }
 };
 
-export const AdminCompetitor = ({ data }: { data: any }) => {
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [statusMessage, setStatusMessage] = useState('情報を取得');
-  const [competitors, setCompetitors] = useState<any[]>([]);
-  const [lastFetchDate, setLastFetchDate] = useState<string>('未取得');
+// 当社の20品目スキーマ定義（AIに絶対にこの型で返させる）
+const priceSchema = z.object({
+  "光線（ピカ線、特号）": z.number().nullable().describe("ピカ線、特一号など"),
+  "1号線": z.number().nullable().describe("1号銅、黒ずみ"),
+  "2号線": z.number().nullable().describe("2号銅"),
+  "上銅": z.number().nullable().describe("上銅、上故銅、付物のある銅"),
+  "並銅": z.number().nullable().describe("並銅、なみどう"),
+  "下銅": z.number().nullable().describe("下銅、下故銅"),
+  "山行銅": z.number().nullable().describe("山行銅、山銅、銅ダスト"),
+  "ビスマス砲金": z.number().nullable().describe("ビスマス砲金"),
+  "砲金": z.number().nullable().describe("砲金、青銅（バルブ、メーター、ダスト除く）"),
+  "メッキ砲金": z.number().nullable().describe("メッキ砲金、メッキ青銅"),
+  "バルブ砲金": z.number().nullable().describe("バルブ砲金"),
+  "込砲金": z.number().nullable().describe("込砲金、砲金ダスト"),
+  "込中": z.number().nullable().describe("込真鍮、真鍮、黄銅"),
+  "山行中": z.number().nullable().describe("山行中、山真鍮、ミックスメタル"),
+  "被覆線80%": z.number().nullable().describe("80%線、1本線、8割、雑電線(銅率80%)"),
+  "被覆線70%": z.number().nullable().describe("70%線、7割、雑電線(銅率70%)"),
+  "被覆線60%": z.number().nullable().describe("60%線、65%線、6割、CV線、雑電線(銅率65%)"),
+  "被覆線50%": z.number().nullable().describe("50%線、5割"),
+  "被覆線40%": z.number().nullable().describe("40%線、4割、VA線、VVF、Fケーブル"),
+  "雑線": z.number().nullable().describe("雑線、家電線、通信線（80~40%以外のもの）")
+});
 
-  // 建値データ
-  const currentCopperPrice = data?.market?.copper?.price || 1450;
-  const currentBrassPrice = data?.market?.brass?.price || 980;
-  const currentZincPrice = data?.market?.zinc?.price || 450;
-  const currentLeadPrice = data?.market?.lead?.price || 380;
-  const currentTinPrice = data?.market?.tin?.price || 8900;
+// 強靭なHTML取得（WAF回避プロキシ付き＆AI向け構造化）
+async function fetchSiteText(url: string) {
+  const options = {
+    headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }
+  };
+  let html = "";
   
-  // 自社価格シミュレーション
-  const myPrices = {
-      "光線（ピカ線、特号）": Math.floor(currentCopperPrice * 0.96),
-      "1号線": Math.floor(currentCopperPrice * 0.94),
-      "2号線": Math.floor(currentCopperPrice * 0.91),
-      "上銅": Math.floor(currentCopperPrice * 0.89),
-      "並銅": Math.floor(currentCopperPrice * 0.87),
-      "下銅": Math.floor(currentCopperPrice * 0.82),
-      "山行銅": Math.floor(currentCopperPrice * 0.78),
-      "ビスマス砲金": Math.floor(currentCopperPrice * 0.70),
-      "砲金": Math.floor(currentCopperPrice * 0.68),
-      "メッキ砲金": Math.floor(currentCopperPrice * 0.65),
-      "バルブ砲金": Math.floor(currentCopperPrice * 0.63),
-      "込砲金": Math.floor(currentCopperPrice * 0.60),
-      "込中": Math.floor(currentCopperPrice * 0.58),
-      "山行中": Math.floor(currentCopperPrice * 0.55),
-      "被覆線80%": Math.floor(currentCopperPrice * 0.80) - 15,
-      "被覆線70%": Math.floor(currentCopperPrice * 0.70) - 15,
-      "被覆線60%": Math.floor(currentCopperPrice * 0.60) - 15,
-      "被覆線50%": Math.floor(currentCopperPrice * 0.50) - 15,
-      "被覆線40%": Math.floor(currentCopperPrice * 0.40) - 15,
-      "雑線": Math.floor(currentCopperPrice * 0.35) - 15
-  };
+  try {
+    const res = await fetch(url, options);
+    if (res.ok) html = await res.text();
+  } catch (e) { console.error("Direct fetch failed", e); }
+  
+  // フォールバック（プロキシ経由）
+  if (!html) {
+    try {
+      const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(url);
+      const res = await fetch(proxyUrl, options);
+      if (res.ok) html = await res.text();
+    } catch (e) { console.error("Proxy fetch failed", e); }
+  }
+  
+  if (!html) return null;
 
-  const targetItems = [
-      "光線（ピカ線、特号）", "1号線", "2号線", "上銅", "並銅", "下銅", "山行銅",
-      "ビスマス砲金", "砲金", "メッキ砲金", "バルブ砲金", "込砲金",
-      "込中", "山行中",
-      "被覆線80%", "被覆線70%", "被覆線60%", "被覆線50%", "被覆線40%", "雑線"
-  ];
+  // ★ 改善ポイント1: AIが理解しやすいようにHTMLをクリーニング（スクリプト等は排除）
+  let text = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, ' ');
+  text = text.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, ' ');
+  
+  // ★ 改善ポイント2: <tr>や<li>、<div>などを「改行」に変換し、品目と価格のペアを保つ
+  text = text.replace(/<(br|p|div|tr|li|h[1-6])[^>]*>/gi, '\n');
+  
+  // 残りのタグを消去
+  text = text.replace(/<[^>]+>/g, ' ');
+  
+  // 余分なスペースや連続する改行を圧縮
+  text = text.replace(/[ \t]+/g, ' ');
+  text = text.replace(/\n\s*\n/g, '\n');
 
-  const keyItems = ["光線（ピカ線、特号）", "並銅", "砲金", "込中"];
+  // ★ 改善ポイント3: 制限を5000文字から30000文字に大幅拡張し、下部の被覆線まで確実に届ける
+  return text.substring(0, 30000);
+}
 
-  useEffect(() => {
-      const savedData = localStorage.getItem('factoryOS_competitors');
-      const savedDate = localStorage.getItem('factoryOS_competitors_date');
-      if (savedData) {
-          try {
-              setCompetitors(JSON.parse(savedData));
-              if (savedDate) setLastFetchDate(savedDate);
-          } catch(e) {}
-      }
-  }, []);
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+    const targetKey = body.targetKey;
+    const target = TARGETS[targetKey];
+    
+    if (!target) {
+      return Response.json({ status: 'error', message: 'Invalid target' }, { status: 400 });
+    }
 
-  // ★ 1社ずつ順番にAIを呼び出す安全な処理
-  const handleRefresh = async () => {
-      setIsRefreshing(true);
-      const results: any[] = [];
-      const targets = [
-          { key: "sapporo", name: "札幌銅" },
-          { key: "rec", name: "REC" },
-          { key: "ohata", name: "大畑商事" }
-      ];
+    const text = await fetchSiteText(target.url);
+    if (!text) {
+      return Response.json({ status: 'error', message: 'HTMLの取得に失敗しました' }, { status: 500 });
+    }
+
+    const nowStr = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+
+    // AIによる意味的マッピング抽出
+    const { object } = await generateObject({
+      model: google('gemini-2.5-flash'),
+      schema: priceSchema,
+      prompt: `
+      あなたは非鉄金属・スクラップ業界のプロの査定員です。
+      以下のテキストは、競合他社のWebサイトから取得した本日の価格表の生データ（改行維持）です。
+      各行を注意深く読み解き、当社の規定する20品目に最も適した価格（1kgあたりの円、数値のみ）を抽出してください。
       
-      for (const target of targets) {
-          setStatusMessage(`${target.name}をAI解析中...`);
-          try {
-              const res = await fetch('/api/competitors', { 
-                  method: 'POST', 
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ targetKey: target.key })
-              });
-              
-              if (!res.ok) {
-                  const errText = await res.text();
-                  console.error(`${target.name} error:`, errText);
-                  continue; // エラーがあっても次の会社へ進む
-              }
-
-              const result = await res.json();
-              if (result.status === 'success' && result.data) {
-                  results.push(result.data);
-              }
-          } catch (error) { 
-              console.error(`${target.name} fetch error:`, error);
-          }
-      }
-
-      if (results.length > 0) {
-          setCompetitors(results); 
-          const now = new Date().toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
-          setLastFetchDate(now);
-          localStorage.setItem('factoryOS_competitors', JSON.stringify(results));
-          localStorage.setItem('factoryOS_competitors_date', now);
-          setStatusMessage('取得完了');
-      } else {
-          alert('すべてのデータ取得に失敗しました。\n開発者コンソールのログを確認してください。');
-          setStatusMessage('情報を取得');
-      }
+      【業界の翻訳ルール（厳守）】
+      - 「1本線」「8割」「雑電線(銅率80%)」などは『被覆線80%』
+      - 「CV線」「雑電線(銅率65%)」などは『被覆線60%』
+      - 「VA線」「VVF」「Fケーブル」などは『被覆線40%』
+      - 「家電線」「弱電線」などは『雑線』
+      - 「真鍮」「込真鍮」などは『込中』
+      - 「ミックスメタル」などは『山行中』
+      - 「ピカ銅」「特一号」などは『光線（ピカ線、特号）』
+      - 「上故銅」は『上銅』
       
-      setTimeout(() => {
-          setIsRefreshing(false);
-          setStatusMessage('情報を取得');
-      }, 2000);
-  };
-
-  const handleDownloadCSV = () => {
-      if (competitors.length === 0) return alert("データがありません");
-      const headers = ['品目名', '月寒製作所 (自社)', ...competitors.map(c => c.name)];
-      const rows = targetItems.map(item => {
-          const myPrice = myPrices[item] || '';
-          const compPrices = competitors.map(c => c.prices[item] !== null ? c.prices[item] : '');
-          return [item, myPrice, ...compPrices];
-      });
-      const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-      const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
-      const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.setAttribute('href', url);
-      link.setAttribute('download', `competitor_prices_${new Date().toISOString().slice(0, 10)}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-  };
-
-  return (
-    <div className="flex flex-col h-full animate-in fade-in duration-500 text-gray-900 pb-12 font-sans">
+      【ガードレール（注意事項）】
+      - 電話番号や日付の年号（例: 2026）を価格と誤認しないこと。価格は通常10円〜20,000円の範囲です。
+      - 当社の20品目に該当する項目がない場合、または判断がつかない場合は必ず null を設定してください。
+      - 出力はカンマを含まない純粋な数値（例: 1450）のみ。
       
-      {/* 🔴 ヘッダー */}
-      <header className="mb-6 flex flex-col sm:flex-row justify-between sm:items-end flex-shrink-0 pb-4 border-b border-gray-200 gap-4">
-        <div>
-            <h2 className="text-2xl font-black tracking-tight flex items-center gap-2 font-serif">
-                <span className="w-1.5 h-6 bg-[#D32F2F]"></span>
-                競合価格レーダー (AI)
-            </h2>
-            <p className="text-xs text-gray-500 mt-1 font-mono tracking-wider ml-3">AI COMPETITOR RESEARCH DASHBOARD</p>
-        </div>
-        <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
-            <button onClick={handleDownloadCSV} className="flex-1 sm:flex-none justify-center bg-white border border-gray-300 text-gray-700 px-4 py-2.5 rounded-sm text-xs font-bold hover:bg-gray-50 transition shadow-sm flex items-center gap-2">
-                <Icons.Download /> CSV
-            </button>
-            <button onClick={handleRefresh} disabled={isRefreshing} className="flex-1 sm:flex-none w-48 justify-center bg-[#111] text-white px-5 py-2.5 rounded-sm text-xs font-bold hover:bg-[#D32F2F] transition flex items-center gap-2 disabled:opacity-50">
-                {isRefreshing && <span className="animate-spin"><Icons.Refresh /></span>}
-                {statusMessage}
-            </button>
-        </div>
-      </header>
+      【対象テキスト】
+      ${text}
+      `
+    });
 
-      {/* 🔴 サマリーダッシュボード */}
-      <div className="bg-white border border-gray-200 rounded-sm shadow-sm mb-6 flex flex-col flex-shrink-0">
-          
-          {/* 上段：建値と取得情報 */}
-          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center p-4 md:p-5 border-b border-gray-100 bg-gray-50 gap-4">
-              <div className="flex flex-wrap gap-4 md:gap-8">
-                  <div className="flex flex-col min-w-[100px]">
-                      <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest flex items-center"><Icons.Banknotes /> 銅建値 (JX)</span>
-                      <span className="text-lg md:text-xl font-mono font-black text-[#D32F2F] mt-1">¥{currentCopperPrice.toLocaleString()}</span>
-                  </div>
-                  <div className="flex flex-col border-l border-gray-200 pl-4 md:pl-8 min-w-[100px]">
-                      <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">真鍮 (日本伸銅)</span>
-                      <span className="text-base md:text-xl font-mono font-black text-gray-900 mt-1">¥{currentBrassPrice.toLocaleString()}</span>
-                  </div>
-                  <div className="flex flex-col border-l border-gray-200 pl-4 md:pl-8 min-w-[100px]">
-                      <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">亜鉛 (三井)</span>
-                      <span className="text-base md:text-xl font-mono font-black text-gray-900 mt-1">¥{currentZincPrice.toLocaleString()}</span>
-                  </div>
-                  <div className="flex flex-col border-l border-gray-200 pl-4 md:pl-8 min-w-[100px]">
-                      <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">鉛 / 錫</span>
-                      <span className="text-sm font-mono font-bold text-gray-600 mt-1.5 md:mt-2">¥{currentLeadPrice} / ¥{currentTinPrice.toLocaleString()}</span>
-                  </div>
-              </div>
-              <div className="text-left md:text-right flex flex-row lg:flex-col items-center lg:items-end gap-3 lg:gap-1 border-t lg:border-t-0 border-gray-200 pt-4 lg:pt-0">
-                  <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest flex items-center"><Icons.Clock /> 最終取得</span>
-                  <span className="text-xs md:text-sm font-mono font-bold text-gray-800 bg-white px-2 md:px-3 py-1 border border-gray-200 rounded-sm shadow-sm">{lastFetchDate}</span>
-              </div>
-          </div>
+    return Response.json({
+      status: 'success',
+      data: {
+        name: target.name,
+        lastUpdated: nowStr,
+        prices: object
+      }
+    });
 
-          {/* 下段：代表4品目 */}
-          <div className="p-0 overflow-x-auto">
-              <table className="w-full text-left text-sm whitespace-nowrap min-w-[600px]">
-                  <thead>
-                      <tr className="border-b border-gray-200">
-                          <th className="py-2.5 px-4 font-normal text-[10px] text-gray-400 bg-white w-[20%] tracking-widest">代表4品目</th>
-                          <th className="py-2.5 px-4 font-bold text-[10px] text-white bg-[#111] border-r border-gray-800 w-[20%] tracking-widest">月寒製作所 (自社)</th>
-                          {competitors.map(c => (
-                              <th key={c.name} className="py-2.5 px-4 font-normal text-[10px] text-gray-600 bg-gray-50 border-r border-gray-100 last:border-0">{c.name}</th>
-                          ))}
-                      </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                      {keyItems.map(item => {
-                          const myPrice = myPrices[item] || 0;
-                          return (
-                              <tr key={item} className="hover:bg-gray-50 transition">
-                                  <td className="py-3 px-4 font-bold text-xs border-r border-gray-100">{item.replace('（ピカ線、特号）', '')}</td>
-                                  <td className="py-3 px-4 font-mono font-black text-sm md:text-lg bg-[#111] text-white border-r border-gray-800 shadow-inner">¥{myPrice.toLocaleString()}</td>
-                                  {competitors.map(c => {
-                                      const price = c.prices[item];
-                                      const diff = price ? myPrice - price : 0;
-                                      return (
-                                          <td key={c.name} className="py-3 px-4 font-mono text-xs border-r border-gray-100 last:border-0 bg-white">
-                                              {price ? (
-                                                  <div className="flex items-center justify-between gap-2">
-                                                      <span className={`text-sm font-mono font-bold ${diff < 0 ? 'text-[#D32F2F]' : 'text-gray-800'}`}>¥{price.toLocaleString()}</span>
-                                                      {diff < 0 && <span className="text-[10px] font-bold text-[#D32F2F] bg-red-50 px-1.5 py-0.5 rounded-sm border border-red-100">劣勢 {(diff).toLocaleString()}円</span>}
-                                                  </div>
-                                              ) : <span className="text-gray-300">-</span>}
-                                          </td>
-                                      );
-                                  })}
-                              </tr>
-                          );
-                      })}
-                  </tbody>
-              </table>
-              {competitors.length === 0 && <div className="text-xs text-gray-400 text-center py-8 font-medium">データがありません。右上のボタンから取得してください。</div>}
-          </div>
-      </div>
-
-      {/* 🔴 メイン価格テーブル (全20品目) */}
-      <div className="flex-1 bg-white rounded-sm border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-[500px] md:min-h-0">
-          <div className="overflow-y-auto overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-[800px] md:min-w-[900px]">
-                  <thead className="sticky top-0 z-20 bg-gray-50 border-b border-gray-200 shadow-sm">
-                      <tr>
-                          <th className="p-3 md:p-4 font-normal text-[10px] md:text-xs text-gray-500 w-[20%] tracking-widest whitespace-nowrap">全20品目 詳細比較</th>
-                          <th className="p-3 md:p-4 font-bold text-xs text-gray-900 w-[20%] border-l border-r border-gray-200 bg-white shadow-sm whitespace-nowrap">
-                              月寒製作所 (自社)
-                          </th>
-                          {competitors.length === 0 && <th className="p-4 font-normal text-xs text-gray-400">データ未取得</th>}
-                          {competitors.map((comp, idx) => (
-                              <th key={idx} className="p-3 md:p-4 font-normal text-[10px] md:text-xs text-gray-500 w-[20%] border-r border-gray-100 last:border-0 whitespace-nowrap">
-                                  {comp.name}
-                              </th>
-                          ))}
-                      </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                      {targetItems.map((item, idx) => {
-                          const myPrice = myPrices[item] || 0;
-                          const validCompetitorPrices = competitors.map(c => c.prices[item]).filter(p => typeof p === 'number' && p > 0);
-                          const maxCompetitorPrice = validCompetitorPrices.length > 0 ? Math.max(...validCompetitorPrices) : 0;
-                          const isLosing = maxCompetitorPrice > 0 && myPrice < maxCompetitorPrice;
-
-                          return (
-                              <tr key={idx} className="hover:bg-gray-50 transition">
-                                  <td className="p-3 md:p-4 font-medium text-xs text-gray-800 whitespace-nowrap">{item}</td>
-                                  <td className="p-3 md:p-4 border-l border-r border-gray-200 bg-white whitespace-nowrap">
-                                      <div className="flex items-center justify-between gap-2">
-                                          <span className="text-sm font-black text-gray-900 font-mono">¥{myPrice.toLocaleString()}</span>
-                                          {isLosing && (
-                                              <span className="text-[10px] font-bold text-[#D32F2F] border border-red-200 bg-red-50 px-1.5 py-0.5 rounded-sm flex items-center whitespace-nowrap">
-                                                  <Icons.Alert /> 負け
-                                              </span>
-                                          )}
-                                      </div>
-                                  </td>
-                                  {competitors.map((comp, cIdx) => {
-                                      const compPrice = comp.prices[item];
-                                      if (!compPrice) return <td key={cIdx} className="p-3 md:p-4 text-xs text-gray-300 font-mono border-r border-gray-100 last:border-0 text-center">-</td>;
-                                      const diff = myPrice - compPrice;
-                                      return (
-                                          <td key={cIdx} className="p-3 md:p-4 border-r border-gray-100 last:border-0 whitespace-nowrap">
-                                              <div className="flex items-center gap-2">
-                                                  <span className={`text-sm font-mono ${compPrice > myPrice ? 'font-bold text-gray-900' : 'text-gray-600'}`}>
-                                                      ¥{compPrice.toLocaleString()}
-                                                  </span>
-                                                  {diff !== 0 && (
-                                                      <span className={`text-[10px] font-mono ${diff < 0 ? 'text-[#D32F2F] font-bold' : 'text-gray-400'}`}>
-                                                          {diff < 0 ? `(${(diff).toLocaleString()})` : `(+${diff.toLocaleString()})`}
-                                                      </span>
-                                                  )}
-                                              </div>
-                                          </td>
-                                      )
-                                  })}
-                              </tr>
-                          );
-                      })}
-                  </tbody>
-              </table>
-          </div>
-      </div>
-    </div>
-  );
-};
+  } catch (error: any) {
+    console.error("Scraping AI Error:", error);
+    return Response.json({ status: 'error', message: error.message }, { status: 500 });
+  }
+}
