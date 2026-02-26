@@ -1,128 +1,221 @@
 // @ts-nocheck
-"use client";
-import React, { useState, useEffect } from 'react';
-
-import { AdminHome } from './AdminHome';
-import { AdminKanban } from './AdminKanban';
-import { AdminPos } from './AdminPos';
-import { AdminCompetitor } from './AdminCompetitor';
-import { AdminProduction } from './AdminProduction';
-import { AdminDatabase } from './AdminDatabase';
-import { AdminClientDetail } from './AdminClientDetail';
-import { AdminSales } from './AdminSales';
+import React from 'react';
+import { MarketData } from '../../types';
 
 const Icons = {
-  Home: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
-  Kanban: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" /></svg>,
-  Calc: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
-  Factory: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>,
-  Radar: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>,
-  Database: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" /></svg>,
-  Briefcase: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
-  Logout: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>,
-  Menu: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" /></svg>,
-  X: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+  TrendingUp: () => <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>,
+  TrendingDown: () => <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>,
+  Minus: () => <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 12H4" /></svg>,
+  Refresh: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
+  Truck: () => <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>,
+  User: () => <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
+  Money: () => <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
 };
 
-export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView: any; onLogout?: any }) => {
-  const [adminTab, setAdminTab] = useState<'HOME' | 'OPERATIONS' | 'POS' | 'PRODUCTION' | 'COMPETITOR' | 'DATABASE' | 'CLIENT_DETAIL' | 'SALES'>('HOME');
-  const [localReservations, setLocalReservations] = useState<any[]>([]);
-  const [editingResId, setEditingResId] = useState<string | null>(null);
-  const [selectedClientName, setSelectedClientName] = useState<string | null>(null);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+// ★ 追加: 表示名を動的に生成する関数 (sqとcoreを結合)
+const getDisplayName = (w: any) => {
+    let name = w.name;
+    if (w.sq && w.sq !== '-') name += ` ${w.sq}sq`;
+    if (w.core && w.core !== '-') name += ` ${w.core}C`;
+    return name;
+};
 
-  useEffect(() => {
-      if (data?.reservations) { setLocalReservations(data.reservations); }
-  }, [data?.reservations]);
+export const AdminDashboard = ({ data }: { data: MarketData | null }) => {
+  const marketPrice = data?.market?.copper?.price || 1450;
+  const history = data?.history || [];
+  const currentPrice = history.length > 0 ? history[history.length - 1].value : marketPrice;
+  const prevPrice = history.length > 1 ? history[history.length - 2].value : currentPrice;
+  const diff = currentPrice - prevPrice;
 
-  const handleNavigate = (tab: any, id?: string) => {
-      if (tab === 'POS' && id) setEditingResId(id); else setEditingResId(null);
-      if (tab === 'CLIENT_DETAIL' && id) setSelectedClientName(id); else setSelectedClientName(null);
-      setAdminTab(tab);
-      setIsMobileMenuOpen(false);
+  // LME銅相場等の情報
+  const usdjpy = data?.market?.usdjpy || 150.00;
+  const lmeCopper = data?.market?.lme_copper_usd || 9000;
+  const jpyCopperPrice = Math.floor((lmeCopper * usdjpy) / 1000);
+
+  const reservations = data?.reservations || [];
+  const activeReservations = reservations.filter(r => r.status === 'RESERVED' || r.status === 'PROCESSING');
+  const todayCount = activeReservations.length;
+  const todayWeight = activeReservations.reduce((sum, r) => {
+      let weight = 0;
+      try {
+          const items = typeof r.items === 'string' ? JSON.parse(r.items) : r.items;
+          weight = items.reduce((s:number, i:any) => s + (Number(i.weight)||0), 0);
+      } catch(e){}
+      return sum + weight;
+  }, 0);
+
+  // 予算関連
+  const targetVolume = Number(data?.config?.target_monthly) || 30000; 
+  const currentVolume = 12450; 
+  const progress = Math.min(100, Math.floor((currentVolume / targetVolume) * 100));
+
+  const formatTime = (dateStr: string) => {
+      try {
+          const d = new Date(dateStr);
+          return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+      } catch(e) { return '-'; }
   };
 
-  const handlePosSuccess = () => { setEditingResId(null); setAdminTab('OPERATIONS'); window.location.reload(); };
-
-  // メニュー定義
-  const MENU_ITEMS = [
-      { id: 'HOME', icon: Icons.Home, label: 'Dashboard' },
-      { id: 'OPERATIONS', icon: Icons.Kanban, label: 'Operations' },
-      { id: 'POS', icon: Icons.Calc, label: 'POS Terminal' },
-      { id: 'PRODUCTION', icon: Icons.Factory, label: 'Production' },
-      { id: 'SALES', icon: Icons.Briefcase, label: 'CRM / Sales' },
-      { id: 'COMPETITOR', icon: Icons.Radar, label: 'Market Radar' },
-      { id: 'DATABASE', icon: Icons.Database, label: 'Database' },
-  ];
-
   return (
-    <div className="h-screen w-full bg-[#FFFFFF] text-[#111111] font-sans flex flex-col md:flex-row overflow-hidden">
-      
-      {/* 📱 スマホ用トップヘッダー */}
-      <div className="md:hidden bg-[#FAFAFA] border-b border-[#E5E7EB] p-4 flex justify-between items-center z-40 flex-shrink-0">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={()=>setView('LP')}>
-              <div className="w-4 h-4 bg-[#D32F2F]"></div>
-              <h1 className="text-lg font-black tracking-tight font-serif">FACTORY OS</h1>
+    <div className="flex flex-col h-full animate-in fade-in duration-500 max-w-7xl mx-auto w-full text-gray-800 pb-12">
+      <header className="mb-6 flex-shrink-0 flex flex-col md:flex-row md:justify-between md:items-end gap-4 border-b border-gray-200 pb-4">
+        <div>
+            <h2 className="text-2xl font-black text-gray-900 flex items-center gap-2 font-serif">
+                <span className="w-1.5 h-6 bg-[#D32F2F]"></span>
+                ダッシュボード
+            </h2>
+            <p className="text-xs text-gray-500 mt-1 font-mono tracking-wider ml-3">EXECUTIVE SUMMARY</p>
+        </div>
+        <div className="text-right">
+            <p className="text-xs font-bold text-gray-400 font-mono">{new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}</p>
+        </div>
+      </header>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white p-5 rounded-sm border border-gray-200 shadow-sm flex flex-col relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 h-full bg-[#D32F2F]"></div>
+              <p className="text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest flex items-center gap-1"><Icons.Money /> 国内銅建値 (JX)</p>
+              <div className="flex items-end gap-2 mt-auto">
+                  <span className="text-3xl font-black font-mono text-gray-900">¥{currentPrice.toLocaleString()}</span>
+                  <span className="text-sm text-gray-500 mb-1">/kg</span>
+              </div>
+              <div className="mt-2 text-xs font-bold flex items-center gap-1">
+                  {diff > 0 ? <><Icons.TrendingUp /><span className="text-red-500">+{diff}</span></> : diff < 0 ? <><Icons.TrendingDown /><span className="text-blue-500">{diff}</span></> : <><Icons.Minus /><span className="text-gray-400">±0</span></>}
+              </div>
           </div>
-          <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-gray-600 hover:bg-gray-200 rounded transition-colors">
-              {isMobileMenuOpen ? <Icons.X /> : <Icons.Menu />}
-          </button>
+
+          <div className="bg-white p-5 rounded-sm border border-gray-200 shadow-sm flex flex-col">
+              <p className="text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest flex items-center gap-1"><Icons.Money /> LME銅 3M</p>
+              <div className="flex items-end gap-2 mt-auto">
+                  <span className="text-3xl font-black font-mono text-gray-900">${lmeCopper.toLocaleString()}</span>
+                  <span className="text-sm text-gray-500 mb-1">/t</span>
+              </div>
+              <div className="mt-2 text-xs font-mono text-gray-500 bg-gray-50 px-2 py-1 inline-block rounded-sm self-start">
+                  換算: 約¥{jpyCopperPrice.toLocaleString()}/kg
+              </div>
+          </div>
+
+          <div className="bg-white p-5 rounded-sm border border-gray-200 shadow-sm flex flex-col">
+              <p className="text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest flex items-center gap-1"><Icons.User /> 本日の予約・持込</p>
+              <div className="flex items-end gap-2 mt-auto">
+                  <span className="text-3xl font-black font-mono text-gray-900">{todayCount}</span>
+                  <span className="text-sm text-gray-500 mb-1">件</span>
+              </div>
+          </div>
+
+          <div className="bg-white p-5 rounded-sm border border-gray-200 shadow-sm flex flex-col">
+              <p className="text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest flex items-center gap-1"><Icons.Truck /> 本日持込予定量</p>
+              <div className="flex items-end gap-2 mt-auto">
+                  <span className="text-3xl font-black font-mono text-[#D32F2F]">{todayWeight.toLocaleString()}</span>
+                  <span className="text-sm text-gray-500 mb-1">kg</span>
+              </div>
+          </div>
       </div>
 
-      {isMobileMenuOpen && (
-          <div className="md:hidden fixed inset-0 bg-white/80 z-30 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)}></div>
-      )}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Content Area */}
+          <div className="lg:col-span-2 space-y-6">
+              
+              <div className="bg-white rounded-sm border border-gray-200 shadow-sm p-6">
+                  <div className="flex justify-between items-center mb-6">
+                      <h3 className="font-bold text-gray-900">月間目標進捗 (加工処理量)</h3>
+                      <span className="text-xs font-bold text-gray-500 font-mono">{progress}%</span>
+                  </div>
+                  <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden mb-2">
+                      <div className="h-full bg-gradient-to-r from-gray-800 to-black transition-all duration-1000" style={{ width: `${progress}%` }}></div>
+                  </div>
+                  <div className="flex justify-between text-xs text-gray-400 font-mono">
+                      <span>{currentVolume.toLocaleString()} kg</span>
+                      <span>Target: {targetVolume.toLocaleString()} kg</span>
+                  </div>
+              </div>
 
-      {/* 💻 サイドバー (Stripe / Linear 風) */}
-      <aside className={`
-          ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-          fixed md:relative top-[61px] md:top-0 left-0 h-[calc(100vh-61px)] md:h-full w-60
-          bg-[#FAFAFA] border-r border-[#E5E7EB] flex flex-col z-40 flex-shrink-0
-          transition-transform duration-300 ease-in-out
-      `}>
-        <div className="hidden md:flex p-6 items-center gap-3 cursor-pointer" onClick={()=>setView('LP')}>
-            <div className="w-5 h-5 bg-[#D32F2F]"></div>
-            <h1 className="text-xl font-black tracking-tighter font-serif">FACTORY OS</h1>
-        </div>
-        
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-            <p className="px-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 mt-4">Menu</p>
-            {MENU_ITEMS.map((item) => {
-                const isActive = adminTab === item.id || (item.id === 'HOME' && adminTab === 'CLIENT_DETAIL');
-                return (
-                    <button 
-                        key={item.id}
-                        onClick={() => handleNavigate(item.id)} 
-                        className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-3 relative ${isActive ? 'text-gray-900 bg-white shadow-sm border border-gray-200' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'}`}
-                    >
-                        {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-4 bg-[#D32F2F] rounded-r-md"></div>}
-                        <item.icon />
-                        {item.label}
-                    </button>
-                )
-            })}
-        </nav>
-        
-        {onLogout && (
-            <div className="p-4 border-t border-[#E5E7EB] flex-shrink-0">
-                <button onClick={onLogout} className="w-full text-left px-3 py-2 rounded-md text-sm font-medium text-gray-500 hover:text-[#D32F2F] hover:bg-red-50 transition flex items-center gap-3">
-                    <Icons.Logout /> Logout
-                </button>
-            </div>
-        )}
-      </aside>
+              <div className="bg-white rounded-sm border border-gray-200 shadow-sm overflow-hidden">
+                  <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                      <h3 className="font-bold text-sm text-gray-900">本日の買取価格 (主要品目)</h3>
+                  </div>
+                  <div className="p-0 overflow-x-auto">
+                      <table className="w-full text-left">
+                          <thead className="bg-white border-b border-gray-100 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                              <tr>
+                                  <th className="p-3 pl-4">品名</th>
+                                  <th className="p-3 text-right">歩留まり</th>
+                                  <th className="p-3 pr-4 text-right">買取単価</th>
+                              </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-50 text-sm">
+                              {data?.wires?.slice(0, 5).map((w: any) => (
+                                  <tr key={w.id} className="hover:bg-gray-50 transition">
+                                      {/* ★ 修正: sqと芯数を結合した名前で表示 */}
+                                      <td className="p-3 pl-4 font-bold text-gray-800">{getDisplayName(w)}</td>
+                                      <td className="p-3 text-right text-gray-500 font-mono">{w.ratio}%</td>
+                                      <td className="p-3 pr-4 text-right font-black font-mono text-[#D32F2F]">¥{Math.floor(marketPrice * (w.ratio/100) * 0.85).toLocaleString()}</td>
+                                  </tr>
+                              ))}
+                              {data?.castings?.slice(0, 3).map((c: any) => {
+                                  let base = marketPrice;
+                                  if(c.type === 'BRASS') base = data?.market?.brass?.price || 980;
+                                  return (
+                                      <tr key={c.id} className="hover:bg-gray-50 transition">
+                                          <td className="p-3 pl-4 font-bold text-gray-800">{c.name}</td>
+                                          <td className="p-3 text-right text-gray-500 font-mono">{c.ratio}%</td>
+                                          <td className="p-3 pr-4 text-right font-black font-mono text-gray-900">¥{Math.floor(base * (c.ratio/100) * 0.90).toLocaleString()}</td>
+                                      </tr>
+                                  );
+                              })}
+                          </tbody>
+                      </table>
+                  </div>
+              </div>
+          </div>
 
-      {/* 📊 コンテンツ領域 (背景は完全な白、余白は広めに) */}
-      <main className="flex-1 overflow-y-auto bg-[#FFFFFF] p-4 md:p-8 lg:p-10 flex flex-col relative w-full selection:bg-red-100 selection:text-red-900">
-         {adminTab === 'HOME' && <AdminHome data={data} localReservations={localReservations} onNavigate={handleNavigate} />}
-         {adminTab === 'OPERATIONS' && <AdminKanban data={data} localReservations={localReservations} setLocalReservations={setLocalReservations} onOpenPos={(resId) => handleNavigate('POS', resId)} onAddClick={() => handleNavigate('POS')} />}
-         {adminTab === 'POS' && <AdminPos data={data} editingResId={editingResId} localReservations={localReservations} onSuccess={handlePosSuccess} onClear={() => setEditingResId(null)} />}
-         {adminTab === 'PRODUCTION' && <AdminProduction data={data} localReservations={localReservations} />}
-         {adminTab === 'COMPETITOR' && <AdminCompetitor data={data} />}
-         {adminTab === 'SALES' && <AdminSales data={data} />}
-         {adminTab === 'DATABASE' && <AdminDatabase data={data} />}
-         {adminTab === 'CLIENT_DETAIL' && selectedClientName && <AdminClientDetail data={data} clientName={selectedClientName} onBack={() => handleNavigate('HOME')} />}
-      </main>
+          {/* Sidebar Area */}
+          <div className="space-y-6">
+              <div className="bg-white rounded-sm border border-gray-200 shadow-sm overflow-hidden flex flex-col h-full max-h-[500px]">
+                  <div className="p-4 border-b border-gray-200 bg-[#111] text-white flex justify-between items-center">
+                      <h3 className="font-bold text-sm flex items-center gap-2">
+                          <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                          </span>
+                          本日の予約・搬入予定
+                      </h3>
+                      <span className="text-xs bg-gray-800 px-2 py-0.5 rounded-full font-mono">{activeReservations.length}</span>
+                  </div>
+                  <div className="p-0 overflow-y-auto flex-1">
+                      {activeReservations.length === 0 ? (
+                          <div className="p-8 text-center text-gray-400 text-sm font-bold">本日の予定はありません</div>
+                      ) : (
+                          <ul className="divide-y divide-gray-100">
+                              {activeReservations.map((res: any) => {
+                                  let w = 0;
+                                  let p = "品目不明";
+                                  try {
+                                      const items = typeof res.items === 'string' ? JSON.parse(res.items) : res.items;
+                                      if(items.length > 0) {
+                                          w = items.reduce((s:number, i:any) => s + (Number(i.weight)||0), 0);
+                                          p = items[0].product || items[0].productName;
+                                          if(items.length > 1) p += " 他";
+                                      }
+                                  } catch(e){}
+                                  return (
+                                      <li key={res.id} className="p-4 hover:bg-gray-50 transition cursor-pointer">
+                                          <div className="flex justify-between items-start mb-1">
+                                              <span className="text-xs font-bold text-gray-900">{formatTime(res.visitDate)}</span>
+                                              <span className="text-[10px] font-mono text-gray-400">{res.id}</span>
+                                          </div>
+                                          <p className="font-bold text-sm text-[#D32F2F] mb-1">{res.memberName}</p>
+                                          <p className="text-xs text-gray-600">{p} / <span className="font-mono font-bold text-gray-900">{w}kg</span></p>
+                                      </li>
+                                  )
+                              })}
+                          </ul>
+                      )}
+                  </div>
+              </div>
+          </div>
+      </div>
     </div>
   );
 };
