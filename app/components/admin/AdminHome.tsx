@@ -2,9 +2,9 @@
 import React, { useMemo } from 'react';
 
 const Icons = {
-    TrendingUp: () => <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>,
-    TrendingDown: () => <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>,
-    Minus: () => <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 12H4" /></svg>,
+    TrendingUp: () => <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>,
+    TrendingDown: () => <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>,
+    Minus: () => <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 12H4" /></svg>,
     Truck: () => <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>,
     User: () => <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
     Money: () => <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
@@ -23,16 +23,31 @@ const getDisplayName = (w: any) => {
 };
 
 export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, localReservations: any[], onNavigate: any }) => {
-    // 1. 相場データの抽出
-    const marketPrice = Number(data?.market?.copper?.price) || 1450;
-    const history = data?.history || [];
-    const currentPrice = history.length > 0 ? Number(history[history.length - 1].value) : marketPrice;
-    const prevPrice = history.length > 1 ? Number(history[history.length - 2].value) : currentPrice;
-    const diff = currentPrice - prevPrice;
+    // 1. 全相場データの抽出
+    const copperPrice = Number(data?.config?.market_price) || 1450;
+    const brassPrice = Number(data?.config?.brass_price) || 980;
+    const zincPrice = Number(data?.config?.zinc_price) || 450;
+    const leadPrice = Number(data?.config?.lead_price) || 380;
+    const tinPrice = Number(data?.config?.tin_price) || 8900;
 
-    const usdjpy = Number(data?.market?.usdjpy) || 150.00;
-    const lmeCopper = Number(data?.market?.lme_copper_usd) || 9000;
+    const usdjpy = Number(data?.config?.usdjpy) || 150.00;
+    const lmeCopper = Number(data?.config?.lme_copper_usd) || 9000;
     const jpyCopperPrice = Math.floor((lmeCopper * usdjpy) / 1000);
+
+    const history = data?.history || [];
+    const currentPrice = history.length > 0 ? Number(history[history.length - 1].value) : copperPrice;
+    const prevPrice = history.length > 1 ? Number(history[history.length - 2].value) : currentPrice;
+    const copperDiff = currentPrice - prevPrice;
+
+    // 相場表示用配列
+    const marketItems = [
+        { label: '銅建値 (JX)', price: copperPrice, unit: '円/kg', color: 'border-[#D32F2F]', diff: copperDiff },
+        { label: '真鍮建値 (日伸)', price: brassPrice, unit: '円/kg', color: 'border-yellow-500' },
+        { label: '亜鉛建値 (三井)', price: zincPrice, unit: '円/kg', color: 'border-gray-400' },
+        { label: '鉛建値 (三菱)', price: leadPrice, unit: '円/kg', color: 'border-slate-500' },
+        { label: '錫建値 (三菱)', price: tinPrice, unit: '円/kg', color: 'border-zinc-400' },
+        { label: 'LME銅 3M', price: lmeCopper, unit: 'USD/t', color: 'border-blue-500', sub: `換算: 約¥${jpyCopperPrice}/kg` },
+    ];
 
     // 2. 本日の稼働状況
     const activeReservations = localReservations.filter(r => r.status === 'RESERVED' || r.status === 'PROCESSING');
@@ -46,26 +61,39 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
         return sum + weight;
     }, 0);
 
-    // 3. 在庫評価損を防ぐためのリアルタイム資産評価 (キャッシュフロー管理)
+    // 3. 在庫評価損を防ぐためのリアルタイム資産評価
     const { totalCopperStock, inventoryValue } = useMemo(() => {
         const productions = data?.productions || [];
-        // 加工済みピカ線の総量 (仮の計算ロジック)
         const producedCopper = productions.reduce((sum: number, p: any) => sum + (Number(p.outputCopper) || 0), 0);
-        // 未加工スクラップの推定銅量
-        const unprocessedCopper = 3500; // ※本来はreservationsのCOMPLETEDから未加工分を算出
+        const unprocessedCopper = 3500; // ※未加工スクラップの推定銅量
         const total = producedCopper + unprocessedCopper;
         return {
             totalCopperStock: total,
-            inventoryValue: total * currentPrice // リアルタイム相場での評価額
+            inventoryValue: total * currentPrice 
         };
     }, [data?.productions, currentPrice]);
 
-    // 4. 歩留まり予実差（工場パフォーマンス）
-    const yieldStats = useMemo(() => {
+    // 4. 今月のナゲット生産実績 ＆ 歩留まり予実差
+    const { monthlyProducedCopper, monthlyAvgYield, yieldStats } = useMemo(() => {
         const productions = data?.productions || [];
-        if (productions.length === 0) return { diff: 0, isPositive: true };
+        if (productions.length === 0) return { monthlyProducedCopper: 0, monthlyAvgYield: 0, yieldStats: { diff: 0, isPositive: true } };
         
-        // 直近10件の平均を算出
+        // 今月のデータを抽出
+        const currentMonth = new Date().getMonth();
+        const currentYear = new Date().getFullYear();
+        const thisMonthProds = productions.filter((p: any) => {
+            try {
+                const d = new Date(p.date);
+                return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+            } catch(e) { return false; }
+        });
+
+        const mCopper = thisMonthProds.reduce((sum, p) => sum + (Number(p.outputCopper) || 0), 0);
+        const mYield = thisMonthProds.length > 0 
+            ? thisMonthProds.reduce((sum, p) => sum + (Number(p.actualRatio) || 0), 0) / thisMonthProds.length 
+            : 0;
+
+        // 予実差 (直近10件)
         const recent = productions.slice(-10);
         let diffSum = 0;
         let count = 0;
@@ -79,7 +107,12 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
             }
         });
         const avgDiff = count > 0 ? (diffSum / count) : 0;
-        return { diff: avgDiff, isPositive: avgDiff >= 0 };
+
+        return { 
+            monthlyProducedCopper: mCopper, 
+            monthlyAvgYield: mYield, 
+            yieldStats: { diff: avgDiff, isPositive: avgDiff >= 0 } 
+        };
     }, [data?.productions, data?.wires]);
 
     // 5. AIプライシング 勝敗サマリー
@@ -93,7 +126,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
         
         try {
             const rules = JSON.parse(rulesStr);
-            // 最新の競合データを抽出 (同一企業で最新日時のもの)
             const latestComps: Record<string, any> = {};
             comps.forEach((c: any) => {
                 if (!latestComps[c.name] || new Date(c.date) > new Date(latestComps[c.name].date)) {
@@ -105,7 +137,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
             Object.keys(rules).forEach(item => {
                 const rule = rules[item];
                 let basePrice = currentPrice;
-                if (rule.base === 'brass') basePrice = Number(data?.market?.brass?.price) || 980;
+                if (rule.base === 'brass') basePrice = brassPrice;
                 const myPrice = Math.floor(basePrice * (Number(rule.ratio) / 100)) + Number(rule.offset);
 
                 const compPrices = compList.map(c => {
@@ -121,7 +153,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
             });
         } catch(e) {}
         return { win, lose, draw };
-    }, [data?.competitorPrices, data?.config?.pricing_rules, currentPrice, data?.market?.brass?.price]);
+    }, [data?.competitorPrices, data?.config?.pricing_rules, currentPrice, brassPrice]);
 
     const formatTime = (dateStr: string) => {
         try {
@@ -131,8 +163,10 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
     };
 
     return (
-        <div className="flex flex-col h-full animate-in fade-in duration-500 w-full text-gray-800 pb-12">
-            <header className="mb-6 flex-shrink-0 flex flex-col md:flex-row md:justify-between md:items-end gap-4 border-b border-gray-200 pb-4">
+        // スマホでの下部見切れを防ぐため、pb-32 にパディングを増加
+        <div className="flex flex-col h-full animate-in fade-in duration-500 w-full text-gray-800 pb-32 md:pb-12">
+            
+            <header className="mb-4 flex-shrink-0 flex flex-col md:flex-row md:justify-between md:items-end gap-4 border-b border-gray-200 pb-4">
                 <div>
                     <h2 className="text-2xl font-black text-gray-900 flex items-center gap-2 font-serif">
                         <span className="w-1.5 h-6 bg-[#D32F2F]"></span>
@@ -147,26 +181,36 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                 </div>
             </header>
 
-            {/* 行1: 最重要 KPI Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <div className="bg-white p-5 rounded-sm border border-gray-200 shadow-sm flex flex-col relative overflow-hidden group">
-                    <div className="absolute top-0 left-0 w-1 h-full bg-[#D32F2F]"></div>
-                    <p className="text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest flex items-center gap-1"><Icons.Money /> 国内銅建値 (JX)</p>
-                    <div className="flex items-end gap-2 mt-auto">
-                        <span className="text-3xl font-black font-mono text-gray-900">¥{currentPrice.toLocaleString()}</span>
-                        <span className="text-sm text-gray-500 mb-1">/kg</span>
+            {/* 行1: 全相場ティッカー（横スクロール） */}
+            <div className="flex gap-3 overflow-x-auto no-scrollbar mb-6 pb-2">
+                {marketItems.map((m, i) => (
+                    <div key={i} className={`bg-white border-l-4 ${m.color} border-y border-r border-gray-200 rounded-sm p-3 shadow-sm min-w-[140px] flex-shrink-0 flex flex-col justify-between`}>
+                        <p className="text-[10px] font-bold text-gray-500 mb-1">{m.label}</p>
+                        <div className="flex items-baseline gap-1">
+                            <span className="text-xl font-black font-mono text-gray-900">{m.price.toLocaleString()}</span>
+                            <span className="text-[10px] text-gray-500">{m.unit}</span>
+                        </div>
+                        {m.diff !== undefined ? (
+                            <div className="mt-1 text-[10px] font-bold flex items-center gap-0.5">
+                                {m.diff > 0 ? <><Icons.TrendingUp /><span className="text-red-500">+{m.diff}</span></> : m.diff < 0 ? <><Icons.TrendingDown /><span className="text-blue-500">{m.diff}</span></> : <><Icons.Minus /><span className="text-gray-400">±0</span></>}
+                            </div>
+                        ) : m.sub ? (
+                            <div className="mt-1 text-[9px] text-gray-400 font-mono">{m.sub}</div>
+                        ) : (
+                            <div className="mt-1 h-3"></div>
+                        )}
                     </div>
-                    <div className="mt-2 text-xs font-bold flex items-center gap-1">
-                        {diff > 0 ? <><Icons.TrendingUp /><span className="text-red-500">+{diff}</span></> : diff < 0 ? <><Icons.TrendingDown /><span className="text-blue-500">{diff}</span></> : <><Icons.Minus /><span className="text-gray-400">±0</span></>}
-                    </div>
-                </div>
+                ))}
+            </div>
 
+            {/* 行2: 最重要 KPI Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                 <div className="bg-[#111] text-white p-5 rounded-sm shadow-md flex flex-col relative overflow-hidden">
                     <div className="absolute right-0 top-0 opacity-10 transform scale-150 -translate-y-4"><Icons.Scale /></div>
                     <p className="text-[10px] font-bold text-gray-400 mb-1 uppercase tracking-widest flex items-center gap-1 relative z-10"><Icons.Scale /> 推定総在庫評価額</p>
                     <div className="flex items-end gap-1 mt-auto relative z-10">
                         <span className="text-lg font-light text-gray-400 mb-1">¥</span>
-                        <span className="text-3xl font-black font-mono tracking-tighter text-white">{(inventoryValue).toLocaleString()}</span>
+                        <span className="text-4xl font-black font-mono tracking-tighter text-white">{(inventoryValue).toLocaleString()}</span>
                     </div>
                     <div className="mt-2 text-[10px] text-gray-400 font-mono relative z-10 flex justify-between">
                         <span>銅換算: {totalCopperStock.toLocaleString()} kg</span>
@@ -176,7 +220,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                 <div className="bg-white p-5 rounded-sm border border-gray-200 shadow-sm flex flex-col">
                     <p className="text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest flex items-center gap-1"><Icons.User /> 本日の予約・来客</p>
                     <div className="flex items-end gap-2 mt-auto">
-                        <span className="text-3xl font-black font-mono text-gray-900">{todayCount}</span>
+                        <span className="text-4xl font-black font-mono text-gray-900">{todayCount}</span>
                         <span className="text-sm text-gray-500 mb-1">件</span>
                     </div>
                 </div>
@@ -184,18 +228,19 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                 <div className="bg-white p-5 rounded-sm border border-gray-200 shadow-sm flex flex-col">
                     <p className="text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest flex items-center gap-1"><Icons.Truck /> 本日持込予定量</p>
                     <div className="flex items-end gap-2 mt-auto">
-                        <span className="text-3xl font-black font-mono text-[#D32F2F]">{todayWeight.toLocaleString()}</span>
+                        <span className="text-4xl font-black font-mono text-[#D32F2F]">{todayWeight.toLocaleString()}</span>
                         <span className="text-sm text-gray-500 mb-1">kg</span>
                     </div>
                 </div>
             </div>
 
-            {/* 行2: メインコンテンツ */}
+            {/* 行3: メインコンテンツ */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
                 {/* 左側2カラム: AI・工場状況 */}
                 <div className="lg:col-span-2 space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        
                         {/* AIプライシング勝敗 */}
                         <div className="bg-white rounded-sm border border-gray-200 shadow-sm p-6 flex flex-col cursor-pointer hover:border-gray-400 transition" onClick={() => onNavigate('COMPETITOR')}>
                             <div className="flex justify-between items-start mb-4">
@@ -205,7 +250,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                             <div className="flex-1 flex flex-col justify-center">
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="text-xs text-gray-500 font-bold">自社優勢 (Win)</span>
-                                    <span className="text-2xl font-black text-blue-600 font-mono">{pricingStats.win}</span>
+                                    <span className="text-3xl font-black text-blue-600 font-mono">{pricingStats.win}</span>
                                 </div>
                                 <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden mb-4">
                                     <div className="h-full bg-blue-500" style={{ width: `${(pricingStats.win / Math.max(1, pricingStats.win + pricingStats.lose + pricingStats.draw)) * 100}%` }}></div>
@@ -217,25 +262,42 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                             </div>
                         </div>
 
-                        {/* 歩留まり予実差 */}
+                        {/* 今月のナゲット生産実績 */}
                         <div className="bg-white rounded-sm border border-gray-200 shadow-sm p-6 flex flex-col cursor-pointer hover:border-gray-400 transition" onClick={() => onNavigate('PRODUCTION')}>
                             <div className="flex justify-between items-start mb-4">
-                                <h3 className="font-bold text-gray-900 flex items-center gap-2"><Icons.Factory /> 直近歩留まり実績</h3>
+                                <h3 className="font-bold text-gray-900 flex items-center gap-2"><Icons.Factory /> 今月の生産実績</h3>
                                 <Icons.ArrowRight />
                             </div>
-                            <div className="flex-1 flex flex-col justify-center items-center text-center">
-                                <p className="text-[10px] text-gray-500 tracking-widest uppercase mb-2">マスター比 乖離幅 (直近10件)</p>
-                                <div className="flex items-baseline justify-center gap-1">
-                                    <span className={`text-5xl font-black font-mono tracking-tighter ${yieldStats.isPositive ? 'text-green-600' : 'text-[#D32F2F]'}`}>
-                                        {yieldStats.isPositive ? '+' : ''}{yieldStats.diff.toFixed(1)}
-                                    </span>
-                                    <span className="text-lg text-gray-500 font-bold">%</span>
+                            <div className="flex-1 flex flex-col justify-center gap-4">
+                                <div className="flex items-center justify-between bg-gray-50 p-3 rounded border border-gray-100">
+                                    <div>
+                                        <p className="text-[10px] text-gray-500 font-bold">月間 生産量</p>
+                                        <div className="flex items-baseline gap-1">
+                                            <span className="text-xl font-black font-mono text-[#D32F2F]">{monthlyProducedCopper.toLocaleString()}</span>
+                                            <span className="text-xs text-gray-500">kg</span>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-[10px] text-gray-500 font-bold">平均 歩留まり</p>
+                                        <div className="flex items-baseline gap-1 justify-end">
+                                            <span className="text-xl font-black font-mono text-gray-900">{monthlyAvgYield.toFixed(1)}</span>
+                                            <span className="text-xs text-gray-500">%</span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <p className={`text-xs mt-3 font-bold ${yieldStats.isPositive ? 'text-green-700 bg-green-50' : 'text-red-700 bg-red-50'} px-3 py-1 rounded-sm`}>
-                                    {yieldStats.isPositive ? '利益上振れ傾向（良好）' : 'ダスト過多・機械要調整'}
-                                </p>
+
+                                <div className="text-center mt-1">
+                                    <p className="text-[10px] text-gray-500 tracking-widest uppercase mb-1">マスター比 乖離幅 (直近10件)</p>
+                                    <div className="flex items-baseline justify-center gap-1">
+                                        <span className={`text-2xl font-black font-mono tracking-tighter ${yieldStats.isPositive ? 'text-green-600' : 'text-[#D32F2F]'}`}>
+                                            {yieldStats.isPositive ? '+' : ''}{yieldStats.diff.toFixed(1)}
+                                        </span>
+                                        <span className="text-sm text-gray-500 font-bold">%</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+
                     </div>
 
                     {/* クイック価格表 */}
@@ -258,7 +320,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                                         <tr key={w.id} className="hover:bg-gray-50 transition cursor-pointer" onClick={() => onNavigate('DATABASE')}>
                                             <td className="p-3 pl-4 font-bold text-gray-800">{getDisplayName(w)}</td>
                                             <td className="p-3 text-right text-gray-500 font-mono">{w.ratio}%</td>
-                                            <td className="p-3 pr-4 text-right font-black font-mono text-[#D32F2F]">¥{Math.floor(currentPrice * (w.ratio/100) * 0.85).toLocaleString()}</td>
+                                            <td className="p-3 pr-4 text-right font-black font-mono text-[#D32F2F]">¥{Math.floor(copperPrice * (w.ratio/100) * 0.85).toLocaleString()}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -268,7 +330,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                 </div>
 
                 {/* 右側カラム: タイムライン */}
-                <div className="space-y-6">
+                <div className="space-y-6 h-full">
                     <div className="bg-white rounded-sm border border-gray-200 shadow-sm overflow-hidden flex flex-col h-full max-h-[600px]">
                         <div className="p-4 border-b border-gray-200 bg-[#111] text-white flex justify-between items-center cursor-pointer hover:bg-black transition" onClick={() => onNavigate('OPERATIONS')}>
                             <h3 className="font-bold text-sm flex items-center gap-2">
