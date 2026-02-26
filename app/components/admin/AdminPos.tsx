@@ -13,7 +13,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   const [clientName, setClientName] = useState('');
   const [selectedClientId, setSelectedClientId] = useState('GUEST');
   const [showSuggest, setShowSuggest] = useState(false);
-  const [items, setItems] = useState<any[]>([]);
+  const [items, setItems] = useState<any[]>([{ product: '', weight: '', price: '' }]);
   const [memo, setMemo] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -33,7 +33,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           if (typeof parsed === 'string') { try { parsed = JSON.parse(parsed); } catch(e) {} }
           if (typeof parsed === 'string') { try { parsed = JSON.parse(parsed); } catch(e) {} }
           if (Array.isArray(parsed)) {
-            const formatted = parsed.map(it => ({ product: it.product || it.productName || '', weight: it.weight || '', price: it.price || it.unitPrice || '' }));
+            const formatted = parsed.map((it: any) => ({ product: it.product || it.productName || '', weight: it.weight || '', price: it.price || it.unitPrice || '' }));
             setItems(formatted.length > 0 ? formatted : [{ product: '', weight: '', price: '' }]);
           } else { setItems([{ product: '', weight: '', price: '' }]); }
         } catch(e) { setItems([{ product: '', weight: '', price: '' }]); }
@@ -48,6 +48,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       setSelectedClientId('GUEST');
       setShowSuggest(true);
   };
+
   const handleSelectClient = (client: any) => {
       setClientName(client.name);
       setSelectedClientId(client.id);
@@ -90,21 +91,17 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
     try {
       const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const result = await res.json();
-      if (result.status === 'success') { alert('登録完了'); onSuccess(); } else { alert('エラー: ' + result.message); }
+      if (result.status === 'success') { alert('登録完了'); onSuccess(); window.location.reload(); } else { alert('エラー: ' + result.message); }
     } catch(e) { alert('通信エラーが発生しました'); }
     setIsSubmitting(false);
   };
 
   const inputClass = "w-full bg-white border border-gray-300 p-2.5 rounded-sm text-lg font-bold text-gray-900 outline-none focus:border-[#D32F2F] focus:ring-1 focus:ring-[#D32F2F] transition font-mono";
 
-  // ★ 修正ポイント: 空欄時は全件（最大30件）表示し、文字入力で絞り込む
-  const filteredClients = clients.filter((c: any) => {
-      if (!c || !c.name) return false;
-      if (!clientName) return true; // 空欄の時はすべて通す
-      const targetName = String(c.name).toLowerCase();
-      const searchWord = String(clientName).toLowerCase().trim();
-      return targetName.includes(searchWord);
-  }).slice(0, 30); // 多すぎると画面が重くなるので30件でカット
+  // ★ 検索サジェスト用データを安全にフィルタリング
+  const searchHitClients = clients
+      .filter((c:any) => c.name && c.name.toLowerCase().includes(clientName.toLowerCase()))
+      .slice(0, 10); // パフォーマンス確保のため最大10件
 
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-500 max-w-6xl mx-auto w-full text-gray-800">
@@ -125,8 +122,9 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
 
       <div className="bg-white border border-gray-200 shadow-sm flex flex-col flex-1 rounded-sm overflow-hidden">
           {/* 顧客情報エリア */}
-          <div className="p-5 border-b border-gray-200 bg-gray-50 flex flex-col md:flex-row gap-6 z-20">
-              <div className="flex-1 relative">
+          <div className="p-5 border-b border-gray-200 bg-gray-50 flex flex-col md:flex-row gap-6">
+              {/* ★ Z-indexのスタッキングコンテキストを修正し、最前面に出るように z-50 を追加 */}
+              <div className="flex-1 relative z-50">
                   <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1">お客様 (業者名)</label>
                   <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Icons.Search /></div>
@@ -139,17 +137,21 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                           onFocus={()=>setShowSuggest(true)} 
                           onBlur={()=>setTimeout(()=>setShowSuggest(false), 200)} 
                       />
-                      {showSuggest && filteredClients.length > 0 && (
-                          <ul className="absolute z-50 w-full bg-white border border-gray-300 mt-1 shadow-xl max-h-60 overflow-y-auto rounded-sm">
-                              {filteredClients.map((c:any) => (
+                      {showSuggest && clientName && searchHitClients.length > 0 && (
+                          <ul className="absolute z-50 w-full bg-white border border-gray-300 mt-1 shadow-2xl max-h-60 overflow-y-auto rounded-sm">
+                              {searchHitClients.map((c:any) => (
                                   <li key={c.id} onMouseDown={() => handleSelectClient(c)} className="p-3 hover:bg-red-50 cursor-pointer border-b border-gray-100 last:border-0 text-sm transition-colors">
                                       <div className="font-bold text-gray-900">{c.name}</div>
-                                      <div className="text-xs text-gray-500 font-mono">{c.phone || '連絡先未登録'}</div>
+                                      <div className="text-xs text-gray-500 font-mono mt-0.5">{c.phone || '電話番号未登録'}</div>
                                   </li>
                               ))}
                           </ul>
                       )}
                   </div>
+                  {/* 新規顧客向けのアラート表示（任意） */}
+                  {clientName && selectedClientId === 'GUEST' && !showSuggest && (
+                      <p className="absolute -bottom-5 left-0 text-[10px] font-bold text-[#D32F2F]">※ 新規顧客（GUEST）として処理されます</p>
+                  )}
               </div>
               <div className="md:w-1/3 w-full">
                   <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1">引継ぎメモ</label>
@@ -158,7 +160,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           </div>
 
           {/* 明細エリア */}
-          <div className="p-5 flex-1 overflow-y-auto bg-white z-10">
+          <div className="p-5 flex-1 overflow-y-auto bg-white">
               <div className="hidden md:flex text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 px-2">
                   <div className="flex-1">持込品目</div>
                   <div className="w-36 text-right">重量 (kg)</div>
@@ -169,7 +171,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
               
               <div className="space-y-2">
                   {items.map((item, idx) => (
-                      <div key={idx} className="flex flex-col md:flex-row gap-2 md:items-center bg-gray-50 p-2 rounded-sm border border-gray-200">
+                      <div key={idx} className="flex flex-col md:flex-row gap-2 md:items-center bg-gray-50 p-2 rounded-sm border border-gray-200 hover:border-gray-300 transition-colors">
                           <div className="flex-1 w-full md:w-auto">
                               <select className="w-full bg-transparent p-2 text-base font-bold text-gray-900 outline-none cursor-pointer" value={item.product} onChange={e => handleItemChange(idx, 'product', e.target.value)}>
                                   <option value="">品目を選択</option>
@@ -204,7 +206,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
               </button>
           </div>
 
-          {/* フッター */}
+          {/* フッター（合計＆保存） */}
           <div className="p-6 bg-[#111] text-white flex flex-col md:flex-row justify-between items-center gap-6">
               <div className="text-center md:text-left">
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">合計買掛金額</p>
