@@ -11,6 +11,7 @@ const Icons = {
 
 export const AdminCompetitor = ({ data }: { data: any }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('情報を取得');
   const [competitors, setCompetitors] = useState<any[]>([]);
   const [lastFetchDate, setLastFetchDate] = useState<string>('未取得');
 
@@ -65,43 +66,56 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       }
   }, []);
 
+  // ★ 1社ずつ順番にAIを呼び出す安全な処理
   const handleRefresh = async () => {
       setIsRefreshing(true);
-      try {
-// 修正前 (AdminCompetitor.tsx の 72行目付近)
-// const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'FETCH_COMPETITORS' }) });
+      const results: any[] = [];
+      const targets = [
+          { key: "sapporo", name: "札幌銅" },
+          { key: "rec", name: "REC" },
+          { key: "ohata", name: "大畑商事" }
+      ];
+      
+      for (const target of targets) {
+          setStatusMessage(`${target.name}をAI解析中...`);
+          try {
+              const res = await fetch('/api/competitors', { 
+                  method: 'POST', 
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ targetKey: target.key })
+              });
+              
+              if (!res.ok) {
+                  const errText = await res.text();
+                  console.error(`${target.name} error:`, errText);
+                  continue; // エラーがあっても次の会社へ進む
+              }
 
-// 修正後
-  const handleRefresh = async () => {
-      setIsRefreshing(true);
-      try {
-          // ★ GASではなく、Next.jsのAIエンドポイントを直接叩く
-          const res = await fetch('/api/competitors', { method: 'POST' });
-          const result = await res.json();
-          if (result.status === 'success' && result.data && result.data.length > 0) { 
-              setCompetitors(result.data); 
-              const now = new Date().toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
-              setLastFetchDate(now);
-              localStorage.setItem('factoryOS_competitors', JSON.stringify(result.data));
-              localStorage.setItem('factoryOS_competitors_date', now);
-          } else { 
-              alert('データの取得に失敗しました。\n過去のデータを維持して表示します。'); 
+              const result = await res.json();
+              if (result.status === 'success' && result.data) {
+                  results.push(result.data);
+              }
+          } catch (error) { 
+              console.error(`${target.name} fetch error:`, error);
           }
-      } catch (error) { alert('通信エラーが発生しました。'); }
-      setIsRefreshing(false);
-  };
-        const result = await res.json();
-          if (result.status === 'success' && result.data && result.data.length > 0) { 
-              setCompetitors(result.data); 
-              const now = new Date().toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
-              setLastFetchDate(now);
-              localStorage.setItem('factoryOS_competitors', JSON.stringify(result.data));
-              localStorage.setItem('factoryOS_competitors_date', now);
-          } else { 
-              alert('相手サイトの構造変更等によりデータが取得できませんでした。\n過去のデータを維持して表示します。'); 
-          }
-      } catch (error) { alert('通信エラーが発生しました。'); }
-      setIsRefreshing(false);
+      }
+
+      if (results.length > 0) {
+          setCompetitors(results); 
+          const now = new Date().toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+          setLastFetchDate(now);
+          localStorage.setItem('factoryOS_competitors', JSON.stringify(results));
+          localStorage.setItem('factoryOS_competitors_date', now);
+          setStatusMessage('取得完了');
+      } else {
+          alert('すべてのデータ取得に失敗しました。\n開発者コンソールのログを確認してください。');
+          setStatusMessage('情報を取得');
+      }
+      
+      setTimeout(() => {
+          setIsRefreshing(false);
+          setStatusMessage('情報を取得');
+      }, 2000);
   };
 
   const handleDownloadCSV = () => {
@@ -132,17 +146,17 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
         <div>
             <h2 className="text-2xl font-black tracking-tight flex items-center gap-2 font-serif">
                 <span className="w-1.5 h-6 bg-[#D32F2F]"></span>
-                競合価格レーダー
+                競合価格レーダー (AI)
             </h2>
-            <p className="text-xs text-gray-500 mt-1 font-mono tracking-wider ml-3">COMPETITOR RESEARCH DASHBOARD</p>
+            <p className="text-xs text-gray-500 mt-1 font-mono tracking-wider ml-3">AI COMPETITOR RESEARCH DASHBOARD</p>
         </div>
         <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
             <button onClick={handleDownloadCSV} className="flex-1 sm:flex-none justify-center bg-white border border-gray-300 text-gray-700 px-4 py-2.5 rounded-sm text-xs font-bold hover:bg-gray-50 transition shadow-sm flex items-center gap-2">
                 <Icons.Download /> CSV
             </button>
-            <button onClick={handleRefresh} disabled={isRefreshing} className="flex-1 sm:flex-none justify-center bg-[#111] text-white px-5 py-2.5 rounded-sm text-xs font-bold hover:bg-[#D32F2F] transition flex items-center gap-2 disabled:opacity-50">
-                <span className={isRefreshing ? "animate-spin" : ""}><Icons.Refresh /></span>
-                {isRefreshing ? '取得中...' : '情報を取得'}
+            <button onClick={handleRefresh} disabled={isRefreshing} className="flex-1 sm:flex-none w-48 justify-center bg-[#111] text-white px-5 py-2.5 rounded-sm text-xs font-bold hover:bg-[#D32F2F] transition flex items-center gap-2 disabled:opacity-50">
+                {isRefreshing && <span className="animate-spin"><Icons.Refresh /></span>}
+                {statusMessage}
             </button>
         </div>
       </header>
@@ -218,7 +232,7 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
           </div>
       </div>
 
-      {/* 🔴 メイン価格テーブル (全20品目) ★ スマホで潰れないように min-h-[500px] と overflow-x-auto を追加 */}
+      {/* 🔴 メイン価格テーブル (全20品目) */}
       <div className="flex-1 bg-white rounded-sm border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-[500px] md:min-h-0">
           <div className="overflow-y-auto overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[800px] md:min-w-[900px]">
@@ -280,12 +294,6 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                       })}
                   </tbody>
               </table>
-              {competitors.length === 0 && (
-                  <div className="p-20 text-center text-gray-400 flex flex-col items-center">
-                      <p className="text-sm font-bold mb-2">過去の取得データがありません。</p>
-                      <p className="text-xs">右上の「最新情報を取得」ボタンを押してください。</p>
-                  </div>
-              )}
           </div>
       </div>
     </div>
