@@ -11,7 +11,11 @@ const Icons = {
   Edit: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>,
   Save: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>,
   Close: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>,
-  Book: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+  Book: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>,
+  // ★ トレンド矢印アイコン
+  TrendUp: () => <svg className="w-3 h-3 text-red-500 inline-block ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 15l7-7 7 7" /></svg>,
+  TrendDown: () => <svg className="w-3 h-3 text-blue-500 inline-block ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" /></svg>,
+  TrendFlat: () => <svg className="w-3 h-3 text-gray-400 inline-block ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 12h14" /></svg>
 };
 
 const defaultPricingRules = {
@@ -37,7 +41,6 @@ const defaultPricingRules = {
   "雑線": { base: "copper", ratio: 35, offset: -15 }
 };
 
-// ★ 初期教科書プロンプト（ボスのノウハウ）
 const defaultAIPrompt = `[銅・砲金・真鍮類]
 - 「ピカ線・1号銅」のように併記されている場合は、『光線』と『1号線』の両方に同じ数値を設定してください。
 - 「込銅」しか記載がない場合、『上銅』および『並銅』の両方に「込銅」の数値を設定してください。
@@ -57,7 +60,10 @@ const keyItems = ["光線（ピカ線、特号）", "並銅", "砲金", "込中"
 export const AdminCompetitor = ({ data }: { data: any }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [statusMessage, setStatusMessage] = useState('最新情報を取得');
+  
   const [competitors, setCompetitors] = useState<any[]>([]);
+  // ★ 新規追加：前回取得時のデータ（トレンド計算用）
+  const [pastCompetitors, setPastCompetitors] = useState<any[]>([]);
   const [lastFetchDate, setLastFetchDate] = useState<string>('未取得');
   
   const [isEditing, setIsEditing] = useState(false);
@@ -71,10 +77,44 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
   const currentBrassPrice = data?.market?.brass?.price || 980;
 
   useEffect(() => {
-      const savedData = localStorage.getItem('factoryOS_competitors');
-      const savedDate = localStorage.getItem('factoryOS_competitors_date');
-      if (savedData) {
-          try { setCompetitors(JSON.parse(savedData)); if (savedDate) setLastFetchDate(savedDate); } catch(e) {}
+      // ★ GASの履歴データ(DB)から「最新」と「前回」を抽出しセットする
+      if (data?.competitorPrices && data.competitorPrices.length > 0) {
+          const historyByName: Record<string, any[]> = {};
+          data.competitorPrices.forEach((row: any) => {
+              if (!historyByName[row.name]) historyByName[row.name] = [];
+              let pricesObj = {};
+              try { pricesObj = JSON.parse(row.prices); } catch(e) {}
+              historyByName[row.name].push({ date: row.date, prices: pricesObj });
+          });
+
+          const currentList: any[] = [];
+          const pastList: any[] = [];
+          let latestDate = '未取得';
+
+          Object.keys(historyByName).forEach(name => {
+              // 日付降順ソート
+              const sorted = historyByName[name].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+              if (sorted.length > 0) {
+                  currentList.push({ name, prices: sorted[0].prices });
+                  if (latestDate === '未取得' || new Date(sorted[0].date) > new Date(latestDate)) {
+                      latestDate = new Date(sorted[0].date).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+                  }
+              }
+              if (sorted.length > 1) {
+                  pastList.push({ name, prices: sorted[1].prices });
+              }
+          });
+
+          setCompetitors(currentList);
+          setPastCompetitors(pastList);
+          if (latestDate !== '未取得') setLastFetchDate(latestDate);
+      } else {
+          // フォールバック
+          const savedData = localStorage.getItem('factoryOS_competitors');
+          const savedDate = localStorage.getItem('factoryOS_competitors_date');
+          if (savedData) {
+              try { setCompetitors(JSON.parse(savedData)); if (savedDate) setLastFetchDate(savedDate); } catch(e) {}
+          }
       }
 
       if (data?.config?.pricing_rules) {
@@ -84,7 +124,6 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
           } catch(e) {}
       }
 
-      // ★ GASのConfigから教科書を復元
       if (data?.config?.ai_knowledge_base) {
           setAiPrompt(data.config.ai_knowledge_base);
       }
@@ -102,24 +141,15 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       setPricingRules((prev: any) => ({ ...prev, [item]: { ...prev[item], [field]: value } }));
   };
 
-  // ★ ルールと教科書を一緒に保存する関数
   const handleSaveConfig = async () => {
       setIsSaving(true);
       try {
-          // 価格ルールの保存
-          await fetch('/api/gas', {
-              method: 'POST',
-              body: JSON.stringify({ action: 'UPDATE_CONFIG', key: 'pricing_rules', value: JSON.stringify(pricingRules) })
-          });
-          // 教科書の保存
-          await fetch('/api/gas', {
-              method: 'POST',
-              body: JSON.stringify({ action: 'UPDATE_CONFIG', key: 'ai_knowledge_base', value: aiPrompt })
-          });
+          await fetch('/api/gas', { method: 'POST', body: JSON.stringify({ action: 'UPDATE_CONFIG', key: 'pricing_rules', value: JSON.stringify(pricingRules) }) });
+          await fetch('/api/gas', { method: 'POST', body: JSON.stringify({ action: 'UPDATE_CONFIG', key: 'ai_knowledge_base', value: aiPrompt }) });
           
           setIsEditing(false);
           setIsEditingPrompt(false);
-          alert("データベース（Config）に設定を保存しました。\n次回からAIはこの教科書を読んでスクレイピングを実行します。");
+          alert("データベース（Config）に設定を保存しました。");
       } catch (e) { alert("通信エラーが発生しました。"); }
       setIsSaving(false);
   };
@@ -128,15 +158,14 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       setIsRefreshing(true);
       const results: any[] = [];
       const targets = [
-          { key: "sapporo", name: "札幌銅" },
-          { key: "rec", name: "REC" },
+          { key: "sapporo", name: "札幌銅リサイクル" },
+          { key: "rec", name: "REC環境サービス" },
           { key: "ohata", name: "大畑商事" }
       ];
       
       for (const target of targets) {
           setStatusMessage(`${target.name}をAI解析中...`);
           try {
-              // ★ 通信時に「現在の教科書」をリクエストボディに含めてAIに渡す
               const res = await fetch('/api/competitors', { 
                   method: 'POST', 
                   headers: { 'Content-Type': 'application/json' }, 
@@ -150,11 +179,19 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       }
 
       if (results.length > 0) {
+          // ★ 取得成功後、GASのデータベース（スプレッドシート）へ永続保存を非同期で投げる
+          fetch('/api/gas', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'SAVE_COMPETITOR_PRICES', results: results })
+          }).catch(e => console.error(e));
+
+          // 画面のステートを更新（過去のデータをpastに押し出す）
+          setPastCompetitors(competitors);
           setCompetitors(results); 
+          
           const now = new Date().toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
           setLastFetchDate(now);
-          localStorage.setItem('factoryOS_competitors', JSON.stringify(results));
-          localStorage.setItem('factoryOS_competitors_date', now);
           setStatusMessage('取得完了');
       } else {
           alert('すべてのデータ取得に失敗しました。');
@@ -162,9 +199,28 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       setTimeout(() => { setIsRefreshing(false); setStatusMessage('最新情報を取得'); }, 2000);
   };
 
+  const handleDownloadCSV = () => {
+      if (competitors.length === 0) return alert("データがありません");
+      const headers = ['品目名', '月寒製作所 (自社)', ...competitors.map(c => c.name)];
+      const rows = targetItems.map(item => {
+          const myPrice = calculateMyPrice(item, pricingRules);
+          const compPrices = competitors.map(c => c.prices[item] !== null ? c.prices[item] : '');
+          return [item, myPrice, ...compPrices];
+      });
+      const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+      const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+      const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `competitor_prices_${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+  };
+
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-500 text-gray-900 pb-12 font-sans">
-      
       <header className="mb-6 flex flex-col sm:flex-row justify-between sm:items-end flex-shrink-0 pb-4 border-b border-gray-200 gap-4">
         <div>
             <h2 className="text-2xl font-black tracking-tight flex items-center gap-2 font-serif">
@@ -184,7 +240,7 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
         </div>
       </header>
 
-      {/* ★ AIナレッジベース（教科書）エディタ */}
+      {/* AI教科書エディタ */}
       {isEditingPrompt && (
           <div className="bg-blue-50 border border-blue-200 p-4 rounded-sm mb-6 animate-in slide-in-from-top-2">
               <div className="flex justify-between items-center mb-2">
@@ -195,7 +251,6 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                       {isSaving ? '保存中...' : '教科書を更新する'}
                   </button>
               </div>
-              <p className="text-xs text-blue-700 mb-3">ここに書かれたルールを基に、スクレイピングAIが競合の価格表を当社の20品目に強制マッピングします。自由に業界の常識を書き足してください。</p>
               <textarea 
                   className="w-full h-48 p-3 text-sm font-mono border border-blue-300 rounded-sm focus:outline-none focus:border-blue-500 shadow-inner"
                   value={aiPrompt}
@@ -204,7 +259,7 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
           </div>
       )}
 
-      {/* 以下、既存の価格テーブル */}
+      {/* メイン価格テーブル */}
       <div className="flex-1 bg-white rounded-sm border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-[500px] md:min-h-0 relative">
           <div className="bg-gray-100 border-b border-gray-200 p-3 flex justify-between items-center sticky top-0 z-30">
               <span className="text-xs font-bold text-gray-600 flex items-center gap-2">
@@ -253,13 +308,13 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                           
                           const isWinning = maxCompetitorPrice > 0 && myPrice >= maxCompetitorPrice;
                           const isLosing = maxCompetitorPrice > 0 && myPrice < maxCompetitorPrice;
-                          
                           const rule = pricingRules[item];
 
                           return (
                               <tr key={idx} className={`hover:bg-gray-50 transition ${isEditing ? 'bg-blue-50/20' : ''}`}>
                                   <td className="p-3 font-medium text-xs text-gray-800 whitespace-nowrap">{item}</td>
                                   
+                                  {/* 自社設定エリア */}
                                   <td className="p-2 md:p-3 border-l border-r border-gray-200 bg-white whitespace-nowrap">
                                       {isEditing ? (
                                           <div className="flex items-center justify-between gap-2 bg-gray-50 p-1.5 rounded border border-gray-200">
@@ -298,17 +353,32 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                                       )}
                                   </td>
 
+                                  {/* 競合他社エリア (トレンド表示付き) */}
                                   {competitors.map((comp, cIdx) => {
                                       const compPrice = comp.prices[item];
                                       if (!compPrice) return <td key={cIdx} className="p-3 text-xs text-gray-300 font-mono border-r border-gray-100 last:border-0 text-center">-</td>;
                                       
                                       const diff = myPrice - compPrice;
+                                      
+                                      // ★ DBから復元した過去データと比較してトレンドを判定
+                                      const pastComp = pastCompetitors.find(p => p.name === comp.name);
+                                      const pastPrice = pastComp ? pastComp.prices[item] : null;
+                                      let TrendIcon = Icons.TrendFlat;
+                                      if (pastPrice) {
+                                          if (compPrice > pastPrice) TrendIcon = Icons.TrendUp;
+                                          if (compPrice < pastPrice) TrendIcon = Icons.TrendDown;
+                                      }
+
                                       return (
                                           <td key={cIdx} className="p-3 border-r border-gray-100 last:border-0 whitespace-nowrap bg-white">
                                               <div className="flex flex-col items-center justify-center gap-1">
-                                                  <span className={`text-sm font-mono ${compPrice > myPrice ? 'font-bold text-gray-900' : 'text-gray-600'}`}>
-                                                      ¥{compPrice.toLocaleString()}
-                                                  </span>
+                                                  <div className="flex items-center">
+                                                      <span className={`text-sm font-mono ${compPrice > myPrice ? 'font-bold text-gray-900' : 'text-gray-600'}`}>
+                                                          ¥{compPrice.toLocaleString()}
+                                                      </span>
+                                                      {pastPrice && <TrendIcon />}
+                                                  </div>
+                                                  
                                                   {diff < 0 ? (
                                                       <span className="text-[9px] font-bold text-[#D32F2F] bg-red-50 px-1.5 py-0.5 rounded border border-red-100">
                                                           自社が {Math.abs(diff).toLocaleString()}円 負け
