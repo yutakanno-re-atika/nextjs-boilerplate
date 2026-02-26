@@ -68,8 +68,29 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
   const handleRefresh = async () => {
       setIsRefreshing(true);
       try {
-          const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'FETCH_COMPETITORS' }) });
+// 修正前 (AdminCompetitor.tsx の 72行目付近)
+// const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'FETCH_COMPETITORS' }) });
+
+// 修正後
+  const handleRefresh = async () => {
+      setIsRefreshing(true);
+      try {
+          // ★ GASではなく、Next.jsのAIエンドポイントを直接叩く
+          const res = await fetch('/api/competitors', { method: 'POST' });
           const result = await res.json();
+          if (result.status === 'success' && result.data && result.data.length > 0) { 
+              setCompetitors(result.data); 
+              const now = new Date().toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+              setLastFetchDate(now);
+              localStorage.setItem('factoryOS_competitors', JSON.stringify(result.data));
+              localStorage.setItem('factoryOS_competitors_date', now);
+          } else { 
+              alert('データの取得に失敗しました。\n過去のデータを維持して表示します。'); 
+          }
+      } catch (error) { alert('通信エラーが発生しました。'); }
+      setIsRefreshing(false);
+  };
+        const result = await res.json();
           if (result.status === 'success' && result.data && result.data.length > 0) { 
               setCompetitors(result.data); 
               const now = new Date().toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
