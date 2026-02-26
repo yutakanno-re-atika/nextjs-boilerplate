@@ -90,20 +90,21 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
     try {
       const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const result = await res.json();
-      if (result.status === 'success') { alert('登録完了'); onSuccess(); window.location.reload(); } else { alert('エラー: ' + result.message); }
+      if (result.status === 'success') { alert('登録完了'); onSuccess(); } else { alert('エラー: ' + result.message); }
     } catch(e) { alert('通信エラーが発生しました'); }
     setIsSubmitting(false);
   };
 
   const inputClass = "w-full bg-white border border-gray-300 p-2.5 rounded-sm text-lg font-bold text-gray-900 outline-none focus:border-[#D32F2F] focus:ring-1 focus:ring-[#D32F2F] transition font-mono";
 
-  // ★ サジェスト用のフィルタリングロジック（エラー回避 ＆ 確実なマッチング）
+  // ★ 修正ポイント: 空欄時は全件（最大30件）表示し、文字入力で絞り込む
   const filteredClients = clients.filter((c: any) => {
       if (!c || !c.name) return false;
+      if (!clientName) return true; // 空欄の時はすべて通す
       const targetName = String(c.name).toLowerCase();
       const searchWord = String(clientName).toLowerCase().trim();
       return targetName.includes(searchWord);
-  });
+  }).slice(0, 30); // 多すぎると画面が重くなるので30件でカット
 
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-500 max-w-6xl mx-auto w-full text-gray-800">
@@ -124,7 +125,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
 
       <div className="bg-white border border-gray-200 shadow-sm flex flex-col flex-1 rounded-sm overflow-hidden">
           {/* 顧客情報エリア */}
-          <div className="p-5 border-b border-gray-200 bg-gray-50 flex flex-col md:flex-row gap-6">
+          <div className="p-5 border-b border-gray-200 bg-gray-50 flex flex-col md:flex-row gap-6 z-20">
               <div className="flex-1 relative">
                   <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1">お客様 (業者名)</label>
                   <div className="relative">
@@ -138,12 +139,12 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                           onFocus={()=>setShowSuggest(true)} 
                           onBlur={()=>setTimeout(()=>setShowSuggest(false), 200)} 
                       />
-                      {showSuggest && clientName && filteredClients.length > 0 && (
-                          <ul className="absolute z-20 w-full bg-white border border-gray-300 mt-1 shadow-lg max-h-60 overflow-y-auto rounded-sm">
+                      {showSuggest && filteredClients.length > 0 && (
+                          <ul className="absolute z-50 w-full bg-white border border-gray-300 mt-1 shadow-xl max-h-60 overflow-y-auto rounded-sm">
                               {filteredClients.map((c:any) => (
-                                  <li key={c.id} onMouseDown={() => handleSelectClient(c)} className="p-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-0 text-sm">
+                                  <li key={c.id} onMouseDown={() => handleSelectClient(c)} className="p-3 hover:bg-red-50 cursor-pointer border-b border-gray-100 last:border-0 text-sm transition-colors">
                                       <div className="font-bold text-gray-900">{c.name}</div>
-                                      <div className="text-xs text-gray-500 font-mono">{c.phone || '-'}</div>
+                                      <div className="text-xs text-gray-500 font-mono">{c.phone || '連絡先未登録'}</div>
                                   </li>
                               ))}
                           </ul>
@@ -157,7 +158,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           </div>
 
           {/* 明細エリア */}
-          <div className="p-5 flex-1 overflow-y-auto bg-white">
+          <div className="p-5 flex-1 overflow-y-auto bg-white z-10">
               <div className="hidden md:flex text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 px-2">
                   <div className="flex-1">持込品目</div>
                   <div className="w-36 text-right">重量 (kg)</div>
