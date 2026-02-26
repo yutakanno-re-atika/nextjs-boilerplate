@@ -163,10 +163,10 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
     };
 
     return (
-        // スマホでの下部見切れを防ぐため、pb-32 にパディングを増加
-        <div className="flex flex-col h-full animate-in fade-in duration-500 w-full text-gray-800 pb-32 md:pb-12">
+        // ★ 修正: h-full を削除し、十分な下部パディング(pb-24)を設定。これにより中身が潰れず自然にスクロールします。
+        <div className="flex flex-col animate-in fade-in duration-500 w-full text-gray-800 pb-24">
             
-            <header className="mb-4 flex-shrink-0 flex flex-col md:flex-row md:justify-between md:items-end gap-4 border-b border-gray-200 pb-4">
+            <header className="mb-4 flex flex-col md:flex-row md:justify-between md:items-end gap-4 border-b border-gray-200 pb-4">
                 <div>
                     <h2 className="text-2xl font-black text-gray-900 flex items-center gap-2 font-serif">
                         <span className="w-1.5 h-6 bg-[#D32F2F]"></span>
@@ -174,7 +174,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                     </h2>
                     <p className="text-xs text-gray-500 mt-1 font-mono tracking-wider ml-3">OVERVIEW & KPIs</p>
                 </div>
-                <div className="text-right">
+                <div className="text-left md:text-right">
                     <p className="text-xs font-bold text-gray-400 font-mono">
                         {new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}
                     </p>
@@ -182,9 +182,10 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
             </header>
 
             {/* 行1: 全相場ティッカー（横スクロール） */}
-            <div className="flex gap-3 overflow-x-auto no-scrollbar mb-6 pb-2">
+            {/* ★ 修正: flex-nowrap とアイテム側の w-40, min-h-[90px] で絶対に潰れないように保護 */}
+            <div className="flex flex-nowrap gap-3 overflow-x-auto no-scrollbar mb-6 pb-2 w-full">
                 {marketItems.map((m, i) => (
-                    <div key={i} className={`bg-white border-l-4 ${m.color} border-y border-r border-gray-200 rounded-sm p-3 shadow-sm min-w-[140px] flex-shrink-0 flex flex-col justify-between`}>
+                    <div key={i} className={`bg-white border-l-4 ${m.color} border-y border-r border-gray-200 rounded-sm p-4 shadow-sm w-40 min-h-[90px] flex-shrink-0 flex flex-col justify-between`}>
                         <p className="text-[10px] font-bold text-gray-500 mb-1">{m.label}</p>
                         <div className="flex items-baseline gap-1">
                             <span className="text-xl font-black font-mono text-gray-900">{m.price.toLocaleString()}</span>
@@ -330,8 +331,9 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                 </div>
 
                 {/* 右側カラム: タイムライン */}
-                <div className="space-y-6 h-full">
-                    <div className="bg-white rounded-sm border border-gray-200 shadow-sm overflow-hidden flex flex-col h-full max-h-[600px]">
+                <div className="space-y-6">
+                    {/* ★ 修正: h-fullを取り除き、自然な高さでスクロールさせる */}
+                    <div className="bg-white rounded-sm border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-[400px] max-h-[600px]">
                         <div className="p-4 border-b border-gray-200 bg-[#111] text-white flex justify-between items-center cursor-pointer hover:bg-black transition" onClick={() => onNavigate('OPERATIONS')}>
                             <h3 className="font-bold text-sm flex items-center gap-2">
                                 <span className="relative flex h-2 w-2">
