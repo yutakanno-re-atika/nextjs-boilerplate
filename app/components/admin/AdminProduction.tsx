@@ -1,16 +1,12 @@
 // @ts-nocheck
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 
 const Icons = {
   Factory: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>,
   Check: () => <svg className="w-5 h-5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>,
-  Copper: () => <svg className="w-6 h-6 text-orange-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>,
   User: () => <svg className="w-4 h-4 inline-block mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>,
-  Tag: () => <svg className="w-4 h-4 inline-block mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>,
   Close: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>,
-  Clock: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   Worker: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
-  Timeline: () => <svg className="w-4 h-4 text-gray-500 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   Scissors: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2-2m-2 2l-2-2m0 0a2 2 0 10-2.828-2.828 2 2 0 002.828 2.828zM3 21a2 2 0 102.828-2.828 2 2 0 00-2.828 2.828z" /></svg>,
   Blend: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>,
   Trash: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
@@ -23,13 +19,11 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
   const [activeTab, setActiveTab] = useState<'SORT' | 'PROCESS' | 'LOG'>('SORT');
   
   // モーダル制御
-  const [sortingLot, setSortingLot] = useState<any>(null); // 選別中のロット
-  const [blendingLots, setBlendingLots] = useState<any[]>([]); // ブレンド加工するロット群
+  const [sortingLot, setSortingLot] = useState<any>(null);
+  const [blendingLots, setBlendingLots] = useState<any[]>([]);
   
   // 状態管理
   const [checkedLotIds, setCheckedLotIds] = useState<string[]>([]);
-  const [localSortedLots, setLocalSortedLots] = useState<any[]>([]); 
-  const [localConsumedIds, setLocalConsumedIds] = useState<string[]>([]); 
 
   // フォームステート (選別用)
   const [sortOutputs, setSortOutputs] = useState([{ product: '', weight: '' }]);
@@ -44,22 +38,30 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
   const [processMemo, setProcessMemo] = useState('');         
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // データソース (GASから取得した本番データ)
   const productions = data?.productions || [];
+  const sortings = data?.sortings || [];
   const wiresMaster = data?.wires || [];
 
-  // LocalStorageから仮データを復元
-  useEffect(() => {
-      const savedSorted = localStorage.getItem('factoryOS_sortedLots');
-      const savedConsumed = localStorage.getItem('factoryOS_consumedIds');
-      if (savedSorted) setLocalSortedLots(JSON.parse(savedSorted));
-      if (savedConsumed) setLocalConsumedIds(JSON.parse(savedConsumed));
-  }, []);
-
-  // データの生成・分類
+  // ==========================================
+  // 動的在庫の計算ロジック (本番環境仕様)
+  // ==========================================
   const { toSortLots, readyLots } = useMemo(() => {
       let rawLots: any[] = [];
       
-      // 1. POS受付済みのロットを展開
+      // 1. 選別済/加工済として消費されたロットIDのリストを作成
+      const consumedBySort = new Set(sortings.map((s:any) => s.originalLotId));
+      const consumedByProcess = new Set();
+      productions.forEach((p:any) => {
+          if (p.consumedLotIds) {
+              p.consumedLotIds.split(',').forEach((id:string) => consumedByProcess.add(id.trim()));
+          } else if (p.reservationId && !p.consumedLotIds) {
+              // 過去の互換性用 (古いデータ対応)
+              consumedByProcess.add(`${p.reservationId}-0`);
+          }
+      });
+
+      // 2. POS受付済みのロット(仕入れ分)を展開
       localReservations.filter(r => r.status === 'COMPLETED').forEach(res => {
           let items = [];
           try { 
@@ -70,39 +72,47 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
           items.forEach((it: any, idx: number) => {
               const product = it.product || it.productName;
               const initialWeight = Number(it.weight) || 0;
-              const lotId = `${res.id}-${idx}`;
+              const lotId = `${res.id}-${idx}`; // POSから生まれたロットID
 
-              if (initialWeight > 0 && product && !localConsumedIds.includes(lotId)) {
-                  // まだ加工実績(Productions)として消費されていないかチェック
-                  const processedWeight = productions.filter((p: any) => p.reservationId === res.id && p.materialName === product).reduce((sum: number, p: any) => sum + (Number(p.inputWeight) || 0), 0);
-                  const remainingWeight = initialWeight - processedWeight;
-                  
-                  if (remainingWeight > 0) {
-                      const productMaster = wiresMaster.find((w: any) => w.name === product);
-                      rawLots.push({
-                          lotId, reservationId: res.id, memberName: res.memberName || '名称未設定',
-                          date: res.visitDate ? String(res.visitDate).substring(5, 16) : '不明', 
-                          product: product, remainingWeight: remainingWeight, expectedRatio: productMaster ? productMaster.ratio : 0,
-                          isSorted: false
-                      });
-                  }
+              // 選別も加工もされていない場合のみ在庫に追加
+              if (initialWeight > 0 && product && !consumedBySort.has(lotId) && !consumedByProcess.has(lotId)) {
+                  rawLots.push({
+                      lotId, reservationId: res.id, memberName: res.memberName || '名称未設定',
+                      date: res.visitDate ? String(res.visitDate).substring(5, 16) : '不明', 
+                      product: product, remainingWeight: initialWeight, 
+                      isSorted: false
+                  });
               }
           });
       });
 
-      // 2. ローカルで選別済みにしたロットを追加
-      localSortedLots.forEach(lot => {
-          if (!localConsumedIds.includes(lot.lotId)) {
-              rawLots.push(lot);
-          }
+      // 3. 選別によって新たに生まれたロット(Sortings)を展開
+      sortings.forEach((sortRecord: any) => {
+          let outputs = [];
+          try {
+             outputs = typeof sortRecord.outputsJSON === 'string' ? JSON.parse(sortRecord.outputsJSON) : sortRecord.outputsJSON;
+          } catch(e) {}
+
+          outputs.forEach((out: any, idx: number) => {
+              const lotId = `${sortRecord.id}-${idx}`; // 選別から生まれたロットID
+              
+              // まだ加工されていない場合のみ在庫に追加
+              if (Number(out.weight) > 0 && out.product && !consumedByProcess.has(lotId)) {
+                  rawLots.push({
+                      lotId, reservationId: sortRecord.reservationId, memberName: `${sortRecord.memberName} (選別)`,
+                      date: sortRecord.date ? String(sortRecord.date).substring(5, 16) : '不明', 
+                      product: out.product, remainingWeight: Number(out.weight), 
+                      isSorted: true
+                  });
+              }
+          });
       });
 
-      // 3. 選別待ち(雑線など) と 加工待ち(特号線、選別済みの線) に振り分け
+      // 4. 選別待ち(雑線など) と 加工待ち(特号線、選別済みの線) に振り分け
       const sortList: any[] = [];
       const processList: any[] = [];
 
       rawLots.forEach(lot => {
-          // 「雑線」「家電線」などが名前に含まれている、または明示的に選別されていない場合はSORTへ
           if (!lot.isSorted && (lot.product.includes('雑線') || lot.product.includes('家電') || lot.product.includes('未選別'))) {
               sortList.push(lot);
           } else {
@@ -111,43 +121,39 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
       });
 
       return { toSortLots: sortList, readyLots: processList };
-  }, [localReservations, productions, wiresMaster, localSortedLots, localConsumedIds]);
+  }, [localReservations, productions, sortings]);
 
   const totalProducedCopper = productions.reduce((sum: number, p: any) => sum + (Number(p.outputCopper) || 0), 0);
 
-  // 選別アクションの実行 (モック保存)
-  const handleSortSubmit = () => {
-      if (!sortingLot) return;
-      const newSortedLots = [...localSortedLots];
+  // 選別アクションの実行 (GASへPOST)
+  const handleSortSubmit = async () => {
+      if (!sortingLot || isSubmitting) return;
+      setIsSubmitting(true);
       
-      // 分割されたアイテムを新しいロットとして生成
-      sortOutputs.forEach((out, idx) => {
-          if (out.product && out.weight) {
-              const productMaster = wiresMaster.find((w: any) => w.name === out.product);
-              newSortedLots.push({
-                  lotId: `${sortingLot.lotId}-S${idx}`,
-                  reservationId: sortingLot.reservationId,
-                  memberName: `${sortingLot.memberName} (選別済)`,
-                  date: sortingLot.date,
-                  product: out.product,
-                  remainingWeight: Number(out.weight),
-                  expectedRatio: productMaster ? productMaster.ratio : 0,
-                  isSorted: true
-              });
-          }
-      });
+      const payload = {
+          action: 'REGISTER_SORTING',
+          originalLotId: sortingLot.lotId,
+          reservationId: sortingLot.reservationId,
+          memberName: sortingLot.memberName,
+          worker: sortWorker,
+          timeMinutes: Number(sortTime) || 0,
+          dustWeight: Number(sortDust) || 0,
+          outputs: sortOutputs.filter(o => o.product && o.weight)
+      };
 
-      const newConsumedIds = [...localConsumedIds, sortingLot.lotId]; // 元のロットは消費されたことにする
-      
-      setLocalSortedLots(newSortedLots);
-      setLocalConsumedIds(newConsumedIds);
-      localStorage.setItem('factoryOS_sortedLots', JSON.stringify(newSortedLots));
-      localStorage.setItem('factoryOS_consumedIds', JSON.stringify(newConsumedIds));
-      
-      setSortingLot(null);
-      setSortOutputs([{ product: '', weight: '' }]);
-      setSortDust(''); setSortTime(''); setSortWorker('未選択');
-      setActiveTab('PROCESS'); // 加工待ちタブへ移動
+      try {
+          const res = await fetch('/api/gas', { method: 'POST', body: JSON.stringify(payload) });
+          const result = await res.json();
+          if (result.status === 'success') {
+              alert('選別結果を保存しました！');
+              setSortingLot(null);
+              setSortOutputs([{ product: '', weight: '' }]);
+              setSortDust(''); setSortTime(''); setSortWorker('未選択');
+              setActiveTab('PROCESS'); 
+              window.location.reload(); // 最新のGASデータを再取得
+          } else { alert('エラー: ' + result.message); }
+      } catch(e) { alert('通信エラーが発生しました'); }
+      setIsSubmitting(false);
   };
 
   // ブレンド加工モーダルを開く
@@ -162,6 +168,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
       setProcessMemo('');
   };
 
+  // ブレンド加工アクション (GASへPOST)
   const handleProcessSubmit = async () => {
       if (blendingLots.length === 0 || !processInputWeight || !processOutputCopper) return;
       if (Number(processOutputCopper) > Number(processInputWeight)) return alert("産出重量が投入重量を上回っています。");
@@ -171,15 +178,16 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
       const outC = parseFloat(processOutputCopper);
       const ratio = ((outC / inW) * 100).toFixed(1);
 
-      // ブレンド名の生成
       const materialNames = blendingLots.map(l => l.product).join(' + ');
       const mixedName = blendingLots.length > 1 ? `混合バッチ (${materialNames})` : blendingLots[0].product;
       const reservationIds = blendingLots.map(l => l.reservationId).join(',');
+      const consumedLotIds = blendingLots.map(l => l.lotId).join(','); // ★消費ロットIDを記録
 
       try {
           const payload = {
               action: 'REGISTER_PRODUCTION', 
-              reservationId: reservationIds.substring(0, 40), // 長すぎる場合はカット
+              reservationId: reservationIds.substring(0, 40),
+              consumedLotIds: consumedLotIds, // GAS側で保存できるように追加
               memberName: blendingLots.length > 1 ? 'ブレンド処理' : blendingLots[0].memberName,
               materialName: mixedName.substring(0, 50), 
               inputWeight: inW, 
@@ -187,15 +195,10 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
               actualRatio: parseFloat(ratio), 
               memo: `作業者: ${processWorker} | 元ロット: ${blendingLots.length}件 | ${processMemo}`
           };
-          const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+          const res = await fetch('/api/gas', { method: 'POST', body: JSON.stringify(payload) });
           const result = await res.json();
           if (result.status === 'success') { 
-              // 消費したロットをローカルにも記録して見えなくする
-              const newConsumedIds = [...localConsumedIds, ...blendingLots.map(l => l.lotId)];
-              setLocalConsumedIds(newConsumedIds);
-              localStorage.setItem('factoryOS_consumedIds', JSON.stringify(newConsumedIds));
-              
-              alert('ブレンド加工データを記録しました！');
+              alert('加工データを記録しました！');
               setBlendingLots([]);
               setCheckedLotIds([]);
               window.location.reload(); 
@@ -214,16 +217,15 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
         <p className="text-xs text-gray-500 mt-1 font-mono tracking-wider ml-3">PRODUCTION & SORTING WORKFLOW</p>
       </header>
 
-      {/* サマリーパネル */}
-      <div className="bg-[#111] rounded-sm shadow-sm p-6 text-white mb-6 relative overflow-hidden flex flex-col md:flex-row justify-between md:items-end gap-4">
+      <div className="flex-shrink-0 bg-[#111] rounded-sm shadow-sm p-5 md:p-6 text-white mb-6 relative overflow-hidden flex flex-col md:flex-row justify-between md:items-end gap-4">
           <div className="absolute top-0 right-0 p-4 opacity-10 transform scale-150 text-[#D32F2F]"><Icons.Factory /></div>
-          <div>
+          <div className="relative z-10">
               <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Pure Copper Produced</h3>
               <p className="text-sm font-bold text-gray-200">累計 ピカ銅生産量</p>
           </div>
-          <div className="flex items-end gap-2 relative z-10">
-              <span className="text-4xl font-black text-white font-mono tracking-tighter">{totalProducedCopper.toLocaleString()}</span>
-              <span className="text-lg text-gray-400 font-bold mb-1">kg</span>
+          <div className="flex items-end gap-2 relative z-10 mt-2 md:mt-0">
+              <span className="text-4xl font-black text-white font-mono tracking-tighter leading-none">{totalProducedCopper.toLocaleString()}</span>
+              <span className="text-lg text-gray-400 font-bold mb-0.5">kg</span>
           </div>
       </div>
 
@@ -281,9 +283,9 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                           <thead className="sticky top-0 bg-gray-100 border-b border-gray-200 z-10">
                               <tr>
                                   <th className="p-3 w-12 text-center"><input type="checkbox" onChange={(e) => setCheckedLotIds(e.target.checked ? readyLots.map(l=>l.lotId) : [])} checked={checkedLotIds.length === readyLots.length && readyLots.length > 0} className="w-4 h-4 accent-[#D32F2F]" /></th>
-                                  <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest">状態 / 入庫</th>
+                                  <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest whitespace-nowrap">状態/入庫</th>
                                   <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest">品目</th>
-                                  <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest">業者名</th>
+                                  <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest">業者・出処</th>
                                   <th className="p-3 text-[10px] font-bold text-gray-900 uppercase tracking-widest text-right">重量</th>
                               </tr>
                           </thead>
@@ -294,8 +296,8 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                                       <td className="p-3 text-center" onClick={e => e.stopPropagation()}><input type="checkbox" className="w-4 h-4 accent-[#D32F2F]" checked={checkedLotIds.includes(lot.lotId)} onChange={() => setCheckedLotIds(prev => prev.includes(lot.lotId) ? prev.filter(id => id !== lot.lotId) : [...prev, lot.lotId])} /></td>
                                       <td className="p-3">
                                           <div className="flex flex-col items-start gap-1">
-                                              {lot.isSorted ? <span className="text-[9px] font-bold bg-green-50 text-green-700 border border-green-200 px-1.5 py-0.5 rounded-sm">選別済</span> : <span className="text-[9px] font-bold bg-gray-100 text-gray-600 border border-gray-200 px-1.5 py-0.5 rounded-sm">原反</span>}
-                                              <span className="text-[10px] text-gray-400 font-mono">{lot.date}</span>
+                                              {lot.isSorted ? <span className="text-[9px] font-bold bg-green-50 text-green-700 border border-green-200 px-1.5 py-0.5 rounded-sm whitespace-nowrap">選別済</span> : <span className="text-[9px] font-bold bg-gray-100 text-gray-600 border border-gray-200 px-1.5 py-0.5 rounded-sm whitespace-nowrap">原反</span>}
+                                              <span className="text-[10px] text-gray-400 font-mono whitespace-nowrap">{lot.date}</span>
                                           </div>
                                       </td>
                                       <td className="p-3 font-bold text-sm text-gray-900">{lot.product}</td>
@@ -309,13 +311,13 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                   
                   {/* フローティング アクションバー */}
                   {checkedLotIds.length > 0 && (
-                      <div className="absolute bottom-0 left-0 w-full bg-[#111] text-white p-4 flex justify-between items-center shadow-2xl animate-in slide-in-from-bottom-5">
-                          <div className="flex items-center gap-4">
-                              <span className="text-sm font-bold bg-gray-800 px-3 py-1 rounded-sm border border-gray-700">{checkedLotIds.length} 件選択中</span>
-                              <span className="text-xs text-gray-400">合計 <span className="text-xl font-black font-mono text-white ml-1">{readyLots.filter(l => checkedLotIds.includes(l.lotId)).reduce((sum, l) => sum + l.remainingWeight, 0).toFixed(1)}</span> kg</span>
+                      <div className="absolute bottom-0 left-0 w-full bg-[#111] text-white p-3 md:p-4 flex justify-between items-center shadow-2xl animate-in slide-in-from-bottom-5">
+                          <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-4">
+                              <span className="text-xs md:text-sm font-bold bg-gray-800 px-2 md:px-3 py-1 rounded-sm border border-gray-700">{checkedLotIds.length} 件選択中</span>
+                              <span className="text-[10px] md:text-xs text-gray-400">合計 <span className="text-lg md:text-xl font-black font-mono text-white ml-1">{readyLots.filter(l => checkedLotIds.includes(l.lotId)).reduce((sum, l) => sum + l.remainingWeight, 0).toFixed(1)}</span> kg</span>
                           </div>
-                          <button onClick={openBlendModal} className="bg-[#D32F2F] hover:bg-red-700 text-white px-6 py-2.5 rounded-sm font-bold text-sm shadow-lg flex items-center gap-2 transition">
-                              <Icons.Blend /> ブレンド加工へ進む
+                          <button onClick={openBlendModal} className="bg-[#D32F2F] hover:bg-red-700 text-white px-4 md:px-6 py-2.5 rounded-sm font-bold text-xs md:text-sm shadow-lg flex items-center gap-2 transition whitespace-nowrap">
+                              <Icons.Blend /> {checkedLotIds.length > 1 ? 'ブレンド加工' : '単体加工'}へ進む
                           </button>
                       </div>
                   )}
@@ -330,24 +332,24 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                   <table className="w-full text-left border-collapse">
                       <thead className="sticky top-0 bg-gray-100 border-b border-gray-200 z-10">
                           <tr>
-                              <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest">加工日時</th>
-                              <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest">対象バッチ</th>
-                              <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">投入量</th>
-                              <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">産出銅</th>
-                              <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">歩留</th>
+                              <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest whitespace-nowrap">加工日時</th>
+                              <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest whitespace-nowrap">対象バッチ</th>
+                              <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right whitespace-nowrap">投入量</th>
+                              <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right whitespace-nowrap">産出銅</th>
+                              <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right whitespace-nowrap">歩留</th>
                           </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
                           {productions.slice(-20).reverse().map((p: any, idx: number) => (
                               <tr key={idx} className="hover:bg-gray-50 transition">
-                                  <td className="p-3 text-xs text-gray-500 font-mono">{String(p.date).substring(5,16)}</td>
+                                  <td className="p-3 text-xs text-gray-500 font-mono whitespace-nowrap">{String(p.date).substring(5,16)}</td>
                                   <td className="p-3">
                                       <p className="text-xs font-bold text-gray-900">{p.materialName}</p>
                                       <p className="text-[9px] text-gray-400 mt-0.5 line-clamp-1">{p.memberName}</p>
                                   </td>
-                                  <td className="p-3 text-right text-sm font-mono text-gray-600">{p.inputWeight} kg</td>
-                                  <td className="p-3 text-right text-sm font-mono font-bold text-gray-900">{p.outputCopper} kg</td>
-                                  <td className="p-3 text-right"><span className="text-sm font-mono font-black text-[#D32F2F]">{p.actualRatio}%</span></td>
+                                  <td className="p-3 text-right text-sm font-mono text-gray-600 whitespace-nowrap">{p.inputWeight} kg</td>
+                                  <td className="p-3 text-right text-sm font-mono font-bold text-gray-900 whitespace-nowrap">{p.outputCopper} kg</td>
+                                  <td className="p-3 text-right whitespace-nowrap"><span className="text-sm font-mono font-black text-[#D32F2F]">{p.actualRatio}%</span></td>
                               </tr>
                           ))}
                       </tbody>
@@ -365,37 +367,37 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                   <div className="p-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
                       <div>
                           <h3 className="text-lg font-black text-gray-900 flex items-center gap-2"><Icons.Scissors /> 選別結果の登録</h3>
-                          <p className="text-xs text-gray-500 mt-1 font-mono">元ロット: {sortingLot.product} ({sortingLot.remainingWeight}kg) / {sortingLot.memberName}</p>
+                          <p className="text-xs text-gray-500 mt-1 font-mono">元ロット: {sortingLot.product} ({sortingLot.remainingWeight}kg)</p>
                       </div>
                       <button onClick={() => setSortingLot(null)} className="text-gray-400 hover:text-gray-900 p-1"><Icons.Close /></button>
                   </div>
                   
                   <div className="p-6 overflow-y-auto flex-1 space-y-6">
                       
-                      <div className="bg-blue-50 border border-blue-200 p-4 rounded-sm flex items-center gap-4">
+                      <div className="bg-blue-50 border border-blue-200 p-4 rounded-sm flex items-center gap-4 overflow-x-auto">
                           <label className="text-sm font-bold text-blue-900 whitespace-nowrap">作業担当</label>
-                          <select className="w-full bg-white border border-blue-300 p-2 text-sm font-bold rounded-sm outline-none" value={sortWorker} onChange={e => setSortWorker(e.target.value)}>
+                          <select className="w-full min-w-[100px] bg-white border border-blue-300 p-2 text-sm font-bold rounded-sm outline-none" value={sortWorker} onChange={e => setSortWorker(e.target.value)}>
                               {WORKERS.map(w => <option key={w} value={w}>{w}</option>)}
                           </select>
                           <label className="text-sm font-bold text-blue-900 whitespace-nowrap ml-2">時間</label>
-                          <div className="relative w-32">
+                          <div className="relative w-24 md:w-32 flex-shrink-0">
                               <input type="number" className="w-full border border-blue-300 p-2 pr-8 text-sm font-mono rounded-sm outline-none text-right" placeholder="0" value={sortTime} onChange={e => setSortTime(e.target.value)} />
                               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">分</span>
                           </div>
                       </div>
 
                       <div>
-                          <h4 className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-widest border-b border-gray-200 pb-1">仕分け後の線材 (加工ヤードへ移動)</h4>
+                          <h4 className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-widest border-b border-gray-200 pb-1">仕分け後の線材</h4>
                           <div className="space-y-2">
                               {sortOutputs.map((out, idx) => (
                                   <div key={idx} className="flex items-center gap-2 bg-gray-50 p-2 border border-gray-200 rounded-sm">
-                                      <select className="flex-1 p-2 bg-white border border-gray-300 rounded-sm text-sm font-bold outline-none" value={out.product} onChange={e => { const newOut = [...sortOutputs]; newOut[idx].product = e.target.value; setSortOutputs(newOut); }}>
-                                          <option value="">仕分け後の品目を選択</option>
+                                      <select className="flex-1 p-2 bg-white border border-gray-300 rounded-sm text-xs md:text-sm font-bold outline-none" value={out.product} onChange={e => { const newOut = [...sortOutputs]; newOut[idx].product = e.target.value; setSortOutputs(newOut); }}>
+                                          <option value="">品目を選択</option>
                                           {wiresMaster.map((w:any) => <option key={w.id} value={w.name}>{w.name}</option>)}
                                       </select>
-                                      <div className="relative w-32 md:w-40">
-                                          <input type="number" className="w-full p-2 pr-8 border border-gray-300 rounded-sm text-sm font-mono text-right outline-none focus:border-blue-500" placeholder="0" value={out.weight} onChange={e => { const newOut = [...sortOutputs]; newOut[idx].weight = e.target.value; setSortOutputs(newOut); }} />
-                                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">kg</span>
+                                      <div className="relative w-24 md:w-32 flex-shrink-0">
+                                          <input type="number" className="w-full p-2 pr-6 border border-gray-300 rounded-sm text-sm font-mono text-right outline-none" placeholder="0" value={out.weight} onChange={e => { const newOut = [...sortOutputs]; newOut[idx].weight = e.target.value; setSortOutputs(newOut); }} />
+                                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">kg</span>
                                       </div>
                                       <button onClick={() => setSortOutputs(sortOutputs.filter((_, i) => i !== idx))} className="p-2 text-gray-400 hover:text-red-600"><Icons.Trash /></button>
                                   </div>
@@ -405,20 +407,20 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                       </div>
 
                       <div>
-                          <h4 className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-widest border-b border-gray-200 pb-1">除去したゴミ・異物 (廃棄)</h4>
+                          <h4 className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-widest border-b border-gray-200 pb-1">除去したゴミ・異物</h4>
                           <div className="flex items-center gap-4 bg-gray-50 p-3 border border-gray-200 rounded-sm">
-                              <span className="text-sm font-bold text-gray-700 flex-1">鉄・プラスチック等の総重量</span>
-                              <div className="relative w-32 md:w-40">
-                                  <input type="number" className="w-full p-2 pr-8 border border-gray-300 rounded-sm text-sm font-mono text-right outline-none" placeholder="0" value={sortDust} onChange={e => setSortDust(e.target.value)} />
-                                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">kg</span>
+                              <span className="text-xs md:text-sm font-bold text-gray-700 flex-1">鉄・プラ等の重量</span>
+                              <div className="relative w-24 md:w-32 flex-shrink-0">
+                                  <input type="number" className="w-full p-2 pr-6 border border-gray-300 rounded-sm text-sm font-mono text-right outline-none" placeholder="0" value={sortDust} onChange={e => setSortDust(e.target.value)} />
+                                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">kg</span>
                               </div>
                           </div>
                       </div>
 
                   </div>
                   <div className="p-4 border-t border-gray-200 bg-gray-100">
-                      <button onClick={handleSortSubmit} className="w-full bg-blue-600 text-white py-3 rounded-sm font-bold text-sm shadow-sm hover:bg-blue-700 transition">
-                          選別結果を保存して、加工待ちヤードへ送る
+                      <button onClick={handleSortSubmit} disabled={isSubmitting} className="w-full bg-blue-600 text-white py-3 rounded-sm font-bold text-sm shadow-sm hover:bg-blue-700 transition disabled:opacity-50">
+                          {isSubmitting ? '保存中...' : '選別結果を保存する'}
                       </button>
                   </div>
               </div>
@@ -433,10 +435,10 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
               <div className="bg-white rounded-sm shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]">
                   <div className="p-5 border-b border-gray-200 bg-gray-50 flex justify-between items-start">
                       <div>
-                          <h3 className="text-lg font-black text-gray-900 flex items-center gap-2"><Icons.Blend /> ブレンド加工の登録</h3>
+                          <h3 className="text-lg font-black text-gray-900 flex items-center gap-2"><Icons.Blend /> {blendingLots.length > 1 ? 'ブレンド' : '単体'}加工の登録</h3>
                           <div className="text-xs text-gray-500 mt-2 space-y-1 bg-white p-2 border border-gray-200 rounded-sm max-h-24 overflow-y-auto">
                               {blendingLots.map(l => (
-                                  <div key={l.lotId} className="flex justify-between font-mono"><span>{l.product} ({l.memberName})</span><span>{l.remainingWeight}kg</span></div>
+                                  <div key={l.lotId} className="flex justify-between font-mono"><span>{l.product}</span><span>{l.remainingWeight}kg</span></div>
                               ))}
                           </div>
                       </div>
@@ -446,7 +448,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                   <div className="p-6 overflow-y-auto flex-1 space-y-5">
                       
                       <div className="bg-[#111] p-4 rounded-sm flex items-center gap-4 text-white">
-                          <label className="text-sm font-bold flex items-center whitespace-nowrap text-gray-300"><Icons.Worker /> プラント担当</label>
+                          <label className="text-sm font-bold flex items-center whitespace-nowrap text-gray-300"><Icons.Worker /> 担当</label>
                           <select className="w-full bg-gray-800 border border-gray-700 p-2 text-sm font-bold rounded-sm outline-none" value={processWorker} onChange={e => setProcessWorker(e.target.value)}>
                               {WORKERS.map(w => <option key={w} value={w}>{w}</option>)}
                           </select>
@@ -454,7 +456,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
 
                       <div className="grid grid-cols-2 gap-4">
                           <div>
-                              <label className="block text-xs font-bold text-gray-500 mb-2">総投入重量 (kg)</label>
+                              <label className="block text-xs font-bold text-gray-500 mb-2">投入重量 (kg)</label>
                               <div className="relative">
                                   <input type="number" className="w-full bg-gray-50 border border-gray-300 p-3 pr-8 rounded-sm text-xl font-black font-mono text-right outline-none focus:border-[#D32F2F]" value={processInputWeight} onChange={e => setProcessInputWeight(e.target.value)} />
                                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-bold">kg</span>
@@ -471,7 +473,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
 
                       {processInputWeight && processOutputCopper && (
                           <div className="bg-gray-50 border border-gray-200 rounded-sm p-4 text-center">
-                              <p className="text-xs text-gray-500 font-bold mb-1 tracking-widest">ブレンドバッチ実測歩留まり</p>
+                              <p className="text-xs text-gray-500 font-bold mb-1 tracking-widest">実測歩留まり</p>
                               <p className="text-3xl font-black font-mono text-gray-900">
                                   {((parseFloat(processOutputCopper) / parseFloat(processInputWeight)) * 100).toFixed(1)} <span className="text-base font-normal">%</span>
                               </p>
@@ -479,14 +481,14 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                       )}
 
                       <div>
-                          <label className="block text-xs font-bold text-gray-500 mb-2">特記事項・刃の摩耗チェック等</label>
+                          <label className="block text-xs font-bold text-gray-500 mb-2">特記事項</label>
                           <input type="text" className="w-full border border-gray-300 p-3 rounded-sm text-sm outline-none focus:border-[#D32F2F]" placeholder="メモ..." value={processMemo} onChange={e => setProcessMemo(e.target.value)} />
                       </div>
                   </div>
 
                   <div className="p-4 border-t border-gray-200 bg-gray-100">
                       <button onClick={handleProcessSubmit} disabled={!processOutputCopper || isSubmitting} className="w-full bg-[#D32F2F] text-white py-3.5 rounded-sm font-bold text-base shadow-sm hover:bg-red-800 transition disabled:opacity-50">
-                          {isSubmitting ? '処理中...' : 'ブレンド実績を保存する'}
+                          {isSubmitting ? '処理中...' : '加工実績を保存する'}
                       </button>
                   </div>
               </div>
