@@ -245,7 +245,7 @@ export default function WireMasterCloud() {
             {/* ★ ここに追加：自動生成されたFAQ */}
             <AutoFaq faqData={data?.faq} />
             
-            <div id="simulator"><Simulator marketPrice={marketPrice} /></div>
+            <div id="simulator"><Simulator marketPrice={marketPrice} data={data} /></div>
         </>
       )}
 
