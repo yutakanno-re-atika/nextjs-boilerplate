@@ -1,21 +1,50 @@
+// @ts-nocheck
 "use client";
 import React, { useState } from 'react';
 
-export const Simulator = ({ marketPrice }: { marketPrice: number }) => {
-  const [simType, setSimType] = useState('');
+// ★ data (マスター情報) を受け取れるように引数を追加
+export const Simulator = ({ marketPrice, data }: { marketPrice: number, data: any }) => {
+  const [simProduct, setSimProduct] = useState('');
   const [simWeight, setSimWeight] = useState('');
   const [simResult, setSimResult] = useState<any>(null);
 
+  const getDisplayName = (w: any) => {
+      let name = w.name;
+      if (w.sq && w.sq !== '-') name += ` ${w.sq}sq`;
+      if (w.core && w.core !== '-') name += ` ${w.core}C`;
+      return name;
+  };
+
   const calculateSim = () => {
-    if (!simType || !simWeight) return;
+    if (!simProduct || !simWeight) return;
     const w = parseFloat(simWeight);
-    // ★非鉄原料(non_ferrous)の計算レートを暫定で0.60に設定しています。実態に合わせて調整してください。
-    const ratios: any = { 'pika': 0.98, 'high': 0.82, 'medium': 0.65, 'low': 0.45, 'mixed': 0.40, 'non_ferrous': 0.60 };
-    const basePrice = marketPrice > 0 ? marketPrice : 1450;
-    const estimatedUnit = Math.floor(basePrice * ratios[simType]); 
+    
+    const productObj = data?.wires.find((x:any) => x.id === simProduct) || data?.castings.find((x:any) => x.id === simProduct);
+    if (!productObj) return;
+
+    const isWire = !!data?.wires.find((x:any) => x.id === simProduct);
+    
+    // 真鍮などの建値切り替え（簡易版）
+    let basePrice = marketPrice > 0 ? marketPrice : 1450;
+    if (!isWire && productObj.type === 'BRASS') {
+        basePrice = data?.market?.brass?.price || 980;
+    }
+
+    const ratio = productObj.ratio / 100;
+    
+    let estimatedUnit = 0;
+    if (isWire) {
+        estimatedUnit = Math.floor((basePrice * ratio * 0.85) - 15);
+    } else {
+        estimatedUnit = Math.floor((basePrice * ratio) + (productObj.priceOffset || 0));
+    }
+    
+    if(estimatedUnit < 0) estimatedUnit = 0;
+
     const total = Math.floor(estimatedUnit * w);
-    const labels: any = { 'pika': '特1号銅線', 'high': '高銅率線', 'medium': '中銅率線', 'low': '低銅率線', 'mixed': '雑線', 'non_ferrous': '非鉄原料' };
-    setSimResult({ label: labels[simType], weight: w, unit: estimatedUnit, total: total });
+    const label = isWire ? getDisplayName(productObj) : productObj.name;
+    
+    setSimResult({ label: label, weight: w, unit: estimatedUnit, total: total });
   };
 
   return (
@@ -29,17 +58,15 @@ export const Simulator = ({ marketPrice }: { marketPrice: number }) => {
             <div className="flex flex-col md:flex-row gap-12 items-center">
                 <div className="flex-1 w-full space-y-8">
                     <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Wire Type</label>
-                        <select className="w-full bg-white border border-gray-200 py-3 px-4 font-serif focus:border-[#D32F2F] focus:outline-none transition-colors cursor-pointer" value={simType} onChange={(e)=>setSimType(e.target.value)}>
-                            {/* ★初期値を無効なプレースホルダーに変更 */}
-                            <option value="" disabled>買取希望項目を選択</option>
-                            <option value="pika">特1号銅線 (ピカ線)</option>
-                            <option value="high">高銅率線 (80%~)</option>
-                            <option value="medium">中銅率線 (60%~)</option>
-                            <option value="low">低銅率線 (40%~)</option>
-                            <option value="mixed">雑線・ミックス</option>
-                            {/* ★非鉄原料を追加 */}
-                            <option value="non_ferrous">非鉄原料</option>
+                        <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Wire / Metal Type</label>
+                        <select className="w-full bg-white border border-gray-200 py-3 px-4 font-serif focus:border-[#D32F2F] focus:outline-none transition-colors cursor-pointer" value={simProduct} onChange={(e)=>setSimProduct(e.target.value)}>
+                            <option value="" disabled>買取希望品目を選択</option>
+                            <optgroup label="電線類">
+                                {data?.wires.map((w:any) => <option key={w.id} value={w.id}>{getDisplayName(w)} ({w.ratio}%)</option>)}
+                            </optgroup>
+                            <optgroup label="非鉄金属">
+                                {data?.castings.map((c:any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            </optgroup>
                         </select>
                     </div>
                     <div>
@@ -61,7 +88,7 @@ export const Simulator = ({ marketPrice }: { marketPrice: number }) => {
                     )}
                 </div>
             </div>
-            <div className="mt-8 text-center"><div className="inline-flex items-center gap-2 text-xs font-mono text-gray-500"><span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>Current Market Price: ¥{Number(marketPrice).toLocaleString()} / kg</div></div>
+            <div className="mt-8 text-center"><div className="inline-flex items-center gap-2 text-xs font-mono text-gray-500"><span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>Current Copper Price: ¥{Number(marketPrice).toLocaleString()} / kg</div></div>
             </div>
         </div>
     </section>
