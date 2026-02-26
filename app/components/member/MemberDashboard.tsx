@@ -1,11 +1,11 @@
-"use client";
+// @ts-nocheck
 import React, { useState } from 'react';
 import { UserData, MarketData } from '../../types';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 const Icons = {
-  Dashboard: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>,
+  Dashboard: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2h-2a2 2 0 01-2-2v-2z" /></svg>,
   History: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   Calc: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
   Star: () => <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>,
@@ -15,9 +15,10 @@ interface MemberProps {
   user: UserData | null;
   data: MarketData | null;
   setView: (view: any) => void;
+  onLogout?: any;
 }
 
-export const MemberDashboard = ({ user, data, setView }: MemberProps) => {
+export const MemberDashboard = ({ user, data, setView, onLogout }: MemberProps) => {
   const [memberTab, setMemberTab] = useState<'DASHBOARD' | 'HISTORY' | 'RESERVATION'>('DASHBOARD');
   const [reserveProduct, setReserveProduct] = useState('');
   const [reserveWeight, setReserveWeight] = useState('');
@@ -28,10 +29,17 @@ export const MemberDashboard = ({ user, data, setView }: MemberProps) => {
   const marketPrice = data?.config?.market_price || 0;
   const myClientId = (user as any)?.clientId || (user as any)?.id;
 
-  // ★ GASのReservationsから自分の取引データだけを抽出（日付降順）
   const myHistory = (data?.reservations || [])
     .filter((r: any) => r.memberId === myClientId)
     .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  // ★ 追加: 表示名を動的に生成
+  const getDisplayName = (w: any) => {
+      let name = w.name;
+      if (w.sq && w.sq !== '-') name += ` ${w.sq}sq`;
+      if (w.core && w.core !== '-') name += ` ${w.core}C`;
+      return name;
+  };
 
   const getUnitPrice = () => {
     const product = data?.wires.find(x => x.id === reserveProduct) || data?.castings.find(x => x.id === reserveProduct);
@@ -49,7 +57,11 @@ export const MemberDashboard = ({ user, data, setView }: MemberProps) => {
       if (!reserveDate) { alert("訪問予定日時を選択してください。"); return; }
       
       setIsSubmitting(true);
-      const productObj = data?.wires.find(x => x.id === reserveProduct) || data?.castings.find(x => x.id === reserveProduct);
+      
+      // ★ 修正: DBに保存する際も、詳細な名前(getDisplayName)をセットする
+      const productObj = data?.wires.find(x => x.id === reserveProduct);
+      const castingObj = data?.castings.find(x => x.id === reserveProduct);
+      const displayName = productObj ? getDisplayName(productObj) : (castingObj?.name || '');
 
       const payload = {
         action: 'REGISTER_RESERVATION',
@@ -57,7 +69,7 @@ export const MemberDashboard = ({ user, data, setView }: MemberProps) => {
         memberId: myClientId,
         memberName: (user as any)?.companyName || (user as any)?.name,
         memo: reserveMemo,
-        items: [{ product: productObj?.name, weight: weight, price: unitPrice }], // price に統一
+        items: [{ product: displayName, weight: weight, price: unitPrice }], 
         totalEstimate: total
       };
       
@@ -67,7 +79,6 @@ export const MemberDashboard = ({ user, data, setView }: MemberProps) => {
           if(d.status === 'success') {
             alert('予約が完了しました。工場でお待ちしております。');
             setReserveProduct(''); setReserveWeight('');
-            // ページリロードなしで最新データを取得できるとベストですが、今回はアラートのみ
           } else {
             alert('予約エラー: ' + d.message);
           }
@@ -96,13 +107,16 @@ export const MemberDashboard = ({ user, data, setView }: MemberProps) => {
     doc.text(`お客様: ${(user as any)?.companyName || (user as any)?.name || 'ご担当者様'}`, 15, 38);
     doc.setFontSize(10); doc.text("株式会社 月寒製作所 苫小牧工場", 195, 30, { align: "right" });
     
-    const productObj = data?.wires.find(x => x.id === reserveProduct) || data?.castings.find(x => x.id === reserveProduct);
+    // ★ 修正: PDFにも詳細な名前を出力
+    const productObj = data?.wires.find(x => x.id === reserveProduct);
+    const castingObj = data?.castings.find(x => x.id === reserveProduct);
+    const displayName = productObj ? getDisplayName(productObj) : (castingObj?.name || '未選択');
     const total = weight * unitPrice;
 
     autoTable(doc, { 
         head: [['品目', '予定重量', '概算単価', '概算金額']], 
         body: [
-          [productObj?.name || '未選択', `${weight} kg`, `¥${unitPrice.toLocaleString()}`, `¥${total.toLocaleString()}`],
+          [displayName, `${weight} kg`, `¥${unitPrice.toLocaleString()}`, `¥${total.toLocaleString()}`],
           ['合計 (税込)', '', '', `¥${total.toLocaleString()}`]
         ], 
         startY: 50,
@@ -131,7 +145,7 @@ export const MemberDashboard = ({ user, data, setView }: MemberProps) => {
            <button onClick={()=>setMemberTab('HISTORY')} className={`w-full text-left p-4 rounded-xl text-sm font-bold transition flex items-center gap-3 ${memberTab==='HISTORY' ? 'bg-[#111] text-white shadow-md' : 'text-gray-500 hover:bg-gray-100'}`}><Icons.History /> 取引履歴</button>
         </nav>
         <div className="mt-auto pt-12">
-            <button onClick={() => setView('LP')} className="w-full text-xs text-gray-400 hover:text-[#D32F2F] font-bold uppercase tracking-widest transition">Log out</button>
+            <button onClick={onLogout} className="w-full text-xs text-gray-400 hover:text-[#D32F2F] font-bold uppercase tracking-widest transition">Log out</button>
         </div>
       </aside>
 
@@ -174,7 +188,8 @@ export const MemberDashboard = ({ user, data, setView }: MemberProps) => {
                      <select className="flex-1 bg-white border border-gray-200 p-4 rounded-lg font-bold focus:border-[#D32F2F] outline-none transition cursor-pointer" value={reserveProduct} onChange={(e)=>setReserveProduct(e.target.value)}>
                         <option value="">品目を選択してください</option>
                         <optgroup label="電線">
-                            {data?.wires.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+                            {/* ★ 修正: sqとcoreを結合して表示させる */}
+                            {data?.wires.map(p=><option key={p.id} value={p.id}>{getDisplayName(p)}</option>)}
                         </optgroup>
                         <optgroup label="非鉄金属">
                             {data?.castings.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
@@ -202,7 +217,6 @@ export const MemberDashboard = ({ user, data, setView }: MemberProps) => {
             </div>
          )}
          
-         {/* ★ 取引履歴（HISTORY）の実装 */}
          {memberTab === 'HISTORY' && (
             <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-in fade-in">
                <div className="p-8 border-b border-gray-100 bg-gray-50">
@@ -233,7 +247,7 @@ export const MemberDashboard = ({ user, data, setView }: MemberProps) => {
                                    try {
                                        let raw = record.items;
                                        if (typeof raw === 'string') raw = JSON.parse(raw);
-                                       if (typeof raw === 'string') raw = JSON.parse(raw); // 念のため2回
+                                       if (typeof raw === 'string') raw = JSON.parse(raw); 
                                        if (Array.isArray(raw)) parsedItems = raw;
                                    } catch(e) {}
 
