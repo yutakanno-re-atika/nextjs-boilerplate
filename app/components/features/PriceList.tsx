@@ -5,7 +5,6 @@ import React from 'react';
 import Image from 'next/image';
 import { MarketData } from '../../types';
 
-// --- 画像マッピングヘルパー ---
 const getImageUrl = (name: string, category: string): string => {
   const DEFAULT_IMG = '/images/items/mixed_wire.png'; 
   
@@ -22,14 +21,20 @@ const getImageUrl = (name: string, category: string): string => {
   return DEFAULT_IMG;
 };
 
-// --- 型定義 ---
+// ★ 追加: 表示名を動的に生成（sqと芯数を結合）
+const getDisplayName = (w: any) => {
+    let name = w.name;
+    if (w.sq && w.sq !== '-') name += ` ${w.sq}sq`;
+    if (w.core && w.core !== '-') name += ` ${w.core}C`;
+    return name;
+};
+
 interface PriceListProps {
   data: MarketData | null;
   marketPrice: number;
 }
 
 export function PriceList({ data, marketPrice }: PriceListProps) {
-  // データロード中の表示
   if (!data || !marketPrice) {
     return (
       <div className="py-24 text-center border-y border-gray-100 bg-gray-50">
@@ -39,35 +44,32 @@ export function PriceList({ data, marketPrice }: PriceListProps) {
     );
   }
 
-  // 更新日
   const lastUpdate = data.history && data.history.length > 0 
     ? data.history[data.history.length - 1].date 
     : new Date().toLocaleDateString();
 
-  // --- データ統合ロジック ---
-  
-  // 1. 電線データ (★固定データを廃止し、GASからMIX系を動的抽出)
+  // ★ 修正: MIXだけでなく、歩留まりが設定されている電線をすべて抽出し、名前を動的生成
   const wireItems = (data.wires || [])
-    .filter(w => w.id && w.id.includes('MIX')) // IDにMIXが含まれるものを抽出
-    .slice(0, 4) // 上位4つに絞る（MIX-75, 56, 42, 30 を想定）
+    .filter(w => w.ratio > 0)
     .map(w => {
-      // 現場のユーザー向けに、IDから動的に説明文を付与
-      let desc = '未選別の混合ケーブル・家電線など。';
-      if (w.id === 'MIX-75') desc = '太線や高銅率ケーブルが中心の高品質ミックス。';
-      if (w.id === 'MIX-56') desc = '中程度の太さのケーブルが混ざった一般的なミックス。';
-      if (w.id === 'MIX-42') desc = 'VVF（VA線）や細線が中心のミックス。';
-      if (w.id === 'MIX-30') desc = '歩留まりの低い家電線や通信線などのミックス。';
+      const displayName = getDisplayName(w);
+      let desc = w.maker && w.maker !== '-' ? `メーカー: ${w.maker}` : '電線・ケーブル類';
+      if (w.id.includes('MIX')) {
+          if (w.id === 'MIX-75') desc = '太線や高銅率ケーブルが中心の高品質ミックス。';
+          else if (w.id === 'MIX-56') desc = '中程度の太さのケーブルが混ざった一般的なミックス。';
+          else if (w.id === 'MIX-42') desc = 'VVF（VA線）や細線が中心のミックス。';
+          else if (w.id === 'MIX-30') desc = '歩留まりの低い家電線や通信線などのミックス。';
+      }
       
       return {
         id: w.id,
-        name: w.name,
+        name: displayName,
         ratio: w.ratio,
         desc: desc,
         image: getImageUrl(w.name, 'wire')
       };
     });
 
-  // 2. 非鉄データ
   const metalItems = (data.castings || [])
     .filter(c => ['特号', '1号', '2号', '込銅', '真鍮', '砲金'].some(key => c.name.includes(key)))
     .map(c => ({
@@ -79,28 +81,24 @@ export function PriceList({ data, marketPrice }: PriceListProps) {
       image: getImageUrl(c.name, 'metal')
     }));
 
-  // 両方のデータを一つに結合（category属性を付与して判定に使用）
   const displayItems = [
     ...wireItems.map(item => ({ ...item, category: 'wire' as const })),
     ...metalItems.map(item => ({ ...item, category: 'metal' as const }))
   ];
 
-  // --- 価格計算ロジック ---
   const calcPrice = (item: any, type: 'wire' | 'metal') => {
     let price = 0;
     if (type === 'wire') {
-      price = (marketPrice * (item.ratio / 100) * 0.9) - 15;
+      price = (marketPrice * (item.ratio / 100) * 0.85) - 15;
     } else {
       price = (marketPrice * (item.ratio / 100)) + (item.priceOffset || 0);
     }
-    return Math.floor(price / 10) * 10; // 10円単位切り捨て
+    return Math.floor(price / 10) * 10;
   };
 
   return (
     <section className="py-16 bg-gray-50" id="price-list">
       <div className="container mx-auto px-4 max-w-6xl">
-        
-        {/* ヘッダーエリア */}
         <div className="text-center mb-12">
           <div className="inline-flex items-center justify-center gap-2 mb-4">
              <span className="w-8 h-[2px] bg-[#D32F2F]"></span>
@@ -119,17 +117,15 @@ export function PriceList({ data, marketPrice }: PriceListProps) {
           </div>
         </div>
 
-        {/* タブナビゲーションは削除し、全項目を一括表示 */}
+        {/* リスト表示 */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {displayItems.map((item) => (
             <div 
               key={item.category + '-' + item.id} 
               className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col relative"
             >
-              {/* 左側のボーダー装飾 (被覆電線はオレンジ、非鉄はイエロー) */}
               <div className={`absolute left-0 top-0 bottom-0 w-1 ${item.category === 'wire' ? 'bg-orange-500' : 'bg-yellow-500'} group-hover:w-2 transition-all z-10`}></div>
 
-              {/* 画像エリア */}
               <div className="relative h-48 w-full bg-gray-100 overflow-hidden">
                  <Image
                     src={item.image}
@@ -138,27 +134,26 @@ export function PriceList({ data, marketPrice }: PriceListProps) {
                     className="object-cover group-hover:scale-110 transition-transform duration-700"
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   />
-                  {/* 歩留まりバッジ */}
                   <div className="absolute top-0 right-0 bg-black/80 text-white text-xs font-mono px-3 py-1 rounded-bl-lg backdrop-blur-sm z-10">
-                    {item.ratio}%
+                    {item.ratio.toFixed(1)}%
                   </div>
               </div>
 
-              {/* コンテンツエリア */}
               <div className="p-5 flex flex-col flex-grow pl-7">
                 <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-lg font-bold text-gray-900 leading-tight group-hover:text-[#D32F2F] transition-colors">
+                    <h3 className="text-lg font-bold text-gray-900 leading-tight group-hover:text-[#D32F2F] transition-colors line-clamp-2">
                       {item.name}
                     </h3>
-                    {/* カテゴリを示す小さなバッジ */}
+                </div>
+                
+                <div className="mb-4">
                     <span className="text-[9px] font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-sm whitespace-nowrap">
                         {item.category === 'wire' ? '被覆電線' : '非鉄金属'}
                     </span>
+                    <p className="text-xs text-gray-500 mt-2 line-clamp-2 min-h-[2.5em]">
+                      {item.desc}
+                    </p>
                 </div>
-                
-                <p className="text-xs text-gray-500 mb-4 line-clamp-2 min-h-[2.5em]">
-                  {item.desc}
-                </p>
 
                 <div className="mt-auto pt-4 border-t border-dashed border-gray-100">
                   <div className="flex justify-between items-end">
@@ -181,14 +176,12 @@ export function PriceList({ data, marketPrice }: PriceListProps) {
           ))}
         </div>
 
-        {/* 注意書き */}
         <div className="mt-12 text-center">
             <p className="text-xs text-gray-400 leading-relaxed">
             ※ 上記価格は税込・参考価格です。状態（付き物、油、酸化など）や相場変動により予告なく変更される場合があります。<br/>
             ※ 10kg未満のお持ち込み、または事業系廃棄物の場合は単価が異なる場合があります。
             </p>
         </div>
-
       </div>
     </section>
   );
