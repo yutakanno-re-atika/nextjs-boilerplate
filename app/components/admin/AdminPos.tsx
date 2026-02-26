@@ -21,6 +21,14 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   const castingsMaster = data?.castings || [];
   const clients = data?.clients || [];
 
+  // ★ 追加: 表示名を動的に生成する関数 (sqとcoreを結合)
+  const getDisplayName = (w: any) => {
+      let name = w.name;
+      if (w.sq && w.sq !== '-') name += ` ${w.sq}sq`;
+      if (w.core && w.core !== '-') name += ` ${w.core}C`;
+      return name;
+  };
+
   useEffect(() => {
     if (editingResId) {
       const res = localReservations.find(r => r.id === editingResId);
@@ -50,8 +58,10 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   };
 
   const handleSelectClient = (client: any) => {
-      setClientName(client.name);
-      setSelectedClientId(client.id);
+      const resolvedName = client.companyName || client.name || '';
+      const resolvedId = client.clientId || client.id || 'GUEST';
+      setClientName(resolvedName);
+      setSelectedClientId(resolvedId);
       setShowSuggest(false);
   };
 
@@ -59,7 +69,8 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
     const newItems = [...items];
     newItems[index][field] = value;
     if (field === 'product') {
-        const wire = wiresMaster.find((w:any) => w.name === value);
+        // ★ 修正: 表示名(getDisplayName) または 元のname(互換性) でマスターを検索
+        const wire = wiresMaster.find((w:any) => getDisplayName(w) === value || w.name === value);
         const casting = castingsMaster.find((c:any) => c.name === value);
         if (wire) {
             const copperPrice = Number(data?.market?.copper?.price || 1450);
@@ -98,10 +109,10 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
 
   const inputClass = "w-full bg-white border border-gray-300 p-2.5 rounded-sm text-lg font-bold text-gray-900 outline-none focus:border-[#D32F2F] focus:ring-1 focus:ring-[#D32F2F] transition font-mono";
 
-  // ★ 検索サジェスト用データを安全にフィルタリング
-  const searchHitClients = clients
-      .filter((c:any) => c.name && c.name.toLowerCase().includes(clientName.toLowerCase()))
-      .slice(0, 10); // パフォーマンス確保のため最大10件
+  const searchHitClients = clients.filter((c: any) => {
+    const targetName = c.companyName || c.name || '';
+    return targetName.toLowerCase().includes(clientName.toLowerCase());
+  }).slice(0, 10);
 
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-500 max-w-6xl mx-auto w-full text-gray-800">
@@ -121,9 +132,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       </header>
 
       <div className="bg-white border border-gray-200 shadow-sm flex flex-col flex-1 rounded-sm overflow-hidden">
-          {/* 顧客情報エリア */}
           <div className="p-5 border-b border-gray-200 bg-gray-50 flex flex-col md:flex-row gap-6">
-              {/* ★ Z-indexのスタッキングコンテキストを修正し、最前面に出るように z-50 を追加 */}
               <div className="flex-1 relative z-50">
                   <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1">お客様 (業者名)</label>
                   <div className="relative">
@@ -139,18 +148,22 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                       />
                       {showSuggest && clientName && searchHitClients.length > 0 && (
                           <ul className="absolute z-50 w-full bg-white border border-gray-300 mt-1 shadow-2xl max-h-60 overflow-y-auto rounded-sm">
-                              {searchHitClients.map((c:any) => (
-                                  <li key={c.id} onMouseDown={() => handleSelectClient(c)} className="p-3 hover:bg-red-50 cursor-pointer border-b border-gray-100 last:border-0 text-sm transition-colors">
-                                      <div className="font-bold text-gray-900">{c.name}</div>
-                                      <div className="text-xs text-gray-500 font-mono mt-0.5">{c.phone || '電話番号未登録'}</div>
-                                  </li>
-                              ))}
+                              {searchHitClients.map((c:any) => {
+                                  const resolvedName = c.companyName || c.name || '不明な顧客';
+                                  const resolvedId = c.clientId || c.id || 'GUEST';
+                                  const resolvedSubInfo = c.rank ? `${c.rank} MEMBER` : (c.note || '');
+                                  return (
+                                      <li key={resolvedId} onMouseDown={() => handleSelectClient(c)} className="p-3 hover:bg-red-50 cursor-pointer border-b border-gray-100 last:border-0 text-sm transition-colors">
+                                          <div className="font-bold text-gray-900">{resolvedName}</div>
+                                          <div className="text-xs text-gray-500 font-mono mt-0.5">{resolvedSubInfo}</div>
+                                      </li>
+                                  );
+                              })}
                           </ul>
                       )}
                   </div>
-                  {/* 新規顧客向けのアラート表示（任意） */}
                   {clientName && selectedClientId === 'GUEST' && !showSuggest && (
-                      <p className="absolute -bottom-5 left-0 text-[10px] font-bold text-[#D32F2F]">※ 新規顧客（GUEST）として処理されます</p>
+                      <p className="absolute -bottom-5 left-0 text-[10px] font-bold text-[#D32F2F]">※ 顧客マスター未登録（GUEST）として処理されます</p>
                   )}
               </div>
               <div className="md:w-1/3 w-full">
@@ -159,7 +172,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
               </div>
           </div>
 
-          {/* 明細エリア */}
           <div className="p-5 flex-1 overflow-y-auto bg-white">
               <div className="hidden md:flex text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 px-2">
                   <div className="flex-1">持込品目</div>
@@ -175,7 +187,13 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                           <div className="flex-1 w-full md:w-auto">
                               <select className="w-full bg-transparent p-2 text-base font-bold text-gray-900 outline-none cursor-pointer" value={item.product} onChange={e => handleItemChange(idx, 'product', e.target.value)}>
                                   <option value="">品目を選択</option>
-                                  <optgroup label="電線類 (W/M)">{wiresMaster.map((w:any) => <option key={w.id} value={w.name}>{w.name} ({w.ratio}%)</option>)}</optgroup>
+                                  <optgroup label="電線類 (W/M)">
+                                      {/* ★ 修正: sqとcoreを結合して表示・登録させる */}
+                                      {wiresMaster.map((w:any) => {
+                                          const dName = getDisplayName(w);
+                                          return <option key={w.id} value={dName}>{dName} ({w.ratio}%)</option>;
+                                      })}
+                                  </optgroup>
                                   <optgroup label="非鉄金属 (C/M)">{castingsMaster.map((c:any) => <option key={c.id} value={c.name}>{c.name}</option>)}</optgroup>
                                   <option value="雑線">雑線</option>
                               </select>
@@ -206,7 +224,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
               </button>
           </div>
 
-          {/* フッター（合計＆保存） */}
           <div className="p-6 bg-[#111] text-white flex flex-col md:flex-row justify-between items-center gap-6">
               <div className="text-center md:text-left">
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">合計買掛金額</p>
