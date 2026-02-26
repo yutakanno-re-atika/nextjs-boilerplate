@@ -10,7 +10,8 @@ const Icons = {
   Clock: () => <svg className="w-4 h-4 text-gray-400 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   Edit: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>,
   Save: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>,
-  Close: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+  Close: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>,
+  Book: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
 };
 
 const defaultPricingRules = {
@@ -36,6 +37,20 @@ const defaultPricingRules = {
   "雑線": { base: "copper", ratio: 35, offset: -15 }
 };
 
+// ★ 初期教科書プロンプト（ボスのノウハウ）
+const defaultAIPrompt = `[銅・砲金・真鍮類]
+- 「ピカ線・1号銅」のように併記されている場合は、『光線』と『1号線』の両方に同じ数値を設定してください。
+- 「込銅」しか記載がない場合、『上銅』および『並銅』の両方に「込銅」の数値を設定してください。
+- 「バルブ砲金」が見当たらない場合は、『込砲金』の数値を設定してください。
+- 「真鍮/黄銅」「真鍮」は『込中』に設定してください。
+- 「ミックスメタル」は『山行中』に設定してください。
+
+[電線類]
+- 「1本線」「8割」は『被覆線80%』です。
+- 「CV線」は『被覆線60%』です。
+- 「VA線」「VVF」「Fケーブル」は『被覆線40%』です。
+- 「家電線」「弱電線」は『雑線』です。`;
+
 const targetItems = Object.keys(defaultPricingRules);
 const keyItems = ["光線（ピカ線、特号）", "並銅", "砲金", "込中"];
 
@@ -46,14 +61,14 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
   const [lastFetchDate, setLastFetchDate] = useState<string>('未取得');
   
   const [isEditing, setIsEditing] = useState(false);
+  const [isEditingPrompt, setIsEditingPrompt] = useState(false);
+  
   const [pricingRules, setPricingRules] = useState<any>(defaultPricingRules);
-  const [isSavingRules, setIsSavingRules] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState<string>(defaultAIPrompt);
+  const [isSaving, setIsSaving] = useState(false);
 
   const currentCopperPrice = data?.market?.copper?.price || 1450;
   const currentBrassPrice = data?.market?.brass?.price || 980;
-  const currentZincPrice = data?.market?.zinc?.price || 450;
-  const currentLeadPrice = data?.market?.lead?.price || 380;
-  const currentTinPrice = data?.market?.tin?.price || 8900;
 
   useEffect(() => {
       const savedData = localStorage.getItem('factoryOS_competitors');
@@ -66,7 +81,12 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
           try {
               const savedRules = JSON.parse(data.config.pricing_rules);
               setPricingRules({ ...defaultPricingRules, ...savedRules });
-          } catch(e) { console.error("Rules parse error"); }
+          } catch(e) {}
+      }
+
+      // ★ GASのConfigから教科書を復元
+      if (data?.config?.ai_knowledge_base) {
+          setAiPrompt(data.config.ai_knowledge_base);
       }
   }, [data]);
 
@@ -75,8 +95,6 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       if (!rule) return 0;
       let basePrice = currentCopperPrice;
       if (rule.base === 'brass') basePrice = currentBrassPrice;
-      if (rule.base === 'zinc') basePrice = currentZincPrice;
-      if (rule.base === 'lead') basePrice = currentLeadPrice;
       return Math.floor(basePrice * (Number(rule.ratio) / 100)) + Number(rule.offset);
   };
 
@@ -84,21 +102,26 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       setPricingRules((prev: any) => ({ ...prev, [item]: { ...prev[item], [field]: value } }));
   };
 
-  const handleSaveRules = async () => {
-      setIsSavingRules(true);
+  // ★ ルールと教科書を一緒に保存する関数
+  const handleSaveConfig = async () => {
+      setIsSaving(true);
       try {
-          const res = await fetch('/api/gas', {
+          // 価格ルールの保存
+          await fetch('/api/gas', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ action: 'UPDATE_CONFIG', key: 'pricing_rules', value: JSON.stringify(pricingRules), description: 'プライシングダッシュボードからの更新' })
+              body: JSON.stringify({ action: 'UPDATE_CONFIG', key: 'pricing_rules', value: JSON.stringify(pricingRules) })
           });
-          const result = await res.json();
-          if (result.status === 'success') {
-              setIsEditing(false);
-              alert("自社の買取設定（歩留まり・控除額）をデータベースに保存しました。");
-          } else { alert("保存エラー: " + result.message); }
+          // 教科書の保存
+          await fetch('/api/gas', {
+              method: 'POST',
+              body: JSON.stringify({ action: 'UPDATE_CONFIG', key: 'ai_knowledge_base', value: aiPrompt })
+          });
+          
+          setIsEditing(false);
+          setIsEditingPrompt(false);
+          alert("データベース（Config）に設定を保存しました。\n次回からAIはこの教科書を読んでスクレイピングを実行します。");
       } catch (e) { alert("通信エラーが発生しました。"); }
-      setIsSavingRules(false);
+      setIsSaving(false);
   };
 
   const handleRefresh = async () => {
@@ -113,7 +136,12 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       for (const target of targets) {
           setStatusMessage(`${target.name}をAI解析中...`);
           try {
-              const res = await fetch('/api/competitors', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ targetKey: target.key }) });
+              // ★ 通信時に「現在の教科書」をリクエストボディに含めてAIに渡す
+              const res = await fetch('/api/competitors', { 
+                  method: 'POST', 
+                  headers: { 'Content-Type': 'application/json' }, 
+                  body: JSON.stringify({ targetKey: target.key, customPrompt: aiPrompt }) 
+              });
               if (res.ok) {
                   const result = await res.json();
                   if (result.status === 'success' && result.data) results.push(result.data);
@@ -134,30 +162,9 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       setTimeout(() => { setIsRefreshing(false); setStatusMessage('最新情報を取得'); }, 2000);
   };
 
-  const handleDownloadCSV = () => {
-      if (competitors.length === 0) return alert("データがありません");
-      const headers = ['品目名', '月寒製作所 (自社)', ...competitors.map(c => c.name)];
-      const rows = targetItems.map(item => {
-          const myPrice = calculateMyPrice(item, pricingRules);
-          const compPrices = competitors.map(c => c.prices[item] !== null ? c.prices[item] : '');
-          return [item, myPrice, ...compPrices];
-      });
-      const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-      const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
-      const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.setAttribute('href', url);
-      link.setAttribute('download', `competitor_prices_${new Date().toISOString().slice(0, 10)}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-  };
-
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-500 text-gray-900 pb-12 font-sans">
       
-      {/* 🔴 ヘッダー */}
       <header className="mb-6 flex flex-col sm:flex-row justify-between sm:items-end flex-shrink-0 pb-4 border-b border-gray-200 gap-4">
         <div>
             <h2 className="text-2xl font-black tracking-tight flex items-center gap-2 font-serif">
@@ -167,8 +174,8 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
             <p className="text-xs text-gray-500 mt-1 font-mono tracking-wider ml-3">AI COMPETITOR RESEARCH & DYNAMIC PRICING</p>
         </div>
         <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
-            <button onClick={handleDownloadCSV} className="flex-1 sm:flex-none justify-center bg-white border border-gray-300 text-gray-700 px-4 py-2.5 rounded-sm text-xs font-bold hover:bg-gray-50 transition shadow-sm flex items-center gap-2">
-                <Icons.Download /> CSV
+            <button onClick={() => setIsEditingPrompt(!isEditingPrompt)} className="flex-1 sm:flex-none justify-center bg-white border border-blue-300 text-blue-700 px-4 py-2.5 rounded-sm text-xs font-bold hover:bg-blue-50 transition shadow-sm flex items-center gap-2">
+                <Icons.Book /> AI教科書
             </button>
             <button onClick={handleRefresh} disabled={isRefreshing} className="flex-1 sm:flex-none w-48 justify-center bg-[#111] text-white px-5 py-2.5 rounded-sm text-xs font-bold hover:bg-[#D32F2F] transition flex items-center gap-2 disabled:opacity-50">
                 {isRefreshing && <span className="animate-spin"><Icons.Refresh /></span>}
@@ -177,29 +184,28 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
         </div>
       </header>
 
-      {/* 🔴 サマリーダッシュボード */}
-      <div className="bg-white border border-gray-200 rounded-sm shadow-sm mb-6 flex flex-col flex-shrink-0">
-          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center p-4 md:p-5 border-b border-gray-100 bg-gray-50 gap-4">
-              <div className="flex flex-wrap gap-4 md:gap-8">
-                  <div className="flex flex-col min-w-[100px]">
-                      <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest flex items-center"><Icons.Banknotes /> 銅建値 (JX)</span>
-                      <span className="text-lg md:text-xl font-mono font-black text-[#D32F2F] mt-1">¥{currentCopperPrice.toLocaleString()}</span>
-                  </div>
-                  <div className="flex flex-col border-l border-gray-200 pl-4 md:pl-8 min-w-[100px]">
-                      <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">真鍮 (日本伸銅)</span>
-                      <span className="text-base md:text-xl font-mono font-black text-gray-900 mt-1">¥{currentBrassPrice.toLocaleString()}</span>
-                  </div>
+      {/* ★ AIナレッジベース（教科書）エディタ */}
+      {isEditingPrompt && (
+          <div className="bg-blue-50 border border-blue-200 p-4 rounded-sm mb-6 animate-in slide-in-from-top-2">
+              <div className="flex justify-between items-center mb-2">
+                  <h3 className="text-sm font-bold text-blue-900 flex items-center gap-2">
+                      <Icons.Book /> 月寒製作所 マスター・ナレッジベース（AIへの指示書）
+                  </h3>
+                  <button onClick={handleSaveConfig} disabled={isSaving} className="text-xs font-bold text-white bg-blue-600 px-4 py-1.5 rounded-sm hover:bg-blue-700 transition shadow-sm flex items-center gap-1">
+                      {isSaving ? '保存中...' : '教科書を更新する'}
+                  </button>
               </div>
-              <div className="text-left md:text-right flex flex-row lg:flex-col items-center lg:items-end gap-3 lg:gap-1 border-t lg:border-t-0 border-gray-200 pt-4 lg:pt-0">
-                  <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest flex items-center"><Icons.Clock /> AI最終巡回</span>
-                  <span className="text-xs md:text-sm font-mono font-bold text-gray-800 bg-white px-2 md:px-3 py-1 border border-gray-200 rounded-sm shadow-sm">{lastFetchDate}</span>
-              </div>
+              <p className="text-xs text-blue-700 mb-3">ここに書かれたルールを基に、スクレイピングAIが競合の価格表を当社の20品目に強制マッピングします。自由に業界の常識を書き足してください。</p>
+              <textarea 
+                  className="w-full h-48 p-3 text-sm font-mono border border-blue-300 rounded-sm focus:outline-none focus:border-blue-500 shadow-inner"
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
+              />
           </div>
-      </div>
+      )}
 
-      {/* 🔴 メイン価格テーブル (全20品目) ＆ 編集モード */}
+      {/* 以下、既存の価格テーブル */}
       <div className="flex-1 bg-white rounded-sm border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-[500px] md:min-h-0 relative">
-          
           <div className="bg-gray-100 border-b border-gray-200 p-3 flex justify-between items-center sticky top-0 z-30">
               <span className="text-xs font-bold text-gray-600 flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
@@ -211,8 +217,8 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                           <button onClick={() => setIsEditing(false)} className="text-xs font-bold text-gray-500 bg-white border border-gray-300 px-3 py-1.5 rounded-sm hover:bg-gray-50 transition flex items-center gap-1">
                               <Icons.Close /> 取消
                           </button>
-                          <button onClick={handleSaveRules} disabled={isSavingRules} className="text-xs font-bold text-white bg-[#D32F2F] px-4 py-1.5 rounded-sm hover:bg-red-700 transition shadow-sm flex items-center gap-1 disabled:opacity-50">
-                              {isSavingRules ? '保存中...' : <><Icons.Save /> DBへ反映</>}
+                          <button onClick={handleSaveConfig} disabled={isSaving} className="text-xs font-bold text-white bg-[#D32F2F] px-4 py-1.5 rounded-sm hover:bg-red-700 transition shadow-sm flex items-center gap-1 disabled:opacity-50">
+                              {isSaving ? '保存中...' : <><Icons.Save /> DBへ反映</>}
                           </button>
                       </>
                   ) : (
@@ -245,7 +251,6 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                           const validCompetitorPrices = competitors.map(c => c.prices[item]).filter(p => typeof p === 'number' && p > 0);
                           const maxCompetitorPrice = validCompetitorPrices.length > 0 ? Math.max(...validCompetitorPrices) : 0;
                           
-                          // ★ 勝敗の明確化
                           const isWinning = maxCompetitorPrice > 0 && myPrice >= maxCompetitorPrice;
                           const isLosing = maxCompetitorPrice > 0 && myPrice < maxCompetitorPrice;
                           
@@ -255,7 +260,6 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                               <tr key={idx} className={`hover:bg-gray-50 transition ${isEditing ? 'bg-blue-50/20' : ''}`}>
                                   <td className="p-3 font-medium text-xs text-gray-800 whitespace-nowrap">{item}</td>
                                   
-                                  {/* 自社設定エリア */}
                                   <td className="p-2 md:p-3 border-l border-r border-gray-200 bg-white whitespace-nowrap">
                                       {isEditing ? (
                                           <div className="flex items-center justify-between gap-2 bg-gray-50 p-1.5 rounded border border-gray-200">
@@ -279,7 +283,6 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                                               </span>
                                               <div className="flex items-center gap-2">
                                                   <span className="text-sm font-black text-gray-900 font-mono">¥{myPrice.toLocaleString()}</span>
-                                                  {/* ★ 自社の全体的な勝敗を表示 */}
                                                   {isLosing && (
                                                       <span className="text-[10px] font-bold text-[#D32F2F] border border-red-200 bg-red-50 px-1.5 py-0.5 rounded-sm flex items-center shadow-sm">
                                                           <Icons.Alert /> 劣勢
@@ -295,7 +298,6 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                                       )}
                                   </td>
 
-                                  {/* 競合他社エリア */}
                                   {competitors.map((comp, cIdx) => {
                                       const compPrice = comp.prices[item];
                                       if (!compPrice) return <td key={cIdx} className="p-3 text-xs text-gray-300 font-mono border-r border-gray-100 last:border-0 text-center">-</td>;
@@ -307,8 +309,6 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                                                   <span className={`text-sm font-mono ${compPrice > myPrice ? 'font-bold text-gray-900' : 'text-gray-600'}`}>
                                                       ¥{compPrice.toLocaleString()}
                                                   </span>
-                                                  
-                                                  {/* ★ 1社ごとの勝敗と金額差をバッジで明確化 */}
                                                   {diff < 0 ? (
                                                       <span className="text-[9px] font-bold text-[#D32F2F] bg-red-50 px-1.5 py-0.5 rounded border border-red-100">
                                                           自社が {Math.abs(diff).toLocaleString()}円 負け
