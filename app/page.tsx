@@ -39,42 +39,47 @@ export default function WireMasterCloud() {
   const [data, setData] = useState<MarketData | null>(null);
   const [user, setUser] = useState<UserData | null>(null);
   
-  // ★ キャッシュがある場合はLoadingを最初からfalseにする
   const [isLoading, setIsLoading] = useState(true);
-
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   // ==========================================
-  // ★ 1. 初期ロード：「爆速キャッシュ描画」と「裏側での最新化」
+  // ★ 1. 初期ロード：キャッシュからの自己修復機能付き
   // ==========================================
   useEffect(() => {
-    // 1. ローカルストレージからユーザー情報と「前回のマスターデータ」を即座に復元
     const savedUser = localStorage.getItem('factoryOS_user');
     const savedView = localStorage.getItem('factoryOS_view');
-    const cachedData = localStorage.getItem('factoryOS_masterData'); // ★ キャッシュ読み込み
+    const cachedData = localStorage.getItem('factoryOS_masterData');
 
-    if (savedUser && savedView) {
-      setUser(JSON.parse(savedUser));
-      setView(savedView as 'MEMBER' | 'ADMIN');
+    // キャッシュのパースエラー回避（自己修復機能）
+    if (savedUser && savedUser !== 'undefined' && savedView) {
+      try {
+        setUser(JSON.parse(savedUser));
+        setView(savedView as 'MEMBER' | 'ADMIN');
+      } catch (e) {
+        localStorage.removeItem('factoryOS_user');
+        localStorage.removeItem('factoryOS_view');
+      }
     }
 
-    if (cachedData) {
-        // キャッシュがあれば、即座にデータをセットしてローディング画面を消す（0.1秒で表示）
-        setData(JSON.parse(cachedData));
-        setIsLoading(false);
+    if (cachedData && cachedData !== 'undefined') {
+        try {
+            setData(JSON.parse(cachedData));
+            setIsLoading(false);
+        } catch (e) {
+            localStorage.removeItem('factoryOS_masterData');
+        }
     }
 
-    // 2. 裏側（バックグラウンド）で最新データをGASにフェッチ
+    // 裏側で最新データをGASにフェッチ
     fetch('/api/gas')
       .then(res => res.json())
       .then(d => { 
           if(d.status === 'success') {
               setData(d); 
-              // 最新データをキャッシュとして保存
               localStorage.setItem('factoryOS_masterData', JSON.stringify(d));
           }
-          setIsLoading(false); // キャッシュが無かった初回アクセス用
+          setIsLoading(false); 
       })
       .catch(err => {
           console.error("データ取得エラー:", err);
@@ -85,7 +90,7 @@ export default function WireMasterCloud() {
   const marketPrice = data?.config?.market_price || 0;
 
   // ==========================================
-  // ★ 2. ログイン処理
+  // ログイン処理
   // ==========================================
   const handleLogin = async (e: any) => {
     e.preventDefault();
@@ -115,9 +120,6 @@ export default function WireMasterCloud() {
     setIsLoggingIn(false);
   };
 
-  // ==========================================
-  // ★ 3. ログアウト処理
-  // ==========================================
   const handleLogout = () => {
     setUser(null);
     setView('LP'); 
@@ -125,9 +127,6 @@ export default function WireMasterCloud() {
     localStorage.removeItem('factoryOS_view');
   };
 
-  // ==========================================
-  // 画面の振り分け（ルーティング）
-  // ==========================================
   if (isLoading) {
     return (
       <div className="h-screen w-full flex flex-col items-center justify-center bg-[#F5F5F7]">
@@ -150,9 +149,6 @@ export default function WireMasterCloud() {
     );
   }
 
-  // ==========================================
-  // LP（一般向けページ）とログインモーダルの表示
-  // ==========================================
   return (
     <div className="min-h-screen bg-white text-[#111] font-sans">
       <GlobalNav setView={setView} view={view} />
@@ -172,7 +168,7 @@ export default function WireMasterCloud() {
               <form onSubmit={handleLogin} className="space-y-6">
                 <input name="loginId" className="w-full bg-gray-50 border-b p-3 outline-none focus:border-[#D32F2F] transition" placeholder="ID" required />
                 <input name="password" type="password" className="w-full bg-gray-50 border-b p-3 outline-none focus:border-[#D32F2F] transition" placeholder="PASSWORD" required />
-                <button disabled={isLoggingIn} className="w-full bg-[#111] text-white py-4 font-bold hover:bg-[#D32F2F] transition disabled:bg-gray-400">
+                <button disabled={isLoggingIn} className="w-full bg-[#111] text-white py-4 font-bold hover:bg-[#D32F2F] transition disabled:bg-gray-400 shadow-lg">
                     {isLoggingIn ? '認証中...' : 'ENTER'}
                 </button>
               </form>
