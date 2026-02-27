@@ -29,7 +29,6 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
     const wires = data?.wires || [];
     const castings = data?.castings || [];
     
-    // STAFFデータ（GAS未実装の場合はモックを使用）
     const staffs = data?.staffs || [
         { id: 'S-001', name: '工場長 (菅野)', role: 'ALL', rate: 60, status: 'ACTIVE' },
         { id: 'S-002', name: '佐藤 (検収員)', role: 'INSPECTION', rate: 45, status: 'ACTIVE' },
@@ -37,9 +36,11 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
         { id: 'S-004', name: 'パートA (選別)', role: 'SORTING', rate: 25, status: 'ACTIVE' },
     ];
 
-    // 最新相場の取得（設定の妥当性確認用）
+    // 最新相場の取得
     const copperPrice = Number(data?.config?.market_price) || 1450;
     const brassPrice = Number(data?.config?.brass_price) || 980;
+    const zincPrice = Number(data?.config?.zinc_price) || 450;
+    const leadPrice = Number(data?.config?.lead_price) || 380;
 
     const handleTabChange = (tab: any) => {
         setActiveTab(tab); setEditingId(null); setIsAdding(false); setFormState({}); setSearchTerm('');
@@ -103,7 +104,6 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
         setIsSaving(false);
     };
 
-    // 検索フィルタリングロジック
     const filteredData = useMemo(() => {
         let sourceData = [];
         if (activeTab === 'CLIENTS') sourceData = clients;
@@ -189,7 +189,7 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                 <button onClick={() => handleTabChange('STAFF')} className={`px-4 py-3 text-xs font-bold tracking-widest whitespace-nowrap transition-colors ${activeTab === 'STAFF' ? 'bg-white border-t-2 border-t-[#D32F2F] text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>⏱️ STAFF・労務費</button>
             </div>
 
-            <div className="flex-1 bg-white border-x border-b border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-0 rounded-b-sm">
+            <div className="flex-1 bg-white border-x border-b border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-[500px] rounded-b-sm">
                 <div className="overflow-x-auto overflow-y-auto flex-1 p-0">
                     <table className="w-full text-left border-collapse min-w-[900px]">
                         <thead className="sticky top-0 bg-gray-100 shadow-sm z-10 border-b border-gray-200">
@@ -271,15 +271,19 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                             )}
 
                             {filteredData.map((record: any) => {
-                                // 想定単価の計算ロジック
+                                // ★ 修正: エラー原因であった変数を撤去し、安全に想定単価を計算
                                 let estimatedPrice = 0;
+                                const currentRatio = editingId === record.id ? (formState.ratio || 0) : (record.ratio || 0);
+
                                 if (activeTab === 'WIRES') {
-                                    estimatedPrice = Math.floor(copperPrice * (Number(record.ratio || formState.ratio)/100) * 0.85);
+                                    estimatedPrice = Math.floor(copperPrice * (Number(currentRatio)/100) * 0.85);
                                 } else if (activeTab === 'CASTINGS') {
                                     let base = copperPrice;
-                                    const rType = isEditing && editingId === record.id ? formState.type : record.type;
+                                    const rType = editingId === record.id ? formState.type : record.type;
                                     if (rType === 'BRASS') base = brassPrice;
-                                    estimatedPrice = Math.floor(base * (Number(record.ratio || formState.ratio)/100) * 0.90);
+                                    if (rType === 'ZINC') base = zincPrice;
+                                    if (rType === 'LEAD') base = leadPrice;
+                                    estimatedPrice = Math.floor(base * (Number(currentRatio)/100) * 0.90);
                                 }
 
                                 return (
@@ -346,7 +350,6 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                                                     <td className="p-3 align-top">
                                                         <div className="flex items-center gap-2">
                                                             <span className="font-bold text-gray-900">{record.name}</span>
-                                                            {/* ★ 取引カルテへの導線を追加 */}
                                                             {onNavigate && (
                                                                 <button onClick={() => onNavigate('CLIENT_DETAIL', record.name)} className="text-[10px] bg-blue-50 text-blue-600 border border-blue-200 px-2 py-0.5 rounded flex items-center gap-1 hover:bg-blue-600 hover:text-white transition group" title="取引カルテを開く">
                                                                     <Icons.Card /> <span className="hidden group-hover:inline">カルテ</span>
