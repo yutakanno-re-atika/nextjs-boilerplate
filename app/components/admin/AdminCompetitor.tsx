@@ -45,7 +45,7 @@ const targetItems = Object.keys(defaultPricingRules);
 const chartItems = ["光線（ピカ線、特号）", "砲金", "込中"];
 
 // 線形回帰（最小二乗法）によるロジック推定
-const calculateLinearRegression = (dataPoints) => {
+const calculateLinearRegression = (dataPoints: {x: number, y: number}[]) => {
     const n = dataPoints.length;
     if (n < 2) return null;
 
@@ -56,7 +56,7 @@ const calculateLinearRegression = (dataPoints) => {
     });
 
     const denominator = (n * sumXX - sumX * sumX);
-    if (denominator === 0) return null;
+    if (denominator === 0) return null; // 建値の変動がない（ゼロ除算）場合はnullを返す
 
     const a = (n * sumXY - sumX * sumY) / denominator;
     const b = (sumY - a * sumX) / n;
@@ -79,6 +79,9 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
   const [aiPrompt, setAiPrompt] = useState<string>(defaultAIPrompt);
   const [isSaving, setIsSaving] = useState(false);
 
+  // UIプレビュー用の状態
+  const [showDemoLogic, setShowDemoLogic] = useState(false);
+
   const currentCopperPrice = data?.market?.copper?.price || 1450;
   const currentBrassPrice = data?.market?.brass?.price || 980;
 
@@ -99,12 +102,17 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
               let pricesObj = {};
               try { pricesObj = JSON.parse(row.prices); } catch(e) {}
               
-              const dateObj = new Date(row.date);
-              const mmdd = `${String(dateObj.getMonth()+1).padStart(2, '0')}/${String(dateObj.getDate()).padStart(2, '0')}`;
+              // ★ Safari対応: "YYYY-MM-DD HH:mm:ss" を "YYYY/MM/DD HH:mm:ss" に変換してパースエラーを防ぐ
+              const safeDateStr = typeof row.date === 'string' ? row.date.replace(/-/g, '/') : row.date;
+              const dateObj = new Date(safeDateStr);
               
-              const record = { date: row.date, mmdd: mmdd, prices: pricesObj };
-              historyByName[row.name].push(record);
-              allRawHistory.push({ name: row.name, ...record });
+              if (!isNaN(dateObj.getTime())) {
+                  const mmdd = `${String(dateObj.getMonth()+1).padStart(2, '0')}/${String(dateObj.getDate()).padStart(2, '0')}`;
+                  
+                  const record = { date: row.date, mmdd: mmdd, prices: pricesObj };
+                  historyByName[row.name].push(record);
+                  allRawHistory.push({ name: row.name, ...record });
+              }
           });
 
           const currentList: any[] = [];
@@ -201,7 +209,6 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       
       uniqueComps.forEach((compName, idx) => {
           const compData = dateLabels.map(d => {
-              // 該当日付の最新データを取得
               const records = allHistoryData.filter(h => h.name === compName && h.mmdd === d);
               if (records.length > 0) {
                   const sorted = records.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -215,24 +222,42 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       return sets;
   }, [dateLabels, allHistoryData, activeChartTab, pricingRules, historyMap]);
 
-  // ロジック推定計算
+  // ★ 修正: ロジック推定計算 (同日の重複データを排除し、エラーハンドリングを強化)
   const estimatedLogics = useMemo(() => {
       const logics: Record<string, any> = {};
       const uniqueComps = Array.from(new Set(allHistoryData.map(h => h.name)));
       
       uniqueComps.forEach(compName => {
-          const dataPoints: {x: number, y: number}[] = [];
+          const latestPerDay: Record<string, any> = {};
+          
           allHistoryData.filter(h => h.name === compName).forEach(h => {
               const copperX = historyMap[h.mmdd];
               const compY = h.prices[activeChartTab];
               if (copperX && compY && copperX > 0 && compY > 0) {
-                  dataPoints.push({ x: copperX, y: compY });
+                  latestPerDay[h.mmdd] = { x: copperX, y: compY };
               }
           });
           
-          const result = calculateLinearRegression(dataPoints);
-          if (result) {
-              logics[compName] = result;
+          const dataPoints = Object.values(latestPerDay);
+          
+          if (dataPoints.length >= 2) {
+              const result = calculateLinearRegression(dataPoints);
+              if (result) {
+                  logics[compName] = result;
+              } else {
+                  // denominator === 0 (建値の変動がない場合)
+                  logics[compName] = { 
+                      error: 'no_price_change', 
+                      message: '建値の変動待ち',
+                      points: dataPoints.length 
+                  };
+              }
+          } else {
+              logics[compName] = { 
+                  error: 'not_enough_days', 
+                  message: `データ不足 (${dataPoints.length}日分)`,
+                  points: dataPoints.length 
+              };
           }
       });
       return logics;
@@ -258,14 +283,12 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
 
       if (min === Infinity) return <div className="text-center p-10 text-gray-400">データがありません</div>;
       
-      // 見栄えのため少し余白を持たせる
       min = Math.floor(min * 0.98);
       max = Math.ceil(max * 1.02);
       const range = max - min || 1;
 
       return (
           <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible">
-              {/* Y軸目盛り */}
               {[0, 0.25, 0.5, 0.75, 1].map(tick => {
                   const yVal = min + range * tick;
                   const yPos = padding.top + innerH - (tick * innerH);
@@ -277,7 +300,6 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                   );
               })}
 
-              {/* X軸ラベル */}
               {dateLabels.map((lbl, idx) => {
                   const xPos = padding.left + (idx / Math.max(1, dateLabels.length - 1)) * innerW;
                   return (
@@ -288,7 +310,6 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                   );
               })}
 
-              {/* データライン */}
               {chartDataSets.map((set, setIdx) => {
                   const points = set.data.map((val: number | null, idx: number) => {
                       if (val === null) return null;
@@ -302,7 +323,6 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                   return (
                       <g key={setIdx}>
                           <polyline points={points.join(' ')} fill="none" stroke={set.color} strokeWidth={set.stroke} strokeDasharray={set.dash} strokeLinejoin="round" strokeLinecap="round" />
-                          {/* 最後の点にマーカー */}
                           {points.length > 0 && (
                               <circle cx={points[points.length-1].split(',')[0]} cy={points[points.length-1].split(',')[1]} r="4" fill={set.color} />
                           )}
@@ -353,7 +373,7 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
           </div>
       )}
 
-      {/* ★ 新規: チャート＆ロジック推定セクション */}
+      {/* チャート＆ロジック推定セクション */}
       <div className="grid lg:grid-cols-3 gap-6 mb-8">
           
           {/* 左側: チャート */}
@@ -390,23 +410,47 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
               <p className="text-[10px] text-gray-400 mb-6 border-b border-gray-800 pb-3 relative z-10">過去のデータから他社の「建値に対する計算式」を自動推論します。</p>
               
               <div className="flex-1 space-y-4 relative z-10 overflow-y-auto pr-2 custom-scrollbar">
-                  {Object.keys(estimatedLogics).length === 0 ? (
-                      <p className="text-xs text-gray-500 text-center py-10">データが不足しているため計算できません</p>
+                  {/* ★ 修正: データ不足時および相場変動がない場合のエラーハンドリングとプレビュー機能 */}
+                  {Object.keys(estimatedLogics).length === 0 && !showDemoLogic ? (
+                      <div className="text-center py-10 flex flex-col items-center gap-3">
+                          <p className="text-xs text-gray-500">データが不足しているため計算できません<br/>(最低2日分の価格履歴が必要です)</p>
+                          <button onClick={() => setShowDemoLogic(true)} className="text-[10px] bg-gray-800 text-gray-300 px-3 py-1.5 rounded-sm hover:bg-gray-700 transition border border-gray-700">UIプレビューを確認</button>
+                      </div>
                   ) : (
-                      Object.entries(estimatedLogics).map(([compName, logic]) => (
-                          <div key={compName} className="bg-white/10 p-3 rounded-sm border border-white/20 hover:bg-white/15 transition cursor-default">
-                              <p className="text-xs font-bold text-gray-200 mb-2">{compName}</p>
-                              <div className="flex justify-between items-end font-mono">
-                                  <div>
-                                      <p className="text-[10px] text-gray-400">推定歩留まり</p>
-                                      <p className="text-xl font-black text-white">{logic.ratio.toFixed(1)}<span className="text-xs ml-0.5">%</span></p>
+                      Object.entries(showDemoLogic && Object.keys(estimatedLogics).length === 0 ? {
+                          "サンプル競合他社 A": { ratio: 96.5, offset: -25 },
+                          "サンプル競合他社 B": { ratio: 94.0, offset: 0 },
+                          "サンプル競合他社 C": { error: 'no_price_change', message: '建値の変動待ち' }
+                      } : estimatedLogics).map(([compName, logic]) => (
+                          <div key={compName} className="bg-white/10 p-3 rounded-sm border border-white/20 hover:bg-white/15 transition cursor-default relative">
+                              <p className="text-xs font-bold text-gray-200 mb-2">
+                                  {compName} 
+                                  {showDemoLogic && Object.keys(estimatedLogics).length === 0 && <span className="text-[8px] bg-red-500 text-white px-1 py-0.5 ml-2 rounded font-mono">DEMO</span>}
+                              </p>
+                              
+                              {logic.error ? (
+                                  <div className="py-3 text-center border-t border-white/10 mt-2">
+                                      <p className="text-xs text-yellow-500 font-bold mb-1">⚠️ {logic.message}</p>
+                                      {logic.error === 'no_price_change' && (
+                                          <p className="text-[9px] text-gray-400">建値の変動がないため、歩留まり(%)と調整額(円)を数学的に分離できません。相場が変動した日に再度取得すると計算されます。</p>
+                                      )}
+                                      {logic.error === 'not_enough_days' && (
+                                          <p className="text-[9px] text-gray-400">AIが十分なデータポイントを確保できていません。明日以降に再度取得してください。</p>
+                                      )}
                                   </div>
-                                  <div className="text-gray-500 font-black">×</div>
-                                  <div className="text-right">
-                                      <p className="text-[10px] text-gray-400">調整額 (オフセット)</p>
-                                      <p className="text-xl font-black text-white">{logic.offset > 0 ? '+' : ''}{Math.round(logic.offset)}<span className="text-xs ml-0.5">円</span></p>
+                              ) : (
+                                  <div className="flex justify-between items-end font-mono mt-2">
+                                      <div>
+                                          <p className="text-[10px] text-gray-400">推定歩留まり</p>
+                                          <p className="text-xl font-black text-white">{logic.ratio.toFixed(1)}<span className="text-xs ml-0.5">%</span></p>
+                                      </div>
+                                      <div className="text-gray-500 font-black pb-1">×</div>
+                                      <div className="text-right">
+                                          <p className="text-[10px] text-gray-400">調整額 (オフセット)</p>
+                                          <p className="text-xl font-black text-white">{logic.offset > 0 ? '+' : ''}{Math.round(logic.offset)}<span className="text-xs ml-0.5">円</span></p>
+                                      </div>
                                   </div>
-                              </div>
+                              )}
                           </div>
                       ))
                   )}
