@@ -10,7 +10,8 @@ const Icons = {
   Scissors: () => <svg className="w-5 h-5 inline-block md:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2-2m-2 2l-2-2m0 0a2 2 0 10-2.828-2.828 2 2 0 002.828 2.828zM3 21a2 2 0 102.828-2.828 2 2 0 00-2.828 2.828z" /></svg>,
   Blend: () => <svg className="w-5 h-5 inline-block md:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>,
   Trash: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
-  Plus: () => <svg className="w-5 h-5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
+  Plus: () => <svg className="w-5 h-5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>,
+  FastForward: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>
 };
 
 const WORKERS = ["未選択", "工場長", "佐藤", "鈴木", "高橋", "田中", "パートA"];
@@ -94,8 +95,9 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
       const sortList: any[] = [];
       const processList: any[] = [];
 
+      // ★修正：システムが勝手に判断せず、すべての新規荷物（isSorted: false）を「選別待ち」に入れる
       rawLots.forEach(lot => {
-          if (!lot.isSorted && (lot.product.includes('雑線') || lot.product.includes('家電') || lot.product.includes('ミックス') || lot.product.includes('未選別'))) {
+          if (!lot.isSorted) {
               sortList.push(lot);
           } else {
               processList.push(lot);
@@ -106,6 +108,28 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
   }, [localReservations, productions, wiresMaster, localSortedLots, localConsumedIds]);
 
   const totalProducedCopper = productions.reduce((sum: number, p: any) => sum + (Number(p.outputCopper) || 0), 0);
+
+  // ★追加：選別が不要な場合にワンタップで「加工ヤード」へ送る機能
+  const handleSkipSort = (lot: any) => {
+      const newSortedLots = [...localSortedLots];
+      newSortedLots.push({
+          lotId: `${lot.lotId}-S-SKIP`,
+          reservationId: lot.reservationId,
+          memberName: lot.memberName,
+          date: lot.date,
+          product: lot.product,
+          remainingWeight: lot.remainingWeight,
+          expectedRatio: lot.expectedRatio,
+          isSorted: true
+      });
+      
+      const newConsumedIds = [...localConsumedIds, lot.lotId];
+      
+      setLocalSortedLots(newSortedLots);
+      setLocalConsumedIds(newConsumedIds);
+      localStorage.setItem('factoryOS_sortedLots', JSON.stringify(newSortedLots));
+      localStorage.setItem('factoryOS_consumedIds', JSON.stringify(newConsumedIds));
+  };
 
   const handleSortSubmit = () => {
       if (!sortingLot) return;
@@ -215,7 +239,6 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
           </div>
       </div>
 
-      {/* スマホで横スクロールできるタブ */}
       <div className="flex border-b border-gray-200 bg-gray-50 flex-shrink-0 overflow-x-auto no-scrollbar">
           <button onClick={() => setActiveTab('SORT')} className={`px-4 py-3 md:py-4 text-xs md:text-sm font-bold tracking-widest whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'SORT' ? 'bg-white border-t-2 border-t-blue-600 text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>
               <Icons.Scissors /> 1. 選別待ち ({toSortLots.length})
@@ -246,7 +269,16 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                                   <p className="text-sm text-gray-500 flex items-center mb-5"><Icons.User /> {lot.memberName}</p>
                                   <div className="mt-auto border-t border-gray-100 pt-4 flex justify-between items-center">
                                       <p className="text-3xl font-black font-mono text-gray-900 tracking-tighter">{lot.remainingWeight.toFixed(1)}<span className="text-xs font-bold text-gray-500 ml-1">kg</span></p>
-                                      <button onClick={() => setSortingLot(lot)} className="bg-blue-600 text-white text-sm font-bold px-4 py-2.5 rounded-sm shadow-sm hover:bg-blue-700 transition">選別する</button>
+                                      
+                                      {/* ★修正: 「直行」と「選別」の2つのボタンを配置 */}
+                                      <div className="flex gap-2">
+                                          <button onClick={() => handleSkipSort(lot)} className="bg-gray-100 text-gray-600 border border-gray-300 text-xs font-bold px-3 py-2.5 rounded-sm hover:bg-gray-200 transition flex items-center gap-1">
+                                              直行 <Icons.FastForward />
+                                          </button>
+                                          <button onClick={() => setSortingLot(lot)} className="bg-blue-600 text-white text-sm font-bold px-4 py-2.5 rounded-sm shadow-sm hover:bg-blue-700 transition">
+                                              選別
+                                          </button>
+                                      </div>
                                   </div>
                               </div>
                           ))}
@@ -288,7 +320,6 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                       </table>
                   </div>
                   
-                  {/* アクションバー (スマホで常に画面下部に追従) */}
                   {checkedLotIds.length > 0 && (
                       <div className="fixed bottom-0 left-0 md:absolute md:bottom-0 md:left-0 w-full bg-[#111] text-white p-4 flex justify-between items-center shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.3)] md:shadow-none z-50">
                           <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-4">
