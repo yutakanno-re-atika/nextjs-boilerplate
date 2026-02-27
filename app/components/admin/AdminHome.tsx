@@ -236,38 +236,40 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                 </div>
             </header>
 
-            {/* 行1: 全相場ティッカー（横スクロール） */}
-            <div className="flex flex-nowrap gap-5 overflow-x-auto no-scrollbar mb-10 pb-4 px-2 w-full snap-x">
-                {marketItems.map((m, i) => (
-                    <div key={i} className={`snap-start relative bg-white border ${m.isPrimary ? 'border-[#D32F2F] shadow-md ring-1 ring-red-50' : 'border-gray-200 shadow-sm hover:border-gray-300'} rounded-sm p-4 hover:shadow-lg transition-all duration-300 w-auto min-w-[200px] flex-shrink-0 flex flex-col justify-between overflow-hidden group`}>
-                        {m.sparkData && (
-                            <div className="absolute bottom-0 left-0 w-full h-1/2 opacity-60 group-hover:opacity-100 transition-opacity duration-500">
-                                <Sparkline data={m.sparkData} color={m.isPrimary ? '#D32F2F' : '#D1D5DB'} />
+            {/* ★ 修正ポイント：w-max と shrink-0 を設定し、絶対に潰れない横スクロールを実装 */}
+            <div className="w-full overflow-x-auto no-scrollbar mb-10 pb-4 px-2">
+                <div className="flex gap-4 w-max">
+                    {marketItems.map((m, i) => (
+                        <div key={i} className={`relative bg-white border ${m.isPrimary ? 'border-[#D32F2F] shadow-md ring-1 ring-red-50' : 'border-gray-200 shadow-sm hover:border-gray-300'} rounded-sm p-4 transition-all duration-300 w-[180px] md:w-[220px] shrink-0 flex flex-col justify-between overflow-hidden group`}>
+                            
+                            {m.sparkData && (
+                                <div className="absolute bottom-0 left-0 w-full h-1/2 opacity-60 group-hover:opacity-100 transition-opacity duration-500">
+                                    <Sparkline data={m.sparkData} color={m.isPrimary ? '#D32F2F' : '#D1D5DB'} />
+                                </div>
+                            )}
+                            
+                            <p className="text-xs font-bold text-gray-500 mb-2 relative z-10 whitespace-nowrap">{m.label}</p>
+                            <div className="flex items-baseline gap-1 relative z-10 whitespace-nowrap">
+                                <span className="text-2xl md:text-3xl font-black text-gray-900 tracking-tighter">{m.price.toLocaleString()}</span>
+                                <span className="text-[10px] md:text-xs text-gray-400 font-bold ml-1">{m.unit}</span>
                             </div>
-                        )}
-                        
-                        <p className="text-xs font-bold text-gray-500 mb-2 relative z-10 whitespace-nowrap">{m.label}</p>
-                        <div className="flex items-baseline gap-1 relative z-10 whitespace-nowrap">
-                            <span className="text-3xl font-black text-gray-900 tracking-tighter">{m.price.toLocaleString()}</span>
-                            <span className="text-sm text-gray-400 font-bold ml-1">{m.unit}</span>
+                            
+                            {m.diff !== undefined ? (
+                                <div className="mt-2 text-xs font-bold flex items-center gap-1.5 relative z-10 whitespace-nowrap">
+                                    {m.diff > 0 ? <><Icons.TrendingUp /><span className="text-[#D32F2F]">+{m.diff}</span></> : m.diff < 0 ? <><Icons.TrendingDown /><span className="text-blue-600">{m.diff}</span></> : <><Icons.Minus /><span className="text-gray-400">±0</span></>}
+                                </div>
+                            ) : m.sub ? (
+                                <div className="mt-2 text-[9px] md:text-[10px] text-gray-400 font-mono font-bold relative z-10 whitespace-nowrap">{m.sub}</div>
+                            ) : (
+                                <div className="mt-2 h-4 relative z-10"></div>
+                            )}
                         </div>
-                        {m.diff !== undefined ? (
-                            <div className="mt-2 text-xs font-bold flex items-center gap-1.5 relative z-10 whitespace-nowrap">
-                                {m.diff > 0 ? <><Icons.TrendingUp /><span className="text-[#D32F2F]">+{m.diff}</span></> : m.diff < 0 ? <><Icons.TrendingDown /><span className="text-blue-600">{m.diff}</span></> : <><Icons.Minus /><span className="text-gray-400">±0</span></>}
-                            </div>
-                        ) : m.sub ? (
-                            <div className="mt-2 text-[10px] text-gray-400 font-mono font-bold relative z-10 whitespace-nowrap">{m.sub}</div>
-                        ) : (
-                            <div className="mt-2 h-4 relative z-10"></div>
-                        )}
-                    </div>
-                ))}
+                    ))}
+                </div>
             </div>
 
-            {/* 行2: メインKPI & 分析カード */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 px-2">
                 
-                {/* 1. 資産状況 */}
                 <div className="bg-[#111] text-white p-6 md:p-8 rounded-sm shadow-xl flex flex-col relative overflow-hidden group">
                     <div className="absolute -right-4 -top-4 opacity-10 transform scale-150 group-hover:rotate-12 transition-transform duration-700">
                         <Icons.Scale />
@@ -287,7 +289,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                     </div>
                 </div>
 
-                {/* 2. 現場稼働状況 */}
                 <div className="bg-white p-6 md:p-8 rounded-sm border border-gray-200 shadow-sm flex flex-col justify-between group hover:border-gray-300 transition-colors">
                     <p className="text-xs font-bold text-gray-500 mb-4 uppercase tracking-widest flex items-center gap-2"><Icons.Truck /> 本日の現場稼働</p>
                     <div className="flex items-center gap-6 mt-auto">
@@ -303,7 +304,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                     </div>
                 </div>
 
-                {/* 3. AI稼働状況 */}
                 <div className="bg-gradient-to-br from-blue-50 to-white p-6 md:p-8 rounded-sm border border-blue-100 shadow-sm flex flex-col justify-between relative overflow-hidden group">
                     <div className="absolute -right-4 -top-4 opacity-10 transform scale-150 text-blue-500 transition-transform duration-700"><Icons.Message /></div>
                     <p className="text-xs font-bold text-blue-800 mb-4 uppercase tracking-widest flex items-center gap-2 relative z-10">
@@ -321,14 +321,11 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
 
             </div>
 
-            {/* 行3: メインコンテンツ (2カラム構成) */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 px-2">
                 
-                {/* 左側2カラム: AI・工場状況 */}
                 <div className="lg:col-span-2 space-y-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         
-                        {/* AI プライシング カード */}
                         <div className="group bg-white rounded-sm border border-gray-200 shadow-sm p-6 md:p-8 flex flex-col cursor-pointer hover:border-[#D32F2F] hover:shadow-md transition-all" onClick={() => onNavigate('COMPETITOR')}>
                             <div className="flex justify-between items-start mb-6">
                                 <h3 className="font-bold text-gray-900 flex items-center gap-2 text-sm"><Icons.Radar /> AI 競合価格勝敗</h3>
@@ -339,7 +336,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                                     <span className="text-xs text-gray-500 font-bold mb-1">自社優勢 (Win)</span>
                                     <span className="text-4xl font-black text-gray-900 tracking-tighter">{win}</span>
                                 </div>
-                                <div className="w-full bg-gray-100 h-3 rounded-full overflow-hidden mb-4 border border-gray-200 shadow-inner">
+                                <div className="w-full bg-gray-100 h-3 rounded-sm overflow-hidden mb-4 border border-gray-200 shadow-inner">
                                     <div className="h-full bg-gradient-to-r from-red-600 to-[#D32F2F] transition-all duration-1000" style={{ width: `${(win / Math.max(1, win + lose + draw)) * 100}%` }}></div>
                                 </div>
                                 <div className="flex justify-between text-xs font-bold text-gray-500">
@@ -349,7 +346,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                             </div>
                         </div>
 
-                        {/* 今月の生産実績 カード */}
                         <div className="group bg-white rounded-sm border border-gray-200 shadow-sm p-6 md:p-8 flex flex-col cursor-pointer hover:border-[#D32F2F] hover:shadow-md transition-all" onClick={() => onNavigate('PRODUCTION')}>
                             <div className="flex justify-between items-start mb-6">
                                 <h3 className="font-bold text-gray-900 flex items-center gap-2 text-sm"><Icons.Factory /> 今月の生産実績</h3>
@@ -387,7 +383,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
 
                     </div>
 
-                    {/* クイック価格表 */}
                     <div className="bg-white rounded-sm border border-gray-200 shadow-sm overflow-hidden group hover:border-gray-300 transition-colors h-fit">
                         <div className="p-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center cursor-pointer" onClick={() => onNavigate('DATABASE')}>
                             <h3 className="font-bold text-sm text-gray-900 flex items-center gap-2">本日の買取価格表 <span className="text-xs text-gray-400 font-normal">(主要品目)</span></h3>
@@ -416,7 +411,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                     </div>
                 </div>
 
-                {/* 右側カラム: タイムライン */}
                 <div className="space-y-8">
                     <div className="bg-white rounded-sm border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-[500px]">
                         <div className="p-5 border-b border-gray-200 bg-[#111] text-white flex justify-between items-center cursor-pointer group transition" onClick={() => onNavigate('OPERATIONS')}>
@@ -442,8 +436,9 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                                         let w = 0;
                                         let p = "品目不明";
                                         try {
-                                            const items = typeof res.items === 'string' ? JSON.parse(res.items) : res.items;
-                                            if(items.length > 0) {
+                                            let items = res.items;
+                                            if (typeof items === 'string') items = JSON.parse(items);
+                                            if (Array.isArray(items) && items.length > 0) {
                                                 w = items.reduce((s:number, i:any) => s + (Number(i.weight)||0), 0);
                                                 p = items[0].product || items[0].productName;
                                                 if(items.length > 1) p += " 他";
