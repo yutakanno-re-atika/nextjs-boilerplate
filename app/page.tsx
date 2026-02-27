@@ -16,11 +16,7 @@ import { MembershipGuide } from './components/features/MembershipGuide';
 import { Company } from './components/features/Company'; 
 import { Contact } from './components/features/Contact'; 
 import { PriceList } from './components/features/PriceList'; 
-
-// ★ ここで新入社員（コンシェルジュ）を呼び出しています
 import { Concierge } from './components/features/Concierge'; 
-
-// ★ 新規追加：自動生成FAQコンポーネント
 import { AutoFaq } from './components/features/AutoFaq';
 
 // Types
@@ -42,33 +38,46 @@ export default function WireMasterCloud() {
   const [view, setView] = useState<'LP' | 'LOGIN' | 'ADMIN' | 'MEMBER' | 'FLOW' | 'MEMBERSHIP' | 'COMPANY' | 'CONTACT'>('LP');
   const [data, setData] = useState<MarketData | null>(null);
   const [user, setUser] = useState<UserData | null>(null);
+  
+  // ★ キャッシュがある場合はLoadingを最初からfalseにする
   const [isLoading, setIsLoading] = useState(true);
 
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   // ==========================================
-  // ★ 1. 初期ロード時の「記憶復元」と「データ取得」
+  // ★ 1. 初期ロード：「爆速キャッシュ描画」と「裏側での最新化」
   // ==========================================
   useEffect(() => {
-    // ローカルストレージから通行証を探す
+    // 1. ローカルストレージからユーザー情報と「前回のマスターデータ」を即座に復元
     const savedUser = localStorage.getItem('factoryOS_user');
     const savedView = localStorage.getItem('factoryOS_view');
+    const cachedData = localStorage.getItem('factoryOS_masterData'); // ★ キャッシュ読み込み
 
     if (savedUser && savedView) {
       setUser(JSON.parse(savedUser));
       setView(savedView as 'MEMBER' | 'ADMIN');
     }
 
-    // データ取得
+    if (cachedData) {
+        // キャッシュがあれば、即座にデータをセットしてローディング画面を消す（0.1秒で表示）
+        setData(JSON.parse(cachedData));
+        setIsLoading(false);
+    }
+
+    // 2. 裏側（バックグラウンド）で最新データをGASにフェッチ
     fetch('/api/gas')
       .then(res => res.json())
       .then(d => { 
-          if(d.status === 'success') setData(d); 
-          setIsLoading(false);
+          if(d.status === 'success') {
+              setData(d); 
+              // 最新データをキャッシュとして保存
+              localStorage.setItem('factoryOS_masterData', JSON.stringify(d));
+          }
+          setIsLoading(false); // キャッシュが無かった初回アクセス用
       })
       .catch(err => {
-          console.error(err);
+          console.error("データ取得エラー:", err);
           setIsLoading(false);
       });
   }, []);
@@ -76,7 +85,7 @@ export default function WireMasterCloud() {
   const marketPrice = data?.config?.market_price || 0;
 
   // ==========================================
-  // ★ 2. ログイン処理 ＆「記憶書き込み」
+  // ★ 2. ログイン処理
   // ==========================================
   const handleLogin = async (e: any) => {
     e.preventDefault();
@@ -95,7 +104,6 @@ export default function WireMasterCloud() {
           const nextView = userData.role === 'ADMIN' ? 'ADMIN' : 'MEMBER';
           setView(nextView);
           
-          // ブラウザの長期記憶に保存
           localStorage.setItem('factoryOS_user', JSON.stringify(userData));
           localStorage.setItem('factoryOS_view', nextView);
         } else { 
@@ -112,7 +120,7 @@ export default function WireMasterCloud() {
   // ==========================================
   const handleLogout = () => {
     setUser(null);
-    setView('LP'); // ログアウトしたらLPに戻る
+    setView('LP'); 
     localStorage.removeItem('factoryOS_user');
     localStorage.removeItem('factoryOS_view');
   };
@@ -124,7 +132,7 @@ export default function WireMasterCloud() {
     return (
       <div className="h-screen w-full flex flex-col items-center justify-center bg-[#F5F5F7]">
         <div className="animate-spin w-10 h-10 border-4 border-gray-300 border-t-[#D32F2F] rounded-full mb-4"></div>
-        <p className="text-gray-500 font-bold tracking-widest text-sm">LOADING...</p>
+        <p className="text-gray-500 font-bold tracking-widest text-sm">LOADING FACTORY OS...</p>
       </div>
     );
   }
@@ -242,7 +250,6 @@ export default function WireMasterCloud() {
             <PriceList data={data} marketPrice={marketPrice} />
             <ServiceCriteria />
             
-            {/* ★ ここに追加：自動生成されたFAQ */}
             <AutoFaq faqData={data?.faq} />
             
             <div id="simulator"><Simulator marketPrice={marketPrice} data={data} /></div>
