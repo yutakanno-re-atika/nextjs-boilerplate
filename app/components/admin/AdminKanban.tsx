@@ -2,11 +2,10 @@
 import React, { useState } from 'react';
 
 const Icons = {
-  Plus: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>,
-  ArrowRight: () => <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>,
-  Archive: () => <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>,
-  Calculator: () => <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
-  Clock: () => <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+  Plus: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>,
+  ArrowRight: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>,
+  Calculator: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
+  Clock: () => <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
 };
 
 export const AdminKanban = ({ data, localReservations, setLocalReservations, onOpenPos, onAddClick }: { data: any; localReservations: any[]; setLocalReservations: any; onOpenPos: (id: string) => void; onAddClick: () => void; }) => {
@@ -26,10 +25,6 @@ export const AdminKanban = ({ data, localReservations, setLocalReservations, onO
     e.preventDefault(); const id = e.dataTransfer.getData('text/plain');
     if (id && id !== draggedId) { updateStatus(id, newStatus); }
     setDraggedId(null);
-  };
-
-  const handleArchive = (id: string) => {
-      if(window.confirm('この荷物は「加工済・出荷済」として実績化しますか？\n（カンバンからは非表示になります）')) { updateStatus(id, 'ARCHIVED'); }
   };
 
   const parseItems = (items: any) => {
@@ -57,7 +52,7 @@ export const AdminKanban = ({ data, localReservations, setLocalReservations, onO
           </h2>
           <p className="text-xs text-gray-500 mt-1 font-mono tracking-wider ml-3">リアルタイム状況監視</p>
         </div>
-        <button onClick={onAddClick} className="bg-[#111] text-white px-4 py-2 rounded-sm text-sm font-bold hover:bg-[#D32F2F] transition flex items-center gap-2 shadow-sm">
+        <button onClick={onAddClick} className="bg-[#111] text-white px-5 py-2.5 rounded-sm text-sm font-bold hover:bg-[#D32F2F] transition flex items-center gap-2 shadow-sm">
           <Icons.Plus /> 新規受付
         </button>
       </header>
@@ -85,43 +80,42 @@ export const AdminKanban = ({ data, localReservations, setLocalReservations, onO
                           <Icons.Clock />
                           <span>{res.visitDate ? String(res.visitDate).substring(5, 16) : ''}</span>
                       </div>
-                      {/* ★ IDのフォントサイズを text-[10px] から text-xs に引き上げ、視認性を高めました */}
                       <span className="text-xs font-mono text-gray-600 bg-gray-100 px-2 py-0.5 border border-gray-200 rounded-sm">{res.id}</span>
                     </div>
 
                     <h4 className="text-base font-bold text-gray-900 mb-3 line-clamp-1 border-b border-gray-100 pb-2">{res.memberName}</h4>
                     
-                    <div className="space-y-1 mb-4">
+                    <div className="space-y-2 mb-4">
                       {items.length > 0 ? items.map((item: any, idx: number) => (
                         <div key={idx} className="flex justify-between text-sm items-center text-gray-700">
                           <span className="truncate pr-2 flex-1 font-medium">{item.productName || item.product}</span>
-                          <span className="font-mono font-bold whitespace-nowrap text-gray-900">{item.weight ? `${item.weight}kg` : '-'}</span>
+                          <span className="font-mono font-bold whitespace-nowrap text-gray-900 text-base">{item.weight ? `${item.weight}kg` : '-'}</span>
                         </div>
                       )) : (
                         <p className="text-xs text-gray-400 italic">品目未登録</p>
                       )}
                     </div>
 
-                    <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+                    <div className="flex justify-between items-center pt-3 border-t border-gray-100">
                       <div className="flex flex-col">
-                          <span className="text-xs text-gray-400 font-bold">合計金額</span>
+                          <span className="text-xs text-gray-400 font-bold mb-1">合計金額</span>
                           <p className="text-xl font-black text-gray-900 tracking-tight font-mono">¥{(res.totalEstimate || 0).toLocaleString()}</p>
                       </div>
                       
                       {col.id === 'RESERVED' && (
-                          <button onClick={() => updateStatus(res.id, 'IN_PROGRESS')} className="bg-blue-600 text-white px-3 py-1.5 rounded-sm text-xs font-bold hover:bg-blue-700 transition flex items-center gap-1 shadow-sm">
+                          <button onClick={() => updateStatus(res.id, 'IN_PROGRESS')} className="bg-blue-600 text-white px-4 py-2 rounded-sm text-sm font-bold hover:bg-blue-700 transition flex items-center gap-1 shadow-sm">
                               計量へ <Icons.ArrowRight />
                           </button>
                       )}
                       {col.id === 'IN_PROGRESS' && (
-                          <button onClick={() => onOpenPos(res.id)} className="bg-gray-900 text-white px-3 py-1.5 rounded-sm text-xs font-bold hover:bg-black transition flex items-center gap-1 shadow-sm">
+                          <button onClick={() => onOpenPos(res.id)} className="bg-gray-900 text-white px-4 py-2 rounded-sm text-sm font-bold hover:bg-black transition flex items-center gap-2 shadow-sm">
                               <Icons.Calculator /> POS入力
                           </button>
                       )}
                       {col.id === 'COMPLETED' && (
-                          <button onClick={() => handleArchive(res.id)} className="bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded-sm text-xs font-bold hover:bg-gray-50 transition flex items-center gap-1">
-                              <Icons.Archive /> 完了
-                          </button>
+                          <p className="text-xs font-bold text-green-600 bg-green-50 px-3 py-1.5 rounded-sm border border-green-200">
+                             製造待ち
+                          </p>
                       )}
                     </div>
                   </div>
