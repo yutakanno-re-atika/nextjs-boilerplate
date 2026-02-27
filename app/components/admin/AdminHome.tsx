@@ -5,15 +5,15 @@ const Icons = {
     TrendingUp: () => <svg className="w-4 h-4 text-[#D32F2F]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>,
     TrendingDown: () => <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>,
     Minus: () => <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M20 12H4" /></svg>,
-    Truck: () => <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>,
-    User: () => <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
+    Truck: () => <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>,
+    User: () => <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
     Radar: () => <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>,
     Factory: () => <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>,
     Scale: () => <svg className="w-6 h-6 text-[#D32F2F]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>,
     ArrowRight: () => <svg className="w-5 h-5 text-gray-300 group-hover:text-[#D32F2F] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
 };
 
-// SVGミニチャート（スパークライン）コンポーネント
+// スパークライン（背景のミニチャート）
 const Sparkline = ({ data, color }: { data: number[], color: string }) => {
     if (!data || data.length < 2) return null;
     const min = Math.min(...data);
@@ -23,7 +23,6 @@ const Sparkline = ({ data, color }: { data: number[], color: string }) => {
     const width = 100;
     const height = 40;
     
-    // データポイントからポリゴンとポリラインの座標を生成
     const points = data.map((d, i) => {
         const x = (i / (data.length - 1)) * width;
         const y = height - padding - ((d - min) / range) * (height - padding * 2);
@@ -42,9 +41,28 @@ const Sparkline = ({ data, color }: { data: number[], color: string }) => {
             </defs>
             <polygon points={fillPoints} fill={`url(#grad-${color.replace('#', '')})`} />
             <polyline points={points} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            {/* 最後の点にマーカー */}
             <circle cx={points.split(' ').pop()?.split(',')[0]} cy={points.split(' ').pop()?.split(',')[1]} r="2" fill={color} />
         </svg>
+    );
+};
+
+// ドーナツチャート
+const DonutChart = ({ value, max }: { value: number, max: number }) => {
+    const radius = 32;
+    const circumference = 2 * Math.PI * radius;
+    const percent = Math.min(100, (value / max) * 100);
+    const strokeDashoffset = circumference - (percent / 100) * circumference;
+    
+    return (
+        <div className="relative w-24 h-24 flex items-center justify-center">
+            <svg className="w-full h-full transform -rotate-90">
+                <circle cx="48" cy="48" r={radius} stroke="#F3F4F6" strokeWidth="8" fill="transparent" />
+                <circle cx="48" cy="48" r={radius} stroke="#D32F2F" strokeWidth="8" fill="transparent" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} className="transition-all duration-1000 ease-out" />
+            </svg>
+            <div className="absolute flex flex-col items-center justify-center">
+                <span className="text-xl font-black text-gray-900 tracking-tighter">{Math.round(percent)}<span className="text-xs font-bold">%</span></span>
+            </div>
+        </div>
     );
 };
 
@@ -57,12 +75,12 @@ const getDisplayName = (w: any) => {
 
 export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, localReservations: any[], onNavigate: any }) => {
     
+    // 相場関連
     const copperPrice = Number(data?.config?.market_price) || 1450;
     const brassPrice = Number(data?.config?.brass_price) || 980;
     const zincPrice = Number(data?.config?.zinc_price) || 450;
     const leadPrice = Number(data?.config?.lead_price) || 380;
     const tinPrice = Number(data?.config?.tin_price) || 8900;
-
     const usdjpy = Number(data?.config?.usdjpy) || 150.00;
     const lmeCopper = Number(data?.config?.lme_copper_usd) || 9000;
     const jpyCopperPrice = Math.floor((lmeCopper * usdjpy) / 1000);
@@ -72,11 +90,9 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
     const prevPrice = history.length > 1 ? Number(history[history.length - 2].value) : currentPrice;
     const copperDiff = currentPrice - prevPrice;
 
-    // スパークライン用のデータ配列（直近7日分）
     const historyValues = history.map((h: any) => Number(h.value));
     const copperSparkData = historyValues.length >= 7 ? historyValues.slice(-7) : [...Array(7 - historyValues.length).fill(copperPrice), ...historyValues];
 
-    // ティッカー表示用
     const marketItems = [
         { label: '銅建値 (JX)', price: copperPrice, unit: '円/kg', diff: copperDiff, isPrimary: true, sparkData: copperSparkData },
         { label: '真鍮建値 (日伸)', price: brassPrice, unit: '円/kg', sparkData: [brassPrice, brassPrice] },
@@ -86,6 +102,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
         { label: 'LME銅 3M', price: lmeCopper, unit: 'USD/t', sub: `為替換算: 約¥${jpyCopperPrice}/kg` },
     ];
 
+    // 受付実績
     const activeReservations = localReservations.filter(r => r.status === 'RESERVED' || r.status === 'PROCESSING');
     const todayCount = activeReservations.length;
     const todayWeight = activeReservations.reduce((sum, r) => {
@@ -97,6 +114,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
         return sum + weight;
     }, 0);
 
+    // 在庫資産
     const { totalCopperStock, inventoryValue } = useMemo(() => {
         const productions = data?.productions || [];
         const producedCopper = productions.reduce((sum: number, p: any) => sum + (Number(p.outputCopper) || 0), 0);
@@ -105,17 +123,27 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
         return { totalCopperStock: total, inventoryValue: total * currentPrice };
     }, [data?.productions, currentPrice]);
 
-    const { monthlyProducedCopper, monthlyAvgYield, yieldStats } = useMemo(() => {
+    // 生産実績 (前月比較付き)
+    const { mCopper, prevCopper, monthlyAvgYield, yieldStats, targetMonthly } = useMemo(() => {
         const productions = data?.productions || [];
-        if (productions.length === 0) return { monthlyProducedCopper: 0, monthlyAvgYield: 0, yieldStats: { diff: 0, isPositive: true } };
+        const targetMonthly = Number(data?.config?.target_monthly) || 30000;
         
         const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();
+        const prevMonthDate = new Date();
+        prevMonthDate.setMonth(currentMonth - 1);
+        const prevMonth = prevMonthDate.getMonth();
+        const prevYear = prevMonthDate.getFullYear();
+
         const thisMonthProds = productions.filter((p: any) => {
-            try { return new Date(p.date).getMonth() === currentMonth && new Date(p.date).getFullYear() === currentYear; } catch(e) { return false; }
+            try { const d = new Date(p.date); return d.getMonth() === currentMonth && d.getFullYear() === currentYear; } catch(e) { return false; }
+        });
+        const prevMonthProds = productions.filter((p: any) => {
+            try { const d = new Date(p.date); return d.getMonth() === prevMonth && d.getFullYear() === prevYear; } catch(e) { return false; }
         });
 
-        const mCopper = thisMonthProds.reduce((sum, p) => sum + (Number(p.outputCopper) || 0), 0);
+        const curCop = thisMonthProds.reduce((sum, p) => sum + (Number(p.outputCopper) || 0), 0);
+        const preCop = prevMonthProds.reduce((sum, p) => sum + (Number(p.outputCopper) || 0), 0);
         const mYield = thisMonthProds.length > 0 ? thisMonthProds.reduce((sum, p) => sum + (Number(p.actualRatio) || 0), 0) / thisMonthProds.length : 0;
 
         const recent = productions.slice(-10);
@@ -127,17 +155,27 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
             if (actual > 0 && expected > 0) { diffSum += (actual - expected); count++; }
         });
         const avgDiff = count > 0 ? (diffSum / count) : 0;
-        return { monthlyProducedCopper: mCopper, monthlyAvgYield: mYield, yieldStats: { diff: avgDiff, isPositive: avgDiff >= 0 } };
-    }, [data?.productions, data?.wires]);
 
-    const pricingStats = useMemo(() => {
+        return { 
+            mCopper: curCop, 
+            prevCopper: preCop, 
+            monthlyAvgYield: mYield, 
+            yieldStats: { diff: avgDiff, isPositive: avgDiff >= 0 },
+            targetMonthly 
+        };
+    }, [data?.productions, data?.wires, data?.config?.target_monthly]);
+
+    // 競合AI解析データ
+    const { win, lose, draw, myBenchPrice, compBars } = useMemo(() => {
         const comps = data?.competitorPrices || [];
-        if (comps.length === 0) return { win: 0, lose: 0, draw: 0 };
         let win = 0, lose = 0, draw = 0;
-        const rulesStr = data?.config?.pricing_rules;
-        if (!rulesStr) return { win, lose, draw };
+        let myBenchPrice = 0;
+        let compBars: any[] = [];
         
         try {
+            const rulesStr = data?.config?.pricing_rules;
+            if (!rulesStr) return { win, lose, draw, myBenchPrice, compBars };
+            
             const rules = JSON.parse(rulesStr);
             const latestComps: Record<string, any> = {};
             comps.forEach((c: any) => {
@@ -147,8 +185,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
 
             Object.keys(rules).forEach(item => {
                 const rule = rules[item];
-                let basePrice = currentPrice;
-                if (rule.base === 'brass') basePrice = brassPrice;
+                let basePrice = rule.base === 'brass' ? brassPrice : currentPrice;
                 const myPrice = Math.floor(basePrice * (Number(rule.ratio) / 100)) + Number(rule.offset);
 
                 const compPrices = compList.map(c => {
@@ -161,255 +198,270 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                     else if (myPrice < maxComp) lose++;
                     else draw++;
                 }
+
+                // グラフ表示用の代表銘柄（光線）
+                if (item === "光線（ピカ線、特号）") {
+                    myBenchPrice = myPrice;
+                    compBars = compList.map(c => {
+                        try { return { name: c.name, price: JSON.parse(c.prices)[item] || 0 }; } catch(e) { return { name: c.name, price: 0 }; }
+                    }).filter(c => c.price > 0);
+                }
             });
         } catch(e) {}
-        return { win, lose, draw };
+        return { win, lose, draw, myBenchPrice, compBars };
     }, [data?.competitorPrices, data?.config?.pricing_rules, currentPrice, brassPrice]);
 
     const formatTime = (dateStr: string) => {
         try { const d = new Date(dateStr); return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`; } catch(e) { return '-'; }
     };
 
+    // 棒グラフ（前月比）の高さを計算
+    const maxBar = Math.max(mCopper, prevCopper, 1) * 1.2;
+    const curH = `${(mCopper / maxBar) * 100}%`;
+    const prevH = `${(prevCopper / maxBar) * 100}%`;
+
+    // 横棒グラフ（競合比較）の幅を計算
+    const minCompPrice = Math.min(myBenchPrice, ...compBars.map(c => c.price)) * 0.95;
+    const maxCompPrice = Math.max(myBenchPrice, ...compBars.map(c => c.price)) * 1.05;
+    const getW = (p: number) => `${Math.max(0, ((p - minCompPrice) / (maxCompPrice - minCompPrice)) * 100)}%`;
+
     return (
         <div className="flex flex-col animate-in fade-in duration-500 w-full text-gray-900 pb-24 font-sans bg-[#FAFAFA] min-h-screen">
             
             {/* ヘッダーエリア */}
-            <header className="mb-8 flex flex-col md:flex-row md:justify-between md:items-end gap-4 border-b border-gray-200 pb-6 px-2">
+            <header className="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4 border-b border-gray-200 pb-4 px-2">
                 <div>
-                    <h2 className="text-2xl font-black flex items-center gap-3 font-serif tracking-tight">
-                        <span className="w-1.5 h-6 bg-[#D32F2F] rounded-full"></span>
+                    <h2 className="text-2xl font-black flex items-center gap-2 font-serif tracking-tight">
+                        <span className="w-1.5 h-6 bg-[#D32F2F]"></span>
                         エグゼクティブ・ダッシュボード
                     </h2>
-                    <p className="text-xs text-gray-500 mt-2 font-mono tracking-widest ml-4 uppercase">Executive Overview & KPIs</p>
+                    <p className="text-xs text-gray-500 mt-1 tracking-widest ml-4 uppercase font-bold">Executive Overview & KPIs</p>
                 </div>
                 <div className="text-left md:text-right">
-                    <p className="text-sm font-bold text-gray-400 font-mono tracking-wider">
+                    <p className="text-sm font-bold text-gray-400">
                         {new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short' })}
                     </p>
                 </div>
             </header>
 
-            {/* 行1: 全相場ティッカー（チャート埋め込み型カード） */}
-            <div className="flex flex-nowrap gap-5 overflow-x-auto no-scrollbar mb-10 pb-4 px-2 w-full snap-x">
+            {/* 行1: 全相場ティッカー（横スクロール） */}
+            <div className="flex flex-nowrap gap-4 overflow-x-auto no-scrollbar mb-8 pb-2 px-2 w-full snap-x">
                 {marketItems.map((m, i) => (
-                    <div key={i} className={`snap-start relative bg-white border ${m.isPrimary ? 'border-[#D32F2F] shadow-md ring-1 ring-red-50' : 'border-gray-200 shadow-sm hover:border-gray-300'} rounded-xl p-5 hover:shadow-lg transition-all duration-300 w-56 min-h-[120px] flex-shrink-0 flex flex-col justify-between overflow-hidden group`}>
-                        {/* 背景のスパークライン */}
+                    <div key={i} className={`snap-start relative bg-white border ${m.isPrimary ? 'border-[#D32F2F] shadow-md ring-1 ring-red-50' : 'border-gray-200 shadow-sm hover:border-gray-300'} rounded-sm p-4 hover:shadow-lg transition-all duration-300 w-48 min-h-[110px] flex-shrink-0 flex flex-col justify-between overflow-hidden group`}>
                         {m.sparkData && (
                             <div className="absolute bottom-0 left-0 w-full h-1/2 opacity-60 group-hover:opacity-100 transition-opacity duration-500">
                                 <Sparkline data={m.sparkData} color={m.isPrimary ? '#D32F2F' : '#D1D5DB'} />
                             </div>
                         )}
                         
-                        <p className="text-xs font-bold text-gray-500 mb-2 relative z-10">{m.label}</p>
+                        <p className="text-xs font-bold text-gray-500 mb-1 relative z-10">{m.label}</p>
                         <div className="flex items-baseline gap-1 relative z-10">
-                            <span className="text-3xl font-black font-mono text-gray-900 tracking-tighter">{m.price.toLocaleString()}</span>
+                            <span className="text-3xl font-black text-gray-900 tracking-tighter">{m.price.toLocaleString()}</span>
                             <span className="text-xs text-gray-400 font-bold">{m.unit}</span>
                         </div>
                         {m.diff !== undefined ? (
-                            <div className="mt-2 text-xs font-bold flex items-center gap-1.5 relative z-10">
+                            <div className="mt-1 text-xs font-bold flex items-center gap-1 relative z-10">
                                 {m.diff > 0 ? <><Icons.TrendingUp /><span className="text-[#D32F2F]">+{m.diff}</span></> : m.diff < 0 ? <><Icons.TrendingDown /><span className="text-blue-600">{m.diff}</span></> : <><Icons.Minus /><span className="text-gray-400">±0</span></>}
                             </div>
                         ) : m.sub ? (
-                            <div className="mt-2 text-[10px] text-gray-400 font-mono font-bold relative z-10">{m.sub}</div>
+                            <div className="mt-1 text-xs text-gray-400 font-bold relative z-10">{m.sub}</div>
                         ) : (
-                            <div className="mt-2 h-4 relative z-10"></div>
+                            <div className="mt-1 h-4 relative z-10"></div>
                         )}
                     </div>
                 ))}
             </div>
 
-            {/* 行2: 最重要 KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 px-2">
-                <div className="bg-[#111] text-white p-6 md:p-8 rounded-xl shadow-xl flex flex-col relative overflow-hidden group">
-                    <div className="absolute -right-4 -top-4 opacity-10 transform scale-150 group-hover:rotate-12 transition-transform duration-700">
-                        <Icons.Scale />
-                    </div>
-                    {/* 微かなノイズ/グラデーション装飾 */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none"></div>
+            {/* 行2: メインKPI & 分析カード */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 px-2">
+                
+                {/* 1. 資産・受付状況 */}
+                <div className="bg-white border border-gray-200 rounded-sm shadow-sm p-6 flex flex-col justify-between relative overflow-hidden group">
+                    <div className="absolute -right-4 -top-4 opacity-5 transform scale-150 group-hover:rotate-12 transition-transform duration-700 pointer-events-none text-gray-900"><Icons.Scale /></div>
                     
-                    <p className="text-xs font-bold text-gray-400 mb-4 uppercase tracking-widest flex items-center gap-2 relative z-10">
-                        推定総在庫 評価額
-                    </p>
-                    <div className="flex items-baseline gap-2 mt-auto relative z-10">
-                        <span className="text-2xl font-light text-gray-500">¥</span>
-                        <span className="text-5xl md:text-6xl font-black font-mono tracking-tighter text-white">{inventoryValue.toLocaleString()}</span>
+                    <div className="mb-6 relative z-10">
+                        <p className="text-xs font-bold text-gray-500 mb-1 uppercase tracking-widest flex items-center gap-2">推定総在庫 評価額</p>
+                        <div className="flex items-baseline gap-1">
+                            <span className="text-xl font-bold text-gray-400">¥</span>
+                            <span className="text-4xl font-black tracking-tighter text-gray-900">{inventoryValue.toLocaleString()}</span>
+                        </div>
                     </div>
-                    <div className="mt-5 pt-4 border-t border-gray-800 text-xs text-gray-400 font-mono relative z-10 flex justify-between items-center">
-                        <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>銅換算在庫</span>
-                        <span className="font-bold text-white">{totalCopperStock.toLocaleString()} kg</span>
+
+                    <div className="grid grid-cols-2 gap-4 border-t border-gray-100 pt-4 relative z-10">
+                        <div>
+                            <p className="text-xs font-bold text-gray-400 mb-1 flex items-center gap-1"><Icons.User />本日受付</p>
+                            <span className="text-xl font-black text-gray-900">{todayCount} <span className="text-xs font-bold text-gray-400">件</span></span>
+                        </div>
+                        <div>
+                            <p className="text-xs font-bold text-gray-400 mb-1 flex items-center gap-1"><Icons.Truck />持込予定</p>
+                            <span className="text-xl font-black text-[#D32F2F]">{todayWeight.toLocaleString()} <span className="text-xs font-bold text-gray-400">kg</span></span>
+                        </div>
                     </div>
                 </div>
 
-                <div className="bg-white p-6 md:p-8 rounded-xl border border-gray-200 shadow-sm flex flex-col group hover:border-gray-300 transition-colors">
-                    <p className="text-xs font-bold text-gray-500 mb-4 uppercase tracking-widest flex items-center gap-2"><Icons.User /> 本日の受付件数</p>
-                    <div className="flex items-baseline gap-2 mt-auto">
-                        <span className="text-5xl md:text-6xl font-black font-mono text-gray-900 tracking-tighter group-hover:text-[#D32F2F] transition-colors">{todayCount}</span>
-                        <span className="text-sm font-bold text-gray-400">件</span>
+                {/* 2. 生産実績 (前月比較棒グラフ) */}
+                <div className="bg-white border border-gray-200 rounded-sm shadow-sm p-6 flex flex-col justify-between cursor-pointer hover:border-[#D32F2F] transition-colors" onClick={() => onNavigate('PRODUCTION')}>
+                    <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-bold text-gray-900 flex items-center gap-2 text-sm"><Icons.Factory /> 月間生産量トレンド</h3>
+                        <Icons.ArrowRight />
+                    </div>
+                    
+                    <div className="flex items-end gap-6 h-28 pt-2">
+                        <div className="flex flex-col items-center gap-2 flex-1 h-full">
+                            <div className="w-full bg-gray-50 border-b border-gray-200 relative h-full flex items-end justify-center">
+                                <div className="w-10 bg-gray-300 transition-all duration-1000" style={{ height: prevH }}></div>
+                            </div>
+                            <span className="text-xs text-gray-500 font-bold">前月</span>
+                            <span className="text-sm font-black text-gray-700">{prevCopper.toLocaleString()}</span>
+                        </div>
+                        <div className="flex flex-col items-center gap-2 flex-1 h-full">
+                            <div className="w-full bg-gray-50 border-b border-gray-200 relative h-full flex items-end justify-center">
+                                <div className="w-10 bg-[#D32F2F] shadow-sm transition-all duration-1000" style={{ height: curH }}></div>
+                            </div>
+                            <span className="text-xs text-[#D32F2F] font-bold">今月</span>
+                            <span className="text-sm font-black text-[#D32F2F]">{mCopper.toLocaleString()}</span>
+                        </div>
+                        
+                        {/* ドーナツチャート (目標進捗) */}
+                        <div className="flex flex-col items-center justify-center flex-1 h-full">
+                            <DonutChart value={mCopper} max={targetMonthly} />
+                            <span className="text-xs text-gray-500 font-bold mt-2">目標達成率</span>
+                        </div>
                     </div>
                 </div>
 
-                <div className="bg-white p-6 md:p-8 rounded-xl border border-gray-200 shadow-sm flex flex-col group hover:border-gray-300 transition-colors">
-                    <p className="text-xs font-bold text-gray-500 mb-4 uppercase tracking-widest flex items-center gap-2"><Icons.Truck /> 本日持込予定量</p>
-                    <div className="flex items-baseline gap-2 mt-auto">
-                        <span className="text-5xl md:text-6xl font-black font-mono text-[#D32F2F] tracking-tighter">{todayWeight.toLocaleString()}</span>
-                        <span className="text-sm font-bold text-gray-400">kg</span>
+                {/* 3. AI競合比較 (横棒グラフ) */}
+                <div className="bg-white border border-gray-200 rounded-sm shadow-sm p-6 flex flex-col justify-between cursor-pointer hover:border-[#D32F2F] transition-colors" onClick={() => onNavigate('COMPETITOR')}>
+                    <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-bold text-gray-900 flex items-center gap-2 text-sm"><Icons.Radar /> 競合価格ベンチマーク</h3>
+                        <Icons.ArrowRight />
+                    </div>
+                    
+                    <div className="flex items-center gap-4 mb-4 text-xs font-bold">
+                        <span className="bg-red-50 text-[#D32F2F] px-2 py-1 rounded-sm">自社優勢: {win}</span>
+                        <span className="text-gray-400">同値: {draw}</span>
+                        <span className="text-gray-500">劣勢: {lose}</span>
+                    </div>
+
+                    <div className="space-y-3">
+                        <div className="flex justify-between text-xs font-bold text-gray-500 border-b border-gray-100 pb-1">
+                            <span>品目: 光線 (ピカ)</span>
+                            <span>単価</span>
+                        </div>
+                        
+                        {/* 自社 */}
+                        <div className="flex flex-col gap-1">
+                            <div className="flex justify-between text-xs font-bold">
+                                <span className="text-[#D32F2F]">自社</span>
+                                <span className="text-gray-900">¥{myBenchPrice.toLocaleString()}</span>
+                            </div>
+                            <div className="w-full h-2 bg-gray-100 overflow-hidden">
+                                <div className="h-full bg-[#D32F2F]" style={{ width: getW(myBenchPrice) }}></div>
+                            </div>
+                        </div>
+
+                        {/* 他社 */}
+                        {compBars.map(c => (
+                            <div key={c.name} className="flex flex-col gap-1">
+                                <div className="flex justify-between text-xs font-bold text-gray-500">
+                                    <span className="truncate w-24">{c.name}</span>
+                                    <span>¥{c.price.toLocaleString()}</span>
+                                </div>
+                                <div className="w-full h-1.5 bg-gray-100 overflow-hidden">
+                                    <div className="h-full bg-gray-400" style={{ width: getW(c.price) }}></div>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
+
             </div>
 
-            {/* 行3: メインコンテンツ (2カラム構成) */}
+            {/* 行3: テーブル & タイムライン */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 px-2">
                 
-                {/* 左側2カラム: AI・工場状況 */}
-                <div className="lg:col-span-2 space-y-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        
-                        {/* AI プライシング カード */}
-                        <div className="group bg-white rounded-xl border border-gray-200 shadow-sm p-6 md:p-8 flex flex-col cursor-pointer hover:border-[#D32F2F] hover:shadow-md transition-all" onClick={() => onNavigate('COMPETITOR')}>
-                            <div className="flex justify-between items-start mb-6">
-                                <h3 className="font-bold text-gray-900 flex items-center gap-2 text-sm"><Icons.Radar /> AI 競合価格勝敗</h3>
-                                <Icons.ArrowRight />
-                            </div>
-                            <div className="flex-1 flex flex-col justify-center">
-                                <div className="flex items-end justify-between mb-3">
-                                    <span className="text-xs text-gray-500 font-bold mb-1">自社優勢 (Win)</span>
-                                    <span className="text-5xl font-black text-gray-900 font-mono tracking-tighter">{pricingStats.win}</span>
-                                </div>
-                                {/* プログレスバー */}
-                                <div className="w-full bg-gray-100 h-3 rounded-full overflow-hidden mb-4 border border-gray-200 shadow-inner">
-                                    <div className="h-full bg-gradient-to-r from-red-600 to-[#D32F2F] transition-all duration-1000" style={{ width: `${(pricingStats.win / Math.max(1, pricingStats.win + pricingStats.lose + pricingStats.draw)) * 100}%` }}></div>
-                                </div>
-                                <div className="flex justify-between text-xs font-mono font-bold">
-                                    <span className="text-gray-400">同値: {pricingStats.draw}</span>
-                                    <span className="text-gray-500">劣勢: {pricingStats.lose}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* 今月の生産実績 カード */}
-                        <div className="group bg-white rounded-xl border border-gray-200 shadow-sm p-6 md:p-8 flex flex-col cursor-pointer hover:border-[#D32F2F] hover:shadow-md transition-all" onClick={() => onNavigate('PRODUCTION')}>
-                            <div className="flex justify-between items-start mb-6">
-                                <h3 className="font-bold text-gray-900 flex items-center gap-2 text-sm"><Icons.Factory /> 今月の生産実績</h3>
-                                <Icons.ArrowRight />
-                            </div>
-                            <div className="flex-1 flex flex-col justify-center gap-6">
-                                <div className="flex items-center justify-between border-l-4 border-[#111] pl-4 py-1">
-                                    <div>
-                                        <p className="text-xs text-gray-500 font-bold mb-1">ピカ銅 生産量</p>
-                                        <div className="flex items-baseline gap-1">
-                                            <span className="text-3xl font-black font-mono text-gray-900">{monthlyProducedCopper.toLocaleString()}</span>
-                                            <span className="text-xs text-gray-400 font-bold">kg</span>
-                                        </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-xs text-gray-500 font-bold mb-1">平均 歩留まり</p>
-                                        <div className="flex items-baseline gap-1 justify-end">
-                                            <span className="text-3xl font-black font-mono text-[#D32F2F]">{monthlyAvgYield.toFixed(1)}</span>
-                                            <span className="text-xs text-gray-400 font-bold">%</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 flex justify-between items-center">
-                                    <span className="text-xs text-gray-500 font-bold">マスター比 乖離 (直近10件)</span>
-                                    <div className="flex items-baseline gap-1 bg-white px-3 py-1 rounded shadow-sm border border-gray-100">
-                                        <span className={`text-xl font-black font-mono tracking-tighter ${yieldStats.isPositive ? 'text-gray-900' : 'text-[#D32F2F]'}`}>
-                                            {yieldStats.isPositive ? '+' : ''}{yieldStats.diff.toFixed(1)}
-                                        </span>
-                                        <span className="text-xs text-gray-500 font-bold">%</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
+                {/* クイック価格表 */}
+                <div className="lg:col-span-2 bg-white rounded-sm border border-gray-200 shadow-sm overflow-hidden group hover:border-gray-300 transition-colors h-fit">
+                    <div className="p-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center cursor-pointer" onClick={() => onNavigate('DATABASE')}>
+                        <h3 className="font-bold text-sm text-gray-900 flex items-center gap-2">本日の買取価格表 <span className="text-xs text-gray-400 font-normal">(主要品目)</span></h3>
+                        <Icons.ArrowRight />
                     </div>
-
-                    {/* クイック価格表 */}
-                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden group hover:border-gray-300 transition-colors">
-                        <div className="p-5 border-b border-gray-200 bg-white flex justify-between items-center cursor-pointer" onClick={() => onNavigate('DATABASE')}>
-                            <h3 className="font-bold text-sm text-gray-900 flex items-center gap-2">本日の買取価格表 <span className="text-xs text-gray-400 font-normal">(主要品目)</span></h3>
-                            <Icons.ArrowRight />
-                        </div>
-                        <div className="p-0 overflow-x-auto">
-                            <table className="w-full text-left">
-                                <thead className="bg-gray-50 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-widest">
-                                    <tr>
-                                        <th className="p-4 pl-6">品名</th>
-                                        <th className="p-4 text-center">設定歩留まり</th>
-                                        <th className="p-4 pr-6 text-right">買取単価</th>
+                    <div className="p-0 overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead className="bg-white border-b border-gray-100 text-xs font-bold text-gray-400 uppercase tracking-widest">
+                                <tr>
+                                    <th className="p-4 pl-6">品名</th>
+                                    <th className="p-4 text-center">設定歩留まり</th>
+                                    <th className="p-4 pr-6 text-right">買取単価</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100 text-sm">
+                                {data?.wires?.slice(0, 5).map((w: any) => (
+                                    <tr key={w.id} className="hover:bg-red-50/50 transition cursor-pointer" onClick={() => onNavigate('DATABASE')}>
+                                        <td className="p-4 pl-6 font-bold text-gray-800">{getDisplayName(w)}</td>
+                                        <td className="p-4 text-center text-gray-500 font-bold">{w.ratio}%</td>
+                                        <td className="p-4 pr-6 text-right font-black text-xl text-[#D32F2F] tracking-tighter">¥{Math.floor(copperPrice * (w.ratio/100) * 0.85).toLocaleString()}</td>
                                     </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100 text-sm">
-                                    {data?.wires?.slice(0, 5).map((w: any) => (
-                                        <tr key={w.id} className="hover:bg-red-50/50 transition cursor-pointer" onClick={() => onNavigate('DATABASE')}>
-                                            <td className="p-4 pl-6 font-bold text-gray-800">{getDisplayName(w)}</td>
-                                            <td className="p-4 text-center text-gray-500 font-mono font-bold">{w.ratio}%</td>
-                                            <td className="p-4 pr-6 text-right font-black font-mono text-xl text-[#D32F2F]">¥{Math.floor(copperPrice * (w.ratio/100) * 0.85).toLocaleString()}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
-                {/* 右側カラム: タイムライン */}
-                <div className="space-y-8">
-                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-[500px]">
-                        <div className="p-5 border-b border-gray-200 bg-white flex justify-between items-center cursor-pointer group transition" onClick={() => onNavigate('OPERATIONS')}>
-                            <h3 className="font-bold text-sm text-gray-900 flex items-center gap-3">
-                                <span className="relative flex h-2.5 w-2.5">
-                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#D32F2F]"></span>
-                                </span>
-                                受付・搬入タイムライン
-                            </h3>
-                            <Icons.ArrowRight />
-                        </div>
-                        
-                        <div className="p-6 overflow-y-auto flex-1 bg-gray-50/30">
-                            {activeReservations.length === 0 ? (
-                                <div className="p-10 text-center text-gray-400 text-sm font-bold flex flex-col items-center gap-3">
-                                    <Icons.Truck />
-                                    本日の予定はありません
-                                </div>
-                            ) : (
-                                <ul className="space-y-0">
-                                    {activeReservations.map((res: any) => {
-                                        let w = 0;
-                                        let p = "品目不明";
-                                        try {
-                                            const items = typeof res.items === 'string' ? JSON.parse(res.items) : res.items;
-                                            if(items.length > 0) {
-                                                w = items.reduce((s:number, i:any) => s + (Number(i.weight)||0), 0);
-                                                p = items[0].product || items[0].productName;
-                                                if(items.length > 1) p += " 他";
-                                            }
-                                        } catch(e){}
-                                        
-                                        return (
-                                            <li key={res.id} className="relative pl-6 pb-8 last:pb-0 group cursor-pointer" onClick={() => onNavigate('OPERATIONS')}>
-                                                {/* 縦線と丸ポチ（美しいタイムラインUI） */}
-                                                <div className="absolute left-[7px] top-3 w-px h-full bg-gray-200 group-last:hidden"></div>
-                                                <div className={`absolute left-0 top-1.5 w-4 h-4 rounded-full border-2 border-white ${res.status === 'PROCESSING' ? 'bg-yellow-400' : 'bg-blue-600'} shadow-sm ring-1 ring-gray-100 z-10`}></div>
-                                                
-                                                <div className="bg-white border border-gray-100 p-4 rounded-xl shadow-sm group-hover:border-[#D32F2F] group-hover:shadow-md transition-all ml-4 -mt-2">
-                                                    <div className="flex justify-between items-center mb-2">
-                                                        <span className="text-xs font-bold text-gray-500 font-mono bg-gray-50 px-2 py-0.5 rounded">{formatTime(res.visitDate)}</span>
-                                                        <span className="text-[10px] font-mono text-gray-400">{res.id}</span>
-                                                    </div>
-                                                    <p className="font-black text-base text-gray-900 mb-1 truncate">{res.memberName}</p>
-                                                    <p className="text-xs text-gray-600 font-bold flex items-center justify-between">
-                                                        <span>{p}</span>
-                                                        <span className="font-mono font-black text-[#D32F2F] text-lg">{w} <span className="text-xs font-normal text-gray-400">kg</span></span>
-                                                    </p>
+                {/* 受付・搬入タイムライン */}
+                <div className="bg-white rounded-sm border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-[400px]">
+                    <div className="p-5 border-b border-gray-200 bg-[#111] text-white flex justify-between items-center cursor-pointer group transition" onClick={() => onNavigate('OPERATIONS')}>
+                        <h3 className="font-bold text-sm flex items-center gap-3 tracking-widest">
+                            <span className="relative flex h-2.5 w-2.5">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#D32F2F]"></span>
+                            </span>
+                            LIVE タイムライン
+                        </h3>
+                        <Icons.ArrowRight />
+                    </div>
+                    
+                    <div className="p-6 overflow-y-auto flex-1 bg-white">
+                        {activeReservations.length === 0 ? (
+                            <div className="p-10 text-center text-gray-400 text-sm font-bold flex flex-col items-center gap-3">
+                                <Icons.Truck />
+                                本日の予定はありません
+                            </div>
+                        ) : (
+                            <ul className="space-y-0">
+                                {activeReservations.map((res: any) => {
+                                    let w = 0;
+                                    let p = "品目不明";
+                                    try {
+                                        const items = typeof res.items === 'string' ? JSON.parse(res.items) : res.items;
+                                        if(items.length > 0) {
+                                            w = items.reduce((s:number, i:any) => s + (Number(i.weight)||0), 0);
+                                            p = items[0].product || items[0].productName;
+                                            if(items.length > 1) p += " 他";
+                                        }
+                                    } catch(e){}
+                                    
+                                    return (
+                                        <li key={res.id} className="relative pl-6 pb-8 last:pb-0 group cursor-pointer" onClick={() => onNavigate('OPERATIONS')}>
+                                            <div className="absolute left-[7px] top-3 w-px h-full bg-gray-200 group-last:hidden"></div>
+                                            <div className={`absolute left-0 top-1.5 w-4 h-4 rounded-full border-2 border-white ${res.status === 'PROCESSING' ? 'bg-yellow-400' : 'bg-blue-600'} shadow-sm ring-1 ring-gray-100 z-10`}></div>
+                                            
+                                            <div className="bg-white border border-gray-100 p-4 rounded-sm shadow-sm group-hover:border-[#D32F2F] transition-colors ml-4 -mt-2">
+                                                <div className="flex justify-between items-center mb-2">
+                                                    <span className="text-xs font-bold text-gray-500 bg-gray-50 px-2 py-0.5 rounded">{formatTime(res.visitDate)}</span>
+                                                    <span className="text-xs text-gray-400">{res.id}</span>
                                                 </div>
-                                            </li>
-                                        )
-                                    })}
-                                </ul>
-                            )}
-                        </div>
+                                                <p className="font-black text-base text-gray-900 mb-1 truncate">{res.memberName}</p>
+                                                <p className="text-xs text-gray-600 font-bold flex items-center justify-between">
+                                                    <span>{p}</span>
+                                                    <span className="font-black text-[#D32F2F] text-lg">{w} <span className="text-xs font-normal text-gray-400">kg</span></span>
+                                                </p>
+                                            </div>
+                                        </li>
+                                    )
+                                })}
+                            </ul>
+                        )}
                     </div>
                 </div>
             </div>
