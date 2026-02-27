@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 
 const Icons = {
     Database: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" /></svg>,
@@ -24,17 +24,49 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
     const [isSaving, setIsSaving] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
 
-    const clients = data?.clients || [];
-    const salesTargets = data?.salesTargets || [];
-    const wires = data?.wires || [];
-    const castings = data?.castings || [];
-    
-    const staffs = data?.staffs || [
+    // ★ リロードを防ぐため、データをローカルステートで管理
+    const [localClients, setLocalClients] = useState(data?.clients || []);
+    const [localSalesTargets, setLocalSalesTargets] = useState(data?.salesTargets || []);
+    const [localWires, setLocalWires] = useState(data?.wires || []);
+    const [localCastings, setLocalCastings] = useState(data?.castings || []);
+    const [localStaffs, setLocalStaffs] = useState(data?.staffs || [
         { id: 'S-001', name: '工場長 (菅野)', role: 'ALL', rate: 60, status: 'ACTIVE' },
         { id: 'S-002', name: '佐藤 (検収員)', role: 'INSPECTION', rate: 45, status: 'ACTIVE' },
         { id: 'S-003', name: '鈴木 (プラント)', role: 'PLANT', rate: 45, status: 'ACTIVE' },
         { id: 'S-004', name: 'パートA (選別)', role: 'SORTING', rate: 25, status: 'ACTIVE' },
-    ];
+    ]);
+
+    // 親からのdataが更新されたら同期する
+    useEffect(() => {
+        if(data) {
+            if(data.clients) setLocalClients(data.clients);
+            if(data.salesTargets) setLocalSalesTargets(data.salesTargets);
+            if(data.wires) setLocalWires(data.wires);
+            if(data.castings) setLocalCastings(data.castings);
+            if(data.staffs) setLocalStaffs(data.staffs);
+        }
+    }, [data]);
+
+    // ★ 裏側で最新データを取ってくる関数（リロードの代替）
+    const fetchLatestData = async () => {
+        try {
+            const res = await fetch('/api/gas');
+            const d = await res.json();
+            if (d.status === 'success') {
+                setLocalClients(d.clients || []);
+                setLocalSalesTargets(d.salesTargets || []);
+                setLocalWires(d.wires || []);
+                setLocalCastings(d.castings || []);
+                setLocalStaffs(d.staffs || []);
+                
+                // 次回起動時のためにキャッシュも更新しておく
+                const cached = JSON.parse(localStorage.getItem('factoryOS_masterData') || '{}');
+                localStorage.setItem('factoryOS_masterData', JSON.stringify({ ...cached, ...d }));
+            }
+        } catch (e) {
+            console.error("最新データ取得エラー", e);
+        }
+    };
 
     // 最新相場の取得
     const copperPrice = Number(data?.config?.market_price) || 1450;
@@ -86,7 +118,13 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
         try {
             const res = await fetch('/api/gas', { method: 'POST', body: JSON.stringify(payload) });
             const result = await res.json();
-            if (result.status === 'success') { window.location.reload(); } 
+            if (result.status === 'success') { 
+                // ★ 強制リロードを廃止し、裏で最新データを取得してUIを更新
+                await fetchLatestData();
+                setIsAdding(false);
+                setEditingId(null);
+                setFormState({});
+            } 
             else { alert('エラー: ' + result.message); }
         } catch (error) { alert('通信エラーが発生しました'); }
         setIsSaving(false);
@@ -98,7 +136,10 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
         try {
             const res = await fetch('/api/gas', { method: 'POST', body: JSON.stringify({ action: 'DELETE_DB_RECORD', sheetName: getSheetName(), recordId: id }) });
             const result = await res.json();
-            if (result.status === 'success') { window.location.reload(); } 
+            if (result.status === 'success') { 
+                // ★ 強制リロードを廃止
+                await fetchLatestData(); 
+            } 
             else { alert('エラー: ' + result.message); }
         } catch (error) { alert('通信エラーが発生しました'); }
         setIsSaving(false);
@@ -106,11 +147,12 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
 
     const filteredData = useMemo(() => {
         let sourceData = [];
-        if (activeTab === 'CLIENTS') sourceData = clients;
-        if (activeTab === 'SALES_TARGETS') sourceData = salesTargets;
-        if (activeTab === 'WIRES') sourceData = wires;
-        if (activeTab === 'CASTINGS') sourceData = castings;
-        if (activeTab === 'STAFF') sourceData = staffs;
+        // ★ ローカルステートを参照するように変更
+        if (activeTab === 'CLIENTS') sourceData = localClients;
+        if (activeTab === 'SALES_TARGETS') sourceData = localSalesTargets;
+        if (activeTab === 'WIRES') sourceData = localWires;
+        if (activeTab === 'CASTINGS') sourceData = localCastings;
+        if (activeTab === 'STAFF') sourceData = localStaffs;
 
         if (!searchTerm) return sourceData;
 
@@ -119,7 +161,7 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
             const searchString = Object.values(item).join(' ').toLowerCase();
             return searchString.includes(lowerTerm);
         });
-    }, [activeTab, clients, salesTargets, wires, castings, staffs, searchTerm]);
+    }, [activeTab, localClients, localSalesTargets, localWires, localCastings, localStaffs, searchTerm]);
 
     const inputClass = "w-full min-w-0 border border-gray-300 p-2 rounded-sm focus:border-[#D32F2F] outline-none text-sm font-bold font-mono transition";
     
@@ -155,28 +197,28 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                     <div className="p-2 bg-gray-50 rounded-sm"><Icons.Users /></div>
                     <div>
                         <p className="text-[10px] text-gray-500 font-bold tracking-wider">登録顧客数</p>
-                        <p className="text-xl font-black text-gray-900 font-mono">{clients.length} <span className="text-xs font-bold text-gray-400">社</span></p>
+                        <p className="text-xl font-black text-gray-900 font-mono">{localClients.length} <span className="text-xs font-bold text-gray-400">社</span></p>
                     </div>
                 </div>
                 <div className="bg-white p-4 flex items-center gap-4">
                     <div className="p-2 bg-blue-50 rounded-sm"><Icons.Target /></div>
                     <div>
                         <p className="text-[10px] text-gray-500 font-bold tracking-wider">営業ターゲット</p>
-                        <p className="text-xl font-black text-gray-900 font-mono">{salesTargets.filter((t:any) => t.status !== '既存取引先').length} <span className="text-xs font-bold text-gray-400">件</span></p>
+                        <p className="text-xl font-black text-gray-900 font-mono">{localSalesTargets.filter((t:any) => t.status !== '既存取引先').length} <span className="text-xs font-bold text-gray-400">件</span></p>
                     </div>
                 </div>
                 <div className="bg-white p-4 flex items-center gap-4">
                     <div className="p-2 bg-red-50 rounded-sm"><Icons.Box /></div>
                     <div>
                         <p className="text-[10px] text-gray-500 font-bold tracking-wider">登録マスター品目</p>
-                        <p className="text-xl font-black text-gray-900 font-mono">{wires.length + castings.length} <span className="text-xs font-bold text-gray-400">種</span></p>
+                        <p className="text-xl font-black text-gray-900 font-mono">{localWires.length + localCastings.length} <span className="text-xs font-bold text-gray-400">種</span></p>
                     </div>
                 </div>
                 <div className="bg-white p-4 flex items-center gap-4">
                     <div className="p-2 bg-yellow-50 rounded-sm"><Icons.Worker /></div>
                     <div>
                         <p className="text-[10px] text-gray-500 font-bold tracking-wider">登録スタッフ(労務費)</p>
-                        <p className="text-xl font-black text-gray-900 font-mono">{staffs.length} <span className="text-xs font-bold text-gray-400">名</span></p>
+                        <p className="text-xl font-black text-gray-900 font-mono">{localStaffs.length} <span className="text-xs font-bold text-gray-400">名</span></p>
                     </div>
                 </div>
             </div>
@@ -189,7 +231,7 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                 <button onClick={() => handleTabChange('STAFF')} className={`px-4 py-3 text-xs font-bold tracking-widest whitespace-nowrap transition-colors ${activeTab === 'STAFF' ? 'bg-white border-t-2 border-t-[#D32F2F] text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>⏱️ STAFF・労務費</button>
             </div>
 
-            <div className="flex-1 bg-white border-x border-b border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-[500px] rounded-b-sm">
+            <div className="flex-1 bg-white border-x border-b border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-0 rounded-b-sm">
                 <div className="overflow-x-auto overflow-y-auto flex-1 p-0">
                     <table className="w-full text-left border-collapse min-w-[900px]">
                         <thead className="sticky top-0 bg-gray-100 shadow-sm z-10 border-b border-gray-200">
@@ -263,7 +305,7 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                                     )}
                                     <td className="p-2 text-right">
                                         <div className="flex flex-col gap-1 items-end">
-                                            <button onClick={() => handleSave(true)} disabled={isSaving} className="bg-gray-900 text-white w-full py-1.5 rounded-sm text-[10px] font-bold hover:bg-black transition"><Icons.Save />保存</button>
+                                            <button onClick={() => handleSave(true)} disabled={isSaving} className="bg-gray-900 text-white w-full py-1.5 rounded-sm text-[10px] font-bold hover:bg-black transition">{isSaving ? '処理中' : <><Icons.Save />保存</>}</button>
                                             <button onClick={() => setIsAdding(false)} className="bg-white border border-gray-300 text-gray-700 w-full py-1.5 rounded-sm text-[10px] font-bold hover:bg-gray-50 transition">取消</button>
                                         </div>
                                     </td>
@@ -271,7 +313,6 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                             )}
 
                             {filteredData.map((record: any) => {
-                                // ★ 修正: エラー原因であった変数を撤去し、安全に想定単価を計算
                                 let estimatedPrice = 0;
                                 const currentRatio = editingId === record.id ? (formState.ratio || 0) : (record.ratio || 0);
 
@@ -338,7 +379,7 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                                             )}
                                             <td className="p-2 text-right">
                                                 <div className="flex flex-col gap-1 items-end">
-                                                    <button onClick={() => handleSave(false, record.id)} disabled={isSaving} className="bg-gray-900 text-white w-full py-1.5 rounded-sm text-[10px] font-bold hover:bg-black transition"><Icons.Save />保存</button>
+                                                    <button onClick={() => handleSave(false, record.id)} disabled={isSaving} className="bg-gray-900 text-white w-full py-1.5 rounded-sm text-[10px] font-bold hover:bg-black transition">{isSaving ? '処理中' : <><Icons.Save />保存</>}</button>
                                                     <button onClick={() => setEditingId(null)} className="bg-white border border-gray-300 text-gray-700 w-full py-1.5 rounded-sm text-[10px] font-bold hover:bg-gray-50 transition">取消</button>
                                                 </div>
                                             </td>
