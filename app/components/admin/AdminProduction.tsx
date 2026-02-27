@@ -14,8 +14,6 @@ const Icons = {
   FastForward: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>
 };
 
-const WORKERS = ["未選択", "工場長", "佐藤", "鈴木", "高橋", "田中", "パートA"];
-
 export const AdminProduction = ({ data, localReservations }: { data: any, localReservations: any[] }) => {
   const [activeTab, setActiveTab] = useState<'SORT' | 'PROCESS' | 'LOG'>('SORT');
   
@@ -39,6 +37,19 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
 
   const productions = data?.productions || [];
   const wiresMaster = data?.wires || [];
+  const staffs = data?.staffs || [];
+
+  // ★ データベースから作業担当者リストを動的生成（退職者「INACTIVE」は除外）
+  const workerList = useMemo(() => {
+      const list = staffs
+          .filter((s: any) => s.status !== 'INACTIVE' && (s.role === 'ALL' || s.role === 'SORTING' || s.role === 'PLANT'))
+          .map((s: any) => s.name);
+      
+      // DBが空の場合のフォールバック
+      if (list.length === 0) return ["未選択", "工場長", "佐藤", "鈴木", "高橋", "田中", "パートA"];
+      
+      return ["未選択", ...list];
+  }, [staffs]);
 
   const getDisplayName = (w: any) => {
       let name = w.name;
@@ -95,7 +106,6 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
       const sortList: any[] = [];
       const processList: any[] = [];
 
-      // ★修正：システムが勝手に判断せず、すべての新規荷物（isSorted: false）を「選別待ち」に入れる
       rawLots.forEach(lot => {
           if (!lot.isSorted) {
               sortList.push(lot);
@@ -109,7 +119,6 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
 
   const totalProducedCopper = productions.reduce((sum: number, p: any) => sum + (Number(p.outputCopper) || 0), 0);
 
-  // ★追加：選別が不要な場合にワンタップで「加工ヤード」へ送る機能
   const handleSkipSort = (lot: any) => {
       const newSortedLots = [...localSortedLots];
       newSortedLots.push({
@@ -270,7 +279,6 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                                   <div className="mt-auto border-t border-gray-100 pt-4 flex justify-between items-center">
                                       <p className="text-3xl font-black font-mono text-gray-900 tracking-tighter">{lot.remainingWeight.toFixed(1)}<span className="text-xs font-bold text-gray-500 ml-1">kg</span></p>
                                       
-                                      {/* ★修正: 「直行」と「選別」の2つのボタンを配置 */}
                                       <div className="flex gap-2">
                                           <button onClick={() => handleSkipSort(lot)} className="bg-gray-100 text-gray-600 border border-gray-300 text-xs font-bold px-3 py-2.5 rounded-sm hover:bg-gray-200 transition flex items-center gap-1">
                                               直行 <Icons.FastForward />
@@ -383,7 +391,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                           <div className="flex-1 flex items-center gap-3">
                               <label className="text-sm font-bold text-blue-900 whitespace-nowrap">作業担当</label>
                               <select className="w-full bg-white border border-blue-300 p-3 text-base font-bold rounded-sm outline-none" value={sortWorker} onChange={e => setSortWorker(e.target.value)}>
-                                  {WORKERS.map(w => <option key={w} value={w}>{w}</option>)}
+                                  {workerList.map(w => <option key={w} value={w}>{w}</option>)}
                               </select>
                           </div>
                           <div className="flex-1 flex items-center gap-3">
@@ -463,7 +471,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                       <div className="bg-[#111] p-4 rounded-sm flex flex-col md:flex-row md:items-center gap-3 md:gap-4 text-white">
                           <label className="text-sm font-bold flex items-center whitespace-nowrap text-gray-300"><Icons.Worker /> プラント担当</label>
                           <select className="w-full bg-gray-800 border border-gray-700 p-3 text-base font-bold rounded-sm outline-none" value={processWorker} onChange={e => setProcessWorker(e.target.value)}>
-                              {WORKERS.map(w => <option key={w} value={w}>{w}</option>)}
+                              {workerList.map(w => <option key={w} value={w}>{w}</option>)}
                           </select>
                       </div>
 
