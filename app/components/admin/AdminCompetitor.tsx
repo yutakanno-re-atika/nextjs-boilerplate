@@ -44,10 +44,19 @@ const defaultAIPrompt = `[銅・砲金・真鍮類]\n- 「ピカ線・1号銅」
 const targetItems = Object.keys(defaultPricingRules);
 const chartItems = ["光線（ピカ線、特号）", "砲金", "込中"];
 
-// 線形回帰（最小二乗法）によるロジック推定
+// ★ 修正: 建値が変動していない場合でも、簡易的に歩留まりを計算するロジックに変更
 const calculateLinearRegression = (dataPoints: {x: number, y: number}[]) => {
     const n = dataPoints.length;
-    if (n < 2) return null;
+    if (n === 0) return null;
+
+    // 建値(X)が全て同じ、またはデータが1件のみの場合はオフセット0として歩留まりを推論（簡易推論モード）
+    const allXSame = dataPoints.every(p => p.x === dataPoints[0].x);
+    if (allXSame || n === 1) {
+        const avgY = dataPoints.reduce((sum, p) => sum + p.y, 0) / n;
+        const x = dataPoints[0].x;
+        if (x === 0) return { ratio: 0, offset: 0, isEstimated: true };
+        return { ratio: (avgY / x) * 100, offset: 0, isEstimated: true }; // isEstimatedフラグで簡易推論であることを示す
+    }
 
     let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
     dataPoints.forEach(p => {
@@ -56,11 +65,14 @@ const calculateLinearRegression = (dataPoints: {x: number, y: number}[]) => {
     });
 
     const denominator = (n * sumXX - sumX * sumX);
-    if (denominator === 0) return null;
+    if (denominator === 0) {
+        const avgY = sumY / n;
+        return { ratio: (avgY / dataPoints[0].x) * 100, offset: 0, isEstimated: true };
+    }
 
     const a = (n * sumXY - sumX * sumY) / denominator;
     const b = (sumY - a * sumX) / n;
-    return { ratio: a * 100, offset: b };
+    return { ratio: a * 100, offset: b, isEstimated: false };
 };
 
 export const AdminCompetitor = ({ data }: { data: any }) => {
@@ -78,9 +90,6 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
   const [pricingRules, setPricingRules] = useState<any>(defaultPricingRules);
   const [aiPrompt, setAiPrompt] = useState<string>(defaultAIPrompt);
   const [isSaving, setIsSaving] = useState(false);
-
-  // UIプレビュー用の状態
-  const [showDemoLogic, setShowDemoLogic] = useState(false);
 
   const currentCopperPrice = data?.market?.copper?.price || 1450;
   const currentBrassPrice = data?.market?.brass?.price || 980;
@@ -100,14 +109,18 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
           data.competitorPrices.forEach((row: any) => {
               if (!historyByName[row.name]) historyByName[row.name] = [];
               let pricesObj = {};
-              try { pricesObj = JSON.parse(row.prices); } catch(e) {}
+              try { 
+                  let parsed = row.prices;
+                  if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+                  if (typeof parsed === 'string') parsed = JSON.parse(parsed); // 二重エスケープ対応
+                  pricesObj = parsed; 
+              } catch(e) {}
               
               const safeDateStr = typeof row.date === 'string' ? row.date.replace(/-/g, '/') : row.date;
               const dateObj = new Date(safeDateStr);
               
               if (!isNaN(dateObj.getTime())) {
                   const mmdd = `${String(dateObj.getMonth()+1).padStart(2, '0')}/${String(dateObj.getDate()).padStart(2, '0')}`;
-                  
                   const record = { date: row.date, mmdd: mmdd, prices: pricesObj };
                   historyByName[row.name].push(record);
                   allRawHistory.push({ name: row.name, ...record });
@@ -188,53 +201,55 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
   // チャート・ロジック計算エリア
   // --------------------------------------------------------
   
-  // ★修正1: X軸（日付）の生成。自社建値の履歴だけでなく、競合データの取得日もマージしてX軸を作成する
+  // ★ 修正: 直近7日間の日付を確実に生成（土日による歯抜けを防ぐ）
   const dateLabels = useMemo(() => {
-      const dateSet = new Set<string>();
-      (data?.history || []).forEach((h:any) => { if (h.date) dateSet.add(h.date); });
-      allHistoryData.forEach(h => { if (h.mmdd) dateSet.add(h.mmdd); });
-      
-      const sorted = Array.from(dateSet).sort((a, b) => {
-          const [mA, dA] = a.split('/').map(Number);
-          const [mB, dB] = b.split('/').map(Number);
-          // 年跨ぎ対応（11月と1月など）
-          const scoreA = mA < 3 && mB > 10 ? mA + 12 : mA;
-          const scoreB = mB < 3 && mA > 10 ? mB + 12 : mB;
-          if (scoreA !== scoreB) return scoreA - scoreB;
-          return dA - dB;
-      });
-      return sorted.slice(-7);
-  }, [data?.history, allHistoryData]);
+      const labels = [];
+      for (let i = 6; i >= 0; i--) {
+          const d = new Date();
+          d.setDate(d.getDate() - i);
+          labels.push(`${String(d.getMonth()+1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`);
+      }
+      return labels;
+  }, []);
   
-  // ★修正2: データの生成。休日など建値がない日は前日の建値を引き継ぐ
+  // ★ 修正: 休日などでデータが存在しない場合は「前日の価格」を引っ張ってきて線を繋ぐ（フォワードフィル）
   const chartDataSets = useMemo(() => {
       const sets: any[] = [];
       
-      // 自社データ（休日は前日の建値を引き継ぐ）
+      // 自社データ（建値のフォワードフィル）
       let lastKnownCopper = currentCopperPrice;
-      
+      // 最初の値を見つける
+      for (let i = 0; i < dateLabels.length; i++) {
+           if (historyMap[dateLabels[i]]) { lastKnownCopper = historyMap[dateLabels[i]]; break; }
+      }
+
       const myData = dateLabels.map(d => {
-          if (historyMap[d]) {
-              lastKnownCopper = historyMap[d];
-          }
+          if (historyMap[d]) lastKnownCopper = historyMap[d];
           return calculateMyPrice(activeChartTab, pricingRules, lastKnownCopper);
       });
       sets.push({ name: '月寒製作所 (自社)', data: myData, color: '#D32F2F', stroke: 3, dash: '' });
 
-      // 他社データ
+      // 他社データ（競合価格のフォワードフィル）
       const compColors = ['#111111', '#666666', '#999999'];
       const uniqueComps = Array.from(new Set(allHistoryData.map(h => h.name)));
       
       uniqueComps.forEach((compName, idx) => {
+          let lastKnownCompPrice: number | null = null;
+          const compHist = allHistoryData.filter(h => h.name === compName);
+          compHist.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
           const compData = dateLabels.map(d => {
-              const records = allHistoryData.filter(h => h.name === compName && h.mmdd === d);
-              if (records.length > 0) {
-                  const sorted = records.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-                  return sorted[0].prices[activeChartTab] || null;
+              const recordsForDay = compHist.filter(h => h.mmdd === d);
+              if (recordsForDay.length > 0) {
+                  const price = recordsForDay[recordsForDay.length - 1].prices[activeChartTab];
+                  if (price) lastKnownCompPrice = price;
               }
-              return null;
+              return lastKnownCompPrice; 
           });
-          sets.push({ name: compName, data: compData, color: compColors[idx % compColors.length], stroke: 2, dash: '4,4' });
+          
+          if (compData.some(v => v !== null)) {
+              sets.push({ name: compName, data: compData, color: compColors[idx % compColors.length], stroke: 2, dash: '4,4' });
+          }
       });
 
       return sets;
@@ -248,9 +263,9 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
           const latestPerDay: Record<string, any> = {};
           
           allHistoryData.filter(h => h.name === compName).forEach(h => {
-              // 休日に取得したデータは直近の建値を使って計算に含める
               let copperX = historyMap[h.mmdd];
               if (!copperX) {
+                  // 建値がない日は直近の過去日を探す
                   const availableDates = Object.keys(historyMap).sort();
                   for (let i = availableDates.length - 1; i >= 0; i--) {
                       if (availableDates[i] < h.mmdd) {
@@ -267,30 +282,16 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
           });
           
           const dataPoints = Object.values(latestPerDay);
+          const result = calculateLinearRegression(dataPoints);
           
-          if (dataPoints.length >= 2) {
-              const result = calculateLinearRegression(dataPoints);
-              if (result) {
-                  logics[compName] = result;
-              } else {
-                  logics[compName] = { 
-                      error: 'no_price_change', 
-                      message: '建値の変動待ち',
-                      points: dataPoints.length 
-                  };
-              }
-          } else {
-              logics[compName] = { 
-                  error: 'not_enough_days', 
-                  message: `データ不足 (${dataPoints.length}日分)`,
-                  points: dataPoints.length 
-              };
+          if (result) {
+              logics[compName] = result;
           }
       });
       return logics;
   }, [allHistoryData, historyMap, activeChartTab]);
 
-  // ★修正3: SVG チャート描画関数（点が少なくても描画するよう改修）
+  // SVG チャート描画関数
   const renderChart = () => {
       const width = 800;
       const height = 250;
@@ -308,11 +309,11 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
           });
       });
 
-      if (min === Infinity) return <div className="text-center p-10 text-gray-400">データがありません</div>;
+      if (min === Infinity) return <div className="text-center p-10 text-gray-400 font-bold">データがありません</div>;
       
       min = Math.floor(min * 0.98);
       max = Math.ceil(max * 1.02);
-      const range = max - min || 1;
+      const range = max - min || 100; // rangeが0にならないように保護
 
       return (
           <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible">
@@ -349,7 +350,7 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
 
                   return (
                       <g key={setIdx}>
-                          {/* 点が2個以上あれば線を引く */}
+                          {/* 点が複数あれば線を描画 */}
                           {points.length > 1 && (
                               <polyline 
                                   points={points.map(p => `${p.x},${p.y}`).join(' ')} 
@@ -361,7 +362,7 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                                   strokeLinecap="round" 
                               />
                           )}
-                          {/* 点が1個でも描画する */}
+                          {/* 各データポイントを丸で描画 */}
                           {points.map((p, pIdx) => (
                               <circle 
                                   key={pIdx} 
@@ -455,46 +456,29 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
               <p className="text-[10px] text-gray-400 mb-6 border-b border-gray-800 pb-3 relative z-10">過去のデータから他社の「建値に対する計算式」を自動推論します。</p>
               
               <div className="flex-1 space-y-4 relative z-10 overflow-y-auto pr-2 custom-scrollbar">
-                  {Object.keys(estimatedLogics).length === 0 && !showDemoLogic ? (
+                  {Object.keys(estimatedLogics).length === 0 ? (
                       <div className="text-center py-10 flex flex-col items-center gap-3">
-                          <p className="text-xs text-gray-500">データが不足しているため計算できません<br/>(最低2日分の価格履歴が必要です)</p>
-                          <button onClick={() => setShowDemoLogic(true)} className="text-[10px] bg-gray-800 text-gray-300 px-3 py-1.5 rounded-sm hover:bg-gray-700 transition border border-gray-700">UIプレビューを確認</button>
+                          <p className="text-xs text-gray-500">データが不足しているため計算できません</p>
                       </div>
                   ) : (
-                      Object.entries(showDemoLogic && Object.keys(estimatedLogics).length === 0 ? {
-                          "サンプル競合他社 A": { ratio: 96.5, offset: -25 },
-                          "サンプル競合他社 B": { ratio: 94.0, offset: 0 },
-                          "サンプル競合他社 C": { error: 'no_price_change', message: '建値の変動待ち' }
-                      } : estimatedLogics).map(([compName, logic]) => (
+                      Object.entries(estimatedLogics).map(([compName, logic]) => (
                           <div key={compName} className="bg-white/10 p-3 rounded-sm border border-white/20 hover:bg-white/15 transition cursor-default relative">
                               <p className="text-xs font-bold text-gray-200 mb-2">
-                                  {compName} 
-                                  {showDemoLogic && Object.keys(estimatedLogics).length === 0 && <span className="text-[8px] bg-red-500 text-white px-1 py-0.5 ml-2 rounded font-mono">DEMO</span>}
+                                  {compName}
+                                  {logic.isEstimated && <span className="text-[8px] bg-red-900 text-red-200 px-1 py-0.5 ml-2 rounded font-mono">簡易推論</span>}
                               </p>
                               
-                              {logic.error ? (
-                                  <div className="py-3 text-center border-t border-white/10 mt-2">
-                                      <p className="text-xs text-yellow-500 font-bold mb-1">⚠️ {logic.message}</p>
-                                      {logic.error === 'no_price_change' && (
-                                          <p className="text-[9px] text-gray-400">建値の変動がないため、歩留まり(%)と調整額(円)を数学的に分離できません。相場が変動した日に再度取得すると計算されます。</p>
-                                      )}
-                                      {logic.error === 'not_enough_days' && (
-                                          <p className="text-[9px] text-gray-400">AIが十分なデータポイントを確保できていません。明日以降に再度取得してください。</p>
-                                      )}
+                              <div className="flex justify-between items-end font-mono mt-2">
+                                  <div>
+                                      <p className="text-[10px] text-gray-400">推定歩留まり</p>
+                                      <p className="text-xl font-black text-white">{logic.ratio.toFixed(1)}<span className="text-xs ml-0.5">%</span></p>
                                   </div>
-                              ) : (
-                                  <div className="flex justify-between items-end font-mono mt-2">
-                                      <div>
-                                          <p className="text-[10px] text-gray-400">推定歩留まり</p>
-                                          <p className="text-xl font-black text-white">{logic.ratio.toFixed(1)}<span className="text-xs ml-0.5">%</span></p>
-                                      </div>
-                                      <div className="text-gray-500 font-black pb-1">×</div>
-                                      <div className="text-right">
-                                          <p className="text-[10px] text-gray-400">調整額 (オフセット)</p>
-                                          <p className="text-xl font-black text-white">{logic.offset > 0 ? '+' : ''}{Math.round(logic.offset)}<span className="text-xs ml-0.5">円</span></p>
-                                      </div>
+                                  <div className="text-gray-500 font-black pb-1">×</div>
+                                  <div className="text-right">
+                                      <p className="text-[10px] text-gray-400">調整額 (オフセット)</p>
+                                      <p className="text-xl font-black text-white">{logic.offset > 0 ? '+' : ''}{Math.round(logic.offset)}<span className="text-xs ml-0.5">円</span></p>
                                   </div>
-                              )}
+                              </div>
                           </div>
                       ))
                   )}
