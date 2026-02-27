@@ -14,6 +14,7 @@ const Icons = {
     Message: () => <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
 };
 
+// スパークライン（背景のミニチャート）
 const Sparkline = ({ data, color }: { data: number[], color: string }) => {
     if (!data || data.length < 2) return null;
     const min = Math.min(...data);
@@ -46,6 +47,7 @@ const Sparkline = ({ data, color }: { data: number[], color: string }) => {
     );
 };
 
+// ドーナツチャート
 const DonutChart = ({ value, max }: { value: number, max: number }) => {
     const radius = 32;
     const circumference = 2 * Math.PI * radius;
@@ -236,11 +238,11 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                 </div>
             </header>
 
-            {/* ★ 修正ポイント：w-max と shrink-0 を設定し、絶対に潰れない横スクロールを実装 */}
-            <div className="w-full overflow-x-auto no-scrollbar mb-10 pb-4 px-2">
-                <div className="flex gap-4 w-max">
+            {/* ★ 修正: PCではグリッド、スマホでは横スクロールの完全レスポンシブティッカー */}
+            <div className="mb-10 px-2 w-full">
+                <div className="flex xl:grid xl:grid-cols-6 gap-4 overflow-x-auto xl:overflow-visible no-scrollbar pb-4 xl:pb-0 snap-x w-full">
                     {marketItems.map((m, i) => (
-                        <div key={i} className={`relative bg-white border ${m.isPrimary ? 'border-[#D32F2F] shadow-md ring-1 ring-red-50' : 'border-gray-200 shadow-sm hover:border-gray-300'} rounded-sm p-4 transition-all duration-300 w-[180px] md:w-[220px] shrink-0 flex flex-col justify-between overflow-hidden group`}>
+                        <div key={i} className={`snap-start relative bg-white border ${m.isPrimary ? 'border-[#D32F2F] shadow-md ring-1 ring-red-50' : 'border-gray-200 shadow-sm hover:border-gray-300'} rounded-sm p-4 transition-all duration-300 w-[180px] shrink-0 xl:w-auto xl:shrink flex flex-col justify-between overflow-hidden group`}>
                             
                             {m.sparkData && (
                                 <div className="absolute bottom-0 left-0 w-full h-1/2 opacity-60 group-hover:opacity-100 transition-opacity duration-500">
@@ -250,8 +252,8 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                             
                             <p className="text-xs font-bold text-gray-500 mb-2 relative z-10 whitespace-nowrap">{m.label}</p>
                             <div className="flex items-baseline gap-1 relative z-10 whitespace-nowrap">
-                                <span className="text-2xl md:text-3xl font-black text-gray-900 tracking-tighter">{m.price.toLocaleString()}</span>
-                                <span className="text-[10px] md:text-xs text-gray-400 font-bold ml-1">{m.unit}</span>
+                                <span className="text-2xl 2xl:text-3xl font-black text-gray-900 tracking-tighter">{m.price.toLocaleString()}</span>
+                                <span className="text-[10px] 2xl:text-xs text-gray-400 font-bold ml-1">{m.unit}</span>
                             </div>
                             
                             {m.diff !== undefined ? (
@@ -259,7 +261,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                                     {m.diff > 0 ? <><Icons.TrendingUp /><span className="text-[#D32F2F]">+{m.diff}</span></> : m.diff < 0 ? <><Icons.TrendingDown /><span className="text-blue-600">{m.diff}</span></> : <><Icons.Minus /><span className="text-gray-400">±0</span></>}
                                 </div>
                             ) : m.sub ? (
-                                <div className="mt-2 text-[9px] md:text-[10px] text-gray-400 font-mono font-bold relative z-10 whitespace-nowrap">{m.sub}</div>
+                                <div className="mt-2 text-[10px] text-gray-400 font-mono font-bold relative z-10 whitespace-nowrap truncate">{m.sub}</div>
                             ) : (
                                 <div className="mt-2 h-4 relative z-10"></div>
                             )}
@@ -321,9 +323,9 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
 
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 px-2">
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 px-2">
                 
-                <div className="lg:col-span-2 space-y-8">
+                <div className="xl:col-span-2 space-y-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         
                         <div className="group bg-white rounded-sm border border-gray-200 shadow-sm p-6 md:p-8 flex flex-col cursor-pointer hover:border-[#D32F2F] hover:shadow-md transition-all" onClick={() => onNavigate('COMPETITOR')}>
