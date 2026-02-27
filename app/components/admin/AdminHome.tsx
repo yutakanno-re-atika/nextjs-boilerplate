@@ -26,7 +26,8 @@ const Sparkline = ({ data, color }: { data: number[], color: string }) => {
     
     const points = data.map((d, i) => {
         const x = (i / (data.length - 1)) * width;
-        const y = height - padding - ((d - min) / range) * (height - padding * 2);
+        // ★ 修正：値が全て同じ（平坦）な場合は中央に線を描画する
+        const y = max === min ? height / 2 : height - padding - ((d - min) / range) * (height - padding * 2);
         return `${x},${y}`;
     }).join(' ');
 
@@ -44,26 +45,6 @@ const Sparkline = ({ data, color }: { data: number[], color: string }) => {
             <polyline points={points} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             <circle cx={points.split(' ').pop()?.split(',')[0]} cy={points.split(' ').pop()?.split(',')[1]} r="2" fill={color} />
         </svg>
-    );
-};
-
-// ドーナツチャート
-const DonutChart = ({ value, max }: { value: number, max: number }) => {
-    const radius = 32;
-    const circumference = 2 * Math.PI * radius;
-    const percent = max > 0 ? Math.min(100, (value / max) * 100) : 0;
-    const strokeDashoffset = circumference - (percent / 100) * circumference;
-    
-    return (
-        <div className="relative w-24 h-24 flex items-center justify-center">
-            <svg className="w-full h-full transform -rotate-90">
-                <circle cx="48" cy="48" r={radius} stroke="#F3F4F6" strokeWidth="8" fill="transparent" />
-                <circle cx="48" cy="48" r={radius} stroke="#D32F2F" strokeWidth="8" fill="transparent" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} className="transition-all duration-1000 ease-out" />
-            </svg>
-            <div className="absolute flex flex-col items-center justify-center">
-                <span className="text-xl font-black text-gray-900 tracking-tighter">{Math.round(percent)}<span className="text-xs font-bold">%</span></span>
-            </div>
-        </div>
     );
 };
 
@@ -87,19 +68,32 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
     const jpyCopperPrice = Math.floor((lmeCopper * usdjpy) / 1000);
 
     const history = data?.history || [];
-    const currentPrice = history.length > 0 ? Number(history[history.length - 1].value) : copperPrice;
-    const prevPrice = history.length > 1 ? Number(history[history.length - 2].value) : currentPrice;
-    const copperDiff = currentPrice - prevPrice;
+    
+    // ★ 修正：すべての金属の履歴データを抽出するヘルパー関数
+    const extractSparkData = (key: string, fallbackPrice: number) => {
+        // 現在のGASは 'value' (銅) しか返さないが、将来的に 'brass' 等が追加された場合自動で読み込む
+        const vals = history.map((h: any) => Number(h[key] || (key === 'copper' ? h.value : fallbackPrice)));
+        return vals.length >= 7 ? vals.slice(-7) : [...Array(7 - vals.length).fill(fallbackPrice), ...vals];
+    };
 
-    const historyValues = history.map((h: any) => Number(h.value));
-    const copperSparkData = historyValues.length >= 7 ? historyValues.slice(-7) : [...Array(7 - historyValues.length).fill(copperPrice), ...historyValues];
+    const copperSparkData = extractSparkData('copper', copperPrice);
+    const brassSparkData = extractSparkData('brass', brassPrice);
+    const zincSparkData = extractSparkData('zinc', zincPrice);
+    const leadSparkData = extractSparkData('lead', leadPrice);
+    const tinSparkData = extractSparkData('tin', tinPrice);
+
+    // 前日比の計算
+    const getDiff = (sparkData: number[]) => {
+        if (sparkData.length >= 2) return sparkData[sparkData.length - 1] - sparkData[sparkData.length - 2];
+        return 0;
+    };
 
     const marketItems = [
-        { label: '銅建値 (JX)', price: copperPrice, unit: '円/kg', diff: copperDiff, isPrimary: true, sparkData: copperSparkData },
-        { label: '真鍮建値 (日伸)', price: brassPrice, unit: '円/kg', sparkData: [brassPrice, brassPrice] },
-        { label: '亜鉛建値 (三井)', price: zincPrice, unit: '円/kg', sparkData: [zincPrice, zincPrice] },
-        { label: '鉛建値 (三菱)', price: leadPrice, unit: '円/kg', sparkData: [leadPrice, leadPrice] },
-        { label: '錫建値 (三菱)', price: tinPrice, unit: '円/kg', sparkData: [tinPrice, tinPrice] },
+        { label: '銅建値 (JX)', price: copperPrice, unit: '円/kg', diff: getDiff(copperSparkData), isPrimary: true, sparkData: copperSparkData },
+        { label: '真鍮建値 (日伸)', price: brassPrice, unit: '円/kg', diff: getDiff(brassSparkData), sparkData: brassSparkData },
+        { label: '亜鉛建値 (三井)', price: zincPrice, unit: '円/kg', diff: getDiff(zincSparkData), sparkData: zincSparkData },
+        { label: '鉛建値 (三菱)', price: leadPrice, unit: '円/kg', diff: getDiff(leadSparkData), sparkData: leadSparkData },
+        { label: '錫建値 (三菱)', price: tinPrice, unit: '円/kg', diff: getDiff(tinSparkData), sparkData: tinSparkData },
         { label: 'LME銅 3M', price: lmeCopper, unit: 'USD/t', sub: `為替換算: 約¥${jpyCopperPrice}/kg` },
     ];
 
@@ -123,7 +117,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
         const unprocessedCopper = 3500; 
         const total = producedCopper + unprocessedCopper;
         return { totalCopperStock: total, inventoryValue: total * currentPrice };
-    }, [data?.productions, currentPrice]);
+    }, [data?.productions, currentPrice = copperPrice]);
 
     const { mCopper, prevCopper, monthlyAvgYield, yieldStats, targetMonthly } = useMemo(() => {
         const productions = data?.productions || [];
@@ -179,7 +173,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
 
             Object.keys(rules).forEach(item => {
                 const rule = rules[item];
-                let basePrice = rule.base === 'brass' ? brassPrice : currentPrice;
+                let basePrice = rule.base === 'brass' ? brassPrice : copperPrice;
                 const myPrice = Math.floor(basePrice * (Number(rule.ratio) / 100)) + Number(rule.offset);
 
                 const compPrices = compList.map(c => {
@@ -202,22 +196,10 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
             });
         } catch(e) {}
         return { win, lose, draw, myBenchPrice, compBars };
-    }, [data?.competitorPrices, data?.config?.pricing_rules, currentPrice, brassPrice]);
+    }, [data?.competitorPrices, data?.config?.pricing_rules, copperPrice, brassPrice]);
 
     const formatTime = (dateStr: string) => {
         try { const d = new Date(dateStr); return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`; } catch(e) { return '-'; }
-    };
-
-    const maxBar = Math.max(mCopper, prevCopper, 1) * 1.2;
-    const curH = `${(mCopper / maxBar) * 100}%`;
-    const prevH = `${(prevCopper / maxBar) * 100}%`;
-
-    const minCompPrice = Math.min(myBenchPrice, ...compBars.map(c => c.price)) * 0.95;
-    const maxCompPrice = Math.max(myBenchPrice, ...compBars.map(c => c.price)) * 1.05;
-    const getW = (p: number) => {
-        const range = maxCompPrice - minCompPrice;
-        if (range <= 0) return '50%';
-        return `${Math.max(0, ((p - minCompPrice) / range) * 100)}%`;
     };
 
     return (
@@ -238,7 +220,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                 </div>
             </header>
 
-            {/* ★ 修正: PCではグリッド、スマホでは横スクロールの完全レスポンシブティッカー */}
             <div className="mb-10 px-2 w-full">
                 <div className="flex xl:grid xl:grid-cols-6 gap-4 overflow-x-auto xl:overflow-visible no-scrollbar pb-4 xl:pb-0 snap-x w-full">
                     {marketItems.map((m, i) => (
