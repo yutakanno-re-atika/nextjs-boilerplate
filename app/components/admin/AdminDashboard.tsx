@@ -44,15 +44,15 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
 
   const handlePosSuccess = () => { setEditingResId(null); setAdminTab('OPERATIONS'); window.location.reload(); };
 
-  // メニュー定義
+  // ★修正: 現場目線に合わせ、メニューのラベルを完全日本語化
   const MENU_ITEMS = [
-      { id: 'HOME', icon: Icons.Home, label: 'Dashboard' },
-      { id: 'OPERATIONS', icon: Icons.Kanban, label: 'Operations' },
-      { id: 'POS', icon: Icons.Calc, label: 'POS Terminal' },
-      { id: 'PRODUCTION', icon: Icons.Factory, label: 'Production' },
-      { id: 'SALES', icon: Icons.Briefcase, label: 'CRM / Sales' },
-      { id: 'COMPETITOR', icon: Icons.Radar, label: 'Market Radar' },
-      { id: 'DATABASE', icon: Icons.Database, label: 'Database' },
+      { id: 'HOME', icon: Icons.Home, label: 'ダッシュボード' },
+      { id: 'OPERATIONS', icon: Icons.Kanban, label: '現場カンバン' },
+      { id: 'POS', icon: Icons.Calc, label: 'POS (受付・計量)' },
+      { id: 'PRODUCTION', icon: Icons.Factory, label: '生産・選別' },
+      { id: 'SALES', icon: Icons.Briefcase, label: '営業・顧客' },
+      { id: 'COMPETITOR', icon: Icons.Radar, label: '相場レーダー' },
+      { id: 'DATABASE', icon: Icons.Database, label: 'マスターDB' },
   ];
 
   return (
@@ -86,14 +86,14 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
         </div>
         
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-            <p className="px-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 mt-4">Menu</p>
+            <p className="px-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 mt-4">メインメニュー</p>
             {MENU_ITEMS.map((item) => {
                 const isActive = adminTab === item.id || (item.id === 'HOME' && adminTab === 'CLIENT_DETAIL');
                 return (
                     <button 
                         key={item.id}
                         onClick={() => handleNavigate(item.id)} 
-                        className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-3 relative ${isActive ? 'text-gray-900 bg-white shadow-sm border border-gray-200' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'}`}
+                        className={`w-full text-left px-3 py-2.5 rounded-md text-sm font-bold transition-all flex items-center gap-3 relative ${isActive ? 'text-gray-900 bg-white shadow-sm border border-gray-200' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'}`}
                     >
                         {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-4 bg-[#D32F2F] rounded-r-md"></div>}
                         <item.icon />
@@ -105,8 +105,8 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
         
         {onLogout && (
             <div className="p-4 border-t border-[#E5E7EB] flex-shrink-0">
-                <button onClick={onLogout} className="w-full text-left px-3 py-2 rounded-md text-sm font-medium text-gray-500 hover:text-[#D32F2F] hover:bg-red-50 transition flex items-center gap-3">
-                    <Icons.Logout /> Logout
+                <button onClick={onLogout} className="w-full text-left px-3 py-2 rounded-md text-sm font-bold text-gray-500 hover:text-[#D32F2F] hover:bg-red-50 transition flex items-center gap-3">
+                    <Icons.Logout /> ログアウト
                 </button>
             </div>
         )}
@@ -120,7 +120,7 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
          {adminTab === 'PRODUCTION' && <AdminProduction data={data} localReservations={localReservations} />}
          {adminTab === 'COMPETITOR' && <AdminCompetitor data={data} />}
          {adminTab === 'SALES' && <AdminSales data={data} />}
-         {adminTab === 'DATABASE' && <AdminDatabase data={data} />}
+         {adminTab === 'DATABASE' && <AdminDatabase data={data} onNavigate={handleNavigate} />}
          {adminTab === 'CLIENT_DETAIL' && selectedClientName && <AdminClientDetail data={data} clientName={selectedClientName} onBack={() => handleNavigate('HOME')} />}
       </main>
     </div>
