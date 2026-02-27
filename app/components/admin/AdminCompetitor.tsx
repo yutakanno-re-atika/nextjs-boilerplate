@@ -56,7 +56,7 @@ const calculateLinearRegression = (dataPoints: {x: number, y: number}[]) => {
     });
 
     const denominator = (n * sumXX - sumX * sumX);
-    if (denominator === 0) return null; // 建値の変動がない（ゼロ除算）場合はnullを返す
+    if (denominator === 0) return null;
 
     const a = (n * sumXY - sumX * sumY) / denominator;
     const b = (sumY - a * sumX) / n;
@@ -102,7 +102,6 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
               let pricesObj = {};
               try { pricesObj = JSON.parse(row.prices); } catch(e) {}
               
-              // ★ Safari対応: "YYYY-MM-DD HH:mm:ss" を "YYYY/MM/DD HH:mm:ss" に変換してパースエラーを防ぐ
               const safeDateStr = typeof row.date === 'string' ? row.date.replace(/-/g, '/') : row.date;
               const dateObj = new Date(safeDateStr);
               
@@ -189,17 +188,36 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
   // チャート・ロジック計算エリア
   // --------------------------------------------------------
   
-  // X軸（日付）の生成
-  const dateLabels = Object.keys(historyMap).slice(-7); // 直近7日分
+  // ★修正1: X軸（日付）の生成。自社建値の履歴だけでなく、競合データの取得日もマージしてX軸を作成する
+  const dateLabels = useMemo(() => {
+      const dateSet = new Set<string>();
+      (data?.history || []).forEach((h:any) => { if (h.date) dateSet.add(h.date); });
+      allHistoryData.forEach(h => { if (h.mmdd) dateSet.add(h.mmdd); });
+      
+      const sorted = Array.from(dateSet).sort((a, b) => {
+          const [mA, dA] = a.split('/').map(Number);
+          const [mB, dB] = b.split('/').map(Number);
+          // 年跨ぎ対応（11月と1月など）
+          const scoreA = mA < 3 && mB > 10 ? mA + 12 : mA;
+          const scoreB = mB < 3 && mA > 10 ? mB + 12 : mB;
+          if (scoreA !== scoreB) return scoreA - scoreB;
+          return dA - dB;
+      });
+      return sorted.slice(-7);
+  }, [data?.history, allHistoryData]);
   
-  // 自社および各社の価格データを日付順に整理
+  // ★修正2: データの生成。休日など建値がない日は前日の建値を引き継ぐ
   const chartDataSets = useMemo(() => {
       const sets: any[] = [];
       
-      // 自社データ
+      // 自社データ（休日は前日の建値を引き継ぐ）
+      let lastKnownCopper = currentCopperPrice;
+      
       const myData = dateLabels.map(d => {
-          const copperPoint = historyMap[d];
-          return calculateMyPrice(activeChartTab, pricingRules, copperPoint);
+          if (historyMap[d]) {
+              lastKnownCopper = historyMap[d];
+          }
+          return calculateMyPrice(activeChartTab, pricingRules, lastKnownCopper);
       });
       sets.push({ name: '月寒製作所 (自社)', data: myData, color: '#D32F2F', stroke: 3, dash: '' });
 
@@ -220,9 +238,8 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       });
 
       return sets;
-  }, [dateLabels, allHistoryData, activeChartTab, pricingRules, historyMap]);
+  }, [dateLabels, allHistoryData, activeChartTab, pricingRules, historyMap, currentCopperPrice]);
 
-  // ★ 修正: ロジック推定計算 (同日の重複データを排除し、エラーハンドリングを強化)
   const estimatedLogics = useMemo(() => {
       const logics: Record<string, any> = {};
       const uniqueComps = Array.from(new Set(allHistoryData.map(h => h.name)));
@@ -231,7 +248,18 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
           const latestPerDay: Record<string, any> = {};
           
           allHistoryData.filter(h => h.name === compName).forEach(h => {
-              const copperX = historyMap[h.mmdd];
+              // 休日に取得したデータは直近の建値を使って計算に含める
+              let copperX = historyMap[h.mmdd];
+              if (!copperX) {
+                  const availableDates = Object.keys(historyMap).sort();
+                  for (let i = availableDates.length - 1; i >= 0; i--) {
+                      if (availableDates[i] < h.mmdd) {
+                          copperX = historyMap[availableDates[i]];
+                          break;
+                      }
+                  }
+              }
+              
               const compY = h.prices[activeChartTab];
               if (copperX && compY && copperX > 0 && compY > 0) {
                   latestPerDay[h.mmdd] = { x: copperX, y: compY };
@@ -245,7 +273,6 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
               if (result) {
                   logics[compName] = result;
               } else {
-                  // denominator === 0 (建値の変動がない場合)
                   logics[compName] = { 
                       error: 'no_price_change', 
                       message: '建値の変動待ち',
@@ -263,7 +290,7 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       return logics;
   }, [allHistoryData, historyMap, activeChartTab]);
 
-  // SVG チャート描画関数
+  // ★修正3: SVG チャート描画関数（点が少なくても描画するよう改修）
   const renderChart = () => {
       const width = 800;
       const height = 250;
@@ -315,17 +342,35 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                       if (val === null) return null;
                       const x = padding.left + (idx / Math.max(1, dateLabels.length - 1)) * innerW;
                       const y = padding.top + innerH - ((val - min) / range) * innerH;
-                      return `${x},${y}`;
-                  }).filter(Boolean);
+                      return {x, y};
+                  }).filter(Boolean) as {x: number, y: number}[];
 
-                  if (points.length < 2) return null;
+                  if (points.length === 0) return null;
 
                   return (
                       <g key={setIdx}>
-                          <polyline points={points.join(' ')} fill="none" stroke={set.color} strokeWidth={set.stroke} strokeDasharray={set.dash} strokeLinejoin="round" strokeLinecap="round" />
-                          {points.length > 0 && (
-                              <circle cx={points[points.length-1].split(',')[0]} cy={points[points.length-1].split(',')[1]} r="4" fill={set.color} />
+                          {/* 点が2個以上あれば線を引く */}
+                          {points.length > 1 && (
+                              <polyline 
+                                  points={points.map(p => `${p.x},${p.y}`).join(' ')} 
+                                  fill="none" 
+                                  stroke={set.color} 
+                                  strokeWidth={set.stroke} 
+                                  strokeDasharray={set.dash} 
+                                  strokeLinejoin="round" 
+                                  strokeLinecap="round" 
+                              />
                           )}
+                          {/* 点が1個でも描画する */}
+                          {points.map((p, pIdx) => (
+                              <circle 
+                                  key={pIdx} 
+                                  cx={p.x} 
+                                  cy={p.y} 
+                                  r={set.stroke === 3 ? "4" : "3"} 
+                                  fill={set.color} 
+                              />
+                          ))}
                       </g>
                   );
               })}
@@ -410,7 +455,6 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
               <p className="text-[10px] text-gray-400 mb-6 border-b border-gray-800 pb-3 relative z-10">過去のデータから他社の「建値に対する計算式」を自動推論します。</p>
               
               <div className="flex-1 space-y-4 relative z-10 overflow-y-auto pr-2 custom-scrollbar">
-                  {/* ★ 修正: データ不足時および相場変動がない場合のエラーハンドリングとプレビュー機能 */}
                   {Object.keys(estimatedLogics).length === 0 && !showDemoLogic ? (
                       <div className="text-center py-10 flex flex-col items-center gap-3">
                           <p className="text-xs text-gray-500">データが不足しているため計算できません<br/>(最低2日分の価格履歴が必要です)</p>
