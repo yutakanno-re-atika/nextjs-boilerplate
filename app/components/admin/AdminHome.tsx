@@ -68,10 +68,11 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
     const jpyCopperPrice = Math.floor((lmeCopper * usdjpy) / 1000);
 
     const history = data?.history || [];
+    const currentPrice = history.length > 0 ? Number(history[history.length - 1].value) : copperPrice;
     
     // ★ 修正：すべての金属の履歴データを抽出するヘルパー関数
+    // GAS側が銅しか返していない現状でも、エラーを出さずにフラットな配列を返す安全設計
     const extractSparkData = (key: string, fallbackPrice: number) => {
-        // 現在のGASは 'value' (銅) しか返さないが、将来的に 'brass' 等が追加された場合自動で読み込む
         const vals = history.map((h: any) => Number(h[key] || (key === 'copper' ? h.value : fallbackPrice)));
         return vals.length >= 7 ? vals.slice(-7) : [...Array(7 - vals.length).fill(fallbackPrice), ...vals];
     };
@@ -111,13 +112,14 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
         return sum + weight;
     }, 0);
 
+    // ★ 修正：クラッシュの原因となっていた currentPrice = copperPrice の代入を修正
     const { totalCopperStock, inventoryValue } = useMemo(() => {
         const productions = data?.productions || [];
         const producedCopper = productions.reduce((sum: number, p: any) => sum + (Number(p.outputCopper) || 0), 0);
         const unprocessedCopper = 3500; 
         const total = producedCopper + unprocessedCopper;
         return { totalCopperStock: total, inventoryValue: total * currentPrice };
-    }, [data?.productions, currentPrice = copperPrice]);
+    }, [data?.productions, currentPrice]);
 
     const { mCopper, prevCopper, monthlyAvgYield, yieldStats, targetMonthly } = useMemo(() => {
         const productions = data?.productions || [];
@@ -220,6 +222,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                 </div>
             </header>
 
+            {/* ★ 横スクロールの完全レスポンシブティッカー（各金属の推移チャート付き） */}
             <div className="mb-10 px-2 w-full">
                 <div className="flex xl:grid xl:grid-cols-6 gap-4 overflow-x-auto xl:overflow-visible no-scrollbar pb-4 xl:pb-0 snap-x w-full">
                     {marketItems.map((m, i) => (
