@@ -13,13 +13,13 @@ const Icons = {
   ArrowRight: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
 };
 
-// ★ 新たに定義した顧客Roleのマスター定義
+// ★ ロールの定義（バッジとして独立させるための設定）
 const ROLE_OPTIONS = [
-  { value: 'SUPPLIER', label: '仕入先 (原料供給)', color: 'bg-blue-50 text-blue-700 border-blue-200' },
-  { value: 'BUYER', label: '売却先 (出荷)', color: 'bg-green-50 text-green-700 border-green-200' },
-  { value: 'PARTNER', label: '連携 (産廃・相互融通)', color: 'bg-purple-50 text-purple-700 border-purple-200' },
-  { value: 'COMPETITOR', label: '競合他社 (相場監視)', color: 'bg-red-50 text-red-700 border-red-200' },
-  { value: 'SYSTEM_PARTNER', label: 'システム・開発', color: 'bg-gray-100 text-gray-700 border-gray-300' }
+  { value: 'SUPPLIER', short: '仕入先', label: '仕入先 (原料供給)', color: 'bg-blue-100 text-blue-800 border-blue-300' },
+  { value: 'BUYER', short: '売却先', label: '売却先 (出荷・エンド)', color: 'bg-green-100 text-green-800 border-green-300' },
+  { value: 'PARTNER', short: 'パートナー', label: 'パートナー (相互融通・産廃等)', color: 'bg-purple-100 text-purple-800 border-purple-300' },
+  { value: 'COMPETITOR', short: '競合', label: '競合他社 (相場監視)', color: 'bg-red-100 text-red-800 border-red-300' },
+  { value: 'SYSTEM_PARTNER', short: 'システム', label: 'システム・開発', color: 'bg-gray-100 text-gray-800 border-gray-300' }
 ];
 
 export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: any }) => {
@@ -59,13 +59,12 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
       try {
           let updates = {};
           if (sheetName === 'Wires' || sheetName === 'Products_Wire') {
-              updates = { 9: editValues.ratio }; // r[9]がratio
+              updates = { 9: editValues.ratio };
           } else if (sheetName === 'Clients') {
-              // ★ クライアント情報の更新（rank:2, memo:8, businessRole:11）
               updates = { 
                   2: editValues.rank, 
                   8: editValues.memo, 
-                  11: editValues.businessRole 
+                  11: editValues.businessRole // カンマ区切りの文字列として保存
               };
           }
 
@@ -253,7 +252,7 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                   </div>
               )}
 
-              {/* ★ CLIENTS TAB (Roleマルチフラグ対応UI) */}
+              {/* ★ CLIENTS TAB (単一ロールバッチの複数付与 UI) */}
               {activeTab === 'CLIENTS' && (
                   <div className="flex-1 overflow-y-auto overflow-x-auto p-0">
                       <table className="w-full text-left border-collapse min-w-[800px]">
@@ -261,8 +260,8 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                               <tr>
                                   <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest w-[20%]">顧客・企業名</th>
                                   <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest w-[10%] text-center">ランク</th>
-                                  <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest w-[25%]">役割 (Role Tags)</th>
-                                  <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest w-[30%]">特記事項 / エリア</th>
+                                  <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest w-[30%]">役割 (Roles)</th>
+                                  <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest w-[25%]">特記事項 / エリア</th>
                                   <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest w-[15%] text-right">操作</th>
                               </tr>
                           </thead>
@@ -270,9 +269,9 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                               {clients.map((c:any) => {
                                   const isEditing = editingId === (c.id || c.clientId);
                                   
-                                  // 現在のロールを配列化
+                                  // カンマやスラッシュ区切りの文字列を、安全に配列へ分割する
                                   const currentRoles = (isEditing ? editValues.businessRole : c.businessRole) || '';
-                                  const rolesArray = currentRoles.split(',').map((r:string) => r.trim()).filter(Boolean);
+                                  const rolesArray = currentRoles.split(/[,/，、]+/).map((r:string) => r.trim()).filter(Boolean);
 
                                   return (
                                       <tr key={c.id || c.clientId} className={`hover:bg-blue-50/20 transition ${isEditing ? 'bg-red-50/10' : ''}`}>
@@ -286,7 +285,7 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                                                   <select 
                                                       value={editValues.rank || 'B'} 
                                                       onChange={e => setEditValues({...editValues, rank: e.target.value})}
-                                                      className="bg-white border border-gray-300 p-1 rounded-sm text-xs font-bold outline-none"
+                                                      className="bg-white border border-gray-300 p-1 rounded-sm text-xs font-bold outline-none shadow-sm"
                                                   >
                                                       <option value="S">S</option>
                                                       <option value="A">A</option>
@@ -297,14 +296,14 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                                               )}
                                           </td>
 
-                                          {/* マルチフラグ(Role)表示＆編集エリア */}
+                                          {/* 独立したバッジを複数並べるエリア */}
                                           <td className="p-3">
                                               {isEditing ? (
-                                                  <div className="flex flex-wrap gap-1.5 p-2 bg-white border border-gray-200 shadow-inner rounded-sm">
+                                                  <div className="flex flex-col gap-1 p-2 bg-gray-50 border border-gray-200 shadow-inner rounded-sm">
                                                       {ROLE_OPTIONS.map(opt => {
                                                           const isChecked = rolesArray.includes(opt.value);
                                                           return (
-                                                              <label key={opt.value} className={`flex items-center gap-1.5 text-[10px] font-bold cursor-pointer px-2 py-1 rounded-sm border transition-colors ${isChecked ? 'bg-blue-50 border-blue-300 text-blue-800' : 'bg-gray-50 border-gray-200 text-gray-400 hover:bg-gray-100'}`}>
+                                                              <label key={opt.value} className={`flex items-center gap-2 text-xs font-bold cursor-pointer px-2 py-1.5 rounded-sm border transition-colors ${isChecked ? 'bg-white border-blue-400 text-gray-900 shadow-sm' : 'bg-transparent border-transparent text-gray-500 hover:bg-gray-100'}`}>
                                                                   <input 
                                                                       type="checkbox" 
                                                                       checked={isChecked} 
@@ -312,11 +311,13 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                                                                           let newRoles = [...rolesArray];
                                                                           if (isChecked) newRoles = newRoles.filter(r => r !== opt.value);
                                                                           else newRoles.push(opt.value);
+                                                                          // 保存用にはカンマ区切りで結合
                                                                           setEditValues({...editValues, businessRole: newRoles.join(',')});
                                                                       }} 
-                                                                      className="accent-blue-600 w-3 h-3" 
+                                                                      className="accent-blue-600 w-4 h-4" 
                                                                   />
-                                                                  {opt.label.split(' ')[0]} {/* 略称のみ表示 */}
+                                                                  <span className={`px-2 py-0.5 rounded-sm border text-[10px] ${opt.color}`}>{opt.short}</span>
+                                                                  <span className="text-[10px] font-normal text-gray-500">{opt.label.replace(opt.short, '').trim()}</span>
                                                               </label>
                                                           );
                                                       })}
@@ -326,9 +327,13 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                                                       {rolesArray.length > 0 ? rolesArray.map((roleStr: string, i: number) => {
                                                           const matchedOption = ROLE_OPTIONS.find(opt => opt.value === roleStr);
                                                           const colorClass = matchedOption ? matchedOption.color : 'bg-gray-100 text-gray-600 border-gray-200';
-                                                          const label = matchedOption ? matchedOption.label.split(' ')[0] : roleStr;
-                                                          return <span key={i} className={`text-[9px] px-1.5 py-0.5 border rounded-sm font-bold ${colorClass}`}>{label}</span>;
-                                                      }) : <span className="text-[9px] text-gray-400 border border-gray-200 px-1.5 py-0.5 rounded-sm">Role未設定</span>}
+                                                          const label = matchedOption ? matchedOption.short : roleStr;
+                                                          return (
+                                                              <span key={i} className={`text-[10px] px-2 py-1 border rounded-sm font-bold shadow-sm ${colorClass}`}>
+                                                                  {label}
+                                                              </span>
+                                                          );
+                                                      }) : <span className="text-[10px] text-gray-400 border border-gray-200 px-2 py-1 rounded-sm">未設定</span>}
                                                   </div>
                                               )}
                                           </td>
@@ -339,12 +344,12 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                                                       type="text" 
                                                       value={editValues.memo || ''} 
                                                       onChange={e => setEditValues({...editValues, memo: e.target.value})} 
-                                                      className="w-full bg-white border border-gray-300 p-1.5 rounded-sm text-xs outline-none focus:border-[#D32F2F]"
+                                                      className="w-full bg-white border border-gray-300 p-1.5 rounded-sm text-xs outline-none focus:border-[#D32F2F] shadow-sm"
                                                       placeholder="特記事項..."
                                                   />
                                               ) : (
                                                   <div>
-                                                      <p className="text-xs text-gray-700 font-medium truncate max-w-[200px] xl:max-w-[300px]">{c.memo || '-'}</p>
+                                                      <p className="text-xs text-gray-700 font-medium truncate max-w-[200px] xl:max-w-[250px]">{c.memo || '-'}</p>
                                                       <p className="text-[10px] text-gray-400 mt-0.5 truncate">{c.address || ''} {c.industry ? `(${c.industry})` : ''}</p>
                                                   </div>
                                               )}
@@ -353,8 +358,8 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                                           <td className="p-3 text-right">
                                               {isEditing ? (
                                                   <div className="flex gap-2 justify-end">
-                                                      <button onClick={() => handleSave('Clients', c.id || c.clientId)} disabled={isSaving} className="bg-gray-900 text-white px-3 py-1 text-[10px] font-bold rounded-sm hover:bg-black transition flex items-center gap-1"><Icons.Save /> 保存</button>
-                                                      <button onClick={() => setEditingId(null)} className="text-gray-400 text-[10px] font-bold hover:text-gray-900">取消</button>
+                                                      <button onClick={() => handleSave('Clients', c.id || c.clientId)} disabled={isSaving} className="bg-gray-900 text-white px-3 py-1 text-[10px] font-bold rounded-sm hover:bg-black transition flex items-center gap-1 shadow-sm"><Icons.Save /> 保存</button>
+                                                      <button onClick={() => setEditingId(null)} className="text-gray-400 text-[10px] font-bold hover:text-gray-900 px-2 py-1">取消</button>
                                                   </div>
                                               ) : (
                                                   <button onClick={(e) => { e.stopPropagation(); handleEdit(c); }} className="text-gray-400 hover:text-blue-600 transition p-2"><Icons.Edit /></button>
