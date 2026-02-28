@@ -14,12 +14,31 @@ const Icons = {
   FastForward: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>,
   Print: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>,
   Refresh: () => <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
-  Brain: () => <svg className="w-5 h-5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+  Brain: () => <svg className="w-5 h-5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>,
+  ShieldCheck: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+};
+
+// ★ プロベナンス・バッジ
+const ProvenanceBadge = ({ type }: { type: 'HUMAN' | 'AI_AUTO' | 'CO_OP' }) => {
+    const baseStyle = "inline-block px-1.5 py-0.5 text-[9px] font-mono font-bold tracking-widest rounded-sm text-white cursor-default shadow-sm";
+    switch (type) {
+        case 'HUMAN':
+            return <span className={`${baseStyle} bg-gray-900`} title="実測・確定データ">HUMAN</span>;
+        case 'CO_OP':
+            return <span className={`${baseStyle} bg-gray-600`} title="AI＋人間 協調データ">CO-P</span>;
+        case 'AI_AUTO':
+            return <span className={`${baseStyle} bg-gray-400`} title="AI予測・推論データ">AI</span>;
+        default:
+            return null;
+    }
 };
 
 export const AdminProduction = ({ data, localReservations }: { data: any, localReservations: any[] }) => {
   const [activeTab, setActiveTab] = useState<'SORT' | 'PROCESS' | 'LOG'>('SORT');
   
+  // ★ トラスト・トグル
+  const [showAiData, setShowAiData] = useState(true);
+
   const [sortingLot, setSortingLot] = useState<any>(null); 
   const [blendingLots, setBlendingLots] = useState<any[]>([]); 
   
@@ -38,7 +57,6 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
   const [processMemo, setProcessMemo] = useState('');         
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // ★ 印刷用レポートのステート
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [aiSummary, setAiSummary] = useState<string>('');
 
@@ -189,16 +207,17 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
     setIsSubmitting(false);
   };
 
-  // ★ 印刷レポートハンドラ
   const handlePrintReport = async () => {
     setIsGeneratingReport(true);
     const recentLogs = productions.slice(-10).map((p:any) => `${p.materialName}: 歩留${p.actualRatio}% (投入${p.inputWeight}kg)`).join('\n');
     const promptData = `
+    ・データモード: ${showAiData ? 'AI予測データ含む' : '実測確定データのみ'}
     ・累計 ピカ銅生産量: ${totalProducedCopper.toLocaleString()} kg
     ・現在の選別待ちロット: ${toSortLots.length} 件
     ・現在の加工待ちヤード在庫: ${readyLots.length} 件
     ・直近10件の加工ログ:
     ${recentLogs}
+    ※工場長へ提出する本日のナゲット製造管理レポートです。稼働状況から読み取れる現場の課題や、明日への改善アドバイスを鋭く記載してください。
     `;
 
     try {
@@ -222,7 +241,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-500 text-gray-900 pb-12 font-sans max-w-7xl mx-auto w-full relative" style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
       
-      {/* --- 通常の画面 (印刷時は非表示) --- */}
+      {/* --- 通常の画面 --- */}
       <div className="print:hidden flex flex-col h-full">
           <header className="mb-4 md:mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4 border-b border-gray-200 pb-4 flex-shrink-0">
             <div>
@@ -232,22 +251,40 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                 </h2>
                 <p className="text-xs text-gray-500 mt-1 font-mono tracking-wider ml-3">PRODUCTION & SORTING</p>
             </div>
-            {/* ★ 印刷ボタン */}
-            <button 
-                onClick={handlePrintReport} 
-                disabled={isGeneratingReport}
-                className="bg-white border border-gray-300 text-gray-800 px-4 py-2 rounded-sm text-xs font-bold hover:border-[#D32F2F] hover:text-[#D32F2F] transition shadow-sm flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-                {isGeneratingReport ? <Icons.Refresh /> : <Icons.Print />}
-                {isGeneratingReport ? 'AI分析中...' : 'レポート作成＆印刷'}
-            </button>
+            
+            <div className="flex items-center gap-4">
+                {/* ★ トラスト・トグル */}
+                <div className="flex items-center gap-1 bg-white p-1 rounded-sm border border-gray-300 shadow-sm">
+                    <button 
+                        onClick={() => setShowAiData(true)}
+                        className={`px-4 py-1.5 text-xs font-bold font-mono transition-colors ${showAiData ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-100'}`}
+                    >
+                        MIX
+                    </button>
+                    <button 
+                        onClick={() => setShowAiData(false)}
+                        className={`px-4 py-1.5 text-xs font-bold font-mono transition-colors ${!showAiData ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-100'}`}
+                    >
+                        HUMAN ONLY
+                    </button>
+                </div>
+
+                <button 
+                    onClick={handlePrintReport} 
+                    disabled={isGeneratingReport}
+                    className="bg-white border border-gray-300 text-gray-800 px-4 py-2 rounded-sm text-xs font-bold hover:border-[#D32F2F] hover:text-[#D32F2F] transition shadow-sm flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                    {isGeneratingReport ? <span className="animate-spin"><Icons.Refresh /></span> : <Icons.Print />}
+                    レポート印刷
+                </button>
+            </div>
           </header>
 
           <div className="bg-[#111] rounded-sm shadow-sm p-5 md:p-6 text-white mb-6 relative overflow-hidden flex flex-col md:flex-row justify-between md:items-end gap-2 md:gap-4 flex-shrink-0">
               <div className="absolute top-0 right-0 p-4 opacity-10 transform scale-150 text-[#D32F2F]"><Icons.Factory /></div>
               <div>
                   <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Pure Copper</h3>
-                  <p className="text-sm font-bold text-gray-200">累計 ピカ銅生産量</p>
+                  <p className="text-sm font-bold text-gray-200 flex items-center gap-2">累計 ピカ銅生産量 <ProvenanceBadge type="HUMAN" /></p>
               </div>
               <div className="flex items-end gap-1 md:gap-2 relative z-10">
                   <span className="text-4xl md:text-5xl font-black text-white font-mono tracking-tighter">{totalProducedCopper.toLocaleString()}</span>
@@ -269,6 +306,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
 
           <div className="flex-1 bg-white border-x border-b border-gray-200 shadow-sm flex flex-col min-h-[400px] overflow-hidden">
               
+              {/* === 選別待ち === */}
               {activeTab === 'SORT' && (
                   <div className="p-4 md:p-6 overflow-y-auto bg-gray-50 flex-1">
                       {toSortLots.length === 0 ? (
@@ -278,7 +316,10 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                               {toSortLots.map(lot => (
                                   <div key={lot.lotId} className="bg-white border border-gray-200 rounded-sm p-5 shadow-sm hover:border-blue-400 transition flex flex-col">
                                       <div className="flex justify-between items-start mb-3">
-                                          <span className="text-[10px] font-mono font-bold bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-sm">未選別</span>
+                                          <div className="flex gap-2">
+                                              <span className="text-[10px] font-mono font-bold bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-sm">未選別</span>
+                                              <ProvenanceBadge type="HUMAN" />
+                                          </div>
                                           <span className="text-[10px] text-gray-400 font-mono">{lot.date} 入庫</span>
                                       </div>
                                       <h4 className="font-black text-gray-900 text-lg mb-1">{lot.product}</h4>
@@ -302,6 +343,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                   </div>
               )}
 
+              {/* === 加工ヤード === */}
               {activeTab === 'PROCESS' && (
                   <div className="flex flex-col h-full relative">
                       <div className="p-0 overflow-y-auto overflow-x-auto flex-1 pb-20">
@@ -310,9 +352,9 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                                   <tr>
                                       <th className="p-3 w-12 text-center"><input type="checkbox" onChange={(e) => setCheckedLotIds(e.target.checked ? readyLots.map(l=>l.lotId) : [])} checked={checkedLotIds.length === readyLots.length && readyLots.length > 0} className="w-4 h-4 accent-[#D32F2F]" /></th>
                                       <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest">状態 / 入庫</th>
-                                      <th className="p-3 text-xs font-bold text-gray-500 uppercase tracking-widest">品目</th>
-                                      <th className="p-3 text-xs font-bold text-gray-500 uppercase tracking-widest">業者名</th>
-                                      <th className="p-3 text-xs font-bold text-gray-900 uppercase tracking-widest text-right">重量</th>
+                                      <th className="p-3 text-xs font-bold text-gray-500 uppercase tracking-widest">品目 <ProvenanceBadge type="HUMAN" /></th>
+                                      <th className="p-3 text-xs font-bold text-gray-500 uppercase tracking-widest">業者名 <ProvenanceBadge type="HUMAN" /></th>
+                                      <th className="p-3 text-xs font-bold text-gray-900 uppercase tracking-widest text-right">重量 <ProvenanceBadge type="HUMAN" /></th>
                                   </tr>
                               </thead>
                               <tbody className="divide-y divide-gray-100">
@@ -349,62 +391,101 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                   </div>
               )}
 
+              {/* === 製造ログ === */}
               {activeTab === 'LOG' && (
-                  <div className="p-0 overflow-y-auto overflow-x-auto flex-1">
+                  <div className="p-0 overflow-y-auto overflow-x-auto flex-1 relative">
+                      {/* AI予測や異常検知を表示するエリア（トグルでON/OFF） */}
+                      <div className={`transition-all duration-500 ${showAiData ? 'max-h-40 opacity-100 border-b border-gray-200' : 'max-h-0 opacity-0 overflow-hidden'}`}>
+                          <div className="bg-gray-100 p-4">
+                              <h4 className="text-xs font-bold text-gray-900 mb-2 flex items-center gap-1.5"><Icons.Brain /> AI アラート・分析</h4>
+                              {productions.length > 0 ? (() => {
+                                  const recent = productions.slice(-1); // 最新1件を評価
+                                  const last = recent[0];
+                                  const master = wiresMaster.find((w:any) => getDisplayName(w) === last.materialName || w.name === last.materialName);
+                                  const expected = master ? Number(master.ratio) : 0;
+                                  const actual = Number(last.actualRatio);
+                                  const diff = actual - expected;
+                                  
+                                  if (expected > 0 && Math.abs(diff) > 2.0) {
+                                      return (
+                                          <div className={`p-3 rounded-sm border text-sm font-bold ${diff > 0 ? 'bg-blue-50 border-blue-200 text-blue-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
+                                              <ProvenanceBadge type="AI_AUTO" /> 最新ロット（{last.materialName}）の歩留まりがマスタ設定値({expected}%)から大きく乖離({diff > 0 ? '+'+diff.toFixed(1) : diff.toFixed(1)}%)しています。{diff < 0 ? '異物混入や機械の摩耗の可能性があります。' : '非常に良質なロットでした。'}
+                                          </div>
+                                      );
+                                  } else {
+                                      return <div className="p-3 bg-white border border-gray-200 rounded-sm text-sm text-gray-500"><ProvenanceBadge type="AI_AUTO" /> 直近の加工データに異常な歩留まりのブレは検出されていません。正常稼働です。</div>;
+                                  }
+                              })() : <div className="text-xs text-gray-400">データがありません</div>}
+                          </div>
+                      </div>
+
                       <table className="w-full text-left border-collapse min-w-[600px]">
                           <thead className="sticky top-0 bg-gray-100 border-b border-gray-200 z-10">
                               <tr>
-                                  <th className="p-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">加工日時</th>
+                                  <th className="p-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">加工日時 <ProvenanceBadge type="HUMAN" /></th>
                                   <th className="p-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">対象バッチ</th>
-                                  <th className="p-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">投入量</th>
-                                  <th className="p-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">産出銅</th>
-                                  <th className="p-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">歩留</th>
+                                  <th className="p-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">投入量 <ProvenanceBadge type="HUMAN" /></th>
+                                  <th className="p-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">産出銅 <ProvenanceBadge type="HUMAN" /></th>
+                                  <th className="p-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">歩留 <ProvenanceBadge type="HUMAN" /></th>
                               </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-100">
-                              {productions.slice(-20).reverse().map((p: any, idx: number) => (
-                                  <tr key={idx} className="hover:bg-gray-50 transition">
-                                      <td className="p-4 text-xs text-gray-500 font-mono">{String(p.date).substring(5,16)}</td>
-                                      <td className="p-4">
-                                          <p className="text-sm font-bold text-gray-900">{p.materialName}</p>
-                                          <p className="text-xs text-gray-400 mt-1 line-clamp-1">{p.memberName}</p>
-                                      </td>
-                                      <td className="p-4 text-right text-base font-mono text-gray-600">{p.inputWeight} kg</td>
-                                      <td className="p-4 text-right text-base font-mono font-bold text-gray-900">{p.outputCopper} kg</td>
-                                      <td className="p-4 text-right"><span className="text-lg font-mono font-black text-[#D32F2F] tracking-tighter">{p.actualRatio}%</span></td>
-                                  </tr>
-                              ))}
+                              {productions.slice(-20).reverse().map((p: any, idx: number) => {
+                                  const master = wiresMaster.find((w:any) => getDisplayName(w) === p.materialName || w.name === p.materialName);
+                                  const expected = master ? Number(master.ratio) : 0;
+                                  const diff = Number(p.actualRatio) - expected;
+                                  const isAlert = expected > 0 && Math.abs(diff) > 2.0;
+
+                                  return (
+                                      <tr key={idx} className={`hover:bg-gray-50 transition ${showAiData && isAlert && diff < 0 ? 'bg-red-50/30' : ''}`}>
+                                          <td className="p-4 text-xs text-gray-500 font-mono">{String(p.date).substring(5,16)}</td>
+                                          <td className="p-4">
+                                              <p className="text-sm font-bold text-gray-900">{p.materialName}</p>
+                                              <p className="text-xs text-gray-400 mt-1 line-clamp-1">{p.memberName}</p>
+                                          </td>
+                                          <td className="p-4 text-right text-base font-mono text-gray-600">{p.inputWeight} kg</td>
+                                          <td className="p-4 text-right text-base font-mono font-bold text-gray-900">{p.outputCopper} kg</td>
+                                          <td className="p-4 text-right">
+                                              <span className={`text-lg font-mono font-black tracking-tighter ${showAiData && isAlert && diff < 0 ? 'text-[#D32F2F]' : 'text-gray-900'}`}>{p.actualRatio}%</span>
+                                              {showAiData && expected > 0 && (
+                                                  <div className="text-[10px] text-gray-400 font-mono mt-0.5">
+                                                      (マスタ比: {diff > 0 ? '+' : ''}{diff.toFixed(1)})
+                                                  </div>
+                                              )}
+                                          </td>
+                                      </tr>
+                                  );
+                              })}
                           </tbody>
                       </table>
                   </div>
               )}
           </div>
           
-          {/* ★ モーダル群 (省略せずに展開) */}
+          {/* ★ モーダル群 (選別・ブレンド) */}
           {sortingLot && (
               <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4 animate-in fade-in">
                   <div className="bg-white rounded-t-xl md:rounded-sm shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh] md:max-h-[85vh]">
                       <div className="p-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center sticky top-0 z-10 rounded-t-xl md:rounded-t-sm">
                           <div>
-                              <h3 className="text-lg font-black text-gray-900 flex items-center gap-2"><Icons.Scissors /> 選別結果の登録</h3>
+                              <h3 className="text-lg font-black text-gray-900 flex items-center gap-2"><Icons.Scissors /> 選別結果の登録 <ProvenanceBadge type="HUMAN" /></h3>
                               <p className="text-xs text-gray-500 mt-1 font-mono">元ロット: {sortingLot.product} ({sortingLot.remainingWeight}kg) / {sortingLot.memberName}</p>
                           </div>
                           <button onClick={() => setSortingLot(null)} className="text-gray-400 hover:text-gray-900 p-2 bg-white rounded-full shadow-sm"><Icons.Close /></button>
                       </div>
                       
                       <div className="p-5 overflow-y-auto flex-1 space-y-6 bg-white">
-                          
-                          <div className="bg-blue-50 border border-blue-200 p-4 rounded-sm flex flex-col md:flex-row md:items-center gap-4">
+                          <div className="bg-gray-100 border border-gray-300 p-4 rounded-sm flex flex-col md:flex-row md:items-center gap-4">
                               <div className="flex-1 flex items-center gap-3">
-                                  <label className="text-sm font-bold text-blue-900 whitespace-nowrap">作業担当</label>
-                                  <select className="w-full bg-white border border-blue-300 p-3 text-base font-bold rounded-sm outline-none" value={sortWorker} onChange={e => setSortWorker(e.target.value)}>
+                                  <label className="text-sm font-bold text-gray-900 whitespace-nowrap">作業担当</label>
+                                  <select className="w-full bg-white border border-gray-300 p-3 text-base font-bold rounded-sm outline-none" value={sortWorker} onChange={e => setSortWorker(e.target.value)}>
                                       {workerList.map(w => <option key={w} value={w}>{w}</option>)}
                                   </select>
                               </div>
                               <div className="flex-1 flex items-center gap-3">
-                                  <label className="text-sm font-bold text-blue-900 whitespace-nowrap">時間</label>
+                                  <label className="text-sm font-bold text-gray-900 whitespace-nowrap">時間</label>
                                   <div className="relative w-full">
-                                      <input type="number" inputMode="decimal" className="w-full bg-white border border-blue-300 p-3 pr-8 text-lg font-mono rounded-sm outline-none text-right" placeholder="0" value={sortTime} onChange={e => setSortTime(e.target.value)} />
+                                      <input type="number" inputMode="decimal" className="w-full bg-white border border-gray-300 p-3 pr-8 text-lg font-mono rounded-sm outline-none text-right" placeholder="0" value={sortTime} onChange={e => setSortTime(e.target.value)} />
                                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-500">分</span>
                                   </div>
                               </div>
@@ -425,15 +506,15 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                                           <div className="flex items-center gap-2">
                                               <div className="relative flex-1 md:w-40">
                                                   <span className="md:hidden absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">重量</span>
-                                                  <input type="number" inputMode="decimal" className="w-full p-3 pr-8 pl-12 md:pl-3 border border-gray-300 rounded-sm text-lg font-mono text-right outline-none focus:border-blue-500" placeholder="0" value={out.weight} onChange={e => { const newOut = [...sortOutputs]; newOut[idx].weight = e.target.value; setSortOutputs(newOut); }} />
+                                                  <input type="number" inputMode="decimal" className="w-full p-3 pr-8 pl-12 md:pl-3 border border-gray-300 rounded-sm text-lg font-mono text-right outline-none focus:border-gray-900" placeholder="0" value={out.weight} onChange={e => { const newOut = [...sortOutputs]; newOut[idx].weight = e.target.value; setSortOutputs(newOut); }} />
                                                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">kg</span>
                                               </div>
-                                              <button onClick={() => setSortOutputs(sortOutputs.filter((_, i) => i !== idx))} className="p-3 text-gray-400 hover:text-red-600 bg-white border border-gray-200 rounded-sm"><Icons.Trash /></button>
+                                              <button onClick={() => setSortOutputs(sortOutputs.filter((_, i) => i !== idx))} className="p-3 text-gray-400 hover:text-gray-900 bg-white border border-gray-200 rounded-sm"><Icons.Trash /></button>
                                           </div>
                                       </div>
                                   ))}
                               </div>
-                              <button onClick={() => setSortOutputs([...sortOutputs, { product: '', weight: '' }])} className="mt-3 w-full border-2 border-dashed border-blue-200 text-sm font-bold text-blue-600 hover:bg-blue-50 py-3 rounded-sm flex items-center justify-center gap-1 transition"><Icons.Plus /> 品目を追加</button>
+                              <button onClick={() => setSortOutputs([...sortOutputs, { product: '', weight: '' }])} className="mt-3 w-full border-2 border-dashed border-gray-300 text-sm font-bold text-gray-600 hover:bg-gray-100 py-3 rounded-sm flex items-center justify-center gap-1 transition"><Icons.Plus /> 品目を追加</button>
                           </div>
 
                           <div>
@@ -449,7 +530,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
 
                       </div>
                       <div className="p-4 border-t border-gray-200 bg-gray-100 sticky bottom-0 z-10 pb-8 md:pb-4">
-                          <button onClick={handleSortSubmit} className="w-full bg-blue-600 text-white py-4 rounded-sm font-bold text-base shadow-md hover:bg-blue-700 transition">
+                          <button onClick={handleSortSubmit} className="w-full bg-gray-900 text-white py-4 rounded-sm font-bold text-base shadow-md hover:bg-black transition">
                               選別結果を保存して、加工待ちヤードへ送る
                           </button>
                       </div>
@@ -462,7 +543,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                   <div className="bg-white rounded-t-xl md:rounded-sm shadow-2xl w-full max-w-xl flex flex-col max-h-[90vh] md:max-h-[85vh]">
                       <div className="p-5 border-b border-gray-200 bg-gray-50 flex justify-between items-start sticky top-0 z-10 rounded-t-xl md:rounded-t-sm">
                           <div>
-                              <h3 className="text-lg font-black text-gray-900 flex items-center gap-2"><Icons.Blend /> ブレンド加工の登録</h3>
+                              <h3 className="text-lg font-black text-gray-900 flex items-center gap-2"><Icons.Blend /> ブレンド加工の登録 <ProvenanceBadge type="HUMAN" /></h3>
                               <div className="text-xs text-gray-500 mt-2 space-y-1 bg-white p-2 border border-gray-200 rounded-sm max-h-24 overflow-y-auto font-mono">
                                   {blendingLots.map(l => (
                                       <div key={l.lotId} className="flex justify-between"><span>{l.product} ({l.memberName})</span><span>{l.remainingWeight.toFixed(1)}kg</span></div>
@@ -473,7 +554,6 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                       </div>
                       
                       <div className="p-5 md:p-6 overflow-y-auto flex-1 space-y-6 bg-white">
-                          
                           <div className="bg-[#111] p-4 rounded-sm flex flex-col md:flex-row md:items-center gap-3 md:gap-4 text-white">
                               <label className="text-sm font-bold flex items-center whitespace-nowrap text-gray-300"><Icons.Worker /> プラント担当</label>
                               <select className="w-full bg-gray-800 border border-gray-700 p-3 text-base font-bold rounded-sm outline-none" value={processWorker} onChange={e => setProcessWorker(e.target.value)}>
@@ -489,27 +569,30 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                                       <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-bold">kg</span>
                                   </div>
                               </div>
-                              <div className="bg-red-50 p-4 border border-red-200 rounded-sm">
-                                  <label className="block text-xs font-bold text-[#D32F2F] mb-2">産出ピカ銅 (kg)</label>
+                              <div className="bg-gray-50 p-4 border border-gray-200 rounded-sm">
+                                  <label className="block text-xs font-bold text-gray-900 mb-2">産出ピカ銅 (kg)</label>
                                   <div className="relative">
-                                      <input type="number" inputMode="decimal" className="w-full bg-white border border-red-300 p-4 pr-10 rounded-sm text-2xl font-black font-mono text-[#D32F2F] text-right outline-none focus:border-[#D32F2F] shadow-inner" value={processOutputCopper} onChange={e => setProcessOutputCopper(e.target.value)} placeholder="0" />
-                                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-red-500 font-bold">kg</span>
+                                      <input type="number" inputMode="decimal" className="w-full bg-white border border-gray-300 p-4 pr-10 rounded-sm text-2xl font-black font-mono text-gray-900 text-right outline-none focus:border-[#D32F2F] shadow-inner" value={processOutputCopper} onChange={e => setProcessOutputCopper(e.target.value)} placeholder="0" />
+                                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-bold">kg</span>
                                   </div>
                               </div>
                           </div>
 
                           {processInputWeight && processOutputCopper && (
-                              <div className="bg-gray-100 border border-gray-300 rounded-sm p-5 text-center">
-                                  <p className="text-xs text-gray-500 font-bold mb-1 tracking-widest uppercase">ブレンドバッチ実測歩留まり</p>
-                                  <p className="text-4xl font-black font-mono text-gray-900 tracking-tighter">
-                                      {((parseFloat(processOutputCopper) / parseFloat(processInputWeight)) * 100).toFixed(1)} <span className="text-lg font-normal">%</span>
+                              <div className="bg-gray-900 text-white rounded-sm p-5 text-center shadow-inner">
+                                  <div className="flex justify-center items-center gap-2 mb-1">
+                                      <p className="text-xs text-gray-400 font-bold tracking-widest uppercase">ブレンドバッチ実測歩留まり</p>
+                                      <ProvenanceBadge type="HUMAN" />
+                                  </div>
+                                  <p className="text-4xl font-black font-mono tracking-tighter">
+                                      {((parseFloat(processOutputCopper) / parseFloat(processInputWeight)) * 100).toFixed(1)} <span className="text-lg font-normal text-gray-400">%</span>
                                   </p>
                               </div>
                           )}
 
                           <div>
                               <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-widest">特記事項・刃の摩耗チェック等</label>
-                              <input type="text" className="w-full border border-gray-300 p-4 rounded-sm text-base outline-none focus:border-[#D32F2F] bg-gray-50" placeholder="メモ..." value={processMemo} onChange={e => setProcessMemo(e.target.value)} />
+                              <input type="text" className="w-full border border-gray-300 p-4 rounded-sm text-base outline-none focus:border-gray-900 bg-gray-50" placeholder="メモ..." value={processMemo} onChange={e => setProcessMemo(e.target.value)} />
                           </div>
                       </div>
 
@@ -523,7 +606,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
           )}
       </div>
 
-      {/* --- 🖨️ 印刷用レポート専用レイアウト (通常時は非表示、印刷時のみブロック要素として表示) --- */}
+      {/* --- 🖨️ 印刷用レポート専用レイアウト --- */}
       <div className="hidden print:block w-[210mm] min-h-[297mm] bg-white text-black p-8 mx-auto font-sans">
           <div className="border-b-2 border-black pb-4 mb-6 flex justify-between items-end">
               <div>
@@ -532,23 +615,27 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
               </div>
               <div className="text-right">
                   <p className="text-lg font-bold font-mono">{new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}</p>
+                  <p className="text-xs font-bold bg-black text-white px-2 py-0.5 inline-block mt-1">
+                      {showAiData ? 'MIX (AI予測 + 実測)' : 'HUMAN ONLY (実測確定のみ)'}
+                  </p>
               </div>
           </div>
 
-          {/* AIサマリーセクション */}
-          <section className="mb-8 border-2 border-black p-6 rounded-sm bg-gray-50">
+          <section className="mb-8 border-2 border-black p-6 rounded-sm bg-gray-50 relative">
+              {showAiData && <div className="absolute top-2 right-2"><ProvenanceBadge type="AI_AUTO" /></div>}
               <h2 className="text-lg font-black text-black flex items-center gap-2 mb-4">
                   <Icons.Brain /> AI参謀からのデータインサイト
               </h2>
               <div className="text-sm leading-relaxed whitespace-pre-wrap font-bold text-gray-800">
-                  {aiSummary || "（データ処理中です...）"}
+                  {showAiData ? (aiSummary || "（データ処理中です...）") : "※AI予測モードがOFFのため、インサイトは表示されません。"}
               </div>
           </section>
 
           <div className="grid grid-cols-2 gap-8 mb-8">
               <section>
                   <h2 className="text-sm font-bold text-white bg-black px-3 py-1.5 inline-block mb-3">製造統計</h2>
-                  <div className="border border-gray-300 p-4">
+                  <div className="border border-gray-300 p-4 relative">
+                      <div className="absolute top-2 right-2"><ProvenanceBadge type="HUMAN" /></div>
                       <p className="text-xs text-gray-500 font-bold mb-1">累計 ピカ銅生産量</p>
                       <p className="text-3xl font-black font-mono mb-4">{totalProducedCopper.toLocaleString()} <span className="text-sm">kg</span></p>
                       
@@ -567,7 +654,8 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
 
               <section>
                   <h2 className="text-sm font-bold text-white bg-black px-3 py-1.5 inline-block mb-3">直近の製造ログ (5件)</h2>
-                  <div className="border border-gray-300 p-4">
+                  <div className="border border-gray-300 p-4 relative">
+                      <div className="absolute top-2 right-2"><ProvenanceBadge type="HUMAN" /></div>
                       <ul className="divide-y divide-gray-200">
                           {productions.slice(-5).reverse().map((p: any, i: number) => (
                               <li key={i} className="py-2 flex justify-between items-center text-xs">
