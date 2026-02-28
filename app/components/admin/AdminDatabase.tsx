@@ -13,6 +13,15 @@ const Icons = {
   ArrowRight: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
 };
 
+// ★ 新たに定義した顧客Roleのマスター定義
+const ROLE_OPTIONS = [
+  { value: 'SUPPLIER', label: '仕入先 (原料供給)', color: 'bg-blue-50 text-blue-700 border-blue-200' },
+  { value: 'BUYER', label: '売却先 (出荷)', color: 'bg-green-50 text-green-700 border-green-200' },
+  { value: 'PARTNER', label: '連携 (産廃・相互融通)', color: 'bg-purple-50 text-purple-700 border-purple-200' },
+  { value: 'COMPETITOR', label: '競合他社 (相場監視)', color: 'bg-red-50 text-red-700 border-red-200' },
+  { value: 'SYSTEM_PARTNER', label: 'システム・開発', color: 'bg-gray-100 text-gray-700 border-gray-300' }
+];
+
 export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: any }) => {
   const [activeTab, setActiveTab] = useState<'WIRES' | 'CASTINGS' | 'CLIENTS' | 'CONFIG'>('WIRES');
   
@@ -20,7 +29,6 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
   const [editValues, setEditValues] = useState<any>({});
   const [isSaving, setIsSaving] = useState(false);
 
-  // ★ 印刷用ステート
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [aiSummary, setAiSummary] = useState<string>('');
 
@@ -42,15 +50,26 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
   };
 
   const handleEdit = (item: any) => {
-      setEditingId(item.id || item.clientId);
+      setEditingId(item.id || item.clientId || null);
       setEditValues({ ...item });
   };
 
   const handleSave = async (sheetName: string, id: string) => {
       setIsSaving(true);
       try {
-          // 簡易保存処理（実際はAPIでアップデート処理を走らせる）
-          const payload = { action: 'UPDATE_DB_RECORD', sheetName, recordId: id, updates: editValues };
+          let updates = {};
+          if (sheetName === 'Wires' || sheetName === 'Products_Wire') {
+              updates = { 9: editValues.ratio }; // r[9]がratio
+          } else if (sheetName === 'Clients') {
+              // ★ クライアント情報の更新（rank:2, memo:8, businessRole:11）
+              updates = { 
+                  2: editValues.rank, 
+                  8: editValues.memo, 
+                  11: editValues.businessRole 
+              };
+          }
+
+          const payload = { action: 'UPDATE_DB_RECORD', sheetName, recordId: id, updates };
           const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
           const result = await res.json();
           if (result.status === 'success') {
@@ -63,10 +82,8 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
       setIsSaving(false);
   };
 
-  // ★ 追加: 印刷＆AIレポート生成ハンドラ
   const handlePrintReport = async () => {
       setIsGeneratingReport(true);
-      
       let promptData = '';
       let pageName = '';
 
@@ -88,7 +105,6 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
           ※社内管理用の顧客リストです。上位顧客の割合などから今後の営業戦略に対する一言を添えてください。
           `;
       } else {
-          // CONFIG等は印刷対象外とするか簡易出力
           pageName = 'システム設定一覧';
           promptData = `システム稼働用のコンフィグデータです。`;
       }
@@ -102,18 +118,11 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
           const result = await res.json();
           if (result.success) {
               setAiSummary(result.summary);
-              setTimeout(() => {
-                  window.print();
-                  setIsGeneratingReport(false);
-              }, 500);
+              setTimeout(() => { window.print(); setIsGeneratingReport(false); }, 500);
           } else {
-              alert('AI要約の生成に失敗しました');
-              setIsGeneratingReport(false);
+              alert('AI要約の生成に失敗しました'); setIsGeneratingReport(false);
           }
-      } catch(e) {
-          alert('通信エラー');
-          setIsGeneratingReport(false);
-      }
+      } catch(e) { alert('通信エラー'); setIsGeneratingReport(false); }
   };
 
   return (
@@ -129,7 +138,6 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                 </h2>
                 <p className="text-xs text-gray-500 mt-1 font-mono tracking-wider ml-3">DATABASE & SETTINGS</p>
             </div>
-            {/* ★ 印刷ボタン */}
             <button 
                 onClick={handlePrintReport} 
                 disabled={isGeneratingReport || activeTab === 'CONFIG'}
@@ -148,7 +156,7 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                   非鉄類 マスター
               </button>
               <button onClick={() => setActiveTab('CLIENTS')} className={`px-4 py-3 md:py-4 text-xs md:text-sm font-bold tracking-widest whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'CLIENTS' ? 'bg-white border-t-2 border-t-blue-600 text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>
-                  <Icons.Users /> 顧客 マスター
+                  <Icons.Users /> 顧客・ロール管理
               </button>
               <button onClick={() => setActiveTab('CONFIG')} className={`px-4 py-3 md:py-4 text-xs md:text-sm font-bold tracking-widest whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'CONFIG' ? 'bg-white border-t-2 border-t-gray-800 text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>
                   <Icons.Settings /> システム設定
@@ -157,6 +165,7 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
 
           <div className="flex-1 bg-white border-x border-b border-gray-200 shadow-sm flex flex-col min-h-[500px] overflow-hidden">
               
+              {/* WIRES TAB */}
               {activeTab === 'WIRES' && (
                   <div className="flex-1 overflow-y-auto overflow-x-auto p-0">
                       <table className="w-full text-left border-collapse min-w-[600px]">
@@ -172,7 +181,7 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                           <tbody className="divide-y divide-gray-100 text-sm">
                               {wires.map((w: any) => {
                                   const isEditing = editingId === w.id;
-                                  const calcPrice = Math.floor(copperPrice * (Number(w.ratio) / 100) * 0.85); // 85%掛けをマージンとする
+                                  const calcPrice = Math.floor(copperPrice * (Number(w.ratio) / 100) * 0.85);
                                   return (
                                       <tr key={w.id} className="hover:bg-gray-50 transition">
                                           <td className="p-3 font-mono text-xs text-gray-400">{w.id}</td>
@@ -191,7 +200,7 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                                           <td className="p-3 text-center">
                                               {isEditing ? (
                                                   <div className="flex gap-2 justify-center">
-                                                      <button onClick={() => handleSave('Wires', w.id)} disabled={isSaving} className="bg-gray-900 text-white px-3 py-1 text-[10px] font-bold rounded-sm hover:bg-black transition"><Icons.Save /> 保存</button>
+                                                      <button onClick={() => handleSave('Products_Wire', w.id)} disabled={isSaving} className="bg-gray-900 text-white px-3 py-1 text-[10px] font-bold rounded-sm hover:bg-black transition"><Icons.Save /> 保存</button>
                                                       <button onClick={() => setEditingId(null)} className="text-gray-400 text-[10px] font-bold hover:text-gray-900">取消</button>
                                                   </div>
                                               ) : (
@@ -206,6 +215,7 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                   </div>
               )}
 
+              {/* CASTINGS TAB */}
               {activeTab === 'CASTINGS' && (
                   <div className="flex-1 overflow-y-auto overflow-x-auto p-0">
                       <table className="w-full text-left border-collapse min-w-[600px]">
@@ -220,12 +230,10 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                           </thead>
                           <tbody className="divide-y divide-gray-100 text-sm">
                               {castings.map((c: any) => {
-                                  let basePrice = copperPrice;
-                                  let baseName = "銅";
+                                  let basePrice = copperPrice; let baseName = "銅";
                                   if (c.type === 'BRASS') { basePrice = brassPrice; baseName = "真鍮"; }
                                   if (c.type === 'ZINC') { basePrice = zincPrice; baseName = "亜鉛"; }
                                   if (c.type === 'LEAD') { basePrice = leadPrice; baseName = "鉛"; }
-                                  
                                   const calcPrice = Math.floor(basePrice * (Number(c.ratio) / 100) * 0.90);
                                   return (
                                       <tr key={c.id} className="hover:bg-gray-50 transition">
@@ -245,40 +253,122 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                   </div>
               )}
 
+              {/* ★ CLIENTS TAB (Roleマルチフラグ対応UI) */}
               {activeTab === 'CLIENTS' && (
                   <div className="flex-1 overflow-y-auto overflow-x-auto p-0">
                       <table className="w-full text-left border-collapse min-w-[800px]">
                           <thead className="sticky top-0 bg-gray-100 border-b border-gray-200 z-10">
                               <tr>
-                                  <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest">顧客名 / 代表者</th>
-                                  <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-center">ランク</th>
-                                  <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest">連絡先</th>
-                                  <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest">特記事項</th>
-                                  <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">詳細</th>
+                                  <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest w-[20%]">顧客・企業名</th>
+                                  <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest w-[10%] text-center">ランク</th>
+                                  <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest w-[25%]">役割 (Role Tags)</th>
+                                  <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest w-[30%]">特記事項 / エリア</th>
+                                  <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest w-[15%] text-right">操作</th>
                               </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-100 text-sm">
-                              {clients.map((client: any) => (
-                                  <tr key={client.clientId} className="hover:bg-blue-50/30 transition cursor-pointer" onClick={() => onNavigate && onNavigate('CLIENT_DETAIL', client.companyName || client.name)}>
-                                      <td className="p-3">
-                                          <p className="font-bold text-gray-900">{client.companyName || client.name}</p>
-                                          <p className="text-xs text-gray-500 mt-0.5">{client.representative || '-'}</p>
-                                      </td>
-                                      <td className="p-3 text-center">
-                                          <span className={`inline-block w-6 h-6 leading-6 text-center rounded text-xs font-black ${client.rank === 'S' ? 'bg-[#D32F2F] text-white' : client.rank === 'A' ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-600'}`}>{client.rank || 'B'}</span>
-                                      </td>
-                                      <td className="p-3 text-xs font-mono text-gray-600">{client.phone || '-'}</td>
-                                      <td className="p-3 text-xs text-gray-500 truncate max-w-[200px]">{client.note || '-'}</td>
-                                      <td className="p-3 text-right">
-                                          <Icons.ArrowRight />
-                                      </td>
-                                  </tr>
-                              ))}
+                              {clients.map((c:any) => {
+                                  const isEditing = editingId === (c.id || c.clientId);
+                                  
+                                  // 現在のロールを配列化
+                                  const currentRoles = (isEditing ? editValues.businessRole : c.businessRole) || '';
+                                  const rolesArray = currentRoles.split(',').map((r:string) => r.trim()).filter(Boolean);
+
+                                  return (
+                                      <tr key={c.id || c.clientId} className={`hover:bg-blue-50/20 transition ${isEditing ? 'bg-red-50/10' : ''}`}>
+                                          <td className="p-3 cursor-pointer" onClick={() => !isEditing && onNavigate && onNavigate('CLIENT_DETAIL', c.companyName || c.name)}>
+                                              <p className="font-bold text-gray-900 hover:text-[#D32F2F] transition-colors">{c.companyName || c.name}</p>
+                                              <p className="text-[10px] font-mono text-gray-500 mt-1">{c.phone || '-'}</p>
+                                          </td>
+
+                                          <td className="p-3 text-center">
+                                              {isEditing ? (
+                                                  <select 
+                                                      value={editValues.rank || 'B'} 
+                                                      onChange={e => setEditValues({...editValues, rank: e.target.value})}
+                                                      className="bg-white border border-gray-300 p-1 rounded-sm text-xs font-bold outline-none"
+                                                  >
+                                                      <option value="S">S</option>
+                                                      <option value="A">A</option>
+                                                      <option value="B">B</option>
+                                                  </select>
+                                              ) : (
+                                                  <span className={`inline-block w-6 h-6 leading-6 text-center rounded text-xs font-black ${c.rank === 'S' ? 'bg-[#D32F2F] text-white' : c.rank === 'A' ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-600'}`}>{c.rank || 'B'}</span>
+                                              )}
+                                          </td>
+
+                                          {/* マルチフラグ(Role)表示＆編集エリア */}
+                                          <td className="p-3">
+                                              {isEditing ? (
+                                                  <div className="flex flex-wrap gap-1.5 p-2 bg-white border border-gray-200 shadow-inner rounded-sm">
+                                                      {ROLE_OPTIONS.map(opt => {
+                                                          const isChecked = rolesArray.includes(opt.value);
+                                                          return (
+                                                              <label key={opt.value} className={`flex items-center gap-1.5 text-[10px] font-bold cursor-pointer px-2 py-1 rounded-sm border transition-colors ${isChecked ? 'bg-blue-50 border-blue-300 text-blue-800' : 'bg-gray-50 border-gray-200 text-gray-400 hover:bg-gray-100'}`}>
+                                                                  <input 
+                                                                      type="checkbox" 
+                                                                      checked={isChecked} 
+                                                                      onChange={() => {
+                                                                          let newRoles = [...rolesArray];
+                                                                          if (isChecked) newRoles = newRoles.filter(r => r !== opt.value);
+                                                                          else newRoles.push(opt.value);
+                                                                          setEditValues({...editValues, businessRole: newRoles.join(',')});
+                                                                      }} 
+                                                                      className="accent-blue-600 w-3 h-3" 
+                                                                  />
+                                                                  {opt.label.split(' ')[0]} {/* 略称のみ表示 */}
+                                                              </label>
+                                                          );
+                                                      })}
+                                                  </div>
+                                              ) : (
+                                                  <div className="flex flex-wrap gap-1.5">
+                                                      {rolesArray.length > 0 ? rolesArray.map((roleStr: string, i: number) => {
+                                                          const matchedOption = ROLE_OPTIONS.find(opt => opt.value === roleStr);
+                                                          const colorClass = matchedOption ? matchedOption.color : 'bg-gray-100 text-gray-600 border-gray-200';
+                                                          const label = matchedOption ? matchedOption.label.split(' ')[0] : roleStr;
+                                                          return <span key={i} className={`text-[9px] px-1.5 py-0.5 border rounded-sm font-bold ${colorClass}`}>{label}</span>;
+                                                      }) : <span className="text-[9px] text-gray-400 border border-gray-200 px-1.5 py-0.5 rounded-sm">Role未設定</span>}
+                                                  </div>
+                                              )}
+                                          </td>
+
+                                          <td className="p-3">
+                                              {isEditing ? (
+                                                  <input 
+                                                      type="text" 
+                                                      value={editValues.memo || ''} 
+                                                      onChange={e => setEditValues({...editValues, memo: e.target.value})} 
+                                                      className="w-full bg-white border border-gray-300 p-1.5 rounded-sm text-xs outline-none focus:border-[#D32F2F]"
+                                                      placeholder="特記事項..."
+                                                  />
+                                              ) : (
+                                                  <div>
+                                                      <p className="text-xs text-gray-700 font-medium truncate max-w-[200px] xl:max-w-[300px]">{c.memo || '-'}</p>
+                                                      <p className="text-[10px] text-gray-400 mt-0.5 truncate">{c.address || ''} {c.industry ? `(${c.industry})` : ''}</p>
+                                                  </div>
+                                              )}
+                                          </td>
+
+                                          <td className="p-3 text-right">
+                                              {isEditing ? (
+                                                  <div className="flex gap-2 justify-end">
+                                                      <button onClick={() => handleSave('Clients', c.id || c.clientId)} disabled={isSaving} className="bg-gray-900 text-white px-3 py-1 text-[10px] font-bold rounded-sm hover:bg-black transition flex items-center gap-1"><Icons.Save /> 保存</button>
+                                                      <button onClick={() => setEditingId(null)} className="text-gray-400 text-[10px] font-bold hover:text-gray-900">取消</button>
+                                                  </div>
+                                              ) : (
+                                                  <button onClick={(e) => { e.stopPropagation(); handleEdit(c); }} className="text-gray-400 hover:text-blue-600 transition p-2"><Icons.Edit /></button>
+                                              )}
+                                          </td>
+                                      </tr>
+                                  );
+                              })}
                           </tbody>
                       </table>
                   </div>
               )}
 
+              {/* CONFIG TAB */}
               {activeTab === 'CONFIG' && (
                   <div className="p-6 overflow-y-auto">
                       <div className="max-w-xl mx-auto space-y-6">
@@ -322,7 +412,6 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
               </div>
           </div>
 
-          {/* AIサマリーセクション */}
           <section className="mb-8 border-2 border-black p-6 rounded-sm bg-gray-50">
               <h2 className="text-lg font-black text-black flex items-center gap-2 mb-4">
                   <Icons.Brain /> 本日の相場概況とインサイト
@@ -332,7 +421,6 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
               </div>
           </section>
 
-          {/* 動的テーブル出力 (開いているタブに応じて切り替え) */}
           {(activeTab === 'WIRES' || activeTab === 'CASTINGS') && (
               <div className="mb-8">
                   <div className="flex justify-between text-sm font-bold bg-black text-white px-4 py-2 mb-4">
@@ -367,7 +455,6 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                           ))}
                       </tbody>
                   </table>
-                  <p className="text-[10px] text-gray-500 text-right mt-2">※上記単価はあくまで目安であり、持ち込み量やダストの有無により変動します。</p>
               </div>
           )}
 
@@ -376,19 +463,22 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                   <table className="w-full text-left border-collapse text-sm">
                       <thead>
                           <tr className="border-b-2 border-black text-xs">
-                              <th className="py-2 w-[40%]">顧客・企業名</th>
+                              <th className="py-2 w-[35%]">顧客・企業名</th>
                               <th className="py-2 text-center w-[10%]">ランク</th>
-                              <th className="py-2 w-[25%]">連絡先</th>
-                              <th className="py-2 w-[25%]">特記事項</th>
+                              <th className="py-2 w-[20%]">役割</th>
+                              <th className="py-2 w-[35%]">特記事項</th>
                           </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-300">
                           {clients.map((c:any) => (
                               <tr key={c.clientId} className="py-1">
-                                  <td className="py-2 font-bold">{c.companyName || c.name}</td>
+                                  <td className="py-2">
+                                      <p className="font-bold">{c.companyName || c.name}</p>
+                                      <p className="text-[10px] text-gray-500 font-mono mt-0.5">{c.phone || '-'}</p>
+                                  </td>
                                   <td className="py-2 text-center font-black">{c.rank || 'B'}</td>
-                                  <td className="py-2 font-mono text-xs">{c.phone || '-'}</td>
-                                  <td className="py-2 text-xs text-gray-600 truncate">{c.note || '-'}</td>
+                                  <td className="py-2 font-mono text-xs">{c.businessRole || '-'}</td>
+                                  <td className="py-2 text-xs text-gray-600 truncate">{c.memo || '-'}</td>
                               </tr>
                           ))}
                       </tbody>
