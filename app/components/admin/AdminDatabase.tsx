@@ -14,6 +14,21 @@ const Icons = {
   Plus: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
 };
 
+// ★ プロベナンス・バッジ
+const ProvenanceBadge = ({ type }: { type: 'HUMAN' | 'AI_AUTO' | 'CO_OP' }) => {
+    const baseStyle = "inline-block px-1.5 py-0.5 text-[9px] font-mono font-bold tracking-widest rounded-sm text-white cursor-default shadow-sm";
+    switch (type) {
+        case 'HUMAN':
+            return <span className={`${baseStyle} bg-gray-900`} title="実測・確定データ">HUMAN</span>;
+        case 'CO_OP':
+            return <span className={`${baseStyle} bg-gray-600`} title="AI＋人間 協調データ">CO-P</span>;
+        case 'AI_AUTO':
+            return <span className={`${baseStyle} bg-gray-400`} title="AI予測・推論データ">AI</span>;
+        default:
+            return null;
+    }
+};
+
 const ROLE_OPTIONS = [
   { value: 'SUPPLIER', short: '仕入先', label: '仕入先 (原料供給)', color: 'bg-blue-100 text-blue-800 border-blue-300' },
   { value: 'BUYER', short: '売却先', label: '売却先 (出荷・エンド)', color: 'bg-green-100 text-green-800 border-green-300' },
@@ -25,6 +40,9 @@ const ROLE_OPTIONS = [
 export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: any }) => {
   const [activeTab, setActiveTab] = useState<'WIRES' | 'CASTINGS' | 'CLIENTS' | 'CONFIG'>('WIRES');
   
+  // ★ トラスト・トグル（AIデータの表示/非表示）
+  const [showAiData, setShowAiData] = useState(true);
+
   // 編集用ステート
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<any>({});
@@ -47,6 +65,18 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
   const zincPrice = Number(config.zinc_price) || 450;
   const leadPrice = Number(config.lead_price) || 380;
 
+  // ★ AI由来のデータかどうかを判定するロジック
+  const isAiGenerated = (item: any) => {
+      if (item.source === 'AI' || item.source === 'AI_AUTO') return true;
+      if (item.memo && String(item.memo).includes('AI')) return true;
+      return false;
+  };
+
+  // トグルに応じたフィルタリング
+  const filteredWires = wires.filter(w => showAiData ? true : !isAiGenerated(w));
+  const filteredCastings = castings.filter(c => showAiData ? true : !isAiGenerated(c));
+  const filteredClients = clients.filter(c => showAiData ? true : !isAiGenerated(c));
+
   const getDisplayName = (w: any) => {
       let name = w.name;
       if (w.sq && w.sq !== '-') name += ` ${w.sq}sq`;
@@ -67,7 +97,6 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
       setAddValues({});
   };
 
-  // ★ データの更新 (Update)
   const handleSave = async (sheetName: string, id: string) => {
       setIsSaving(true);
       try {
@@ -110,10 +139,10 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
       setIsSaving(false);
   };
 
-  // ★ データの追加 (Create)
   const handleAdd = async (sheetName: string) => {
       setIsSaving(true);
       try {
+          // 人間がUIから追加した場合は、将来のためのsourceフラグも送信可能（現状はバックエンドで処理）
           const payload = { action: 'ADD_DB_RECORD', sheetName, data: addValues };
           const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
           const result = await res.json();
@@ -127,7 +156,6 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
       setIsSaving(false);
   };
 
-  // ★ データの削除 (Delete)
   const handleDelete = async (sheetName: string, id: string) => {
       if(!window.confirm('本当にこのデータを削除しますか？\n（※この操作は取り消せません）')) return;
       setIsSaving(true);
@@ -146,8 +174,47 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
 
   const handlePrintReport = async () => {
       setIsGeneratingReport(true);
-      // ...（既存の印刷処理ロジックそのまま）
-      setTimeout(() => { window.print(); setIsGeneratingReport(false); }, 500);
+      let promptData = '';
+      let pageName = '';
+
+      if (activeTab === 'WIRES' || activeTab === 'CASTINGS') {
+          pageName = '本日の買取価格表（マスタ一覧）';
+          promptData = `
+          ・データモード: ${showAiData ? 'AI予測データ含む' : '実測確定データのみ'}
+          ・本日の銅建値: ${copperPrice} 円/kg
+          ・本日の真鍮建値: ${brassPrice} 円/kg
+          ・登録されている電線類: ${filteredWires.length} 品目
+          ・登録されている非鉄類: ${filteredCastings.length} 品目
+          ※顧客に提示・配布するための相場表です。現在の相場動向に対する一言を添えてください。
+          `;
+      } else if (activeTab === 'CLIENTS') {
+          pageName = '顧客ディレクトリ（名簿）';
+          promptData = `
+          ・データモード: ${showAiData ? 'AI予測データ含む' : '実測確定データのみ'}
+          ・現在の登録顧客数: ${filteredClients.length} 社
+          ・ランクS顧客: ${filteredClients.filter((c:any)=>c.rank==='S').length} 社
+          ・ランクA顧客: ${filteredClients.filter((c:any)=>c.rank==='A').length} 社
+          ※社内管理用の顧客リストです。上位顧客の割合などから今後の営業戦略に対する一言を添えてください。
+          `;
+      } else {
+          pageName = 'システム設定一覧';
+          promptData = `システム稼働用のコンフィグデータです。`;
+      }
+
+      try {
+          const res = await fetch('/api/print-summary', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ pageName, promptData })
+          });
+          const result = await res.json();
+          if (result.success) {
+              setAiSummary(result.summary);
+              setTimeout(() => { window.print(); setIsGeneratingReport(false); }, 500);
+          } else {
+              alert('AI要約の生成に失敗しました'); setIsGeneratingReport(false);
+          }
+      } catch(e) { alert('通信エラー'); setIsGeneratingReport(false); }
   };
 
   return (
@@ -163,10 +230,29 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                 </h2>
                 <p className="text-xs text-gray-500 mt-1 font-mono tracking-wider ml-3">DATABASE & SETTINGS</p>
             </div>
-            <button onClick={handlePrintReport} disabled={isGeneratingReport || activeTab === 'CONFIG'} className="bg-white border border-gray-300 text-gray-800 px-4 py-2 rounded-sm text-xs font-bold hover:border-[#D32F2F] hover:text-[#D32F2F] transition shadow-sm flex items-center justify-center gap-2 disabled:opacity-50">
-                {isGeneratingReport ? <Icons.Refresh /> : <Icons.Print />}
-                {activeTab === 'CONFIG' ? '印刷非対応' : isGeneratingReport ? 'AI分析中...' : 'このタブを印刷する'}
-            </button>
+            
+            <div className="flex items-center gap-4">
+                {/* ★ トラスト・トグル */}
+                <div className="flex items-center gap-1 bg-white p-1 rounded-sm border border-gray-300 shadow-sm">
+                    <button 
+                        onClick={() => setShowAiData(true)}
+                        className={`px-4 py-1.5 text-xs font-bold font-mono transition-colors ${showAiData ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-100'}`}
+                    >
+                        MIX
+                    </button>
+                    <button 
+                        onClick={() => setShowAiData(false)}
+                        className={`px-4 py-1.5 text-xs font-bold font-mono transition-colors ${!showAiData ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-100'}`}
+                    >
+                        HUMAN ONLY
+                    </button>
+                </div>
+
+                <button onClick={handlePrintReport} disabled={isGeneratingReport || activeTab === 'CONFIG'} className="bg-white border border-gray-300 text-gray-800 px-4 py-2 rounded-sm text-xs font-bold hover:border-[#D32F2F] hover:text-[#D32F2F] transition shadow-sm flex items-center justify-center gap-2 disabled:opacity-50">
+                    {isGeneratingReport ? <Icons.Refresh /> : <Icons.Print />}
+                    {activeTab === 'CONFIG' ? '印刷非対応' : isGeneratingReport ? 'AI分析中...' : 'このタブを印刷する'}
+                </button>
+            </div>
           </header>
 
           <div className="flex border-b border-gray-200 bg-gray-50 flex-shrink-0 overflow-x-auto no-scrollbar">
@@ -189,7 +275,6 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
               {/* ================= WIRES TAB ================= */}
               {activeTab === 'WIRES' && (
                   <div className="flex-1 overflow-y-auto overflow-x-auto p-0 relative">
-                      {/* 追加ボタンエリア */}
                       <div className="sticky top-0 bg-white border-b border-gray-200 p-3 flex justify-end z-20">
                           <button onClick={() => { setAddingTab('WIRES'); setEditingId(null); setAddValues({}); }} className="bg-[#111] text-white px-4 py-2 text-xs font-bold rounded-sm flex items-center shadow-sm hover:bg-[#D32F2F] transition">
                               <Icons.Plus /> 新規追加
@@ -226,11 +311,12 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                                   </tr>
                               )}
                               
-                              {wires.map((w: any) => {
+                              {filteredWires.map((w: any) => {
                                   const isEditing = editingId === w.id;
+                                  const isAi = isAiGenerated(w);
                                   const calcPrice = Math.floor(copperPrice * (Number(w.ratio) / 100) * 0.85);
                                   return (
-                                      <tr key={w.id} className={`hover:bg-gray-50 transition ${isEditing ? 'bg-red-50/10' : ''}`}>
+                                      <tr key={w.id} className={`hover:bg-gray-50 transition ${isEditing ? 'bg-red-50/10' : ''} ${isAi ? 'bg-blue-50/10' : ''}`}>
                                           <td className="p-3 font-mono text-xs text-gray-400">{w.id}</td>
                                           <td className="p-3">
                                               {isEditing ? (
@@ -240,7 +326,10 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                                                       <input type="text" value={editValues.core || ''} onChange={e => setEditValues({...editValues, core: e.target.value})} className="w-16 p-1.5 border border-gray-300 rounded-sm text-xs outline-none focus:border-[#D32F2F]" placeholder="C" />
                                                   </div>
                                               ) : (
-                                                  <span className="font-bold text-gray-900">{getDisplayName(w)}</span>
+                                                  <div className="flex items-center gap-2">
+                                                      <span className="font-bold text-gray-900">{getDisplayName(w)}</span>
+                                                      <ProvenanceBadge type={isAi ? 'AI_AUTO' : 'HUMAN'} />
+                                                  </div>
                                               )}
                                           </td>
                                           <td className="p-3 text-center">
@@ -318,8 +407,9 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                                   </tr>
                               )}
 
-                              {castings.map((c: any) => {
+                              {filteredCastings.map((c: any) => {
                                   const isEditing = editingId === c.id;
+                                  const isAi = isAiGenerated(c);
                                   let basePrice = copperPrice; let baseName = "銅";
                                   if (c.type === 'BRASS') { basePrice = brassPrice; baseName = "真鍮"; }
                                   if (c.type === 'ZINC') { basePrice = zincPrice; baseName = "亜鉛"; }
@@ -327,13 +417,16 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                                   const calcPrice = Math.floor(basePrice * (Number(c.ratio) / 100) * 0.90);
                                   
                                   return (
-                                      <tr key={c.id} className={`hover:bg-gray-50 transition ${isEditing ? 'bg-red-50/10' : ''}`}>
+                                      <tr key={c.id} className={`hover:bg-gray-50 transition ${isEditing ? 'bg-red-50/10' : ''} ${isAi ? 'bg-blue-50/10' : ''}`}>
                                           <td className="p-3 font-mono text-xs text-gray-400">{c.id}</td>
                                           <td className="p-3">
                                               {isEditing ? (
                                                   <input type="text" value={editValues.name || ''} onChange={e => setEditValues({...editValues, name: e.target.value})} className="w-full p-1.5 border border-gray-300 rounded-sm text-xs font-bold outline-none focus:border-[#D32F2F]" />
                                               ) : (
-                                                  <span className="font-bold text-gray-900">{c.name}</span>
+                                                  <div className="flex items-center gap-2">
+                                                      <span className="font-bold text-gray-900">{c.name}</span>
+                                                      <ProvenanceBadge type={isAi ? 'AI_AUTO' : 'HUMAN'} />
+                                                  </div>
                                               )}
                                           </td>
                                           <td className="p-3 text-xs text-gray-500">
@@ -444,13 +537,18 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                                   </tr>
                               )}
 
-                              {clients.map((c:any) => {
+                              {filteredClients.length === 0 && (
+                                  <tr><td colSpan={5} className="p-16 text-center text-sm text-gray-400 font-bold bg-white">表示するデータがありません</td></tr>
+                              )}
+
+                              {filteredClients.map((c:any) => {
                                   const isEditing = editingId === (c.id || c.clientId);
+                                  const isAi = isAiGenerated(c);
                                   const currentRoles = (isEditing ? editValues.businessRole : c.businessRole) || '';
                                   const rolesArray = currentRoles.split(/[,/，、]+/).map((r:string) => r.trim()).filter(Boolean);
 
                                   return (
-                                      <tr key={c.id || c.clientId} className={`hover:bg-blue-50/20 transition ${isEditing ? 'bg-red-50/10' : ''}`}>
+                                      <tr key={c.id || c.clientId} className={`hover:bg-blue-50/20 transition ${isEditing ? 'bg-red-50/10' : ''} ${isAi ? 'bg-blue-50/10' : ''}`}>
                                           <td className="p-3">
                                               {isEditing ? (
                                                   <div className="space-y-1.5">
@@ -459,7 +557,10 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                                                   </div>
                                               ) : (
                                                   <div className="cursor-pointer" onClick={() => onNavigate && onNavigate('CLIENT_DETAIL', c.companyName || c.name)}>
-                                                      <p className="font-bold text-gray-900 hover:text-[#D32F2F] transition-colors">{c.companyName || c.name}</p>
+                                                      <div className="flex items-center gap-2">
+                                                          <p className="font-bold text-gray-900 hover:text-[#D32F2F] transition-colors">{c.companyName || c.name}</p>
+                                                          <ProvenanceBadge type={isAi ? 'AI_AUTO' : 'HUMAN'} />
+                                                      </div>
                                                       <p className="text-[10px] font-mono text-gray-500 mt-1">{c.phone || '-'}</p>
                                                   </div>
                                               )}
@@ -483,15 +584,15 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                                                       {ROLE_OPTIONS.map(opt => {
                                                           const isChecked = rolesArray.includes(opt.value);
                                                           return (
-                                                              <label key={opt.value} className={`flex items-center gap-2 text-[10px] font-bold cursor-pointer px-2 py-1.5 rounded-sm border transition-colors ${isChecked ? 'bg-white border-blue-400 text-gray-900 shadow-sm' : 'bg-transparent border-transparent text-gray-500 hover:bg-gray-100'}`}>
+                                                              <label key={opt.value} className={`flex items-center gap-2 text-xs font-bold cursor-pointer px-2 py-1.5 rounded-sm border transition-colors ${isChecked ? 'bg-white border-blue-400 text-gray-900 shadow-sm' : 'bg-transparent border-transparent text-gray-500 hover:bg-gray-100'}`}>
                                                                   <input type="checkbox" checked={isChecked} onChange={() => {
                                                                       let newRoles = [...rolesArray];
                                                                       if (isChecked) newRoles = newRoles.filter(r => r !== opt.value);
                                                                       else newRoles.push(opt.value);
                                                                       setEditValues({...editValues, businessRole: newRoles.join(',')});
-                                                                  }} className="accent-blue-600 w-3 h-3" />
-                                                                  <span className={`px-2 py-0.5 rounded-sm border text-[9px] ${opt.color}`}>{opt.short}</span>
-                                                                  <span className="font-normal text-gray-500">{opt.label.replace(opt.short, '').trim()}</span>
+                                                                  }} className="accent-blue-600 w-4 h-4" />
+                                                                  <span className={`px-2 py-0.5 rounded-sm border text-[10px] ${opt.color}`}>{opt.short}</span>
+                                                                  <span className="text-[10px] font-normal text-gray-500">{opt.label.replace(opt.short, '').trim()}</span>
                                                               </label>
                                                           );
                                                       })}
@@ -502,7 +603,11 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                                                           const matchedOption = ROLE_OPTIONS.find(opt => opt.value === roleStr);
                                                           const colorClass = matchedOption ? matchedOption.color : 'bg-gray-100 text-gray-600 border-gray-200';
                                                           const label = matchedOption ? matchedOption.short : roleStr;
-                                                          return <span key={i} className={`text-[10px] px-2 py-1 border rounded-sm font-bold shadow-sm ${colorClass}`}>{label}</span>;
+                                                          return (
+                                                              <span key={i} className={`text-[10px] px-2 py-1 border rounded-sm font-bold shadow-sm ${colorClass}`}>
+                                                                  {label}
+                                                              </span>
+                                                          );
                                                       }) : <span className="text-[10px] text-gray-400 border border-gray-200 px-2 py-1 rounded-sm">未設定</span>}
                                                   </div>
                                               )}
@@ -546,7 +651,8 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
 
               {/* ================= CONFIG TAB ================= */}
               {activeTab === 'CONFIG' && (
-                  <div className="p-6 overflow-y-auto">
+                  <div className="p-6 overflow-y-auto relative">
+                      <div className="absolute top-6 right-6"><ProvenanceBadge type="HUMAN" /></div>
                       <div className="max-w-xl mx-auto space-y-6">
                           <div className="bg-gray-50 p-6 rounded-sm border border-gray-200">
                               <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><Icons.Settings /> 外部連携・相場設定</h3>
@@ -572,8 +678,101 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
 
           </div>
       </div>
-      
-      {/* 印刷用レイアウトは省略(既存のまま) */}
+
+      {/* --- 🖨️ 印刷用レポート専用レイアウト (通常時は非表示) --- */}
+      <div className="hidden print:block w-[210mm] min-h-[297mm] bg-white text-black p-8 mx-auto font-sans">
+          <div className="border-b-2 border-black pb-4 mb-6 flex justify-between items-end">
+              <div>
+                  <h1 className="text-3xl font-black font-serif tracking-widest">
+                      {activeTab === 'WIRES' || activeTab === 'CASTINGS' ? '本日の買取価格表' : 
+                       activeTab === 'CLIENTS' ? '顧客ディレクトリ (社内秘)' : 'システムレポート'}
+                  </h1>
+                  <p className="text-sm font-bold text-gray-600 mt-2">株式会社月寒製作所 苫小牧工場</p>
+              </div>
+              <div className="text-right">
+                  <p className="text-lg font-bold font-mono">{new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}</p>
+                  <p className="text-xs font-bold bg-black text-white px-2 py-0.5 inline-block mt-1">
+                      {showAiData ? 'MIX (AI予測 + 実測)' : 'HUMAN ONLY (実測確定のみ)'}
+                  </p>
+              </div>
+          </div>
+
+          <section className="mb-8 border-2 border-black p-6 rounded-sm bg-gray-50 relative">
+              {showAiData && <div className="absolute top-2 right-2"><ProvenanceBadge type="AI_AUTO" /></div>}
+              <h2 className="text-lg font-black text-black flex items-center gap-2 mb-4">
+                  <Icons.Brain /> 本日の相場概況とインサイト
+              </h2>
+              <div className="text-sm leading-relaxed whitespace-pre-wrap font-bold text-gray-800">
+                  {showAiData ? (aiSummary || "（データ処理中です...）") : "※AI予測モードがOFFのため、インサイトは表示されません。"}
+              </div>
+          </section>
+
+          {(activeTab === 'WIRES' || activeTab === 'CASTINGS') && (
+              <div className="mb-8">
+                  <div className="flex justify-between text-sm font-bold bg-black text-white px-4 py-2 mb-4">
+                      <span>基準相場: 銅建値 {copperPrice}円/kg | 真鍮建値 {brassPrice}円/kg | 亜鉛建値 {zincPrice}円/kg</span>
+                  </div>
+                  <table className="w-full text-left border-collapse text-sm">
+                      <thead>
+                          <tr className="border-b-2 border-black text-xs">
+                              <th className="py-2 w-[40%]">品目名</th>
+                              <th className="py-2 text-center w-[20%]">評価ベース</th>
+                              <th className="py-2 text-center w-[20%]">歩留/掛率</th>
+                              <th className="py-2 text-right w-[20%]">参考買取単価</th>
+                          </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-300">
+                          {activeTab === 'WIRES' ? filteredWires.map((w:any) => (
+                              <tr key={w.id} className="py-1">
+                                  <td className="py-2 font-bold">{getDisplayName(w)} {isAiGenerated(w) && <ProvenanceBadge type="AI_AUTO" />}</td>
+                                  <td className="py-2 text-center text-gray-600">銅</td>
+                                  <td className="py-2 text-center font-mono">{w.ratio}%</td>
+                                  <td className="py-2 text-right font-black font-mono">¥{Math.floor(copperPrice * (w.ratio/100) * 0.85).toLocaleString()} /kg</td>
+                              </tr>
+                          )) : filteredCastings.map((c:any) => (
+                              <tr key={c.id} className="py-1">
+                                  <td className="py-2 font-bold">{c.name} {isAiGenerated(c) && <ProvenanceBadge type="AI_AUTO" />}</td>
+                                  <td className="py-2 text-center text-gray-600">{c.type === 'BRASS' ? '真鍮' : c.type === 'ZINC' ? '亜鉛' : c.type === 'LEAD' ? '鉛' : '銅'}</td>
+                                  <td className="py-2 text-center font-mono">{c.ratio}%</td>
+                                  <td className="py-2 text-right font-black font-mono">
+                                      ¥{Math.floor((c.type === 'BRASS' ? brassPrice : c.type === 'ZINC' ? zincPrice : c.type === 'LEAD' ? leadPrice : copperPrice) * (c.ratio/100) * 0.90).toLocaleString()} /kg
+                                  </td>
+                              </tr>
+                          ))}
+                      </tbody>
+                  </table>
+              </div>
+          )}
+
+          {activeTab === 'CLIENTS' && (
+              <div className="mb-8">
+                  <table className="w-full text-left border-collapse text-sm">
+                      <thead>
+                          <tr className="border-b-2 border-black text-xs">
+                              <th className="py-2 w-[35%]">顧客・企業名</th>
+                              <th className="py-2 text-center w-[10%]">ランク</th>
+                              <th className="py-2 w-[20%]">役割</th>
+                              <th className="py-2 w-[35%]">特記事項</th>
+                          </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-300">
+                          {filteredClients.map((c:any) => (
+                              <tr key={c.clientId} className="py-1">
+                                  <td className="py-2">
+                                      <p className="font-bold flex items-center gap-1">{c.companyName || c.name} {isAiGenerated(c) && <ProvenanceBadge type="AI_AUTO" />}</p>
+                                      <p className="text-[10px] text-gray-500 font-mono mt-0.5">{c.phone || '-'}</p>
+                                  </td>
+                                  <td className="py-2 text-center font-black">{c.rank || 'B'}</td>
+                                  <td className="py-2 font-mono text-xs">{c.businessRole || '-'}</td>
+                                  <td className="py-2 text-xs text-gray-600 truncate">{c.memo || '-'}</td>
+                              </tr>
+                          ))}
+                      </tbody>
+                  </table>
+              </div>
+          )}
+
+      </div>
     </div>
   );
 };
