@@ -8,7 +8,8 @@ const Icons = {
   Close: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>,
   Search: () => <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
   Sparkles: () => <svg className="w-5 h-5 inline-block mr-1" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 8.134a1 1 0 010 1.932l-3.354.933-1.179 4.456a1 1 0 01-1.934 0l-1.179-4.456-3.354-.933a1 1 0 010-1.932l3.354-.933 1.179-4.456A1 1 0 0112 2z" clipRule="evenodd" /></svg>,
-  User: () => <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+  User: () => <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>,
+  Print: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
 };
 
 export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onClear }: { data: any; editingResId: string | null; localReservations: any[]; onSuccess: () => void; onClear: () => void; }) => {
@@ -163,173 +164,266 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
     setIsSubmitting(false);
   };
 
+  // ★ 追加: 印刷ハンドラ
+  const handlePrintReceipt = () => {
+      if (!clientName) {
+          alert("お客様名が入力されていません。");
+          return;
+      }
+      window.print();
+  };
+
   const inputClass = "w-full bg-white border border-gray-300 p-3 rounded-sm text-base md:text-lg font-bold text-gray-900 outline-none focus:border-[#D32F2F] focus:ring-1 focus:ring-[#D32F2F] transition font-sans";
 
   const searchHitClients = clients.filter((c: any) => {
     const targetName = c.companyName || c.name || '';
     return targetName.toLowerCase().includes(clientName.toLowerCase());
-  }).slice(0, 10);
+  }).slice(0, 50);
 
   return (
-    <div className="flex flex-col h-full animate-in fade-in duration-500 max-w-6xl mx-auto w-full text-gray-800 pb-28 md:pb-12 relative">
-      <header className="mb-4 flex flex-col md:flex-row md:justify-between md:items-end flex-shrink-0 pb-4 border-b border-gray-200 gap-4">
-        <div>
-          <h2 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2 font-serif">
-             <span className="w-1.5 h-6 bg-[#D32F2F]"></span>
-             {editingResId ? '検収・計量 (POS)' : '新規受付 (POS)'}
-          </h2>
-          <p className="text-xs text-gray-500 mt-1 font-mono tracking-wider ml-3">{editingResId ? 'EDIT MODE' : 'NEW ENTRY'}</p>
-        </div>
-        
-        <div className="flex items-center gap-3">
-            <div className="flex items-center bg-gray-50 border border-gray-200 rounded-sm px-3 py-2 shadow-inner w-full md:w-auto">
-                <Icons.User />
-                <select className="bg-transparent text-sm font-bold text-gray-700 outline-none ml-2 cursor-pointer w-full" value={inspector} onChange={e => setInspector(e.target.value)}>
-                    <option value="未選択">検収者を選択</option>
-                    {inspectorList.map((name:string) => <option key={name} value={name}>{name}</option>)}
-                </select>
+    <div className="flex flex-col h-full animate-in fade-in duration-500 max-w-6xl mx-auto w-full text-gray-800 pb-28 md:pb-12 relative" style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
+      
+      {/* --- 通常の画面 (印刷時は非表示) --- */}
+      <div className="print:hidden flex flex-col h-full">
+          <header className="mb-4 flex flex-col md:flex-row md:justify-between md:items-end flex-shrink-0 pb-4 border-b border-gray-200 gap-4">
+            <div>
+              <h2 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2 font-serif">
+                 <span className="w-1.5 h-6 bg-[#D32F2F]"></span>
+                 {editingResId ? '検収・計量 (POS)' : '新規受付 (POS)'}
+              </h2>
+              <p className="text-xs text-gray-500 mt-1 font-mono tracking-wider ml-3">{editingResId ? 'EDIT MODE' : 'NEW ENTRY'}</p>
             </div>
-
-            {editingResId && (
-                <button onClick={onClear} className="text-gray-500 hover:text-gray-900 bg-white border border-gray-300 px-4 py-2 rounded-sm text-sm font-bold shadow-sm transition flex items-center gap-1 whitespace-nowrap">
-                    <Icons.Close /> 取消
+            
+            <div className="flex items-center gap-3">
+                <div className="flex items-center bg-gray-50 border border-gray-200 rounded-sm px-3 py-2 shadow-inner w-full md:w-auto">
+                    <Icons.User />
+                    <select className="bg-transparent text-sm font-bold text-gray-700 outline-none ml-2 cursor-pointer w-full" value={inspector} onChange={e => setInspector(e.target.value)}>
+                        <option value="未選択">検収者を選択</option>
+                        {inspectorList.map((name:string) => <option key={name} value={name}>{name}</option>)}
+                    </select>
+                </div>
+                
+                {/* ★ 追加: 伝票印刷ボタン */}
+                <button 
+                    onClick={handlePrintReceipt} 
+                    className="bg-white border border-gray-300 text-gray-800 px-4 py-2 rounded-sm text-sm font-bold hover:border-[#D32F2F] hover:text-[#D32F2F] transition shadow-sm flex items-center gap-2 whitespace-nowrap"
+                >
+                    <Icons.Print /> 伝票を印刷
                 </button>
-            )}
-        </div>
-      </header>
 
-      <div className="bg-white border border-gray-200 shadow-sm flex flex-col flex-1 rounded-sm overflow-hidden mb-4">
-          <div className="p-4 md:p-5 border-b border-gray-200 bg-gray-50 flex flex-col gap-4">
-              <div className="flex flex-col md:flex-row gap-4 md:gap-6">
-                  <div className="flex-1 relative z-50">
-                      <label className="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-widest block mb-1.5">お客様 (業者名)</label>
-                      <div className="relative">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Icons.Search /></div>
-                          <input 
-                              type="text" 
-                              className={`${inputClass} pl-10`}
-                              placeholder="業者名を検索..." 
-                              value={clientName} 
-                              onChange={handleNameChange} 
-                              onFocus={()=>setShowSuggest(true)} 
-                              onBlur={()=>setTimeout(()=>setShowSuggest(false), 200)} 
-                          />
-                          {showSuggest && clientName && searchHitClients.length > 0 && (
-                              <ul className="absolute z-50 w-full bg-white border border-gray-300 mt-1 shadow-2xl max-h-60 overflow-y-auto rounded-sm">
-                                  {searchHitClients.map((c:any) => {
-                                      const resolvedName = c.companyName || c.name || '不明な顧客';
-                                      const resolvedId = c.clientId || c.id || 'GUEST';
-                                      const resolvedSubInfo = c.rank ? `${c.rank} MEMBER` : (c.note || '');
-                                      return (
-                                          <li key={resolvedId} onMouseDown={() => handleSelectClient(c)} className="p-3 hover:bg-red-50 cursor-pointer border-b border-gray-100 last:border-0 text-sm transition-colors">
-                                              <div className="font-bold text-gray-900">{resolvedName}</div>
-                                              <div className="text-xs text-gray-500 font-mono mt-0.5">{resolvedSubInfo}</div>
-                                          </li>
-                                      );
-                                  })}
-                              </ul>
+                {editingResId && (
+                    <button onClick={onClear} className="text-gray-500 hover:text-gray-900 bg-white border border-gray-300 px-4 py-2 rounded-sm text-sm font-bold shadow-sm transition flex items-center gap-1 whitespace-nowrap">
+                        <Icons.Close /> 取消
+                    </button>
+                )}
+            </div>
+          </header>
+
+          <div className="bg-white border border-gray-200 shadow-sm flex flex-col flex-1 rounded-sm overflow-hidden mb-4">
+              <div className="p-4 md:p-5 border-b border-gray-200 bg-gray-50 flex flex-col gap-4">
+                  <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+                      <div className="flex-1 relative z-50">
+                          <label className="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-widest block mb-1.5">お客様 (業者名)</label>
+                          <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Icons.Search /></div>
+                              <input 
+                                  type="text" 
+                                  className={`${inputClass} pl-10`}
+                                  placeholder="業者名を入力・選択..." 
+                                  value={clientName} 
+                                  onChange={handleNameChange} 
+                                  onFocus={()=>setShowSuggest(true)} 
+                                  onBlur={()=>setTimeout(()=>setShowSuggest(false), 200)} 
+                              />
+                              {showSuggest && searchHitClients.length > 0 && (
+                                  <ul className="absolute z-50 w-full bg-white border border-gray-300 mt-1 shadow-2xl max-h-60 overflow-y-auto rounded-sm">
+                                      {searchHitClients.map((c:any) => {
+                                          const resolvedName = c.companyName || c.name || '不明な顧客';
+                                          const resolvedId = c.clientId || c.id || 'GUEST';
+                                          const resolvedSubInfo = c.rank ? `${c.rank} MEMBER` : (c.note || '');
+                                          return (
+                                              <li key={resolvedId} onMouseDown={() => handleSelectClient(c)} className="p-3 hover:bg-red-50 cursor-pointer border-b border-gray-100 last:border-0 text-sm transition-colors">
+                                                  <div className="font-bold text-gray-900">{resolvedName}</div>
+                                                  <div className="text-xs text-gray-500 font-mono mt-0.5">{resolvedSubInfo}</div>
+                                              </li>
+                                          );
+                                      })}
+                                  </ul>
+                              )}
+                          </div>
+                          {clientName && selectedClientId === 'GUEST' && !showSuggest && (
+                              <p className="absolute -bottom-5 left-0 text-[10px] font-bold text-[#D32F2F]">※ 顧客マスター未登録（GUEST）扱い</p>
                           )}
                       </div>
-                      {clientName && selectedClientId === 'GUEST' && !showSuggest && (
-                          <p className="absolute -bottom-5 left-0 text-[10px] font-bold text-[#D32F2F]">※ 顧客マスター未登録（GUEST）扱い</p>
-                      )}
+                      <div className="md:w-1/3 w-full mt-2 md:mt-0">
+                          <label className="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-widest block mb-1.5">引継ぎメモ</label>
+                          <input type="text" className={inputClass} placeholder="備考" value={memo} onChange={e => setMemo(e.target.value)} />
+                      </div>
                   </div>
-                  <div className="md:w-1/3 w-full mt-2 md:mt-0">
-                      <label className="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-widest block mb-1.5">引継ぎメモ</label>
-                      <input type="text" className={inputClass} placeholder="備考" value={memo} onChange={e => setMemo(e.target.value)} />
-                  </div>
+
+                  {clientInsight && (
+                      <div className={`mt-2 p-3 rounded-sm border flex items-start gap-3 animate-in slide-in-from-top-2 ${
+                          clientInsight.type === 'good' ? 'bg-blue-50 border-blue-200 text-blue-900' :
+                          clientInsight.type === 'bad' ? 'bg-red-50 border-red-200 text-red-900' :
+                          'bg-gray-100 border-gray-300 text-gray-800'
+                      }`}>
+                          <div className={`mt-0.5 ${clientInsight.type === 'good' ? 'text-blue-600' : clientInsight.type === 'bad' ? 'text-red-600' : 'text-gray-500'}`}>
+                              <Icons.Sparkles />
+                          </div>
+                          <p className="text-xs md:text-sm font-bold leading-relaxed">{clientInsight.text}</p>
+                      </div>
+                  )}
               </div>
 
-              {clientInsight && (
-                  <div className={`mt-2 p-3 rounded-sm border flex items-start gap-3 animate-in slide-in-from-top-2 ${
-                      clientInsight.type === 'good' ? 'bg-blue-50 border-blue-200 text-blue-900' :
-                      clientInsight.type === 'bad' ? 'bg-red-50 border-red-200 text-red-900' :
-                      'bg-gray-100 border-gray-300 text-gray-800'
-                  }`}>
-                      <div className={`mt-0.5 ${clientInsight.type === 'good' ? 'text-blue-600' : clientInsight.type === 'bad' ? 'text-red-600' : 'text-gray-500'}`}>
-                          <Icons.Sparkles />
-                      </div>
-                      <p className="text-xs md:text-sm font-bold leading-relaxed">{clientInsight.text}</p>
+              <div className="p-3 md:p-5 flex-1 overflow-y-auto bg-white">
+                  <div className="hidden md:flex text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-2">
+                      <div className="flex-1">持込品目</div>
+                      <div className="w-40 text-right">重量 (kg)</div>
+                      <div className="w-44 text-right">単価 (円)</div>
+                      <div className="w-44 text-right">金額</div>
+                      <div className="w-14"></div>
                   </div>
-              )}
+                  
+                  <div className="space-y-3">
+                      {items.map((item, idx) => (
+                          <div key={idx} className="flex flex-col md:flex-row gap-3 md:gap-2 md:items-center bg-gray-50 p-3 md:p-2 rounded-sm border border-gray-200 hover:border-gray-300 transition-colors">
+                              
+                              <div className="flex-1 w-full md:w-auto">
+                                  <select className="w-full bg-white md:bg-transparent border md:border-none border-gray-300 p-3 md:p-2 text-base md:text-lg font-bold text-gray-900 rounded-sm outline-none cursor-pointer" value={item.product} onChange={e => handleItemChange(idx, 'product', e.target.value)}>
+                                      <option value="">品目を選択</option>
+                                      <optgroup label="電線類">
+                                          {wiresMaster.map((w:any) => {
+                                              const dName = getDisplayName(w);
+                                              return <option key={w.id} value={dName}>{dName} ({w.ratio}%)</option>;
+                                          })}
+                                      </optgroup>
+                                      <optgroup label="非鉄金属">{castingsMaster.map((c:any) => <option key={c.id} value={c.name}>{c.name}</option>)}</optgroup>
+                                      <option value="雑線">雑線</option>
+                                  </select>
+                              </div>
+
+                              <div className="flex gap-2 items-center w-full md:w-auto">
+                                  <div className="flex-1 md:w-40 relative">
+                                      <span className="md:hidden absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">重量</span>
+                                      <input type="number" inputMode="decimal" className={`${inputClass} text-right pr-8 pl-10 md:pl-3 py-3 md:py-2.5 font-mono`} placeholder="0" value={item.weight} onChange={e => handleItemChange(idx, 'weight', e.target.value)} />
+                                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-500 pointer-events-none">kg</span>
+                                  </div>
+                                  <div className="flex-1 md:w-44 relative">
+                                      <span className="md:hidden absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">単価</span>
+                                      <input type="number" inputMode="decimal" className={`${inputClass} text-right pr-8 pl-10 md:pl-3 py-3 md:py-2.5 font-mono`} placeholder="0" value={item.price} onChange={e => handleItemChange(idx, 'price', e.target.value)} />
+                                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-500 pointer-events-none">¥</span>
+                                  </div>
+                              </div>
+
+                              <div className="flex justify-between items-center md:block md:w-44 md:text-right px-2 md:px-0 pt-2 md:pt-0 border-t border-dashed border-gray-200 md:border-none mt-1 md:mt-0">
+                                  <span className="md:hidden text-xs font-bold text-gray-500">小計</span>
+                                  <p className="text-xl md:text-xl font-black text-gray-900 font-mono tracking-tighter">¥{(Number(item.weight) * Number(item.price) || 0).toLocaleString()}</p>
+                                  
+                                  <div className="md:hidden">
+                                      <button onClick={() => removeItem(idx)} className="text-gray-400 hover:text-[#D32F2F] bg-white border border-gray-200 p-2 rounded-sm shadow-sm flex items-center gap-1 text-xs font-bold">
+                                          <Icons.Trash /> 削除
+                                      </button>
+                                  </div>
+                              </div>
+
+                              <div className="hidden md:block w-14 text-center">
+                                  <button onClick={() => removeItem(idx)} className="text-gray-400 hover:text-[#D32F2F] transition p-2"><Icons.Trash /></button>
+                              </div>
+                          </div>
+                      ))}
+                  </div>
+                  
+                  <button onClick={addItem} className="mt-4 w-full py-4 border-2 border-dashed border-gray-300 rounded-sm text-gray-500 font-bold hover:border-[#D32F2F] hover:text-[#D32F2F] hover:bg-red-50 transition flex items-center justify-center gap-2 text-sm bg-gray-50">
+                      <Icons.Plus /> 品目を追加する
+                  </button>
+              </div>
           </div>
 
-          <div className="p-3 md:p-5 flex-1 overflow-y-auto bg-white">
-              <div className="hidden md:flex text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-2">
-                  <div className="flex-1">持込品目</div>
-                  <div className="w-40 text-right">重量 (kg)</div>
-                  <div className="w-44 text-right">単価 (円)</div>
-                  <div className="w-44 text-right">金額</div>
-                  <div className="w-14"></div>
+          <div className="fixed bottom-0 left-0 w-full md:relative md:w-auto bg-[#111] text-white p-4 md:p-6 flex flex-row justify-between items-center gap-4 z-[60] shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.3)] md:shadow-none md:rounded-sm">
+              <div className="text-left flex-1">
+                  <p className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest mb-0.5">合計買掛金額</p>
+                  <p className="text-3xl md:text-5xl font-black tracking-tighter font-mono text-white leading-none">¥{totalAmount.toLocaleString()}</p>
               </div>
-              
-              <div className="space-y-3">
-                  {items.map((item, idx) => (
-                      <div key={idx} className="flex flex-col md:flex-row gap-3 md:gap-2 md:items-center bg-gray-50 p-3 md:p-2 rounded-sm border border-gray-200 hover:border-gray-300 transition-colors">
-                          
-                          {/* スマホレイアウト: 1段目 (品目) */}
-                          <div className="flex-1 w-full md:w-auto">
-                              <select className="w-full bg-white md:bg-transparent border md:border-none border-gray-300 p-3 md:p-2 text-base md:text-lg font-bold text-gray-900 rounded-sm outline-none cursor-pointer" value={item.product} onChange={e => handleItemChange(idx, 'product', e.target.value)}>
-                                  <option value="">品目を選択</option>
-                                  <optgroup label="電線類">
-                                      {wiresMaster.map((w:any) => {
-                                          const dName = getDisplayName(w);
-                                          return <option key={w.id} value={dName}>{dName} ({w.ratio}%)</option>;
-                                      })}
-                                  </optgroup>
-                                  <optgroup label="非鉄金属">{castingsMaster.map((c:any) => <option key={c.id} value={c.name}>{c.name}</option>)}</optgroup>
-                                  <option value="雑線">雑線</option>
-                              </select>
-                          </div>
-
-                          {/* スマホレイアウト: 2段目 (重量 & 単価) */}
-                          <div className="flex gap-2 items-center w-full md:w-auto">
-                              <div className="flex-1 md:w-40 relative">
-                                  <span className="md:hidden absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">重量</span>
-                                  <input type="number" inputMode="decimal" className={`${inputClass} text-right pr-8 pl-10 md:pl-3 py-3 md:py-2.5 font-mono`} placeholder="0" value={item.weight} onChange={e => handleItemChange(idx, 'weight', e.target.value)} />
-                                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-500 pointer-events-none">kg</span>
-                              </div>
-                              <div className="flex-1 md:w-44 relative">
-                                  <span className="md:hidden absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">単価</span>
-                                  <input type="number" inputMode="decimal" className={`${inputClass} text-right pr-8 pl-10 md:pl-3 py-3 md:py-2.5 font-mono`} placeholder="0" value={item.price} onChange={e => handleItemChange(idx, 'price', e.target.value)} />
-                                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-500 pointer-events-none">¥</span>
-                              </div>
-                          </div>
-
-                          {/* スマホレイアウト: 3段目 (小計 & 削除) */}
-                          <div className="flex justify-between items-center md:block md:w-44 md:text-right px-2 md:px-0 pt-2 md:pt-0 border-t border-dashed border-gray-200 md:border-none mt-1 md:mt-0">
-                              <span className="md:hidden text-xs font-bold text-gray-500">小計</span>
-                              <p className="text-xl md:text-xl font-black text-gray-900 font-mono tracking-tighter">¥{(Number(item.weight) * Number(item.price) || 0).toLocaleString()}</p>
-                              
-                              <div className="md:hidden">
-                                  <button onClick={() => removeItem(idx)} className="text-gray-400 hover:text-[#D32F2F] bg-white border border-gray-200 p-2 rounded-sm shadow-sm flex items-center gap-1 text-xs font-bold">
-                                      <Icons.Trash /> 削除
-                                  </button>
-                              </div>
-                          </div>
-
-                          <div className="hidden md:block w-14 text-center">
-                              <button onClick={() => removeItem(idx)} className="text-gray-400 hover:text-[#D32F2F] transition p-2"><Icons.Trash /></button>
-                          </div>
-                      </div>
-                  ))}
-              </div>
-              
-              <button onClick={addItem} className="mt-4 w-full py-4 border-2 border-dashed border-gray-300 rounded-sm text-gray-500 font-bold hover:border-[#D32F2F] hover:text-[#D32F2F] hover:bg-red-50 transition flex items-center justify-center gap-2 text-sm bg-gray-50">
-                  <Icons.Plus /> 品目を追加する
+              <button onClick={handleSubmit} disabled={isSubmitting || !clientName} className="bg-[#D32F2F] text-white px-6 md:px-10 py-3 md:py-4 rounded-sm text-sm md:text-lg font-bold hover:bg-red-600 transition shadow-sm flex items-center justify-center gap-2 disabled:bg-gray-700 disabled:text-gray-500 whitespace-nowrap">
+                  {isSubmitting ? '処理中...' : <><Icons.Save /> 確定する</>}
               </button>
           </div>
       </div>
 
-      {/* モバイルでスクロール時も常に下に固定される決済バー */}
-      <div className="fixed bottom-0 left-0 w-full md:relative md:w-auto bg-[#111] text-white p-4 md:p-6 flex flex-row justify-between items-center gap-4 z-[60] shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.3)] md:shadow-none md:rounded-sm">
-          <div className="text-left flex-1">
-              <p className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest mb-0.5">合計買掛金額</p>
-              <p className="text-3xl md:text-5xl font-black tracking-tighter font-mono text-white leading-none">¥{totalAmount.toLocaleString()}</p>
+      {/* --- 🖨️ 印刷用レポート専用レイアウト (計量・買取伝票) --- */}
+      {/* 印刷時のみA4縦（またはレシート横幅）にフィットするレイアウト */}
+      <div className="hidden print:block w-[210mm] mx-auto bg-white text-black p-10 font-sans">
+          <div className="text-center mb-8 border-b-2 border-black pb-4">
+              <h1 className="text-3xl font-black font-serif tracking-widest mb-2">計量・買取計算書</h1>
+              <p className="text-sm font-bold text-gray-600">株式会社月寒製作所 苫小牧工場</p>
           </div>
-          <button onClick={handleSubmit} disabled={isSubmitting || !clientName} className="bg-[#D32F2F] text-white px-6 md:px-10 py-3 md:py-4 rounded-sm text-sm md:text-lg font-bold hover:bg-red-600 transition shadow-sm flex items-center justify-center gap-2 disabled:bg-gray-700 disabled:text-gray-500 whitespace-nowrap">
-              {isSubmitting ? '処理中...' : <><Icons.Save /> 確定する</>}
-          </button>
+
+          <div className="flex justify-between items-end mb-8">
+              <div className="flex-1 border-b border-black pb-1 mr-10">
+                  <p className="text-2xl font-bold">{clientName || "　　　　　　　　"} <span className="text-lg font-normal">様</span></p>
+              </div>
+              <div className="text-right text-sm font-mono space-y-1">
+                  <p>発行日: {new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' })}</p>
+                  <p>時間: {new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}</p>
+                  <p>検収者: {inspector !== '未選択' ? inspector : '________'}</p>
+                  {editingResId && <p className="text-[10px] text-gray-500">伝票番号: {editingResId}</p>}
+              </div>
+          </div>
+
+          <div className="mb-10">
+              <table className="w-full text-left border-collapse text-base">
+                  <thead>
+                      <tr className="border-b-2 border-black text-sm">
+                          <th className="py-3 w-[45%]">品目名</th>
+                          <th className="py-3 text-right w-[15%]">重量 (kg)</th>
+                          <th className="py-3 text-right w-[20%]">単価 (円)</th>
+                          <th className="py-3 text-right w-[20%]">金額 (円)</th>
+                      </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-300">
+                      {items.map((item, idx) => {
+                          if (!item.product) return null;
+                          const subtotal = Number(item.weight) * Number(item.price) || 0;
+                          return (
+                              <tr key={idx} className="py-2">
+                                  <td className="py-4 font-bold">{item.product}</td>
+                                  <td className="py-4 text-right font-mono">{item.weight || 0}</td>
+                                  <td className="py-4 text-right font-mono">{Number(item.price || 0).toLocaleString()}</td>
+                                  <td className="py-4 text-right font-mono font-bold">{subtotal.toLocaleString()}</td>
+                              </tr>
+                          )
+                      })}
+                  </tbody>
+              </table>
+          </div>
+
+          <div className="flex justify-end border-t-2 border-black pt-4 mb-10">
+              <div className="w-1/2 flex justify-between items-baseline">
+                  <span className="text-lg font-bold">合計金額</span>
+                  <span className="text-4xl font-black font-mono tracking-tighter">¥{totalAmount.toLocaleString()}</span>
+              </div>
+          </div>
+
+          {memo && (
+              <div className="mb-8 border border-gray-400 p-4 min-h-[80px]">
+                  <p className="text-xs font-bold text-gray-500 mb-1">備考</p>
+                  <p className="text-sm">{memo}</p>
+              </div>
+          )}
+
+          <div className="mt-16 pt-8 text-xs text-gray-500 text-center flex flex-col items-center">
+              <p className="mb-2">毎度ありがとうございます。またのお越しをお待ちしております。</p>
+              <div className="flex gap-16 mt-8">
+                  <div className="text-center">
+                      <p className="mb-8">受領印</p>
+                      <div className="w-32 border-b border-black"></div>
+                  </div>
+                  <div className="text-center">
+                      <p className="mb-8">検収印</p>
+                      <div className="w-32 border-b border-black"></div>
+                  </div>
+              </div>
+          </div>
       </div>
 
     </div>
