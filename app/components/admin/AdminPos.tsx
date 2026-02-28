@@ -12,6 +12,21 @@ const Icons = {
   Print: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
 };
 
+// ★ プロベナンス・バッジ（AdminHomeと統一されたデザインルール）
+const ProvenanceBadge = ({ type }: { type: 'HUMAN' | 'AI_AUTO' | 'CO_OP' }) => {
+    const baseStyle = "inline-block px-1.5 py-0.5 text-[9px] font-mono font-bold tracking-widest rounded-sm text-white cursor-default shadow-sm";
+    switch (type) {
+        case 'HUMAN':
+            return <span className={`${baseStyle} bg-gray-900`} title="実測・確定データ">HUMAN</span>;
+        case 'CO_OP':
+            return <span className={`${baseStyle} bg-gray-600`} title="AI＋人間 協調データ">CO-P</span>;
+        case 'AI_AUTO':
+            return <span className={`${baseStyle} bg-gray-400`} title="AI予測・推論データ">AI</span>;
+        default:
+            return null;
+    }
+};
+
 export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onClear }: { data: any; editingResId: string | null; localReservations: any[]; onSuccess: () => void; onClear: () => void; }) => {
   const [clientName, setClientName] = useState('');
   const [selectedClientId, setSelectedClientId] = useState('GUEST');
@@ -164,7 +179,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
     setIsSubmitting(false);
   };
 
-  // ★ 追加: 印刷ハンドラ
   const handlePrintReceipt = () => {
       if (!clientName) {
           alert("お客様名が入力されていません。");
@@ -173,7 +187,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       window.print();
   };
 
-  const inputClass = "w-full bg-white border border-gray-300 p-3 rounded-sm text-base md:text-lg font-bold text-gray-900 outline-none focus:border-[#D32F2F] focus:ring-1 focus:ring-[#D32F2F] transition font-sans";
+  const inputClass = "w-full bg-white border border-gray-300 p-3 rounded-sm text-base md:text-lg font-bold text-gray-900 outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500 transition font-sans";
 
   const searchHitClients = clients.filter((c: any) => {
     const targetName = c.companyName || c.name || '';
@@ -195,7 +209,11 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
             </div>
             
             <div className="flex items-center gap-3">
-                <div className="flex items-center bg-gray-50 border border-gray-200 rounded-sm px-3 py-2 shadow-inner w-full md:w-auto">
+                <div className="flex items-center bg-gray-50 border border-gray-200 rounded-sm px-3 py-2 shadow-inner w-full md:w-auto relative">
+                    {/* ★ 検収者は人間（HUMAN） */}
+                    <div className="absolute -top-2.5 right-2 bg-white px-1">
+                        <ProvenanceBadge type="HUMAN" />
+                    </div>
                     <Icons.User />
                     <select className="bg-transparent text-sm font-bold text-gray-700 outline-none ml-2 cursor-pointer w-full" value={inspector} onChange={e => setInspector(e.target.value)}>
                         <option value="未選択">検収者を選択</option>
@@ -203,12 +221,11 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                     </select>
                 </div>
                 
-                {/* ★ 追加: 伝票印刷ボタン */}
                 <button 
                     onClick={handlePrintReceipt} 
-                    className="bg-white border border-gray-300 text-gray-800 px-4 py-2 rounded-sm text-sm font-bold hover:border-[#D32F2F] hover:text-[#D32F2F] transition shadow-sm flex items-center gap-2 whitespace-nowrap"
+                    className="bg-white border border-gray-300 text-gray-800 px-4 py-2 rounded-sm text-sm font-bold hover:border-gray-400 transition shadow-sm flex items-center gap-2 whitespace-nowrap"
                 >
-                    <Icons.Print /> 伝票を印刷
+                    <Icons.Print /> 伝票印刷
                 </button>
 
                 {editingResId && (
@@ -223,7 +240,11 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
               <div className="p-4 md:p-5 border-b border-gray-200 bg-gray-50 flex flex-col gap-4">
                   <div className="flex flex-col md:flex-row gap-4 md:gap-6">
                       <div className="flex-1 relative z-50">
-                          <label className="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-widest block mb-1.5">お客様 (業者名)</label>
+                          <label className="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2 mb-1.5">
+                              お客様 (業者名)
+                              {/* ★ 顧客情報の入力は人間（HUMAN） */}
+                              <ProvenanceBadge type="HUMAN" />
+                          </label>
                           <div className="relative">
                               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Icons.Search /></div>
                               <input 
@@ -242,7 +263,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                                           const resolvedId = c.clientId || c.id || 'GUEST';
                                           const resolvedSubInfo = c.rank ? `${c.rank} MEMBER` : (c.note || '');
                                           return (
-                                              <li key={resolvedId} onMouseDown={() => handleSelectClient(c)} className="p-3 hover:bg-red-50 cursor-pointer border-b border-gray-100 last:border-0 text-sm transition-colors">
+                                              <li key={resolvedId} onMouseDown={() => handleSelectClient(c)} className="p-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-0 text-sm transition-colors">
                                                   <div className="font-bold text-gray-900">{resolvedName}</div>
                                                   <div className="text-xs text-gray-500 font-mono mt-0.5">{resolvedSubInfo}</div>
                                               </li>
@@ -256,31 +277,40 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                           )}
                       </div>
                       <div className="md:w-1/3 w-full mt-2 md:mt-0">
-                          <label className="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-widest block mb-1.5">引継ぎメモ</label>
+                          <label className="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2 mb-1.5">
+                              引継ぎメモ
+                              <ProvenanceBadge type="HUMAN" />
+                          </label>
                           <input type="text" className={inputClass} placeholder="備考" value={memo} onChange={e => setMemo(e.target.value)} />
                       </div>
                   </div>
 
+                  {/* ★ AIインサイトメッセージ */}
                   {clientInsight && (
-                      <div className={`mt-2 p-3 rounded-sm border flex items-start gap-3 animate-in slide-in-from-top-2 ${
+                      <div className={`mt-2 p-3 rounded-sm border flex items-start gap-3 animate-in slide-in-from-top-2 relative ${
                           clientInsight.type === 'good' ? 'bg-blue-50 border-blue-200 text-blue-900' :
                           clientInsight.type === 'bad' ? 'bg-red-50 border-red-200 text-red-900' :
                           'bg-gray-100 border-gray-300 text-gray-800'
                       }`}>
-                          <div className={`mt-0.5 ${clientInsight.type === 'good' ? 'text-blue-600' : clientInsight.type === 'bad' ? 'text-red-600' : 'text-gray-500'}`}>
+                          <div className="absolute top-2 right-2">
+                              <ProvenanceBadge type="AI_AUTO" />
+                          </div>
+                          <div className={`mt-0.5 ${clientInsight.type === 'good' ? 'text-blue-600' : clientInsight.type === 'bad' ? 'text-[#D32F2F]' : 'text-gray-500'}`}>
                               <Icons.Sparkles />
                           </div>
-                          <p className="text-xs md:text-sm font-bold leading-relaxed">{clientInsight.text}</p>
+                          <div className="pr-8">
+                              <p className="text-xs md:text-sm font-bold leading-relaxed">{clientInsight.text}</p>
+                          </div>
                       </div>
                   )}
               </div>
 
               <div className="p-3 md:p-5 flex-1 overflow-y-auto bg-white">
                   <div className="hidden md:flex text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-2">
-                      <div className="flex-1">持込品目</div>
-                      <div className="w-40 text-right">重量 (kg)</div>
-                      <div className="w-44 text-right">単価 (円)</div>
-                      <div className="w-44 text-right">金額</div>
+                      <div className="flex-1 flex items-center gap-2">持込品目 <ProvenanceBadge type="HUMAN" /></div>
+                      <div className="w-40 text-right flex items-center justify-end gap-2">重量 (kg) <ProvenanceBadge type="HUMAN" /></div>
+                      <div className="w-44 text-right flex items-center justify-end gap-2">単価 (円) <ProvenanceBadge type="CO_OP" /></div>
+                      <div className="w-44 text-right flex items-center justify-end gap-2">金額 <ProvenanceBadge type="CO_OP" /></div>
                       <div className="w-14"></div>
                   </div>
                   
@@ -288,8 +318,9 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                       {items.map((item, idx) => (
                           <div key={idx} className="flex flex-col md:flex-row gap-3 md:gap-2 md:items-center bg-gray-50 p-3 md:p-2 rounded-sm border border-gray-200 hover:border-gray-300 transition-colors">
                               
-                              <div className="flex-1 w-full md:w-auto">
-                                  <select className="w-full bg-white md:bg-transparent border md:border-none border-gray-300 p-3 md:p-2 text-base md:text-lg font-bold text-gray-900 rounded-sm outline-none cursor-pointer" value={item.product} onChange={e => handleItemChange(idx, 'product', e.target.value)}>
+                              <div className="flex-1 w-full md:w-auto relative">
+                                  <span className="md:hidden absolute -top-2 left-2 bg-gray-50 px-1 text-[10px] font-bold text-gray-400 flex items-center gap-1 z-10">品目 <ProvenanceBadge type="HUMAN" /></span>
+                                  <select className="w-full bg-white md:bg-transparent border md:border-none border-gray-300 p-3 md:p-2 text-base md:text-lg font-bold text-gray-900 rounded-sm outline-none cursor-pointer relative z-0" value={item.product} onChange={e => handleItemChange(idx, 'product', e.target.value)}>
                                       <option value="">品目を選択</option>
                                       <optgroup label="電線類">
                                           {wiresMaster.map((w:any) => {
@@ -304,19 +335,22 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
 
                               <div className="flex gap-2 items-center w-full md:w-auto">
                                   <div className="flex-1 md:w-40 relative">
-                                      <span className="md:hidden absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">重量</span>
-                                      <input type="number" inputMode="decimal" className={`${inputClass} text-right pr-8 pl-10 md:pl-3 py-3 md:py-2.5 font-mono`} placeholder="0" value={item.weight} onChange={e => handleItemChange(idx, 'weight', e.target.value)} />
-                                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-500 pointer-events-none">kg</span>
+                                      <span className="md:hidden absolute -top-2 left-2 bg-gray-50 px-1 text-[10px] font-bold text-gray-400 flex items-center gap-1 z-10">重量 <ProvenanceBadge type="HUMAN" /></span>
+                                      <input type="number" inputMode="decimal" className={`${inputClass} text-right pr-8 pl-3 py-3 md:py-2.5 font-mono relative z-0`} placeholder="0" value={item.weight} onChange={e => handleItemChange(idx, 'weight', e.target.value)} />
+                                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-500 pointer-events-none z-10">kg</span>
                                   </div>
                                   <div className="flex-1 md:w-44 relative">
-                                      <span className="md:hidden absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">単価</span>
-                                      <input type="number" inputMode="decimal" className={`${inputClass} text-right pr-8 pl-10 md:pl-3 py-3 md:py-2.5 font-mono`} placeholder="0" value={item.price} onChange={e => handleItemChange(idx, 'price', e.target.value)} />
-                                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-500 pointer-events-none">¥</span>
+                                      <span className="md:hidden absolute -top-2 left-2 bg-gray-50 px-1 text-[10px] font-bold text-gray-400 flex items-center gap-1 z-10">単価 <ProvenanceBadge type="CO_OP" /></span>
+                                      <input type="number" inputMode="decimal" className={`${inputClass} text-right pr-8 pl-3 py-3 md:py-2.5 font-mono relative z-0`} placeholder="0" value={item.price} onChange={e => handleItemChange(idx, 'price', e.target.value)} />
+                                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-500 pointer-events-none z-10">¥</span>
                                   </div>
                               </div>
 
-                              <div className="flex justify-between items-center md:block md:w-44 md:text-right px-2 md:px-0 pt-2 md:pt-0 border-t border-dashed border-gray-200 md:border-none mt-1 md:mt-0">
-                                  <span className="md:hidden text-xs font-bold text-gray-500">小計</span>
+                              <div className="flex justify-between items-center md:block md:w-44 md:text-right px-2 md:px-0 pt-2 md:pt-0 border-t border-dashed border-gray-200 md:border-none mt-1 md:mt-0 relative">
+                                  <div className="md:hidden flex items-center gap-1">
+                                      <span className="text-xs font-bold text-gray-500">小計</span>
+                                      <ProvenanceBadge type="CO_OP" />
+                                  </div>
                                   <p className="text-xl md:text-xl font-black text-gray-900 font-mono tracking-tighter">¥{(Number(item.weight) * Number(item.price) || 0).toLocaleString()}</p>
                                   
                                   <div className="md:hidden">
@@ -333,25 +367,27 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                       ))}
                   </div>
                   
-                  <button onClick={addItem} className="mt-4 w-full py-4 border-2 border-dashed border-gray-300 rounded-sm text-gray-500 font-bold hover:border-[#D32F2F] hover:text-[#D32F2F] hover:bg-red-50 transition flex items-center justify-center gap-2 text-sm bg-gray-50">
+                  <button onClick={addItem} className="mt-4 w-full py-4 border-2 border-dashed border-gray-300 rounded-sm text-gray-500 font-bold hover:border-gray-500 hover:text-gray-700 hover:bg-gray-100 transition flex items-center justify-center gap-2 text-sm bg-gray-50">
                       <Icons.Plus /> 品目を追加する
                   </button>
               </div>
           </div>
 
           <div className="fixed bottom-0 left-0 w-full md:relative md:w-auto bg-[#111] text-white p-4 md:p-6 flex flex-row justify-between items-center gap-4 z-[60] shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.3)] md:shadow-none md:rounded-sm">
-              <div className="text-left flex-1">
-                  <p className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest mb-0.5">合計買掛金額</p>
+              <div className="text-left flex-1 relative">
+                  <div className="flex items-center gap-2 mb-0.5">
+                      <p className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest">合計買掛金額</p>
+                      <ProvenanceBadge type="CO_OP" />
+                  </div>
                   <p className="text-3xl md:text-5xl font-black tracking-tighter font-mono text-white leading-none">¥{totalAmount.toLocaleString()}</p>
               </div>
-              <button onClick={handleSubmit} disabled={isSubmitting || !clientName} className="bg-[#D32F2F] text-white px-6 md:px-10 py-3 md:py-4 rounded-sm text-sm md:text-lg font-bold hover:bg-red-600 transition shadow-sm flex items-center justify-center gap-2 disabled:bg-gray-700 disabled:text-gray-500 whitespace-nowrap">
+              <button onClick={handleSubmit} disabled={isSubmitting || !clientName} className="bg-[#D32F2F] text-white px-6 md:px-10 py-3 md:py-4 rounded-sm text-sm md:text-lg font-bold hover:bg-red-600 transition shadow-sm flex items-center justify-center gap-2 disabled:bg-gray-800 disabled:text-gray-600 whitespace-nowrap">
                   {isSubmitting ? '処理中...' : <><Icons.Save /> 確定する</>}
               </button>
           </div>
       </div>
 
       {/* --- 🖨️ 印刷用レポート専用レイアウト (計量・買取伝票) --- */}
-      {/* 印刷時のみA4縦（またはレシート横幅）にフィットするレイアウト */}
       <div className="hidden print:block w-[210mm] mx-auto bg-white text-black p-10 font-sans">
           <div className="text-center mb-8 border-b-2 border-black pb-4">
               <h1 className="text-3xl font-black font-serif tracking-widest mb-2">計量・買取計算書</h1>
