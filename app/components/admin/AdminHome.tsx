@@ -6,7 +6,6 @@ const Icons = {
     TrendingDown: () => <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>,
     Minus: () => <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M20 12H4" /></svg>,
     Truck: () => <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>,
-    User: () => <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
     Radar: () => <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>,
     Factory: () => <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>,
     Scale: () => <svg className="w-6 h-6 text-[#D32F2F]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>,
@@ -14,7 +13,23 @@ const Icons = {
     Message: () => <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>,
     Brain: () => <svg className="w-4 h-4 inline-block mr-1" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 18a8 8 0 110-16 8 8 0 010 16zm1-11h-2v2h2V9zm0 4h-2v6h2v-6z" /></svg>,
     Print: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>,
-    Refresh: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+    Refresh: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
+    ShieldCheck: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>,
+    Handshake: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
+};
+
+// ★ データプロベナンス・バッジの共通コンポーネント
+const ProvenanceBadge = ({ type }: { type: 'HUMAN' | 'AI_AUTO' | 'CO_OP' }) => {
+    switch (type) {
+        case 'HUMAN':
+            return <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-bold bg-gray-100 text-gray-600 border border-gray-300" title="人間が入力・確定した実測データです"><Icons.ShieldCheck /> 実測確定</span>;
+        case 'AI_AUTO':
+            return <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-bold bg-blue-50 text-blue-600 border border-blue-200" title="AIが自動収集・推論したデータです"><Icons.Brain /> AI推論</span>;
+        case 'CO_OP':
+            return <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-bold bg-purple-50 text-purple-700 border border-purple-200" title="AIの提案を人間が承認・修正した協調データです"><Icons.Handshake /> CO-OP</span>;
+        default:
+            return null;
+    }
 };
 
 const Sparkline = ({ data, color }: { data: number[], color: string }) => {
@@ -60,8 +75,10 @@ const getDisplayName = (w: any) => {
 export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, localReservations: any[], onNavigate: any }) => {
     
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
-    const [reportAdvice, setReportAdvice] = useState<string>('');
     const [isMounted, setIsMounted] = useState(false);
+    
+    // ★ 追加: 全体のトラスト・トグル（AIデータの表示/非表示）
+    const [showAiData, setShowAiData] = useState(true);
 
     useEffect(() => {
         setIsMounted(true);
@@ -97,12 +114,12 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
     const copperDiff = getDiff(copperSparkData);
 
     const marketItems = [
-        { label: '銅建値 (JX)', price: copperPrice, unit: '円/kg', diff: copperDiff, isPrimary: true, sparkData: copperSparkData },
-        { label: '真鍮建値 (日伸)', price: brassPrice, unit: '円/kg', diff: getDiff(brassSparkData), sparkData: brassSparkData },
-        { label: '亜鉛建値 (三井)', price: zincPrice, unit: '円/kg', diff: getDiff(zincSparkData), sparkData: zincSparkData },
-        { label: '鉛建値 (三菱)', price: leadPrice, unit: '円/kg', diff: getDiff(leadSparkData), sparkData: leadSparkData },
-        { label: '錫建値 (三菱)', price: tinPrice, unit: '円/kg', diff: getDiff(tinSparkData), sparkData: tinSparkData },
-        { label: 'LME銅 3M', price: lmeCopper, unit: 'USD/t', sub: `為替換算: 約¥${jpyCopperPrice}/kg` },
+        { label: '銅建値 (JX)', price: copperPrice, unit: '円/kg', diff: copperDiff, isPrimary: true, sparkData: copperSparkData, provenance: 'AI_AUTO' },
+        { label: '真鍮建値 (日伸)', price: brassPrice, unit: '円/kg', diff: getDiff(brassSparkData), sparkData: brassSparkData, provenance: 'AI_AUTO' },
+        { label: '亜鉛建値 (三井)', price: zincPrice, unit: '円/kg', diff: getDiff(zincSparkData), sparkData: zincSparkData, provenance: 'AI_AUTO' },
+        { label: '鉛建値 (三菱)', price: leadPrice, unit: '円/kg', diff: getDiff(leadSparkData), sparkData: leadSparkData, provenance: 'AI_AUTO' },
+        { label: '錫建値 (三菱)', price: tinPrice, unit: '円/kg', diff: getDiff(tinSparkData), sparkData: tinSparkData, provenance: 'AI_AUTO' },
+        { label: 'LME銅 3M', price: lmeCopper, unit: 'USD/t', sub: `為替換算: 約¥${jpyCopperPrice}/kg`, provenance: 'AI_AUTO' },
     ];
 
     const activeReservations = localReservations.filter(r => r.status === 'RESERVED' || r.status === 'PROCESSING');
@@ -122,12 +139,13 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
     const { totalCopperStock, inventoryValue } = useMemo(() => {
         const productions = data?.productions || [];
         const producedCopper = productions.reduce((sum: number, p: any) => sum + (Number(p.outputCopper) || 0), 0);
+        // 未加工在庫は人間がトラックスケールで計った実測値(HUMAN)ベース
         const unprocessedCopper = 3500; 
         const total = producedCopper + unprocessedCopper;
         return { totalCopperStock: total, inventoryValue: total * currentPrice };
     }, [data?.productions, currentPrice]);
 
-    const { mCopper, prevCopper, monthlyAvgYield, yieldStats, targetMonthly, projectedCopper, progressPercent } = useMemo(() => {
+    const { mCopper, monthlyAvgYield, yieldStats, targetMonthly, projectedCopper, progressPercent } = useMemo(() => {
         const productions = data?.productions || [];
         const targetMonthly = Number(data?.config?.target_monthly) || 30000;
         
@@ -137,20 +155,12 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
         const currentDay = Math.max(1, today.getDate());
         const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
 
-        const prevMonthDate = new Date();
-        prevMonthDate.setMonth(currentMonth - 1);
-        const prevMonth = prevMonthDate.getMonth();
-        const prevYear = prevMonthDate.getFullYear();
-
         const thisMonthProds = productions.filter((p: any) => {
             try { const d = new Date(p.date); return d.getMonth() === currentMonth && d.getFullYear() === currentYear; } catch(e) { return false; }
         });
-        const prevMonthProds = productions.filter((p: any) => {
-            try { const d = new Date(p.date); return d.getMonth() === prevMonth && d.getFullYear() === prevYear; } catch(e) { return false; }
-        });
 
+        // 生産量は実測(HUMAN)
         const curCop = thisMonthProds.reduce((sum, p) => sum + (Number(p.outputCopper) || 0), 0);
-        const preCop = prevMonthProds.reduce((sum, p) => sum + (Number(p.outputCopper) || 0), 0);
         const mYield = thisMonthProds.length > 0 ? thisMonthProds.reduce((sum, p) => sum + (Number(p.actualRatio) || 0), 0) / thisMonthProds.length : 0;
 
         const recent = productions.slice(-10);
@@ -163,12 +173,12 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
         });
         const avgDiff = count > 0 ? (diffSum / count) : 0;
 
+        // 月末着地見込みはAI予測（AI_AUTO）
         const projected = Math.round((curCop / currentDay) * daysInMonth);
         const progress = Math.min(100, Math.round((curCop / targetMonthly) * 100));
 
         return { 
             mCopper: curCop, 
-            prevCopper: preCop, 
             monthlyAvgYield: mYield, 
             yieldStats: { diff: avgDiff, isPositive: avgDiff >= 0 }, 
             targetMonthly,
@@ -223,20 +233,10 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
 
     const handlePrintReport = () => {
         setIsGeneratingReport(true);
-        // ★ 修正: AIの辛口アドバイスはデータが溜まるまで一時封印。
-        // API通信を行わず、すぐに印刷ダイアログを開くようにショートカットします。
         setTimeout(() => {
             window.print();
             setIsGeneratingReport(false);
         }, 500);
-
-        /* // --- 将来、データが溜まってAIを復活させる際はこちらのコードに戻してください ---
-        try {
-            const payload = { ... };
-            const res = await fetch('/api/report', { ... });
-            // ...
-        } catch(e) { ... }
-        */
     };
 
     if (!isMounted) return null;
@@ -244,7 +244,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
     return (
         <div className="flex flex-col h-full animate-in fade-in duration-500 w-full text-gray-900 pb-24 font-sans bg-[#FAFAFA] min-h-screen relative" style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
             
-            {/* --- ここから通常のダッシュボード画面 (印刷時は非表示) --- */}
+            {/* --- 通常のダッシュボード画面 --- */}
             <div className="print:hidden max-w-[1400px] mx-auto w-full">
                 <header className="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4 border-b border-gray-200 pb-6 px-2">
                     <div>
@@ -255,9 +255,22 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                         <p className="text-xs text-gray-500 mt-2 font-mono tracking-widest ml-4 uppercase font-bold">Executive Overview & KPIs</p>
                     </div>
                     <div className="flex items-center gap-4">
-                        <p className="text-sm font-bold text-gray-400 font-mono tracking-wider">
-                            {new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short' })}
-                        </p>
+                        {/* ★ トラスト・トグル */}
+                        <div className="flex items-center gap-2 bg-gray-100 p-1.5 rounded-full border border-gray-200 shadow-inner">
+                            <button 
+                                onClick={() => setShowAiData(true)}
+                                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-300 ${showAiData ? 'bg-white text-blue-600 shadow-sm border border-gray-200' : 'text-gray-400 hover:text-gray-600'}`}
+                            >
+                                <Icons.Brain /> AI予測込み
+                            </button>
+                            <button 
+                                onClick={() => setShowAiData(false)}
+                                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-300 ${!showAiData ? 'bg-white text-green-700 shadow-sm border border-gray-200' : 'text-gray-400 hover:text-gray-600'}`}
+                            >
+                                <Icons.ShieldCheck /> 実測確定のみ
+                            </button>
+                        </div>
+
                         <button 
                             onClick={handlePrintReport} 
                             disabled={isGeneratingReport}
@@ -270,57 +283,68 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                 </header>
 
                 <div className="mb-10 px-2 w-full">
-                    <div className="flex xl:grid xl:grid-cols-6 gap-4 overflow-x-auto xl:overflow-visible no-scrollbar pb-4 xl:pb-0 snap-x w-full">
-                        {marketItems.map((m, i) => (
-                            <div key={i} className={`snap-start relative bg-white border ${m.isPrimary ? 'border-[#D32F2F] shadow-md ring-1 ring-red-50' : 'border-gray-200 shadow-sm hover:border-gray-300'} rounded-sm p-4 transition-all duration-300 w-[180px] shrink-0 xl:w-auto xl:shrink flex flex-col justify-between overflow-hidden group`}>
-                                
-                                {m.sparkData && (
-                                    <div className="absolute bottom-0 left-0 w-full h-1/2 opacity-60 group-hover:opacity-100 transition-opacity duration-500">
-                                        <Sparkline data={m.sparkData} color={m.isPrimary ? '#D32F2F' : '#D1D5DB'} />
+                    {/* 相場ティッカー */}
+                    <div className={`transition-opacity duration-300 ${showAiData ? 'opacity-100' : 'opacity-30 grayscale pointer-events-none'}`}>
+                        <div className="flex xl:grid xl:grid-cols-6 gap-4 overflow-x-auto xl:overflow-visible no-scrollbar pb-4 xl:pb-0 snap-x w-full">
+                            {marketItems.map((m, i) => (
+                                <div key={i} className={`snap-start relative bg-white border ${m.isPrimary ? 'border-[#D32F2F] shadow-md ring-1 ring-red-50' : 'border-gray-200 shadow-sm hover:border-gray-300'} rounded-sm p-4 transition-all duration-300 w-[180px] shrink-0 xl:w-auto xl:shrink flex flex-col justify-between overflow-hidden group`}>
+                                    <div className="absolute top-2 right-2 z-20">
+                                        <ProvenanceBadge type="AI_AUTO" />
                                     </div>
-                                )}
-                                
-                                <p className="text-xs font-bold text-gray-500 mb-2 relative z-10 whitespace-nowrap">{m.label}</p>
-                                <div className="flex items-baseline gap-1 relative z-10 whitespace-nowrap">
-                                    <span className="text-2xl 2xl:text-3xl font-black text-gray-900 tracking-tighter">{m.price.toLocaleString()}</span>
-                                    <span className="text-[10px] 2xl:text-xs text-gray-400 font-bold ml-1">{m.unit}</span>
+                                    {m.sparkData && (
+                                        <div className="absolute bottom-0 left-0 w-full h-1/2 opacity-60 group-hover:opacity-100 transition-opacity duration-500">
+                                            <Sparkline data={m.sparkData} color={m.isPrimary ? '#D32F2F' : '#D1D5DB'} />
+                                        </div>
+                                    )}
+                                    <p className="text-xs font-bold text-gray-500 mb-2 relative z-10 whitespace-nowrap">{m.label}</p>
+                                    <div className="flex items-baseline gap-1 relative z-10 whitespace-nowrap">
+                                        <span className="text-2xl 2xl:text-3xl font-black text-gray-900 tracking-tighter">{m.price.toLocaleString()}</span>
+                                        <span className="text-[10px] 2xl:text-xs text-gray-400 font-bold ml-1">{m.unit}</span>
+                                    </div>
+                                    {m.diff !== undefined ? (
+                                        <div className="mt-2 text-xs font-bold flex items-center gap-1.5 relative z-10 whitespace-nowrap">
+                                            {m.diff > 0 ? <><Icons.TrendingUp /><span className="text-[#D32F2F]">+{m.diff}</span></> : m.diff < 0 ? <><Icons.TrendingDown /><span className="text-blue-600">{m.diff}</span></> : <><Icons.Minus /><span className="text-gray-400">±0</span></>}
+                                        </div>
+                                    ) : m.sub ? (
+                                        <div className="mt-2 text-[10px] text-gray-400 font-mono font-bold relative z-10 whitespace-nowrap truncate">{m.sub}</div>
+                                    ) : (
+                                        <div className="mt-2 h-4 relative z-10"></div>
+                                    )}
                                 </div>
-                                
-                                {m.diff !== undefined ? (
-                                    <div className="mt-2 text-xs font-bold flex items-center gap-1.5 relative z-10 whitespace-nowrap">
-                                        {m.diff > 0 ? <><Icons.TrendingUp /><span className="text-[#D32F2F]">+{m.diff}</span></> : m.diff < 0 ? <><Icons.TrendingDown /><span className="text-blue-600">{m.diff}</span></> : <><Icons.Minus /><span className="text-gray-400">±0</span></>}
-                                    </div>
-                                ) : m.sub ? (
-                                    <div className="mt-2 text-[10px] text-gray-400 font-mono font-bold relative z-10 whitespace-nowrap truncate">{m.sub}</div>
-                                ) : (
-                                    <div className="mt-2 h-4 relative z-10"></div>
-                                )}
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 px-2">
+                    {/* 推定総在庫 評価額 */}
                     <div className="bg-[#111] text-white p-6 md:p-8 rounded-sm shadow-xl flex flex-col relative overflow-hidden group">
+                        <div className="absolute top-4 right-4 z-20">
+                            <ProvenanceBadge type="CO_OP" />
+                        </div>
                         <div className="absolute -right-4 -top-4 opacity-10 transform scale-150 group-hover:rotate-12 transition-transform duration-700">
                             <Icons.Scale />
                         </div>
-                        <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none"></div>
-                        
                         <p className="text-xs font-bold text-gray-400 mb-4 uppercase tracking-widest flex items-center gap-2 relative z-10">
                             推定総在庫 評価額
                         </p>
                         <div className="flex items-baseline gap-2 mt-auto relative z-10">
                             <span className="text-2xl font-light text-gray-500">¥</span>
-                            <span className="text-5xl md:text-6xl font-black tracking-tighter text-white">{inventoryValue.toLocaleString()}</span>
+                            <span className="text-5xl md:text-6xl font-black tracking-tighter text-white">
+                                {showAiData ? inventoryValue.toLocaleString() : '---'}
+                            </span>
                         </div>
                         <div className="mt-5 pt-4 border-t border-gray-800 text-xs text-gray-400 font-mono relative z-10 flex justify-between items-center">
-                            <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>銅換算在庫</span>
+                            <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>銅換算在庫 <span className="ml-2 scale-75"><ProvenanceBadge type="HUMAN" /></span></span>
                             <span className="font-bold text-white text-sm">{totalCopperStock.toLocaleString()} kg</span>
                         </div>
                     </div>
 
-                    <div className="bg-white p-6 md:p-8 rounded-sm border border-gray-200 shadow-sm flex flex-col justify-between group hover:border-gray-300 transition-colors">
+                    {/* 本日の現場稼働 */}
+                    <div className="bg-white p-6 md:p-8 rounded-sm border border-gray-200 shadow-sm flex flex-col justify-between group hover:border-gray-300 transition-colors relative">
+                        <div className="absolute top-4 right-4 z-20">
+                            <ProvenanceBadge type="HUMAN" />
+                        </div>
                         <p className="text-xs font-bold text-gray-500 mb-4 uppercase tracking-widest flex items-center gap-2"><Icons.Truck /> 本日の現場稼働</p>
                         <div className="flex items-center gap-6 mt-auto">
                             <div>
@@ -335,7 +359,11 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                         </div>
                     </div>
 
-                    <div className="bg-gradient-to-br from-blue-50 to-white p-6 md:p-8 rounded-sm border border-blue-100 shadow-sm flex flex-col justify-between relative overflow-hidden group">
+                    {/* AIコンシェルジュ稼働 */}
+                    <div className={`bg-gradient-to-br from-blue-50 to-white p-6 md:p-8 rounded-sm border border-blue-100 shadow-sm flex flex-col justify-between relative overflow-hidden group transition-opacity duration-300 ${showAiData ? 'opacity-100' : 'opacity-30 grayscale pointer-events-none'}`}>
+                        <div className="absolute top-4 right-4 z-20">
+                            <ProvenanceBadge type="AI_AUTO" />
+                        </div>
                         <div className="absolute -right-4 -top-4 opacity-10 transform scale-150 text-blue-500 transition-transform duration-700"><Icons.Message /></div>
                         <p className="text-xs font-bold text-blue-800 mb-4 uppercase tracking-widest flex items-center gap-2 relative z-10">
                             <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
@@ -347,30 +375,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                         </div>
                         <div className="mt-5 pt-4 border-t border-blue-200/50 text-xs text-blue-600/70 font-mono relative z-10 flex justify-between items-center">
                             <span className="font-bold">累計対応数: {data?.chatStats?.total || 0} 件</span>
-                            <button 
-                                onClick={async (e) => {
-                                    const btn = e.currentTarget;
-                                    btn.disabled = true;
-                                    btn.innerText = "トレーニング中...";
-                                    try {
-                                        const res = await fetch('/api/simulate', { method: 'POST' });
-                                        const simData = await res.json();
-                                        if(simData.success) {
-                                            alert("仮想トレーニング完了！\n\n【ペルソナ】\n" + simData.persona + "\n\n【生成された会話】\n" + simData.chatHistory);
-                                            window.location.reload();
-                                        } else {
-                                            alert("エラー: " + simData.message);
-                                        }
-                                    } catch(err) {
-                                        alert("通信エラーが発生しました。");
-                                    }
-                                    btn.disabled = false;
-                                    btn.innerText = "仮想トレーニング実行";
-                                }}
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-sm text-[10px] font-bold shadow-sm transition flex items-center gap-1 disabled:opacity-50"
-                            >
-                                <Icons.Brain /> 仮想トレーニング実行
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -379,10 +383,13 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                     <div className="xl:col-span-2 space-y-8">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             
-                            <div className="group bg-white rounded-sm border border-gray-200 shadow-sm p-6 md:p-8 flex flex-col cursor-pointer hover:border-[#D32F2F] hover:shadow-md transition-all" onClick={() => onNavigate('COMPETITOR')}>
+                            {/* AI 競合価格勝敗 */}
+                            <div className={`group bg-white rounded-sm border border-gray-200 shadow-sm p-6 md:p-8 flex flex-col cursor-pointer transition-all relative ${showAiData ? 'hover:border-[#D32F2F] hover:shadow-md' : 'opacity-30 grayscale pointer-events-none'}`} onClick={() => showAiData && onNavigate('COMPETITOR')}>
+                                <div className="absolute top-4 right-4 z-20">
+                                    <ProvenanceBadge type="AI_AUTO" />
+                                </div>
                                 <div className="flex justify-between items-start mb-6">
                                     <h3 className="font-bold text-gray-900 flex items-center gap-2 text-sm"><Icons.Radar /> AI 競合価格勝敗</h3>
-                                    <Icons.ArrowRight />
                                 </div>
                                 <div className="flex-1 flex flex-col justify-center">
                                     <div className="flex items-end justify-between mb-3">
@@ -399,7 +406,11 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                                 </div>
                             </div>
 
-                            <div className="group bg-white rounded-sm border border-gray-200 shadow-sm p-6 md:p-8 flex flex-col cursor-pointer hover:border-[#D32F2F] hover:shadow-md transition-all" onClick={() => onNavigate('PRODUCTION')}>
+                            {/* 今月の生産実績 */}
+                            <div className="group bg-white rounded-sm border border-gray-200 shadow-sm p-6 md:p-8 flex flex-col cursor-pointer hover:border-[#D32F2F] hover:shadow-md transition-all relative" onClick={() => onNavigate('PRODUCTION')}>
+                                <div className="absolute top-4 right-4 z-20 flex gap-1">
+                                    <ProvenanceBadge type="HUMAN" />
+                                </div>
                                 <div className="flex justify-between items-start mb-6">
                                     <h3 className="font-bold text-gray-900 flex items-center gap-2 text-sm"><Icons.Factory /> 今月の生産実績</h3>
                                     <Icons.ArrowRight />
@@ -407,23 +418,23 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                                 <div className="flex-1 flex flex-col justify-center gap-6">
                                     <div className="flex items-center justify-between border-l-4 border-gray-900 pl-4 py-1">
                                         <div>
-                                            <p className="text-xs text-gray-500 font-bold mb-1">ピカ銅 生産量</p>
+                                            <p className="text-xs text-gray-500 font-bold mb-1">ピカ銅 生産量 <span className="scale-75 inline-block"><ProvenanceBadge type="HUMAN" /></span></p>
                                             <div className="flex items-baseline gap-1">
                                                 <span className="text-2xl font-black text-gray-900">{mCopper.toLocaleString()}</span>
                                                 <span className="text-xs text-gray-400 font-bold">kg</span>
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <p className="text-xs text-gray-500 font-bold mb-1">平均 歩留まり</p>
+                                            <p className="text-xs text-gray-500 font-bold mb-1">月末予測 <span className="scale-75 inline-block"><ProvenanceBadge type="AI_AUTO" /></span></p>
                                             <div className="flex items-baseline gap-1 justify-end">
-                                                <span className="text-2xl font-black text-[#D32F2F]">{monthlyAvgYield.toFixed(1)}</span>
-                                                <span className="text-xs text-gray-400 font-bold">%</span>
+                                                <span className="text-xl font-black text-[#D32F2F]">{showAiData ? projectedCopper.toLocaleString() : '---'}</span>
+                                                <span className="text-xs text-gray-400 font-bold">kg</span>
                                             </div>
                                         </div>
                                     </div>
 
                                     <div className="bg-gray-50 p-4 rounded-sm border border-gray-200 flex justify-between items-center">
-                                        <span className="text-xs text-gray-500 font-bold">マスター比 乖離 (直近10件)</span>
+                                        <span className="text-xs text-gray-500 font-bold">マスター比 乖離 (直近10件) <span className="scale-75 inline-block ml-1"><ProvenanceBadge type="HUMAN" /></span></span>
                                         <div className="flex items-baseline gap-1 bg-white px-3 py-1 rounded-sm shadow-sm border border-gray-100">
                                             <span className={`text-xl font-black tracking-tighter ${yieldStats.isPositive ? 'text-gray-900' : 'text-[#D32F2F]'}`}>
                                                 {yieldStats.isPositive ? '+' : ''}{yieldStats.diff.toFixed(1)}
@@ -436,8 +447,12 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
 
                         </div>
 
-                        <div className="bg-white rounded-sm border border-gray-200 shadow-sm overflow-hidden group hover:border-gray-300 transition-colors h-fit">
-                            <div className="p-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center cursor-pointer" onClick={() => onNavigate('DATABASE')}>
+                        {/* 本日の買取価格表 */}
+                        <div className="bg-white rounded-sm border border-gray-200 shadow-sm overflow-hidden group hover:border-gray-300 transition-colors h-fit relative">
+                            <div className="absolute top-4 right-4 z-20">
+                                <ProvenanceBadge type="CO_OP" />
+                            </div>
+                            <div className="p-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center cursor-pointer pr-24" onClick={() => onNavigate('DATABASE')}>
                                 <h3 className="font-bold text-sm text-gray-900 flex items-center gap-2">本日の買取価格表 <span className="text-xs text-gray-400 font-normal">(主要品目)</span></h3>
                                 <Icons.ArrowRight />
                             </div>
@@ -465,8 +480,11 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                     </div>
 
                     <div className="space-y-8">
-                        <div className="bg-white rounded-sm border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-[500px]">
-                            <div className="p-5 border-b border-gray-200 bg-[#111] text-white flex justify-between items-center cursor-pointer group transition" onClick={() => onNavigate('OPERATIONS')}>
+                        <div className="bg-white rounded-sm border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-[500px] relative">
+                            <div className="absolute top-4 right-4 z-20">
+                                <ProvenanceBadge type="HUMAN" />
+                            </div>
+                            <div className="p-5 border-b border-gray-200 bg-[#111] text-white flex justify-between items-center cursor-pointer group transition pr-24" onClick={() => onNavigate('OPERATIONS')}>
                                 <h3 className="font-bold text-sm flex items-center gap-3 tracking-widest">
                                     <span className="relative flex h-2.5 w-2.5">
                                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -525,7 +543,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                 </div>
             </div>
 
-            {/* --- ここから印刷用レポートレイアウト (通常時は非表示、印刷時のみ表示) --- */}
+            {/* --- 🖨️ 印刷用レポート専用レイアウト --- */}
             <div className="hidden print:block w-[210mm] min-h-[297mm] bg-white text-black p-8 mx-auto font-sans">
                 <div className="border-b-2 border-black pb-4 mb-6 flex justify-between items-end">
                     <div>
@@ -534,7 +552,9 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                     </div>
                     <div className="text-right">
                         <p className="text-lg font-bold font-mono">{new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}</p>
-                        <p className="text-xs text-gray-500 mt-1">発行: システム管理者</p>
+                        <p className="text-xs font-bold bg-black text-white px-2 py-0.5 inline-block mt-1">
+                            {showAiData ? 'AI予測データ 含む' : '実測確定データ のみ'}
+                        </p>
                     </div>
                 </div>
 
@@ -543,27 +563,31 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                     <div className="space-y-6">
                         <section>
                             <h2 className="text-sm font-bold text-white bg-black px-3 py-1.5 inline-block mb-3">1. 本日の市況</h2>
-                            <div className="border border-gray-300 rounded-sm p-4 bg-gray-50">
+                            <div className="border border-gray-300 rounded-sm p-4 bg-gray-50 relative">
+                                {showAiData && <div className="absolute top-2 right-2"><ProvenanceBadge type="AI_AUTO" /></div>}
                                 <div className="flex justify-between items-end mb-3 border-b border-gray-300 pb-2">
                                     <span className="font-bold text-gray-700">銅建値 (JX)</span>
                                     <div className="flex items-baseline gap-2">
-                                        <span className="text-3xl font-black font-mono">{copperPrice.toLocaleString()}</span>
+                                        <span className="text-3xl font-black font-mono">{showAiData ? copperPrice.toLocaleString() : '---'}</span>
                                         <span className="text-sm font-bold">円/kg</span>
-                                        <span className={`text-sm font-bold ml-2 ${copperDiff > 0 ? 'text-red-600' : copperDiff < 0 ? 'text-blue-600' : 'text-gray-500'}`}>
-                                            ({copperDiff > 0 ? '+' : ''}{copperDiff})
-                                        </span>
+                                        {showAiData && (
+                                            <span className={`text-sm font-bold ml-2 ${copperDiff > 0 ? 'text-red-600' : copperDiff < 0 ? 'text-blue-600' : 'text-gray-500'}`}>
+                                                ({copperDiff > 0 ? '+' : ''}{copperDiff})
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-2 text-sm font-bold text-gray-600">
-                                    <div className="flex justify-between"><span>真鍮建値:</span><span className="font-mono">{brassPrice.toLocaleString()} 円</span></div>
-                                    <div className="flex justify-between"><span>LME銅:</span><span className="font-mono">${lmeCopper.toLocaleString()} /t</span></div>
+                                    <div className="flex justify-between"><span>真鍮建値:</span><span className="font-mono">{showAiData ? brassPrice.toLocaleString() : '---'} 円</span></div>
+                                    <div className="flex justify-between"><span>LME銅:</span><span className="font-mono">${showAiData ? lmeCopper.toLocaleString() : '---'} /t</span></div>
                                 </div>
                             </div>
                         </section>
 
                         <section>
                             <h2 className="text-sm font-bold text-white bg-black px-3 py-1.5 inline-block mb-3">2. 現場稼働予定</h2>
-                            <div className="border border-gray-300 rounded-sm p-4">
+                            <div className="border border-gray-300 rounded-sm p-4 relative">
+                                <div className="absolute top-2 right-2"><ProvenanceBadge type="HUMAN" /></div>
                                 <div className="flex justify-between items-center mb-4">
                                     <div className="text-center">
                                         <p className="text-xs text-gray-500 font-bold mb-1">受付件数</p>
@@ -595,7 +619,8 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                     <div className="space-y-6">
                         <section>
                             <h2 className="text-sm font-bold text-white bg-black px-3 py-1.5 inline-block mb-3">3. 生産実績と目標進捗</h2>
-                            <div className="border border-gray-300 rounded-sm p-4">
+                            <div className="border border-gray-300 rounded-sm p-4 relative">
+                                <div className="absolute top-2 right-2"><ProvenanceBadge type="HUMAN" /></div>
                                 <div className="mb-4">
                                     <div className="flex justify-between text-xs font-bold text-gray-500 mb-1">
                                         <span>当月 ピカ銅生産量</span>
@@ -610,11 +635,11 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                                     </div>
                                     <div className="flex justify-between text-[10px] font-bold mt-1">
                                         <span className="text-gray-500">進捗率: {progressPercent || 0}%</span>
-                                        <span className="text-red-600">月末着地見込み: {projectedCopper ? projectedCopper.toLocaleString() : 0} kg</span>
+                                        <span className="text-red-600">月末予測: {showAiData && projectedCopper ? projectedCopper.toLocaleString() : '---'} kg</span>
                                     </div>
                                 </div>
                                 <div className="border-t border-gray-300 pt-3 flex justify-between items-center">
-                                    <span className="text-xs font-bold text-gray-700">直近の歩留まり乖離 (マスター比)</span>
+                                    <span className="text-xs font-bold text-gray-700">直近の歩留まり乖離</span>
                                     <span className={`text-lg font-black font-mono ${yieldStats.isPositive ? 'text-black' : 'text-red-600'}`}>
                                         {yieldStats.isPositive ? '+' : ''}{yieldStats.diff.toFixed(1)}%
                                     </span>
@@ -624,17 +649,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                     </div>
                 </div>
 
-                {/* AIインサイトセクション（※一時的に非表示） */}
-                {/* <section className="mt-4 border-t-4 border-black pt-6">
-                    <h2 className="text-lg font-black text-black flex items-center gap-2 mb-4">
-                        <Icons.Brain /> AI参謀からの戦略アドバイス
-                    </h2>
-                    <div className="bg-gray-50 border border-gray-300 p-6 rounded-sm text-sm leading-loose whitespace-pre-wrap font-bold text-gray-800">
-                        {reportAdvice || "（AIによる分析データがここに表示されます）"}
-                    </div>
-                </section>
-                */}
-                
                 <div className="mt-8 text-center text-[10px] font-mono text-gray-400">
                     GENERATED BY FACTORY OS - AI CONCIERGE ENGINE
                 </div>
