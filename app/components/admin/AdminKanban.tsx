@@ -46,9 +46,10 @@ export const AdminKanban = ({ data, localReservations, setLocalReservations, onO
     <div className="flex flex-col h-full animate-in fade-in duration-300 text-gray-800">
       <header className="mb-4 flex justify-between items-end flex-shrink-0 pb-4 border-b border-gray-200">
         <div>
+          {/* ★修正: 現場状況管理に変更 */}
           <h2 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2 font-serif">
              <span className="w-1.5 h-6 bg-[#D32F2F]"></span>
-             現場カンバン
+             現場状況管理
           </h2>
           <p className="text-xs text-gray-500 mt-1 font-mono tracking-wider ml-3">リアルタイム状況監視</p>
         </div>
@@ -114,7 +115,7 @@ export const AdminKanban = ({ data, localReservations, setLocalReservations, onO
                       )}
                       {col.id === 'COMPLETED' && (
                           <p className="text-xs font-bold text-green-600 bg-green-50 px-3 py-1.5 rounded-sm border border-green-200">
-                             製造待ち
+                              製造待ち
                           </p>
                       )}
                     </div>
