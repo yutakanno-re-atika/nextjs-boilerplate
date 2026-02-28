@@ -12,7 +12,8 @@ const Icons = {
   Refresh: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
   Robot: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>,
   Print: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>,
-  Brain: () => <svg className="w-5 h-5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+  Brain: () => <svg className="w-5 h-5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>,
+  ShieldCheck: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
 };
 
 export const AdminSales = ({ data }: { data: any }) => {
@@ -22,6 +23,9 @@ export const AdminSales = ({ data }: { data: any }) => {
   const [filterArea, setFilterArea] = useState('');
   const [filterIndustry, setFilterIndustry] = useState('');
 
+  // ★ 追加: AIデータを含めるかどうかのトラスト・トグル
+  const [includeAiData, setIncludeAiData] = useState(true);
+
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editStatus, setEditStatus] = useState('');
   const [editMemo, setEditMemo] = useState('');
@@ -29,11 +33,22 @@ export const AdminSales = ({ data }: { data: any }) => {
   
   const [isGeneratingLeads, setIsGeneratingLeads] = useState(false);
 
-  // ★ 印刷用レポートのステート
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [aiSummary, setAiSummary] = useState<string>('');
 
-  const targets = data?.salesTargets || [];
+  const rawTargets = data?.salesTargets || [];
+
+  // ★ AI判定ロジック: sourceプロパティまたはmemo内の"🤖 AI"文字列で判定
+  const isAiGenerated = (target: any) => {
+      if (target.source === 'AI' || target.source === 'AI_AUTO') return true;
+      if (target.memo && target.memo.includes('AI')) return true;
+      return false;
+  };
+
+  // 1. まずAIフィルタリングを適用したベースリストを作成
+  const targets = useMemo(() => {
+      return rawTargets.filter((t: any) => includeAiData ? true : !isAiGenerated(t));
+  }, [rawTargets, includeAiData]);
 
   const masterStats = useMemo(() => {
       const areaCount: Record<string, number> = {};
@@ -100,6 +115,7 @@ export const AdminSales = ({ data }: { data: any }) => {
 
   const handleSave = async (id: string) => {
     setIsSaving(true);
+    // 保存時に人間が介入した証としてメモを更新し、AIフラグを消すなどの処理も将来的に可能
     const updates = { 10: editStatus, 13: editMemo };
     try {
       const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'UPDATE_DB_RECORD', sheetName: 'SalesTargets', recordId: id, updates }) });
@@ -133,6 +149,9 @@ export const AdminSales = ({ data }: { data: any }) => {
       if (!window.confirm("AIを使用して北海道周辺の「解体業者・電気設備業者」の有望リストを5件自動抽出しますか？\n（完了まで10〜20秒程度かかります）")) return;
       
       setIsGeneratingLeads(true);
+      // AI生成中は強制的にAIデータを表示するモードにする
+      setIncludeAiData(true);
+      
       try {
           const res = await fetch('/api/lead-gen', {
               method: 'POST',
@@ -152,10 +171,9 @@ export const AdminSales = ({ data }: { data: any }) => {
       setIsGeneratingLeads(false);
   };
 
-  // ★ 印刷＆AI要約機能ハンドラ
   const handlePrintReport = async () => {
       if(filteredTargets.length === 0) {
-          alert('印刷するターゲットがありません。AIリード自動収集を実行するか、検索条件をクリアしてください。');
+          alert('印刷するターゲットがありません。');
           return;
       }
       
@@ -165,12 +183,13 @@ export const AdminSales = ({ data }: { data: any }) => {
       const uniqueIndustries = [...new Set(filteredTargets.map((t:any)=>t.industry).filter(Boolean))].slice(0, 3).join(', ');
 
       const promptData = `
+      ・データモード: ${includeAiData ? 'AI予測データ含む' : '実測・確定データのみ'}
       ・現在リストアップされているターゲット数: ${filteredTargets.length} 件
       ・内訳: ランクS ${currentStats.priorityCount.S}件, ランクA ${currentStats.priorityCount.A}件
       ・主な抽出エリア: ${uniqueAreas || '指定なし'}
       ・主な業種: ${uniqueIndustries || '指定なし'}
       
-      ※工場長や営業担当者に渡す『本日の営業アプローチ用リスト』です。上記のデータをもとに、どういった優先順位で回るべきか、どの業種を狙うべきかなど、現場目線で鋭く実践的な戦略アドバイスを記述してください。
+      ※工場長や営業担当者に渡す『本日の営業アプローチ用リスト』です。上記のデータをもとに、どういった優先順位で回るべきか現場目線で鋭く実践的な戦略アドバイスを記述してください。
       `;
 
       try {
@@ -209,15 +228,33 @@ export const AdminSales = ({ data }: { data: any }) => {
               </h2>
               <p className="text-xs font-mono text-gray-500 mt-1 uppercase tracking-widest ml-3">Total: {masterStats.total} Companies</p>
             </div>
-            {/* ★ 印刷ボタン */}
-            <button 
-                onClick={handlePrintReport} 
-                disabled={isGeneratingReport || filteredTargets.length === 0}
-                className="bg-white border border-gray-300 text-gray-800 px-4 py-2.5 rounded-sm text-sm font-bold hover:border-[#D32F2F] hover:text-[#D32F2F] transition shadow-sm flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-                {isGeneratingReport ? <Icons.Refresh /> : <Icons.Print />}
-                {isGeneratingReport ? 'AIが戦略を立案中...' : 'このリストをレポート印刷'}
-            </button>
+            
+            <div className="flex items-center gap-4">
+                {/* ★ データソース（AI/Human）切り替えトグル */}
+                <div className="flex items-center gap-2 bg-gray-100 p-1.5 rounded-full border border-gray-200 shadow-inner">
+                    <button 
+                        onClick={() => setIncludeAiData(true)}
+                        className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-300 ${includeAiData ? 'bg-white text-blue-600 shadow-sm border border-gray-200' : 'text-gray-400 hover:text-gray-600'}`}
+                    >
+                        <Icons.Robot /> AI予測込み
+                    </button>
+                    <button 
+                        onClick={() => setIncludeAiData(false)}
+                        className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-300 ${!includeAiData ? 'bg-white text-green-700 shadow-sm border border-gray-200' : 'text-gray-400 hover:text-gray-600'}`}
+                    >
+                        <Icons.ShieldCheck /> 実測確定のみ
+                    </button>
+                </div>
+
+                <button 
+                    onClick={handlePrintReport} 
+                    disabled={isGeneratingReport || filteredTargets.length === 0}
+                    className="bg-white border border-gray-300 text-gray-800 px-4 py-2.5 rounded-sm text-sm font-bold hover:border-[#D32F2F] hover:text-[#D32F2F] transition shadow-sm flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                    {isGeneratingReport ? <Icons.Refresh /> : <Icons.Print />}
+                    {isGeneratingReport ? 'AIが戦略を立案中...' : 'このリストをレポート印刷'}
+                </button>
+            </div>
           </header>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -294,10 +331,12 @@ export const AdminSales = ({ data }: { data: any }) => {
                     <input type="text" placeholder="企業名や住所で検索..." className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 text-sm font-bold outline-none focus:border-[#D32F2F] rounded-sm transition shadow-inner" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                 </div>
                 
+                {/* AI収集ボタンは、AIモードがONの時だけアクティブに */}
                 <button 
                     onClick={handleGenerateLeads} 
                     disabled={isGeneratingLeads} 
-                    className="bg-white border border-[#D32F2F] text-[#D32F2F] px-4 py-2.5 rounded-sm text-sm font-bold hover:bg-red-50 transition flex justify-center items-center gap-2 disabled:opacity-50 shadow-sm whitespace-nowrap"
+                    className={`border px-4 py-2.5 rounded-sm text-sm font-bold transition flex justify-center items-center gap-2 shadow-sm whitespace-nowrap ${includeAiData ? 'bg-white border-[#D32F2F] text-[#D32F2F] hover:bg-red-50' : 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed'}`}
+                    title={!includeAiData ? "AI予測込みモードでのみ使用可能です" : ""}
                 >
                     {isGeneratingLeads ? <span className="animate-spin"><Icons.Refresh /></span> : <Icons.Robot />}
                     {isGeneratingLeads ? 'AIがリスト抽出中...' : 'AI リード自動収集'}
@@ -339,11 +378,18 @@ export const AdminSales = ({ data }: { data: any }) => {
                       </thead>
                       <tbody className="divide-y divide-gray-100">
                           {filteredTargets.length === 0 ? (
-                              <tr><td colSpan={5} className="p-16 text-center text-sm text-gray-400 font-bold bg-white">ターゲットが見つかりません。上のボタンからAIに収集させてみましょう。</td></tr>
-                          ) : filteredTargets.map((target: any, idx: number) => (
-                              <tr key={`${target.id}-${idx}`} className="hover:bg-gray-50 transition">
+                              <tr><td colSpan={5} className="p-16 text-center text-sm text-gray-400 font-bold bg-white">ターゲットが見つかりません。{includeAiData ? '上のボタンからAIに収集させてみましょう。' : 'AI予測モードをONにすると表示されるデータがあるかもしれません。'}</td></tr>
+                          ) : filteredTargets.map((target: any, idx: number) => {
+                              const isAi = isAiGenerated(target);
+                              return (
+                              <tr key={`${target.id}-${idx}`} className={`hover:bg-gray-50 transition ${isAi ? 'bg-blue-50/10' : ''}`}>
                                   <td className="p-4">
-                                      <p className="font-bold text-gray-900 text-sm">{target.company}</p>
+                                      <div className="flex items-center gap-2">
+                                          <p className="font-bold text-gray-900 text-sm">{target.company}</p>
+                                          {/* ★ AI推論データであることを示すバッジ */}
+                                          {isAi && <span className="text-[8px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-bold border border-blue-200 flex items-center gap-0.5" title="AIが自動収集・推論したデータです"><Icons.Robot />AI推論</span>}
+                                          {!isAi && <span className="text-[8px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-bold border border-green-200 flex items-center gap-0.5" title="人間が確認・入力した実測データです"><Icons.ShieldCheck />実測</span>}
+                                      </div>
                                       <div className="text-[10px] text-gray-500 mt-1 flex gap-2 font-mono">
                                           <span className="bg-gray-100 px-1.5 py-0.5 border border-gray-200">{target.area}</span>
                                           <span className="bg-gray-100 px-1.5 py-0.5 border border-gray-200">{target.industry}</span>
@@ -395,7 +441,7 @@ export const AdminSales = ({ data }: { data: any }) => {
                                       )}
                                   </td>
                               </tr>
-                          ))}
+                          )})}
                       </tbody>
                   </table>
               </div>
@@ -411,6 +457,9 @@ export const AdminSales = ({ data }: { data: any }) => {
               </div>
               <div className="text-right">
                   <p className="text-lg font-bold font-mono">{new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}</p>
+                  <p className="text-xs font-bold bg-black text-white px-2 py-0.5 inline-block mt-1">
+                      {includeAiData ? 'AI予測データ 含む' : '実測確定データ のみ'}
+                  </p>
               </div>
           </div>
 
@@ -442,7 +491,10 @@ export const AdminSales = ({ data }: { data: any }) => {
                       {filteredTargets.map((t:any, idx:number) => (
                           <tr key={idx} className="py-2">
                               <td className="py-3 align-top">
-                                  <p className="font-bold text-base">{t.company}</p>
+                                  <div className="flex items-center gap-1">
+                                      <p className="font-bold text-base">{t.company}</p>
+                                      {isAiGenerated(t) && <span className="text-[8px] border border-black px-1 rounded font-bold">AI</span>}
+                                  </div>
                                   <p className="text-[10px] text-gray-600 mt-1">{t.area} / {t.industry}</p>
                                   <p className="text-[10px] font-mono mt-1">TEL: {t.contact || '不明'}</p>
                               </td>
