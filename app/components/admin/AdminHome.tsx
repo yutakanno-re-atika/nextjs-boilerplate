@@ -12,21 +12,21 @@ const Icons = {
     ArrowRight: () => <svg className="w-5 h-5 text-gray-300 group-hover:text-[#D32F2F] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>,
     Message: () => <svg className="w-6 h-6 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>,
     Print: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>,
-    Refresh: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+    Refresh: () => <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
+    Brain: () => <svg className="w-4 h-4 inline-block mr-1" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 18a8 8 0 110-16 8 8 0 010 16zm1-11h-2v2h2V9zm0 4h-2v6h2v-6z" /></svg>,
+    ShieldCheck: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>,
+    Handshake: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
 };
 
-// ★ データプロベナンス・バッジ（背景ベタ＋白抜き文字、グレーの濃淡で確実性を表現）
+// ★ プロベナンス・バッジ
 const ProvenanceBadge = ({ type }: { type: 'HUMAN' | 'AI_AUTO' | 'CO_OP' }) => {
     const baseStyle = "inline-block px-1.5 py-0.5 text-[9px] font-mono font-bold tracking-widest rounded-sm text-white cursor-default shadow-sm";
     switch (type) {
         case 'HUMAN':
-            // 一番確実な実測データ：濃いグレー（黒に近い）
             return <span className={`${baseStyle} bg-gray-900`} title="実測・確定データ">HUMAN</span>;
         case 'CO_OP':
-            // 人間とAIの協調：中間のグレー
             return <span className={`${baseStyle} bg-gray-600`} title="AI＋人間 協調データ">CO-P</span>;
         case 'AI_AUTO':
-            // AIの推論：薄いグレー
             return <span className={`${baseStyle} bg-gray-400`} title="AI予測・推論データ">AI</span>;
         default:
             return null;
@@ -78,7 +78,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
     
-    // 全体のトラスト・トグル（AIデータの表示/非表示）
     const [showAiData, setShowAiData] = useState(true);
 
     useEffect(() => {
@@ -253,7 +252,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                         <p className="text-xs text-gray-500 mt-2 font-mono tracking-widest ml-4 uppercase font-bold">Executive Overview & KPIs</p>
                     </div>
                     <div className="flex items-center gap-4">
-                        {/* 究極にシンプルなトラスト・トグル */}
+                        {/* トラスト・トグル */}
                         <div className="flex items-center gap-1 bg-white p-1 rounded-sm border border-gray-300 shadow-sm">
                             <button 
                                 onClick={() => setShowAiData(true)}
@@ -376,6 +375,34 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                         </div>
                         <div className="mt-5 pt-4 border-t border-gray-300 text-xs text-gray-600 font-mono relative z-10 flex justify-between items-center">
                             <span className="font-bold">累計対応数: {data?.chatStats?.total || 0} 件</span>
+                            
+                            {/* ★ 復活させた AI自動学習用のボタン（白黒グレーのデザイントーンに適合） */}
+                            <button 
+                                onClick={async (e) => {
+                                    const btn = e.currentTarget;
+                                    const originalText = btn.innerHTML;
+                                    btn.disabled = true;
+                                    btn.innerHTML = '<span class="animate-spin mr-1">↻</span> トレーニング中...';
+                                    try {
+                                        const res = await fetch('/api/simulate', { method: 'POST' });
+                                        const simData = await res.json();
+                                        if(simData.success) {
+                                            alert("仮想トレーニング完了！\n\n【ペルソナ】\n" + simData.persona + "\n\n【生成された会話】\n" + simData.chatHistory);
+                                            window.location.reload();
+                                        } else {
+                                            alert("エラー: " + simData.message);
+                                        }
+                                    } catch(err) {
+                                        alert("通信エラーが発生しました。");
+                                    }
+                                    btn.disabled = false;
+                                    btn.innerHTML = originalText;
+                                }}
+                                className="bg-gray-900 hover:bg-black text-white px-3 py-1.5 rounded-sm text-[10px] font-bold shadow-sm transition flex items-center gap-1 disabled:opacity-50"
+                            >
+                                <Icons.Brain /> 仮想トレーニング実行
+                            </button>
+
                         </div>
                     </div>
                 </div>
