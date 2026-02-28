@@ -44,12 +44,12 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
 
   const handlePosSuccess = () => { setEditingResId(null); setAdminTab('OPERATIONS'); window.location.reload(); };
 
-  // ★修正: 現場目線に合わせ、メニューのラベルを完全日本語化
+  // ★修正: メニュー名を指示通り変更
   const MENU_ITEMS = [
       { id: 'HOME', icon: Icons.Home, label: 'ダッシュボード' },
-      { id: 'OPERATIONS', icon: Icons.Kanban, label: '現場カンバン' },
+      { id: 'OPERATIONS', icon: Icons.Kanban, label: '現場状況管理' },
       { id: 'POS', icon: Icons.Calc, label: 'POS (受付・計量)' },
-      { id: 'PRODUCTION', icon: Icons.Factory, label: '生産・選別' },
+      { id: 'PRODUCTION', icon: Icons.Factory, label: 'ナゲット製造管理' },
       { id: 'SALES', icon: Icons.Briefcase, label: '営業・顧客' },
       { id: 'COMPETITOR', icon: Icons.Radar, label: '相場レーダー' },
       { id: 'DATABASE', icon: Icons.Database, label: 'マスターDB' },
