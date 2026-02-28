@@ -8,7 +8,9 @@ const Icons = {
   Save: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>,
   Fire: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z" /></svg>,
   XCircle: () => <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-  UserAdd: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
+  UserAdd: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>,
+  Refresh: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
+  Robot: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
 };
 
 export const AdminSales = ({ data }: { data: any }) => {
@@ -22,6 +24,9 @@ export const AdminSales = ({ data }: { data: any }) => {
   const [editStatus, setEditStatus] = useState('');
   const [editMemo, setEditMemo] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  
+  // AIリード自動収集用の状態
+  const [isGeneratingLeads, setIsGeneratingLeads] = useState(false);
 
   const targets = data?.salesTargets || [];
 
@@ -119,6 +124,30 @@ export const AdminSales = ({ data }: { data: any }) => {
       setSearchTerm(''); setFilterPriority(''); setFilterStatus(''); setFilterArea(''); setFilterIndustry('');
   };
 
+  // ★ AIリスト自動収集ハンドラ
+  const handleGenerateLeads = async () => {
+      if (!window.confirm("AIを使用して北海道周辺の「解体業者・電気設備業者」の有望リストを5件自動抽出しますか？\n（完了まで10〜20秒程度かかります）")) return;
+      
+      setIsGeneratingLeads(true);
+      try {
+          const res = await fetch('/api/lead-gen', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ area: '北海道 苫小牧市周辺、札幌市周辺', industry: '解体工事業、電気通信工事業', count: 5 })
+          });
+          const result = await res.json();
+          if (result.success) {
+              alert(`AIが ${result.count} 件の有望なターゲットを抽出・生成し、データベースに登録しました！\n画面をリロードします。`);
+              window.location.reload();
+          } else {
+              alert('AIの生成中にエラーが発生しました: ' + result.message);
+          }
+      } catch (e) {
+          alert('通信エラーが発生しました');
+      }
+      setIsGeneratingLeads(false);
+  };
+
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-500 max-w-[1400px] mx-auto w-full pb-12 text-gray-800">
       
@@ -200,25 +229,40 @@ export const AdminSales = ({ data }: { data: any }) => {
       </div>
 
       <div className="bg-gray-50 p-4 rounded-sm border border-gray-200 flex flex-col lg:flex-row gap-4 items-center mb-1">
-        <div className="flex-1 relative w-full">
-            <div className="absolute left-3 top-1/2 -translate-y-1/2"><Icons.Search /></div>
-            <input type="text" placeholder="企業名や住所で検索..." className="w-full pl-10 pr-4 py-2 bg-white border border-gray-300 text-sm font-bold outline-none focus:border-[#D32F2F] rounded-sm transition" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+        
+        {/* ★ 左側：検索とAIリード収集ボタン */}
+        <div className="flex-1 flex flex-col md:flex-row gap-3 w-full">
+            <div className="relative flex-1">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2"><Icons.Search /></div>
+                <input type="text" placeholder="企業名や住所で検索..." className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 text-sm font-bold outline-none focus:border-[#D32F2F] rounded-sm transition shadow-inner" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+            </div>
+            
+            <button 
+                onClick={handleGenerateLeads} 
+                disabled={isGeneratingLeads} 
+                className="bg-white border border-[#D32F2F] text-[#D32F2F] px-4 py-2.5 rounded-sm text-sm font-bold hover:bg-red-50 transition flex justify-center items-center gap-2 disabled:opacity-50 shadow-sm whitespace-nowrap"
+            >
+                {isGeneratingLeads ? <span className="animate-spin"><Icons.Refresh /></span> : <Icons.Robot />}
+                {isGeneratingLeads ? 'AIがリスト抽出中...' : 'AI リード自動収集'}
+            </button>
         </div>
+
+        {/* 右側：フィルター群 */}
         <div className="flex flex-wrap gap-2 w-full lg:w-auto">
-            <select className="px-3 py-2 bg-white border border-gray-300 text-xs font-bold outline-none cursor-pointer rounded-sm" value={filterPriority} onChange={(e) => setFilterPriority(e.target.value)}>
+            <select className="px-3 py-2.5 bg-white border border-gray-300 text-xs font-bold outline-none cursor-pointer rounded-sm" value={filterPriority} onChange={(e) => setFilterPriority(e.target.value)}>
                 <option value="">すべての優先度</option>
                 <option value="S">S (激アツ)</option>
                 <option value="A">A (高)</option>
                 <option value="B">B (中)</option>
             </select>
-            <select className="px-3 py-2 bg-white border border-gray-300 text-xs font-bold outline-none cursor-pointer rounded-sm" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+            <select className="px-3 py-2.5 bg-white border border-gray-300 text-xs font-bold outline-none cursor-pointer rounded-sm" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
                 <option value="">すべてのステータス</option>
                 <option value="未確認">未確認</option>
                 <option value="アプローチ中">アプローチ中</option>
                 <option value="既存取引先">既存取引先</option>
             </select>
             {(searchTerm || filterPriority || filterStatus || filterArea || filterIndustry) && (
-                <button onClick={clearFilters} className="px-3 py-2 text-xs font-bold text-[#D32F2F] bg-white border border-red-200 hover:bg-red-50 transition rounded-sm flex items-center">
+                <button onClick={clearFilters} className="px-3 py-2.5 text-xs font-bold text-[#D32F2F] bg-white border border-red-200 hover:bg-red-50 transition rounded-sm flex items-center">
                     <Icons.XCircle /> 条件クリア
                 </button>
             )}
@@ -239,7 +283,7 @@ export const AdminSales = ({ data }: { data: any }) => {
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                       {filteredTargets.length === 0 ? (
-                          <tr><td colSpan={5} className="p-12 text-center text-xs text-gray-400 font-bold bg-white">ターゲットが見つかりません</td></tr>
+                          <tr><td colSpan={5} className="p-16 text-center text-sm text-gray-400 font-bold bg-white">ターゲットが見つかりません。上のボタンからAIに収集させてみましょう。</td></tr>
                       ) : filteredTargets.map((target: any, idx: number) => (
                           <tr key={`${target.id}-${idx}`} className="hover:bg-gray-50 transition">
                               <td className="p-4">
