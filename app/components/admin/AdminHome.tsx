@@ -14,7 +14,6 @@ const Icons = {
     Message: () => <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>,
     Brain: () => <svg className="w-4 h-4 inline-block mr-1" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 18a8 8 0 110-16 8 8 0 010 16zm1-11h-2v2h2V9zm0 4h-2v6h2v-6z" /></svg>,
     Print: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>,
-    // ★ 修正: これが抜けていたため、ボタンを押した瞬間に白画面クラッシュが起きていました
     Refresh: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
 };
 
@@ -222,44 +221,22 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
         try { const d = new Date(dateStr); return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`; } catch(e) { return '-'; }
     };
 
-    const handlePrintReport = async () => {
+    const handlePrintReport = () => {
         setIsGeneratingReport(true);
-        try {
-            const payload = {
-                date: new Date().toLocaleDateString('ja-JP'),
-                copperPrice,
-                copperDiff,
-                todayCount,
-                todayWeight,
-                mCopper,
-                targetMonthly,
-                progress: progressPercent,
-                projected: projectedCopper,
-                yieldDiff: yieldStats.diff.toFixed(1)
-            };
-
-            const res = await fetch('/api/report', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            const result = await res.json();
-            
-            if (result.success) {
-                setReportAdvice(result.advice);
-                // 画面にテキストがレンダリングされるのを待ってから印刷ダイアログを開く
-                setTimeout(() => {
-                    window.print();
-                    setIsGeneratingReport(false);
-                }, 500);
-            } else {
-                alert("レポート生成に失敗しました: " + result.message);
-                setIsGeneratingReport(false);
-            }
-        } catch (e) {
-            alert("通信エラーが発生しました。");
+        // ★ 修正: AIの辛口アドバイスはデータが溜まるまで一時封印。
+        // API通信を行わず、すぐに印刷ダイアログを開くようにショートカットします。
+        setTimeout(() => {
+            window.print();
             setIsGeneratingReport(false);
-        }
+        }, 500);
+
+        /* // --- 将来、データが溜まってAIを復活させる際はこちらのコードに戻してください ---
+        try {
+            const payload = { ... };
+            const res = await fetch('/api/report', { ... });
+            // ...
+        } catch(e) { ... }
+        */
     };
 
     if (!isMounted) return null;
@@ -370,6 +347,30 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                         </div>
                         <div className="mt-5 pt-4 border-t border-blue-200/50 text-xs text-blue-600/70 font-mono relative z-10 flex justify-between items-center">
                             <span className="font-bold">累計対応数: {data?.chatStats?.total || 0} 件</span>
+                            <button 
+                                onClick={async (e) => {
+                                    const btn = e.currentTarget;
+                                    btn.disabled = true;
+                                    btn.innerText = "トレーニング中...";
+                                    try {
+                                        const res = await fetch('/api/simulate', { method: 'POST' });
+                                        const simData = await res.json();
+                                        if(simData.success) {
+                                            alert("仮想トレーニング完了！\n\n【ペルソナ】\n" + simData.persona + "\n\n【生成された会話】\n" + simData.chatHistory);
+                                            window.location.reload();
+                                        } else {
+                                            alert("エラー: " + simData.message);
+                                        }
+                                    } catch(err) {
+                                        alert("通信エラーが発生しました。");
+                                    }
+                                    btn.disabled = false;
+                                    btn.innerText = "仮想トレーニング実行";
+                                }}
+                                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-sm text-[10px] font-bold shadow-sm transition flex items-center gap-1 disabled:opacity-50"
+                            >
+                                <Icons.Brain /> 仮想トレーニング実行
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -623,8 +624,8 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                     </div>
                 </div>
 
-                {/* AIインサイトセクション */}
-                <section className="mt-4 border-t-4 border-black pt-6">
+                {/* AIインサイトセクション（※一時的に非表示） */}
+                {/* <section className="mt-4 border-t-4 border-black pt-6">
                     <h2 className="text-lg font-black text-black flex items-center gap-2 mb-4">
                         <Icons.Brain /> AI参謀からの戦略アドバイス
                     </h2>
@@ -632,6 +633,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                         {reportAdvice || "（AIによる分析データがここに表示されます）"}
                     </div>
                 </section>
+                */}
                 
                 <div className="mt-8 text-center text-[10px] font-mono text-gray-400">
                     GENERATED BY FACTORY OS - AI CONCIERGE ENGINE
