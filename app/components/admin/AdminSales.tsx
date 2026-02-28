@@ -25,7 +25,6 @@ export const AdminSales = ({ data }: { data: any }) => {
   const [editMemo, setEditMemo] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   
-  // AIリード自動収集用の状態
   const [isGeneratingLeads, setIsGeneratingLeads] = useState(false);
 
   const targets = data?.salesTargets || [];
@@ -124,7 +123,6 @@ export const AdminSales = ({ data }: { data: any }) => {
       setSearchTerm(''); setFilterPriority(''); setFilterStatus(''); setFilterArea(''); setFilterIndustry('');
   };
 
-  // ★ AIリスト自動収集ハンドラ
   const handleGenerateLeads = async () => {
       if (!window.confirm("AIを使用して北海道周辺の「解体業者・電気設備業者」の有望リストを5件自動抽出しますか？\n（完了まで10〜20秒程度かかります）")) return;
       
@@ -149,9 +147,10 @@ export const AdminSales = ({ data }: { data: any }) => {
   };
 
   return (
-    <div className="flex flex-col h-full animate-in fade-in duration-500 max-w-[1400px] mx-auto w-full pb-12 text-gray-800">
+    // ★ 修正1: h-full を外して自然にスクロールできるように変更（親コンテナに引っ張られないようにする）
+    <div className="flex flex-col animate-in fade-in duration-500 max-w-[1400px] mx-auto w-full pb-12 text-gray-800">
       
-      <header className="flex items-center justify-between border-b border-gray-200 pb-4 mb-6">
+      <header className="flex items-center justify-between border-b border-gray-200 pb-4 mb-6 mt-2">
         <div>
           <h2 className="text-2xl font-black text-gray-900 tracking-tight font-serif flex items-center gap-2">
               <span className="w-1.5 h-6 bg-[#D32F2F]"></span>
@@ -229,8 +228,6 @@ export const AdminSales = ({ data }: { data: any }) => {
       </div>
 
       <div className="bg-gray-50 p-4 rounded-sm border border-gray-200 flex flex-col lg:flex-row gap-4 items-center mb-1">
-        
-        {/* ★ 左側：検索とAIリード収集ボタン */}
         <div className="flex-1 flex flex-col md:flex-row gap-3 w-full">
             <div className="relative flex-1">
                 <div className="absolute left-3 top-1/2 -translate-y-1/2"><Icons.Search /></div>
@@ -247,7 +244,6 @@ export const AdminSales = ({ data }: { data: any }) => {
             </button>
         </div>
 
-        {/* 右側：フィルター群 */}
         <div className="flex flex-wrap gap-2 w-full lg:w-auto">
             <select className="px-3 py-2.5 bg-white border border-gray-300 text-xs font-bold outline-none cursor-pointer rounded-sm" value={filterPriority} onChange={(e) => setFilterPriority(e.target.value)}>
                 <option value="">すべての優先度</option>
@@ -269,8 +265,9 @@ export const AdminSales = ({ data }: { data: any }) => {
         </div>
       </div>
 
-      <div className="bg-white border border-gray-200 shadow-sm flex-1 overflow-hidden flex flex-col rounded-sm">
-          <div className="flex-1 overflow-y-auto p-0">
+      {/* ★ 修正2: min-h-[600px] と overflow-x-auto を追加し、スマホでテーブルが押し潰されるのを防ぐ */}
+      <div className="bg-white border border-gray-200 shadow-sm flex-1 overflow-hidden flex flex-col rounded-sm mt-4 min-h-[600px]">
+          <div className="flex-1 overflow-y-auto overflow-x-auto p-0">
               <table className="w-full text-left border-collapse min-w-[800px]">
                   <thead className="sticky top-0 bg-gray-100 border-b border-gray-200 z-10">
                       <tr>
