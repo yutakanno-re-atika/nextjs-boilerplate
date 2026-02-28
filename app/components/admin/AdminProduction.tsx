@@ -39,13 +39,11 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
   const wiresMaster = data?.wires || [];
   const staffs = data?.staffs || [];
 
-  // ★ データベースから作業担当者リストを動的生成（退職者「INACTIVE」は除外）
   const workerList = useMemo(() => {
       const list = staffs
           .filter((s: any) => s.status !== 'INACTIVE' && (s.role === 'ALL' || s.role === 'SORTING' || s.role === 'PLANT'))
           .map((s: any) => s.name);
       
-      // DBが空の場合のフォールバック
       if (list.length === 0) return ["未選択", "工場長", "佐藤", "鈴木", "高橋", "田中", "パートA"];
       
       return ["未選択", ...list];
@@ -229,9 +227,10 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-500 text-gray-900 pb-12 font-sans max-w-7xl mx-auto w-full relative">
       <header className="mb-4 md:mb-6 flex-shrink-0 border-b border-gray-200 pb-4">
+        {/* ★修正: ナゲット製造管理に変更 */}
         <h2 className="text-xl md:text-2xl font-black text-gray-900 flex items-center gap-2 font-serif">
             <span className="w-1.5 h-6 bg-[#D32F2F]"></span>
-            生産・選別ワークフロー
+            ナゲット製造管理
         </h2>
         <p className="text-xs text-gray-500 mt-1 font-mono tracking-wider ml-3">PRODUCTION & SORTING</p>
       </header>
