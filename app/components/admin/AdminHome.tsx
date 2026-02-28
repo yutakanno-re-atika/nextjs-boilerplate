@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 
 const Icons = {
     TrendingUp: () => <svg className="w-4 h-4 text-[#D32F2F]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>,
@@ -13,7 +13,9 @@ const Icons = {
     ArrowRight: () => <svg className="w-5 h-5 text-gray-300 group-hover:text-[#D32F2F] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>,
     Message: () => <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>,
     Brain: () => <svg className="w-4 h-4 inline-block mr-1" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 18a8 8 0 110-16 8 8 0 010 16zm1-11h-2v2h2V9zm0 4h-2v6h2v-6z" /></svg>,
-    Print: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+    Print: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>,
+    // ★ 修正: これが抜けていたため、ボタンを押した瞬間に白画面クラッシュが起きていました
+    Refresh: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
 };
 
 const Sparkline = ({ data, color }: { data: number[], color: string }) => {
@@ -60,6 +62,11 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
     
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
     const [reportAdvice, setReportAdvice] = useState<string>('');
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     const copperPrice = Number(data?.config?.market_price) || 1450;
     const brassPrice = Number(data?.config?.brass_price) || 980;
@@ -171,15 +178,13 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
         };
     }, [data?.productions, data?.wires, data?.config?.target_monthly]);
 
-    const { win, lose, draw, myBenchPrice, compBars } = useMemo(() => {
+    const { win, lose, draw } = useMemo(() => {
         const comps = data?.competitorPrices || [];
         let win = 0, lose = 0, draw = 0;
-        let myBenchPrice = 0;
-        let compBars: any[] = [];
         
         try {
             const rulesStr = data?.config?.pricing_rules;
-            if (!rulesStr) return { win, lose, draw, myBenchPrice, compBars };
+            if (!rulesStr) return { win, lose, draw };
             
             const rules = JSON.parse(rulesStr);
             const latestComps: Record<string, any> = {};
@@ -194,7 +199,12 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                 const myPrice = Math.floor(basePrice * (Number(rule.ratio) / 100)) + Number(rule.offset);
 
                 const compPrices = compList.map(c => {
-                    try { return JSON.parse(c.prices)[item]; } catch(e) { return null; }
+                    try { 
+                        let p = c.prices;
+                        if (typeof p === 'string') p = JSON.parse(p);
+                        if (typeof p === 'string') p = JSON.parse(p);
+                        return p[item]; 
+                    } catch(e) { return null; }
                 }).filter(p => typeof p === 'number' && p > 0);
                 
                 if (compPrices.length > 0) {
@@ -205,7 +215,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                 }
             });
         } catch(e) {}
-        return { win, lose, draw, myBenchPrice, compBars };
+        return { win, lose, draw };
     }, [data?.competitorPrices, data?.config?.pricing_rules, copperPrice, brassPrice]);
 
     const formatTime = (dateStr: string) => {
@@ -237,7 +247,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
             
             if (result.success) {
                 setReportAdvice(result.advice);
-                // レンダリング待ちのため少し遅延させてから印刷ダイアログを開く
+                // 画面にテキストがレンダリングされるのを待ってから印刷ダイアログを開く
                 setTimeout(() => {
                     window.print();
                     setIsGeneratingReport(false);
@@ -251,6 +261,8 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
             setIsGeneratingReport(false);
         }
     };
+
+    if (!isMounted) return null;
 
     return (
         <div className="flex flex-col h-full animate-in fade-in duration-500 w-full text-gray-900 pb-24 font-sans bg-[#FAFAFA] min-h-screen relative" style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
@@ -358,30 +370,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                         </div>
                         <div className="mt-5 pt-4 border-t border-blue-200/50 text-xs text-blue-600/70 font-mono relative z-10 flex justify-between items-center">
                             <span className="font-bold">累計対応数: {data?.chatStats?.total || 0} 件</span>
-                            <button 
-                                onClick={async (e) => {
-                                    const btn = e.currentTarget;
-                                    btn.disabled = true;
-                                    btn.innerText = "トレーニング中...";
-                                    try {
-                                        const res = await fetch('/api/simulate', { method: 'POST' });
-                                        const simData = await res.json();
-                                        if(simData.success) {
-                                            alert("仮想トレーニング完了！\n\n【ペルソナ】\n" + simData.persona + "\n\n【生成された会話】\n" + simData.chatHistory);
-                                            window.location.reload();
-                                        } else {
-                                            alert("エラー: " + simData.message);
-                                        }
-                                    } catch(err) {
-                                        alert("通信エラーが発生しました。");
-                                    }
-                                    btn.disabled = false;
-                                    btn.innerText = "仮想トレーニング実行";
-                                }}
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-sm text-[10px] font-bold shadow-sm transition flex items-center gap-1 disabled:opacity-50"
-                            >
-                                <Icons.Brain /> 仮想トレーニング実行
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -617,11 +605,11 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                                         <span className="font-bold text-gray-600 pb-1">kg</span>
                                     </div>
                                     <div className="w-full bg-gray-200 h-4 rounded-sm overflow-hidden border border-gray-300">
-                                        <div className="bg-black h-full" style={{ width: `${progressPercent}%` }}></div>
+                                        <div className="bg-black h-full" style={{ width: `${progressPercent || 0}%` }}></div>
                                     </div>
                                     <div className="flex justify-between text-[10px] font-bold mt-1">
-                                        <span className="text-gray-500">進捗率: {progressPercent}%</span>
-                                        <span className="text-red-600">月末着地見込み: {projectedCopper.toLocaleString()} kg</span>
+                                        <span className="text-gray-500">進捗率: {progressPercent || 0}%</span>
+                                        <span className="text-red-600">月末着地見込み: {projectedCopper ? projectedCopper.toLocaleString() : 0} kg</span>
                                     </div>
                                 </div>
                                 <div className="border-t border-gray-300 pt-3 flex justify-between items-center">
