@@ -1,447 +1,402 @@
 // @ts-nocheck
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 
 const Icons = {
-    Search: () => <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
-    Plus: () => <svg className="w-5 h-5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>,
-    Save: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>,
-    Users: () => <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
-    Target: () => <svg className="w-6 h-6 text-[#D32F2F]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>,
-    Box: () => <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>,
-    Worker: () => <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+  Database: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" /></svg>,
+  Edit: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>,
+  Save: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>,
+  Settings: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+  Users: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
+  Print: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>,
+  Refresh: () => <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
+  Brain: () => <svg className="w-5 h-5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>,
+  ArrowRight: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
 };
 
 export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: any }) => {
-    const [activeTab, setActiveTab] = useState<'CLIENTS' | 'SALES_TARGETS' | 'WIRES' | 'CASTINGS' | 'STAFF'>('WIRES');
-    const [editingId, setEditingId] = useState<string | null>(null);
-    const [isAdding, setIsAdding] = useState(false);
-    const [formState, setFormState] = useState<any>({});
-    const [isSaving, setIsSaving] = useState(false);
-    const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState<'WIRES' | 'CASTINGS' | 'CLIENTS' | 'CONFIG'>('WIRES');
+  
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValues, setEditValues] = useState<any>({});
+  const [isSaving, setIsSaving] = useState(false);
 
-    const [localClients, setLocalClients] = useState(data?.clients || []);
-    const [localSalesTargets, setLocalSalesTargets] = useState(data?.salesTargets || []);
-    const [localWires, setLocalWires] = useState(data?.wires || []);
-    const [localCastings, setLocalCastings] = useState(data?.castings || []);
-    const [localStaffs, setLocalStaffs] = useState(data?.staffs || []);
+  // ★ 印刷用ステート
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [aiSummary, setAiSummary] = useState<string>('');
 
-    useEffect(() => {
-        if(data) {
-            if(data.clients) setLocalClients(data.clients);
-            if(data.salesTargets) setLocalSalesTargets(data.salesTargets);
-            if(data.wires) setLocalWires(data.wires);
-            if(data.castings) setLocalCastings(data.castings);
-            if(data.staffs) setLocalStaffs(data.staffs);
-        }
-    }, [data]);
+  const wires = data?.wires || [];
+  const castings = data?.castings || [];
+  const clients = data?.clients || [];
+  const config = data?.config || {};
 
-    const fetchLatestData = async () => {
-        try {
-            const res = await fetch('/api/gas');
-            const d = await res.json();
-            if (d.status === 'success') {
-                setLocalClients(d.clients || []);
-                setLocalSalesTargets(d.salesTargets || []);
-                setLocalWires(d.wires || []);
-                setLocalCastings(d.castings || []);
-                setLocalStaffs(d.staffs || []);
-            }
-        } catch (e) {}
-    };
+  const copperPrice = Number(config.market_price) || 1450;
+  const brassPrice = Number(config.brass_price) || 980;
+  const zincPrice = Number(config.zinc_price) || 450;
+  const leadPrice = Number(config.lead_price) || 380;
 
-    const copperPrice = Number(data?.config?.market_price) || 1450;
-    const brassPrice = Number(data?.config?.brass_price) || 980;
+  const getDisplayName = (w: any) => {
+      let name = w.name;
+      if (w.sq && w.sq !== '-') name += ` ${w.sq}sq`;
+      if (w.core && w.core !== '-') name += ` ${w.core}C`;
+      return name;
+  };
 
-    const handleTabChange = (tab: any) => {
-        setActiveTab(tab); setEditingId(null); setIsAdding(false); setFormState({}); setSearchTerm('');
-    };
+  const handleEdit = (item: any) => {
+      setEditingId(item.id || item.clientId);
+      setEditValues({ ...item });
+  };
 
-    const handleEditClick = (record: any) => {
-        setEditingId(record.id);
-        setIsAdding(false);
-        setFormState({ ...record });
-    };
+  const handleSave = async (sheetName: string, id: string) => {
+      setIsSaving(true);
+      try {
+          // 簡易保存処理（実際はAPIでアップデート処理を走らせる）
+          const payload = { action: 'UPDATE_DB_RECORD', sheetName, recordId: id, updates: editValues };
+          const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+          const result = await res.json();
+          if (result.status === 'success') {
+              setEditingId(null);
+              window.location.reload();
+          } else {
+              alert('エラー: ' + result.message);
+          }
+      } catch(e) { alert('通信エラーが発生しました'); }
+      setIsSaving(false);
+  };
 
-    const handleAddClick = () => {
-        setIsAdding(true);
-        setEditingId(null);
-        setFormState({ type: 'BRASS', rank: 'NORMAL', points: 0, priority: 'B', status: '新規', role: 'ALL', rate: 30, sample_total: '', sample_copper: '' }); 
-    };
+  // ★ 追加: 印刷＆AIレポート生成ハンドラ
+  const handlePrintReport = async () => {
+      setIsGeneratingReport(true);
+      
+      let promptData = '';
+      let pageName = '';
 
-    // サンプル重量から歩留まりを自動計算
-    const handleSampleChange = (field: 'sample_total' | 'sample_copper', value: string) => {
-        const newState = { ...formState, [field]: value };
-        const total = parseFloat(newState.sample_total);
-        const copper = parseFloat(newState.sample_copper);
-        if (total > 0 && copper >= 0 && copper <= total) {
-            newState.ratio = ((copper / total) * 100).toFixed(2);
-        }
-        setFormState(newState);
-    };
+      if (activeTab === 'WIRES' || activeTab === 'CASTINGS') {
+          pageName = '本日の買取価格表（マージン計算済）';
+          promptData = `
+          ・本日の銅建値: ${copperPrice} 円/kg
+          ・本日の真鍮建値: ${brassPrice} 円/kg
+          ・登録されている電線類: ${wires.length} 品目
+          ・登録されている非鉄類: ${castings.length} 品目
+          ※顧客に提示・配布するための相場表です。現在の相場動向に対する一言を添えてください。
+          `;
+      } else if (activeTab === 'CLIENTS') {
+          pageName = '顧客ディレクトリ（名簿）';
+          promptData = `
+          ・現在の登録顧客数: ${clients.length} 社
+          ・ランクS顧客: ${clients.filter((c:any)=>c.rank==='S').length} 社
+          ・ランクA顧客: ${clients.filter((c:any)=>c.rank==='A').length} 社
+          ※社内管理用の顧客リストです。上位顧客の割合などから今後の営業戦略に対する一言を添えてください。
+          `;
+      } else {
+          // CONFIG等は印刷対象外とするか簡易出力
+          pageName = 'システム設定一覧';
+          promptData = `システム稼働用のコンフィグデータです。`;
+      }
 
-    const getSheetName = () => {
-        if (activeTab === 'CLIENTS') return 'Clients';
-        if (activeTab === 'SALES_TARGETS') return 'SalesTargets';
-        if (activeTab === 'WIRES') return 'Products_Wire';
-        if (activeTab === 'CASTINGS') return 'Products_Casting';
-        if (activeTab === 'STAFF') return 'Staff';
-        return '';
-    };
+      try {
+          const res = await fetch('/api/print-summary', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ pageName, promptData })
+          });
+          const result = await res.json();
+          if (result.success) {
+              setAiSummary(result.summary);
+              setTimeout(() => {
+                  window.print();
+                  setIsGeneratingReport(false);
+              }, 500);
+          } else {
+              alert('AI要約の生成に失敗しました');
+              setIsGeneratingReport(false);
+          }
+      } catch(e) {
+          alert('通信エラー');
+          setIsGeneratingReport(false);
+      }
+  };
 
-    const formatUpdates = (sheetName: string, form: any) => {
-        if (sheetName === 'Clients') return { 1: form.name, 2: form.rank, 4: form.phone, 5: form.loginId, 6: form.password, 7: form.points, 8: form.memo };
-        if (sheetName === 'SalesTargets') return { 2: form.company, 4: form.area, 5: form.priority, 11: form.status, 12: form.contact, 14: form.memo };
-        if (sheetName === 'Products_Wire') return { 1: form.maker, 2: form.name, 3: form.year, 4: form.sq, 5: form.sample_total, 6: form.sample_copper, 7: form.core, 8: form.conductor, 9: form.ratio, 10: form.memo }; 
-        if (sheetName === 'Products_Casting') return { 1: form.name, 4: form.ratio, 2: form.type };
-        if (sheetName === 'Staff') return { 1: form.name, 2: form.role, 3: form.rate, 4: form.status };
-        return {};
-    };
-
-    const handleSave = async (isNew: boolean, id?: string) => {
-        setIsSaving(true);
-        const sheetName = getSheetName();
-        const payload = isNew 
-            ? { action: 'ADD_DB_RECORD', sheetName, data: formState }
-            : { action: 'UPDATE_DB_RECORD', sheetName, recordId: id, updates: formatUpdates(sheetName, formState) };
-
-        try {
-            const res = await fetch('/api/gas', { method: 'POST', body: JSON.stringify(payload) });
-            const result = await res.json();
-            if (result.status === 'success') { 
-                await fetchLatestData();
-                setIsAdding(false); setEditingId(null); setFormState({});
-            } 
-            else { alert('エラー: ' + result.message); }
-        } catch (error) { alert('通信エラーが発生しました'); }
-        setIsSaving(false);
-    };
-
-    const handleDelete = async (id: string) => {
-        if (!window.confirm("本当にこのデータを削除しますか？")) return;
-        setIsSaving(true);
-        try {
-            const res = await fetch('/api/gas', { method: 'POST', body: JSON.stringify({ action: 'DELETE_DB_RECORD', sheetName: getSheetName(), recordId: id }) });
-            const result = await res.json();
-            if (result.status === 'success') { await fetchLatestData(); } 
-        } catch (error) {}
-        setIsSaving(false);
-    };
-
-    const filteredData = useMemo(() => {
-        let sourceData = [];
-        if (activeTab === 'CLIENTS') sourceData = localClients;
-        if (activeTab === 'SALES_TARGETS') sourceData = localSalesTargets;
-        if (activeTab === 'WIRES') sourceData = localWires;
-        if (activeTab === 'CASTINGS') sourceData = localCastings;
-        if (activeTab === 'STAFF') sourceData = localStaffs;
-
-        if (!searchTerm) return sourceData;
-        const lowerTerm = searchTerm.toLowerCase();
-        return sourceData.filter((item: any) => Object.values(item).join(' ').toLowerCase().includes(lowerTerm));
-    }, [activeTab, localClients, localSalesTargets, localWires, localCastings, localStaffs, searchTerm]);
-
-    const inputClass = "w-full border border-gray-300 p-2.5 rounded-sm focus:border-[#D32F2F] outline-none text-sm font-bold font-mono transition";
-    
-    return (
-        <div className="flex flex-col h-full animate-in fade-in duration-300 max-w-[1400px] mx-auto w-full pb-12 text-gray-800">
-            <header className="mb-6 flex-shrink-0 border-b border-gray-200 pb-4 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
-                <div>
-                    <h2 className="text-2xl font-black text-gray-900 flex items-center gap-2 font-serif">
-                        <span className="w-1.5 h-6 bg-[#D32F2F]"></span>中枢データ管理
-                    </h2>
-                    <p className="text-xs text-gray-500 mt-1 font-mono">MASTER DATA & COST MANAGEMENT</p>
-                </div>
-                <div className="flex items-center gap-3 w-full md:w-auto">
-                    <div className="relative flex-1 md:w-64">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Icons.Search /></div>
-                        <input type="text" className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-sm text-sm outline-none focus:border-[#D32F2F]" placeholder="全件検索..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-                    </div>
-                    <button onClick={handleAddClick} disabled={isAdding || editingId !== null} className="bg-[#111] text-white px-5 py-2.5 rounded-sm text-sm font-bold hover:bg-[#D32F2F] transition flex justify-center items-center gap-2 disabled:opacity-50">
-                        <Icons.Plus /> 新規追加
-                    </button>
-                </div>
-            </header>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-white p-5 border border-gray-200 rounded-sm shadow-sm flex items-center gap-4">
-                    <Icons.Users />
-                    <div><p className="text-xs text-gray-500 font-bold tracking-wider mb-1">顧客マスター</p><p className="text-2xl font-black text-gray-900 font-mono">{localClients.length} <span className="text-sm font-bold text-gray-400">社</span></p></div>
-                </div>
-                <div className="bg-white p-5 border border-gray-200 rounded-sm shadow-sm flex items-center gap-4">
-                    <Icons.Target />
-                    <div><p className="text-xs text-gray-500 font-bold tracking-wider mb-1">営業ターゲット</p><p className="text-2xl font-black text-gray-900 font-mono">{localSalesTargets.filter((t:any) => t.status !== '既存取引先').length} <span className="text-sm font-bold text-gray-400">件</span></p></div>
-                </div>
-                <div className="bg-white p-5 border border-gray-200 rounded-sm shadow-sm flex items-center gap-4">
-                    <Icons.Box />
-                    <div><p className="text-xs text-gray-500 font-bold tracking-wider mb-1">登録品目数</p><p className="text-2xl font-black text-gray-900 font-mono">{localWires.length + localCastings.length} <span className="text-sm font-bold text-gray-400">種</span></p></div>
-                </div>
-                <div className="bg-white p-5 border border-gray-200 rounded-sm shadow-sm flex items-center gap-4">
-                    <Icons.Worker />
-                    <div><p className="text-xs text-gray-500 font-bold tracking-wider mb-1">スタッフ(労務費)</p><p className="text-2xl font-black text-gray-900 font-mono">{localStaffs.length} <span className="text-sm font-bold text-gray-400">名</span></p></div>
-                </div>
+  return (
+    <div className="flex flex-col h-full animate-in fade-in duration-500 text-gray-900 pb-12 font-sans max-w-7xl mx-auto w-full relative" style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
+      
+      {/* --- 通常の画面 (印刷時は非表示) --- */}
+      <div className="print:hidden flex flex-col h-full">
+          <header className="mb-4 md:mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4 border-b border-gray-200 pb-4 flex-shrink-0">
+            <div>
+                <h2 className="text-xl md:text-2xl font-black text-gray-900 flex items-center gap-2 font-serif">
+                    <span className="w-1.5 h-6 bg-[#D32F2F]"></span>
+                    マスターDB管理
+                </h2>
+                <p className="text-xs text-gray-500 mt-1 font-mono tracking-wider ml-3">DATABASE & SETTINGS</p>
             </div>
+            {/* ★ 印刷ボタン */}
+            <button 
+                onClick={handlePrintReport} 
+                disabled={isGeneratingReport || activeTab === 'CONFIG'}
+                className="bg-white border border-gray-300 text-gray-800 px-4 py-2 rounded-sm text-xs font-bold hover:border-[#D32F2F] hover:text-[#D32F2F] transition shadow-sm flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+                {isGeneratingReport ? <Icons.Refresh /> : <Icons.Print />}
+                {activeTab === 'CONFIG' ? '印刷非対応' : isGeneratingReport ? 'AI分析中...' : 'このタブを印刷する'}
+            </button>
+          </header>
 
-            <div className="flex border-b border-gray-200 bg-gray-50 flex-shrink-0 overflow-x-auto no-scrollbar">
-                <button onClick={() => handleTabChange('WIRES')} className={`px-6 py-4 text-sm font-bold tracking-widest whitespace-nowrap transition-colors ${activeTab === 'WIRES' ? 'bg-white border-t-2 border-t-[#D32F2F] text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>⚡ 電線マスター</button>
-                <button onClick={() => handleTabChange('CASTINGS')} className={`px-6 py-4 text-sm font-bold tracking-widest whitespace-nowrap transition-colors ${activeTab === 'CASTINGS' ? 'bg-white border-t-2 border-t-[#D32F2F] text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>⚙️ 非鉄マスター</button>
-                <button onClick={() => handleTabChange('CLIENTS')} className={`px-6 py-4 text-sm font-bold tracking-widest whitespace-nowrap transition-colors ${activeTab === 'CLIENTS' ? 'bg-white border-t-2 border-t-[#D32F2F] text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>👥 顧客マスター</button>
-                <button onClick={() => handleTabChange('SALES_TARGETS')} className={`px-6 py-4 text-sm font-bold tracking-widest whitespace-nowrap transition-colors ${activeTab === 'SALES_TARGETS' ? 'bg-white border-t-2 border-t-[#D32F2F] text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>🎯 営業リスト</button>
-                <button onClick={() => handleTabChange('STAFF')} className={`px-6 py-4 text-sm font-bold tracking-widest whitespace-nowrap transition-colors ${activeTab === 'STAFF' ? 'bg-white border-t-2 border-t-[#D32F2F] text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>⏱️ スタッフ・労務</button>
-            </div>
+          <div className="flex border-b border-gray-200 bg-gray-50 flex-shrink-0 overflow-x-auto no-scrollbar">
+              <button onClick={() => setActiveTab('WIRES')} className={`px-4 py-3 md:py-4 text-xs md:text-sm font-bold tracking-widest whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'WIRES' ? 'bg-white border-t-2 border-t-[#D32F2F] text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>
+                  電線類 マスター
+              </button>
+              <button onClick={() => setActiveTab('CASTINGS')} className={`px-4 py-3 md:py-4 text-xs md:text-sm font-bold tracking-widest whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'CASTINGS' ? 'bg-white border-t-2 border-t-[#D32F2F] text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>
+                  非鉄類 マスター
+              </button>
+              <button onClick={() => setActiveTab('CLIENTS')} className={`px-4 py-3 md:py-4 text-xs md:text-sm font-bold tracking-widest whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'CLIENTS' ? 'bg-white border-t-2 border-t-blue-600 text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>
+                  <Icons.Users /> 顧客 マスター
+              </button>
+              <button onClick={() => setActiveTab('CONFIG')} className={`px-4 py-3 md:py-4 text-xs md:text-sm font-bold tracking-widest whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'CONFIG' ? 'bg-white border-t-2 border-t-gray-800 text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>
+                  <Icons.Settings /> システム設定
+              </button>
+          </div>
 
-            <div className="flex-1 bg-white border-x border-b border-gray-200 shadow-sm overflow-hidden flex flex-col rounded-b-sm">
-                <div className="overflow-x-auto overflow-y-auto flex-1 p-0">
-                    {/* ★ バグ解消: table自体に activeTab を key として設定し、タブ切り替え時にDOMを完全に再構築させる */}
-                    <table key={activeTab} className="w-full text-left border-collapse min-w-[1000px]">
-                        <thead className="sticky top-0 bg-gray-100 shadow-sm z-10 border-b border-gray-200">
-                            <tr>
-                                {activeTab === 'WIRES' && (
-                                    <><th className="p-4 text-xs font-bold text-gray-500 uppercase w-[35%]">メーカー / 品名 / 仕様</th><th className="p-4 text-xs font-bold text-gray-500 uppercase w-[30%] text-center">歩留まり算出 (総重量 → 銅重量)</th><th className="p-4 text-xs font-bold text-gray-900 bg-gray-200 uppercase w-[25%] text-right border-l border-gray-300">💰 想定単価 (現在相場換算)</th></>
-                                )}
-                                {activeTab === 'CLIENTS' && (
-                                    <><th className="p-4 text-xs font-bold text-gray-500 uppercase w-[25%]">顧客名・社名</th><th className="p-4 text-xs font-bold text-gray-500 uppercase w-[15%]">ランク / Pt</th><th className="p-4 text-xs font-bold text-gray-500 uppercase w-[15%]">連絡先</th><th className="p-4 text-xs font-bold text-gray-500 uppercase w-[15%]">ログイン情報</th><th className="p-4 text-xs font-bold text-gray-500 uppercase w-[20%]">メモ</th></>
-                                )}
-                                {activeTab === 'SALES_TARGETS' && (
-                                    <><th className="p-4 text-xs font-bold text-gray-500 uppercase w-[25%]">企業名</th><th className="p-4 text-xs font-bold text-gray-500 uppercase w-[15%]">エリア / 優先度</th><th className="p-4 text-xs font-bold text-gray-500 uppercase w-[15%]">連絡先</th><th className="p-4 text-xs font-bold text-gray-500 uppercase w-[15%]">ステータス</th><th className="p-4 text-xs font-bold text-gray-500 uppercase w-[20%]">メモ / 提案内容</th></>
-                                )}
-                                {activeTab === 'CASTINGS' && (
-                                    <><th className="p-4 text-xs font-bold text-gray-500 uppercase w-[30%]">品名</th><th className="p-4 text-xs font-bold text-gray-500 uppercase w-[20%]">相場種別</th><th className="p-4 text-xs font-bold text-gray-500 uppercase w-[20%] text-center">歩留まり (%)</th><th className="p-4 text-xs font-bold text-gray-900 bg-gray-200 uppercase w-[20%] text-right border-l border-gray-300">💰 想定単価</th></>
-                                )}
-                                {activeTab === 'STAFF' && (
-                                    <><th className="p-4 text-xs font-bold text-gray-500 uppercase w-[30%]">従業員名</th><th className="p-4 text-xs font-bold text-gray-500 uppercase w-[25%]">役割 (Role)</th><th className="p-4 text-xs font-bold text-gray-900 bg-gray-200 uppercase w-[25%] text-right border-l border-gray-300">⏱️ 分間チャージレート</th><th className="p-4 text-xs font-bold text-gray-500 uppercase w-[10%] text-center">状態</th></>
-                                )}
-                                <th className="p-4 text-xs font-bold text-gray-500 uppercase w-[10%] text-center">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100 text-sm">
-                            
-                            {isAdding && (
-                                <tr className="bg-gray-50">
-                                    {activeTab === 'WIRES' && (
-                                        <>
-                                            <td className="p-3 space-y-2">
-                                                <div className="flex gap-2"><input autoFocus placeholder="メーカー" className={inputClass} onChange={e => setFormState({...formState, maker: e.target.value})} /><input placeholder="品名 (例: CV)" className={inputClass} onChange={e => setFormState({...formState, name: e.target.value})} /></div>
-                                                <div className="flex gap-2"><input placeholder="製造年" className={inputClass} onChange={e => setFormState({...formState, year: e.target.value})} /><input placeholder="sq" className={inputClass} onChange={e => setFormState({...formState, sq: e.target.value})} /><input placeholder="芯数(C)" className={inputClass} onChange={e => setFormState({...formState, core: e.target.value})} /><input placeholder="導体" className={inputClass} onChange={e => setFormState({...formState, conductor: e.target.value})} /></div>
-                                                <input placeholder="備考メモ" className={inputClass} onChange={e => setFormState({...formState, memo: e.target.value})} />
-                                            </td>
-                                            <td className="p-3 text-center space-y-3 bg-white border-x border-gray-200 shadow-inner">
-                                                <div className="flex items-center gap-2 justify-center">
-                                                    <input type="number" placeholder="総重量(g)" className={inputClass + " w-28 text-right"} onChange={e => handleSampleChange('sample_total', e.target.value)} />
-                                                    <span className="text-gray-400 font-bold">→</span>
-                                                    <input type="number" placeholder="銅重量(g)" className={inputClass + " w-28 text-right text-red-600"} onChange={e => handleSampleChange('sample_copper', e.target.value)} />
-                                                </div>
-                                                <div className="flex items-center justify-center gap-2 bg-gray-100 p-2 rounded-sm border border-gray-300">
-                                                    <span className="text-xs font-bold text-gray-600">確定歩留まり=</span>
-                                                    <input type="number" className={`${inputClass} w-24 text-center font-black text-[#D32F2F] bg-transparent border-none focus:ring-0`} value={formState.ratio || ''} onChange={e => setFormState({...formState, ratio: e.target.value})} />
-                                                    <span className="text-xs font-bold text-gray-600">%</span>
-                                                </div>
-                                            </td>
-                                            <td className="p-3 bg-gray-100 text-right font-mono text-gray-500 text-sm">保存後に計算</td>
-                                        </>
-                                    )}
-                                    {activeTab === 'CLIENTS' && (
-                                        <>
-                                            <td className="p-3"><input autoFocus placeholder="会社名" className={inputClass} onChange={e => setFormState({...formState, name: e.target.value})} /></td>
-                                            <td className="p-3 space-y-2"><select className={inputClass} onChange={e => setFormState({...formState, rank: e.target.value})} defaultValue="NORMAL"><option value="NORMAL">NORMAL</option><option value="GOLD">GOLD</option></select><input type="number" inputMode="decimal" placeholder="Pt" className={inputClass} onChange={e => setFormState({...formState, points: e.target.value})} /></td>
-                                            <td className="p-3"><input placeholder="連絡先" className={inputClass} onChange={e => setFormState({...formState, phone: e.target.value})} /></td>
-                                            <td className="p-3 space-y-2"><input placeholder="ID" className={inputClass} onChange={e => setFormState({...formState, loginId: e.target.value})} /><input placeholder="PW" className={inputClass} onChange={e => setFormState({...formState, password: e.target.value})} /></td>
-                                            <td className="p-3"><input placeholder="メモ" className={inputClass} onChange={e => setFormState({...formState, memo: e.target.value})} /></td>
-                                        </>
-                                    )}
-                                    {activeTab === 'SALES_TARGETS' && (
-                                        <>
-                                            <td className="p-3"><input autoFocus placeholder="企業名" className={inputClass} onChange={e => setFormState({...formState, company: e.target.value})} /></td>
-                                            <td className="p-3 space-y-2"><input placeholder="エリア" className={inputClass} onChange={e => setFormState({...formState, area: e.target.value})} /><select className={inputClass} onChange={e => setFormState({...formState, priority: e.target.value})} defaultValue="B"><option value="S">S</option><option value="A">A</option><option value="B">B</option><option value="C">C</option></select></td>
-                                            <td className="p-3"><input placeholder="連絡先" className={inputClass} onChange={e => setFormState({...formState, contact: e.target.value})} /></td>
-                                            <td className="p-3"><select className={inputClass} onChange={e => setFormState({...formState, status: e.target.value})} defaultValue="新規"><option value="新規">新規</option><option value="アプローチ中">アプローチ中</option><option value="既存取引先">既存取引先</option></select></td>
-                                            <td className="p-3"><input placeholder="メモ" className={inputClass} onChange={e => setFormState({...formState, memo: e.target.value})} /></td>
-                                        </>
-                                    )}
-                                    {activeTab === 'CASTINGS' && (
-                                        <>
-                                            <td className="p-3"><input autoFocus placeholder="品名" className={inputClass} onChange={e => setFormState({...formState, name: e.target.value})} /></td>
-                                            <td className="p-3"><select className={inputClass} value={formState.type} onChange={e => setFormState({...formState, type: e.target.value})}><option value="BRASS">BRASS</option><option value="COPPER">COPPER</option><option value="ZINC">ZINC</option><option value="LEAD">LEAD</option></select></td>
-                                            <td className="p-3"><input type="number" inputMode="decimal" placeholder="100" className={`${inputClass} text-center font-black text-[#D32F2F]`} onChange={e => setFormState({...formState, ratio: e.target.value})} /></td>
-                                            <td className="p-3 bg-gray-100 text-right font-mono text-gray-500 text-sm">保存後に計算</td>
-                                        </>
-                                    )}
-                                    {activeTab === 'STAFF' && (
-                                        <>
-                                            <td className="p-3"><input autoFocus placeholder="山田 太郎" className={inputClass} onChange={e => setFormState({...formState, name: e.target.value})} /></td>
-                                            <td className="p-3"><select className={inputClass} value={formState.role} onChange={e => setFormState({...formState, role: e.target.value})}><option value="ALL">ALL (全般)</option><option value="INSPECTION">INSPECTION (検収)</option><option value="SORTING">SORTING (選別)</option><option value="PLANT">PLANT (機械)</option></select></td>
-                                            <td className="p-3 bg-white relative border-l border-gray-200"><input type="number" inputMode="decimal" placeholder="50" className={`${inputClass} text-right font-black pr-8`} onChange={e => setFormState({...formState, rate: e.target.value})} /><span className="absolute right-6 top-1/2 -translate-y-1/2 text-sm text-gray-500">円</span></td>
-                                            <td className="p-3"><select className={inputClass} value={formState.status} onChange={e => setFormState({...formState, status: e.target.value})}><option value="ACTIVE">ACTIVE</option><option value="INACTIVE">INACTIVE</option></select></td>
-                                        </>
-                                    )}
-                                    <td className="p-3 text-center align-top">
-                                        <div className="flex flex-col gap-2 items-center">
-                                            <button onClick={() => handleSave(true)} disabled={isSaving} className="bg-[#111] text-white w-full py-2 rounded-sm text-xs font-bold hover:bg-[#D32F2F] transition shadow-sm">{isSaving ? '保存中' : '保存'}</button>
-                                            <button onClick={() => setIsAdding(false)} className="bg-white border border-gray-300 text-gray-600 w-full py-2 rounded-sm text-xs font-bold hover:bg-gray-100 transition shadow-sm">取消</button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            )}
+          <div className="flex-1 bg-white border-x border-b border-gray-200 shadow-sm flex flex-col min-h-[500px] overflow-hidden">
+              
+              {activeTab === 'WIRES' && (
+                  <div className="flex-1 overflow-y-auto overflow-x-auto p-0">
+                      <table className="w-full text-left border-collapse min-w-[600px]">
+                          <thead className="sticky top-0 bg-gray-100 border-b border-gray-200 z-10">
+                              <tr>
+                                  <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest w-[10%]">ID</th>
+                                  <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest w-[30%]">品名</th>
+                                  <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest w-[15%] text-center">歩留設定 (%)</th>
+                                  <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest w-[25%] text-right">参考単価 (円/kg)</th>
+                                  <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest w-[20%] text-center">操作</th>
+                              </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100 text-sm">
+                              {wires.map((w: any) => {
+                                  const isEditing = editingId === w.id;
+                                  const calcPrice = Math.floor(copperPrice * (Number(w.ratio) / 100) * 0.85); // 85%掛けをマージンとする
+                                  return (
+                                      <tr key={w.id} className="hover:bg-gray-50 transition">
+                                          <td className="p-3 font-mono text-xs text-gray-400">{w.id}</td>
+                                          <td className="p-3 font-bold text-gray-900">{getDisplayName(w)}</td>
+                                          <td className="p-3 text-center">
+                                              {isEditing ? (
+                                                  <input type="number" className="w-20 border border-gray-300 p-1 text-center font-mono rounded-sm outline-none focus:border-[#D32F2F]" value={editValues.ratio || ''} onChange={(e)=>setEditValues({...editValues, ratio: e.target.value})} />
+                                              ) : (
+                                                  <span className="font-mono font-bold">{w.ratio} %</span>
+                                              )}
+                                          </td>
+                                          <td className="p-3 text-right">
+                                              <span className="text-xs text-gray-400 mr-2">目安:</span>
+                                              <span className="font-black text-[#D32F2F] text-lg tracking-tighter">¥{calcPrice.toLocaleString()}</span>
+                                          </td>
+                                          <td className="p-3 text-center">
+                                              {isEditing ? (
+                                                  <div className="flex gap-2 justify-center">
+                                                      <button onClick={() => handleSave('Wires', w.id)} disabled={isSaving} className="bg-gray-900 text-white px-3 py-1 text-[10px] font-bold rounded-sm hover:bg-black transition"><Icons.Save /> 保存</button>
+                                                      <button onClick={() => setEditingId(null)} className="text-gray-400 text-[10px] font-bold hover:text-gray-900">取消</button>
+                                                  </div>
+                                              ) : (
+                                                  <button onClick={() => handleEdit(w)} className="text-gray-400 hover:text-gray-900 transition p-2"><Icons.Edit /></button>
+                                              )}
+                                          </td>
+                                      </tr>
+                                  );
+                              })}
+                          </tbody>
+                      </table>
+                  </div>
+              )}
 
-                            {filteredData.map((record: any) => {
-                                let estimatedPrice = 0;
-                                const currentRatio = editingId === record.id ? (formState.ratio || 0) : (record.ratio || 0);
+              {activeTab === 'CASTINGS' && (
+                  <div className="flex-1 overflow-y-auto overflow-x-auto p-0">
+                      <table className="w-full text-left border-collapse min-w-[600px]">
+                          <thead className="sticky top-0 bg-gray-100 border-b border-gray-200 z-10">
+                              <tr>
+                                  <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest">ID</th>
+                                  <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest">品名</th>
+                                  <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest">ベース建値</th>
+                                  <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-center">掛率 (%)</th>
+                                  <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">参考単価 (円/kg)</th>
+                              </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100 text-sm">
+                              {castings.map((c: any) => {
+                                  let basePrice = copperPrice;
+                                  let baseName = "銅";
+                                  if (c.type === 'BRASS') { basePrice = brassPrice; baseName = "真鍮"; }
+                                  if (c.type === 'ZINC') { basePrice = zincPrice; baseName = "亜鉛"; }
+                                  if (c.type === 'LEAD') { basePrice = leadPrice; baseName = "鉛"; }
+                                  
+                                  const calcPrice = Math.floor(basePrice * (Number(c.ratio) / 100) * 0.90);
+                                  return (
+                                      <tr key={c.id} className="hover:bg-gray-50 transition">
+                                          <td className="p-3 font-mono text-xs text-gray-400">{c.id}</td>
+                                          <td className="p-3 font-bold text-gray-900">{c.name}</td>
+                                          <td className="p-3 text-xs text-gray-500"><span className="bg-gray-100 px-2 py-0.5 border border-gray-200 rounded-sm">{baseName}</span></td>
+                                          <td className="p-3 text-center font-mono font-bold">{c.ratio} %</td>
+                                          <td className="p-3 text-right">
+                                              <span className="text-xs text-gray-400 mr-2">目安:</span>
+                                              <span className="font-black text-gray-900 text-lg tracking-tighter">¥{calcPrice.toLocaleString()}</span>
+                                          </td>
+                                      </tr>
+                                  );
+                              })}
+                          </tbody>
+                      </table>
+                  </div>
+              )}
 
-                                if (activeTab === 'WIRES') {
-                                    estimatedPrice = Math.floor(copperPrice * (Number(currentRatio)/100) * 0.85);
-                                } else if (activeTab === 'CASTINGS') {
-                                    let base = copperPrice;
-                                    const rType = editingId === record.id ? formState.type : record.type;
-                                    if (rType === 'BRASS') base = brassPrice;
-                                    estimatedPrice = Math.floor(base * (Number(currentRatio)/100) * 0.90);
-                                }
+              {activeTab === 'CLIENTS' && (
+                  <div className="flex-1 overflow-y-auto overflow-x-auto p-0">
+                      <table className="w-full text-left border-collapse min-w-[800px]">
+                          <thead className="sticky top-0 bg-gray-100 border-b border-gray-200 z-10">
+                              <tr>
+                                  <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest">顧客名 / 代表者</th>
+                                  <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-center">ランク</th>
+                                  <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest">連絡先</th>
+                                  <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest">特記事項</th>
+                                  <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">詳細</th>
+                              </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100 text-sm">
+                              {clients.map((client: any) => (
+                                  <tr key={client.clientId} className="hover:bg-blue-50/30 transition cursor-pointer" onClick={() => onNavigate && onNavigate('CLIENT_DETAIL', client.companyName || client.name)}>
+                                      <td className="p-3">
+                                          <p className="font-bold text-gray-900">{client.companyName || client.name}</p>
+                                          <p className="text-xs text-gray-500 mt-0.5">{client.representative || '-'}</p>
+                                      </td>
+                                      <td className="p-3 text-center">
+                                          <span className={`inline-block w-6 h-6 leading-6 text-center rounded text-xs font-black ${client.rank === 'S' ? 'bg-[#D32F2F] text-white' : client.rank === 'A' ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-600'}`}>{client.rank || 'B'}</span>
+                                      </td>
+                                      <td className="p-3 text-xs font-mono text-gray-600">{client.phone || '-'}</td>
+                                      <td className="p-3 text-xs text-gray-500 truncate max-w-[200px]">{client.note || '-'}</td>
+                                      <td className="p-3 text-right">
+                                          <Icons.ArrowRight />
+                                      </td>
+                                  </tr>
+                              ))}
+                          </tbody>
+                      </table>
+                  </div>
+              )}
 
-                                return (
-                                <tr key={record.id} className="hover:bg-red-50/20 transition duration-150">
-                                    {editingId === record.id ? (
-                                        <>
-                                            {activeTab === 'WIRES' && (
-                                                <>
-                                                    <td className="p-3 space-y-2 bg-gray-50 border-r border-gray-200">
-                                                        <div className="flex gap-2"><input type="text" placeholder="メーカー" className={inputClass} value={formState.maker || ''} onChange={e => setFormState({...formState, maker: e.target.value})} /><input type="text" placeholder="品名" className={inputClass} value={formState.name || ''} onChange={e => setFormState({...formState, name: e.target.value})} /></div>
-                                                        <div className="flex gap-2"><input type="text" placeholder="年" className={inputClass} value={formState.year || ''} onChange={e => setFormState({...formState, year: e.target.value})} /><input type="text" placeholder="sq" className={inputClass} value={formState.sq || ''} onChange={e => setFormState({...formState, sq: e.target.value})} /><input type="text" placeholder="芯" className={inputClass} value={formState.core || ''} onChange={e => setFormState({...formState, core: e.target.value})} /><input type="text" placeholder="導体" className={inputClass} value={formState.conductor || ''} onChange={e => setFormState({...formState, conductor: e.target.value})} /></div>
-                                                        <input type="text" placeholder="備考" className={inputClass} value={formState.memo || ''} onChange={e => setFormState({...formState, memo: e.target.value})} />
-                                                    </td>
-                                                    <td className="p-3 text-center space-y-3 bg-white border-r border-gray-200 shadow-inner">
-                                                        <div className="flex items-center gap-2 justify-center">
-                                                            <input type="number" placeholder="総量(g)" className={inputClass + " w-28 text-right"} value={formState.sample_total || ''} onChange={e => handleSampleChange('sample_total', e.target.value)} />
-                                                            <span className="text-gray-400 font-bold">→</span>
-                                                            <input type="number" placeholder="銅量(g)" className={inputClass + " w-28 text-right text-red-600"} value={formState.sample_copper || ''} onChange={e => handleSampleChange('sample_copper', e.target.value)} />
-                                                        </div>
-                                                        <div className="flex items-center justify-center gap-2 bg-gray-100 p-2 rounded-sm border border-gray-300">
-                                                            <span className="text-xs font-bold text-gray-600">確定歩留まり=</span>
-                                                            <input type="number" inputMode="decimal" className={`${inputClass} w-24 text-center font-black text-[#D32F2F] bg-transparent border-none focus:ring-0`} value={formState.ratio || 0} onChange={e => setFormState({...formState, ratio: e.target.value})} />
-                                                            <span className="text-xs font-bold text-gray-600">%</span>
-                                                        </div>
-                                                    </td>
-                                                    <td className="p-3 bg-gray-100 border-l border-gray-200 text-right"><span className="text-xl font-black font-mono text-[#D32F2F]">¥{estimatedPrice.toLocaleString()}</span></td>
-                                                </>
-                                            )}
-                                            {activeTab === 'CLIENTS' && (
-                                                <>
-                                                    <td className="p-3"><input type="text" className={inputClass} value={formState.name || ''} onChange={e => setFormState({...formState, name: e.target.value})} /></td>
-                                                    <td className="p-3 space-y-2"><select className={inputClass} value={formState.rank || 'NORMAL'} onChange={e => setFormState({...formState, rank: e.target.value})}><option value="NORMAL">NORMAL</option><option value="GOLD">GOLD</option></select><input type="number" inputMode="decimal" className={inputClass} value={formState.points || 0} onChange={e => setFormState({...formState, points: e.target.value})} /></td>
-                                                    <td className="p-3"><input type="text" className={inputClass} value={formState.phone || ''} onChange={e => setFormState({...formState, phone: e.target.value})} /></td>
-                                                    <td className="p-3 space-y-2"><input type="text" className={inputClass} value={formState.loginId || ''} onChange={e => setFormState({...formState, loginId: e.target.value})} /><input type="text" className={inputClass} value={formState.password || ''} onChange={e => setFormState({...formState, password: e.target.value})} /></td>
-                                                    <td className="p-3"><input type="text" className={inputClass} value={formState.memo || ''} onChange={e => setFormState({...formState, memo: e.target.value})} /></td>
-                                                </>
-                                            )}
-                                            {activeTab === 'SALES_TARGETS' && (
-                                                <>
-                                                    <td className="p-3"><input type="text" className={inputClass} value={formState.company || ''} onChange={e => setFormState({...formState, company: e.target.value})} /></td>
-                                                    <td className="p-3 space-y-2"><input type="text" className={inputClass} value={formState.area || ''} onChange={e => setFormState({...formState, area: e.target.value})} /><select className={inputClass} value={formState.priority || 'B'} onChange={e => setFormState({...formState, priority: e.target.value})}><option value="S">S</option><option value="A">A</option><option value="B">B</option><option value="C">C</option></select></td>
-                                                    <td className="p-3"><input type="text" className={inputClass} value={formState.contact || ''} onChange={e => setFormState({...formState, contact: e.target.value})} /></td>
-                                                    <td className="p-3"><select className={inputClass} value={formState.status || '新規'} onChange={e => setFormState({...formState, status: e.target.value})}><option value="新規">新規</option><option value="アプローチ中">アプローチ中</option><option value="既存取引先">既存取引先</option></select></td>
-                                                    <td className="p-3"><input type="text" className={inputClass} value={formState.memo || ''} onChange={e => setFormState({...formState, memo: e.target.value})} /></td>
-                                                </>
-                                            )}
-                                            {activeTab === 'CASTINGS' && (
-                                                <>
-                                                    <td className="p-3"><input type="text" className={inputClass} value={formState.name || ''} onChange={e => setFormState({...formState, name: e.target.value})} /></td>
-                                                    <td className="p-3"><select className={inputClass} value={formState.type || 'BRASS'} onChange={e => setFormState({...formState, type: e.target.value})}><option value="BRASS">BRASS</option><option value="COPPER">COPPER</option><option value="ZINC">ZINC</option><option value="LEAD">LEAD</option></select></td>
-                                                    <td className="p-3"><input type="number" inputMode="decimal" className={`${inputClass} text-center font-black text-[#D32F2F]`} value={formState.ratio || 0} onChange={e => setFormState({...formState, ratio: e.target.value})} /></td>
-                                                    <td className="p-3 bg-gray-100 border-l border-gray-200 text-right"><span className="text-xl font-black font-mono text-[#D32F2F]">¥{estimatedPrice.toLocaleString()}</span></td>
-                                                </>
-                                            )}
-                                            {activeTab === 'STAFF' && (
-                                                <>
-                                                    <td className="p-3"><input type="text" className={inputClass} value={formState.name || ''} onChange={e => setFormState({...formState, name: e.target.value})} /></td>
-                                                    <td className="p-3"><select className={inputClass} value={formState.role || 'ALL'} onChange={e => setFormState({...formState, role: e.target.value})}><option value="ALL">ALL (全般)</option><option value="INSPECTION">INSPECTION (検収)</option><option value="SORTING">SORTING (選別)</option><option value="PLANT">PLANT (機械)</option></select></td>
-                                                    <td className="p-3 bg-white relative border-l border-gray-200"><input type="number" inputMode="decimal" className={`${inputClass} text-right font-black pr-8`} value={formState.rate || 0} onChange={e => setFormState({...formState, rate: e.target.value})} /><span className="absolute right-6 top-1/2 -translate-y-1/2 text-sm text-gray-500">円</span></td>
-                                                    <td className="p-3"><select className={inputClass} value={formState.status || 'ACTIVE'} onChange={e => setFormState({...formState, status: e.target.value})}><option value="ACTIVE">ACTIVE</option><option value="INACTIVE">INACTIVE</option></select></td>
-                                                </>
-                                            )}
-                                            <td className="p-3 text-center align-top border-l border-gray-100">
-                                                <div className="flex flex-col gap-2 items-center">
-                                                    <button onClick={() => handleSave(false, record.id)} disabled={isSaving} className="bg-[#111] text-white w-full py-2 rounded-sm text-xs font-bold hover:bg-[#D32F2F] transition shadow-sm">{isSaving ? '保存中' : '保存'}</button>
-                                                    <button onClick={() => setEditingId(null)} className="bg-white border border-gray-300 text-gray-600 w-full py-2 rounded-sm text-xs font-bold hover:bg-gray-100 transition shadow-sm">取消</button>
-                                                </div>
-                                            </td>
-                                        </>
-                                    ) : (
-                                        <>
-                                            {activeTab === 'WIRES' && (
-                                                <>
-                                                    <td className="p-4 align-top border-r border-gray-100">
-                                                        <div className="font-bold text-gray-900 text-lg mb-2">
-                                                            {record.maker && record.maker !== '-' && <span className="text-xs text-gray-500 font-normal mr-2">[{record.maker}]</span>}
-                                                            {record.name}
-                                                        </div>
-                                                        <div className="flex gap-2 text-sm font-mono text-gray-600 mb-1">
-                                                            {record.year && record.year !== '-' && <span className="bg-gray-50 px-2 py-1 rounded-sm border border-gray-200">{record.year}年製</span>}
-                                                            {record.sq && record.sq !== '-' && <span className="bg-gray-50 px-2 py-1 rounded-sm border border-gray-200">{record.sq}sq</span>}
-                                                            {record.core && record.core !== '-' && <span className="bg-gray-50 px-2 py-1 rounded-sm border border-gray-200">{record.core}C</span>}
-                                                            {record.conductor && record.conductor !== '-' && <span className="bg-gray-50 px-2 py-1 rounded-sm border border-gray-200">{record.conductor}</span>}
-                                                        </div>
-                                                        {record.memo && <div className="text-xs text-gray-400 italic mt-2">{record.memo}</div>}
-                                                    </td>
-                                                    <td className="p-4 align-top text-center border-r border-gray-100">
-                                                        <div className="text-sm text-gray-500 font-mono mb-2 bg-gray-50 inline-block px-3 py-1 rounded-sm border border-gray-200">
-                                                            {record.sample_total > 0 ? `${record.sample_total}g → ${record.sample_copper}g` : '実測データなし'}
-                                                        </div>
-                                                        <div className="text-3xl font-mono font-black text-gray-900">{record.ratio}<span className="text-base text-gray-500 font-normal ml-1">%</span></div>
-                                                    </td>
-                                                    <td className="p-4 align-top bg-gray-50 text-right"><span className="text-2xl font-black font-mono text-[#D32F2F]">¥{estimatedPrice.toLocaleString()}</span></td>
-                                                </>
-                                            )}
-                                            {activeTab === 'CLIENTS' && (
-                                                <>
-                                                    <td className="p-4 align-top"><div className="font-bold text-gray-900 text-base">{record.name}</div></td>
-                                                    <td className="p-4 align-top"><span className={`text-xs px-2 py-1 border rounded-sm font-mono font-bold ${record.rank === 'GOLD' ? 'bg-[#111] text-white border-black' : 'bg-gray-50 text-gray-600 border-gray-200'}`}>{record.rank}</span><div className="text-sm font-mono text-gray-600 mt-2">{record.points} pt</div></td>
-                                                    <td className="p-4 align-top text-gray-600 font-mono text-sm">{record.phone || '-'}</td>
-                                                    <td className="p-4 align-top text-xs font-mono text-gray-500 space-y-1"><div>ID: <span className="text-gray-900 font-bold">{record.loginId}</span></div><div>PW: <span className="text-gray-900 font-bold">{record.password}</span></div></td>
-                                                    <td className="p-4 align-top text-sm text-gray-500" title={record.memo}>{record.memo || '-'}</td>
-                                                </>
-                                            )}
-                                            {activeTab === 'SALES_TARGETS' && (
-                                                <>
-                                                    <td className="p-4 align-top font-bold text-gray-900 text-base">{record.company}</td>
-                                                    <td className="p-4 align-top"><div className="text-sm text-gray-500 mb-1 font-mono">{record.area || '-'}</div><span className="text-xs px-2 py-1 rounded-sm border bg-gray-50 text-gray-600 font-mono font-bold">Rank {record.priority}</span></td>
-                                                    <td className="p-4 align-top text-gray-600 font-mono text-sm">{record.contact || '-'}</td>
-                                                    <td className="p-4 align-top"><span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-sm text-xs border border-gray-200 font-bold">{record.status}</span></td>
-                                                    <td className="p-4 align-top text-sm text-gray-500">{record.memo || record.proposal || '-'}</td>
-                                                </>
-                                            )}
-                                            {activeTab === 'CASTINGS' && (
-                                                <>
-                                                    <td className="p-4 align-top font-bold text-gray-900 text-base">{record.name}</td>
-                                                    <td className="p-4 align-top"><span className="bg-gray-50 text-gray-600 px-2 py-1 rounded-sm border border-gray-200 text-xs font-mono font-bold">{record.type}</span></td>
-                                                    <td className="p-4 align-top text-center"><span className="text-2xl font-mono font-black text-gray-800">{record.ratio}%</span></td>
-                                                    <td className="p-4 align-top bg-gray-50 text-right"><span className="text-2xl font-black font-mono text-[#D32F2F]">¥{estimatedPrice.toLocaleString()}</span></td>
-                                                </>
-                                            )}
-                                            {activeTab === 'STAFF' && (
-                                                <>
-                                                    <td className="p-4 align-top font-bold text-gray-900 text-base">{record.name}</td>
-                                                    <td className="p-4 align-top"><span className="bg-gray-50 text-gray-600 px-2 py-1 rounded-sm border border-gray-200 text-xs font-mono font-bold">{record.role}</span></td>
-                                                    <td className="p-4 align-top bg-gray-50 text-right">
-                                                        <span className="text-2xl font-black font-mono text-gray-900">{record.rate}</span>
-                                                        <span className="text-sm text-gray-500 ml-1">円/分</span>
-                                                    </td>
-                                                    <td className="p-4 align-top text-center">
-                                                        <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${record.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-500'}`}>{record.status}</span>
-                                                    </td>
-                                                </>
-                                            )}
-                                            <td className="p-4 align-top text-center border-l border-gray-100">
-                                                <div className="flex flex-col gap-2 items-center">
-                                                    <button onClick={() => handleEditClick(record)} className="text-xs font-bold text-gray-600 border border-gray-300 px-3 py-2 hover:bg-gray-100 transition rounded-sm w-full shadow-sm">編集</button>
-                                                    <button onClick={() => handleDelete(record.id)} className="text-xs font-bold text-gray-400 hover:text-[#D32F2F] transition w-full py-1">削除</button>
-                                                </div>
-                                            </td>
-                                        </>
-                                    )}
-                                </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    );
+              {activeTab === 'CONFIG' && (
+                  <div className="p-6 overflow-y-auto">
+                      <div className="max-w-xl mx-auto space-y-6">
+                          <div className="bg-gray-50 p-6 rounded-sm border border-gray-200">
+                              <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><Icons.Settings /> 外部連携・相場設定</h3>
+                              <div className="space-y-4">
+                                  <div className="flex justify-between items-center border-b border-gray-200 pb-2">
+                                      <span className="text-xs font-bold text-gray-500">銅建値 (手動上書き用)</span>
+                                      <span className="font-mono font-black text-lg">{copperPrice} 円/kg</span>
+                                  </div>
+                                  <div className="flex justify-between items-center border-b border-gray-200 pb-2">
+                                      <span className="text-xs font-bold text-gray-500">為替レート (USD/JPY)</span>
+                                      <span className="font-mono font-bold">{config.usdjpy || 150} 円</span>
+                                  </div>
+                                  <div className="flex justify-between items-center border-b border-gray-200 pb-2">
+                                      <span className="text-xs font-bold text-gray-500">LME銅 3M</span>
+                                      <span className="font-mono font-bold">{config.lme_copper_usd || 9000} USD/t</span>
+                                  </div>
+                              </div>
+                          </div>
+                          <p className="text-[10px] text-gray-400 text-center">※システム設定の変更はGoogle Spreadsheetの「Config」シートから行ってください。</p>
+                      </div>
+                  </div>
+              )}
+
+          </div>
+      </div>
+
+      {/* --- 🖨️ 印刷用レポート専用レイアウト (通常時は非表示) --- */}
+      <div className="hidden print:block w-[210mm] min-h-[297mm] bg-white text-black p-8 mx-auto font-sans">
+          <div className="border-b-2 border-black pb-4 mb-6 flex justify-between items-end">
+              <div>
+                  <h1 className="text-3xl font-black font-serif tracking-widest">
+                      {activeTab === 'WIRES' || activeTab === 'CASTINGS' ? '本日の買取価格表' : 
+                       activeTab === 'CLIENTS' ? '顧客ディレクトリ (社内秘)' : 'システムレポート'}
+                  </h1>
+                  <p className="text-sm font-bold text-gray-600 mt-2">株式会社月寒製作所 苫小牧工場</p>
+              </div>
+              <div className="text-right">
+                  <p className="text-lg font-bold font-mono">{new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}</p>
+              </div>
+          </div>
+
+          {/* AIサマリーセクション */}
+          <section className="mb-8 border-2 border-black p-6 rounded-sm bg-gray-50">
+              <h2 className="text-lg font-black text-black flex items-center gap-2 mb-4">
+                  <Icons.Brain /> 本日の相場概況とインサイト
+              </h2>
+              <div className="text-sm leading-relaxed whitespace-pre-wrap font-bold text-gray-800">
+                  {aiSummary || "（データ処理中です...）"}
+              </div>
+          </section>
+
+          {/* 動的テーブル出力 (開いているタブに応じて切り替え) */}
+          {(activeTab === 'WIRES' || activeTab === 'CASTINGS') && (
+              <div className="mb-8">
+                  <div className="flex justify-between text-sm font-bold bg-black text-white px-4 py-2 mb-4">
+                      <span>基準相場: 銅建値 {copperPrice}円/kg | 真鍮建値 {brassPrice}円/kg | 亜鉛建値 {zincPrice}円/kg</span>
+                  </div>
+                  <table className="w-full text-left border-collapse text-sm">
+                      <thead>
+                          <tr className="border-b-2 border-black text-xs">
+                              <th className="py-2 w-[40%]">品目名</th>
+                              <th className="py-2 text-center w-[20%]">評価ベース</th>
+                              <th className="py-2 text-center w-[20%]">歩留/掛率</th>
+                              <th className="py-2 text-right w-[20%]">参考買取単価</th>
+                          </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-300">
+                          {activeTab === 'WIRES' ? wires.map((w:any) => (
+                              <tr key={w.id} className="py-1">
+                                  <td className="py-2 font-bold">{getDisplayName(w)}</td>
+                                  <td className="py-2 text-center text-gray-600">銅</td>
+                                  <td className="py-2 text-center font-mono">{w.ratio}%</td>
+                                  <td className="py-2 text-right font-black font-mono">¥{Math.floor(copperPrice * (w.ratio/100) * 0.85).toLocaleString()} /kg</td>
+                              </tr>
+                          )) : castings.map((c:any) => (
+                              <tr key={c.id} className="py-1">
+                                  <td className="py-2 font-bold">{c.name}</td>
+                                  <td className="py-2 text-center text-gray-600">{c.type === 'BRASS' ? '真鍮' : c.type === 'ZINC' ? '亜鉛' : c.type === 'LEAD' ? '鉛' : '銅'}</td>
+                                  <td className="py-2 text-center font-mono">{c.ratio}%</td>
+                                  <td className="py-2 text-right font-black font-mono">
+                                      ¥{Math.floor((c.type === 'BRASS' ? brassPrice : c.type === 'ZINC' ? zincPrice : c.type === 'LEAD' ? leadPrice : copperPrice) * (c.ratio/100) * 0.90).toLocaleString()} /kg
+                                  </td>
+                              </tr>
+                          ))}
+                      </tbody>
+                  </table>
+                  <p className="text-[10px] text-gray-500 text-right mt-2">※上記単価はあくまで目安であり、持ち込み量やダストの有無により変動します。</p>
+              </div>
+          )}
+
+          {activeTab === 'CLIENTS' && (
+              <div className="mb-8">
+                  <table className="w-full text-left border-collapse text-sm">
+                      <thead>
+                          <tr className="border-b-2 border-black text-xs">
+                              <th className="py-2 w-[40%]">顧客・企業名</th>
+                              <th className="py-2 text-center w-[10%]">ランク</th>
+                              <th className="py-2 w-[25%]">連絡先</th>
+                              <th className="py-2 w-[25%]">特記事項</th>
+                          </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-300">
+                          {clients.map((c:any) => (
+                              <tr key={c.clientId} className="py-1">
+                                  <td className="py-2 font-bold">{c.companyName || c.name}</td>
+                                  <td className="py-2 text-center font-black">{c.rank || 'B'}</td>
+                                  <td className="py-2 font-mono text-xs">{c.phone || '-'}</td>
+                                  <td className="py-2 text-xs text-gray-600 truncate">{c.note || '-'}</td>
+                              </tr>
+                          ))}
+                      </tbody>
+                  </table>
+              </div>
+          )}
+
+      </div>
+    </div>
+  );
 };
