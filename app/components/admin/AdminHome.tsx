@@ -11,7 +11,8 @@ const Icons = {
     Factory: () => <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>,
     Scale: () => <svg className="w-6 h-6 text-[#D32F2F]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>,
     ArrowRight: () => <svg className="w-5 h-5 text-gray-300 group-hover:text-[#D32F2F] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>,
-    Message: () => <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
+    Message: () => <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>,
+    Brain: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
 };
 
 // スパークライン（背景のミニチャート）
@@ -26,7 +27,6 @@ const Sparkline = ({ data, color }: { data: number[], color: string }) => {
     
     const points = data.map((d, i) => {
         const x = (i / (data.length - 1)) * width;
-        // ★ 修正：値が全て同じ（平坦）な場合は中央に線を描画する
         const y = max === min ? height / 2 : height - padding - ((d - min) / range) * (height - padding * 2);
         return `${x},${y}`;
     }).join(' ');
@@ -70,8 +70,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
     const history = data?.history || [];
     const currentPrice = history.length > 0 ? Number(history[history.length - 1].value) : copperPrice;
     
-    // ★ 修正：すべての金属の履歴データを抽出するヘルパー関数
-    // GAS側が銅しか返していない現状でも、エラーを出さずにフラットな配列を返す安全設計
     const extractSparkData = (key: string, fallbackPrice: number) => {
         const vals = history.map((h: any) => Number(h[key] || (key === 'copper' ? h.value : fallbackPrice)));
         return vals.length >= 7 ? vals.slice(-7) : [...Array(7 - vals.length).fill(fallbackPrice), ...vals];
@@ -83,7 +81,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
     const leadSparkData = extractSparkData('lead', leadPrice);
     const tinSparkData = extractSparkData('tin', tinPrice);
 
-    // 前日比の計算
     const getDiff = (sparkData: number[]) => {
         if (sparkData.length >= 2) return sparkData[sparkData.length - 1] - sparkData[sparkData.length - 2];
         return 0;
@@ -112,7 +109,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
         return sum + weight;
     }, 0);
 
-    // ★ 修正：クラッシュの原因となっていた currentPrice = copperPrice の代入を修正
     const { totalCopperStock, inventoryValue } = useMemo(() => {
         const productions = data?.productions || [];
         const producedCopper = productions.reduce((sum: number, p: any) => sum + (Number(p.outputCopper) || 0), 0);
@@ -222,7 +218,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                 </div>
             </header>
 
-            {/* ★ 横スクロールの完全レスポンシブティッカー（各金属の推移チャート付き） */}
             <div className="mb-10 px-2 w-full">
                 <div className="flex xl:grid xl:grid-cols-6 gap-4 overflow-x-auto xl:overflow-visible no-scrollbar pb-4 xl:pb-0 snap-x w-full">
                     {marketItems.map((m, i) => (
@@ -302,6 +297,32 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                     </div>
                     <div className="mt-5 pt-4 border-t border-blue-200/50 text-xs text-blue-600/70 font-mono relative z-10 flex justify-between items-center">
                         <span className="font-bold">累計対応数: {data?.chatStats?.total || 0} 件</span>
+                        
+                        {/* ★ AI仮想トレーニング実行ボタン */}
+                        <button 
+                            onClick={async (e) => {
+                                const btn = e.currentTarget;
+                                btn.disabled = true;
+                                btn.innerText = "トレーニング中...";
+                                try {
+                                    const res = await fetch('/api/simulate', { method: 'POST' });
+                                    const simData = await res.json();
+                                    if(simData.success) {
+                                        alert("仮想トレーニング完了！\n\n【ペルソナ】\n" + simData.persona + "\n\n【生成された会話】\n" + simData.chatHistory);
+                                        window.location.reload();
+                                    } else {
+                                        alert("エラー: " + simData.message);
+                                    }
+                                } catch(err) {
+                                    alert("通信エラーが発生しました。");
+                                }
+                                btn.disabled = false;
+                                btn.innerText = "仮想トレーニング実行";
+                            }}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-sm text-[10px] font-bold shadow-sm transition flex items-center gap-1 disabled:opacity-50"
+                        >
+                            <Icons.Brain /> 仮想トレーニング実行
+                        </button>
                     </div>
                 </div>
 
