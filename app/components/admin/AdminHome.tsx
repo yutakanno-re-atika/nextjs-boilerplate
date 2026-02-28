@@ -252,7 +252,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                         <p className="text-xs text-gray-500 mt-2 font-mono tracking-widest ml-4 uppercase font-bold">Executive Overview & KPIs</p>
                     </div>
                     <div className="flex items-center gap-4">
-                        {/* トラスト・トグル */}
                         <div className="flex items-center gap-1 bg-white p-1 rounded-sm border border-gray-300 shadow-sm">
                             <button 
                                 onClick={() => setShowAiData(true)}
@@ -376,7 +375,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                         <div className="mt-5 pt-4 border-t border-gray-300 text-xs text-gray-600 font-mono relative z-10 flex justify-between items-center">
                             <span className="font-bold">累計対応数: {data?.chatStats?.total || 0} 件</span>
                             
-                            {/* ★ 復活させた AI自動学習用のボタン（白黒グレーのデザイントーンに適合） */}
                             <button 
                                 onClick={async (e) => {
                                     const btn = e.currentTarget;
@@ -475,7 +473,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
 
                         </div>
 
-                        {/* 本日の買取価格表 */}
+                        {/* ★ 本日の買取価格表（余白を追加して見切れを修正） */}
                         <div className="bg-white rounded-sm border border-gray-200 shadow-sm overflow-hidden group hover:border-gray-300 transition-colors h-fit relative">
                             <div className="absolute top-4 right-4 z-20">
                                 <ProvenanceBadge type="CO_OP" />
@@ -484,8 +482,9 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                                 <h3 className="font-bold text-sm text-gray-900 flex items-center gap-2">本日の買取価格表 <span className="text-xs text-gray-400 font-normal">(主要品目)</span></h3>
                                 <Icons.ArrowRight />
                             </div>
-                            <div className="p-0 overflow-x-auto">
-                                <table className="w-full text-left">
+                            {/* pb-2 を追加してテーブル下部の見切れを解消 */}
+                            <div className="p-0 overflow-x-auto pb-2">
+                                <table className="w-full text-left mb-2">
                                     <thead className="bg-white border-b border-gray-100 text-xs font-bold text-gray-400 uppercase tracking-widest">
                                         <tr>
                                             <th className="p-4 pl-6">品名</th>
