@@ -11,47 +11,43 @@ const Icons = {
   Refresh: () => <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
   Brain: () => <svg className="w-5 h-5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>,
   Trash: () => <svg className="w-4 h-4 inline-block md:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
-  Plus: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
+  Plus: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>,
+  Camera: () => <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+  Upload: () => <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>,
+  ImagePlaceholder: () => <svg className="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
 };
 
-// ★ プロベナンス・バッジ
+// ★ プロベナンス・バッジ（白抜き・グレー濃淡）
 const ProvenanceBadge = ({ type }: { type: 'HUMAN' | 'AI_AUTO' | 'CO_OP' }) => {
     const baseStyle = "inline-block px-1.5 py-0.5 text-[9px] font-mono font-bold tracking-widest rounded-sm text-white cursor-default shadow-sm";
     switch (type) {
-        case 'HUMAN':
-            return <span className={`${baseStyle} bg-gray-900`} title="実測・確定データ">HUMAN</span>;
-        case 'CO_OP':
-            return <span className={`${baseStyle} bg-gray-600`} title="AI＋人間 協調データ">CO-P</span>;
-        case 'AI_AUTO':
-            return <span className={`${baseStyle} bg-gray-400`} title="AI予測・推論データ">AI</span>;
-        default:
-            return null;
+        case 'HUMAN': return <span className={`${baseStyle} bg-gray-900`} title="実測・確定データ">HUMAN</span>;
+        case 'CO_OP': return <span className={`${baseStyle} bg-gray-600`} title="AI＋人間 協調データ">CO-P</span>;
+        case 'AI_AUTO': return <span className={`${baseStyle} bg-gray-400`} title="AI予測・推論データ">AI</span>;
+        default: return null;
     }
 };
 
 const ROLE_OPTIONS = [
-  { value: 'SUPPLIER', short: '仕入先', label: '仕入先 (原料供給)', color: 'bg-blue-100 text-blue-800 border-blue-300' },
-  { value: 'BUYER', short: '売却先', label: '売却先 (出荷・エンド)', color: 'bg-green-100 text-green-800 border-green-300' },
-  { value: 'PARTNER', short: 'パートナー', label: 'パートナー (相互融通・産廃等)', color: 'bg-purple-100 text-purple-800 border-purple-300' },
-  { value: 'COMPETITOR', short: '競合', label: '競合他社 (相場監視)', color: 'bg-red-100 text-red-800 border-red-300' },
+  { value: 'SUPPLIER', short: '仕入先', label: '仕入先 (原料供給)', color: 'bg-gray-100 text-gray-800 border-gray-300' },
+  { value: 'BUYER', short: '売却先', label: '売却先 (出荷・エンド)', color: 'bg-gray-100 text-gray-800 border-gray-300' },
+  { value: 'PARTNER', short: 'パートナー', label: 'パートナー (相互融通・産廃等)', color: 'bg-gray-100 text-gray-800 border-gray-300' },
+  { value: 'COMPETITOR', short: '競合', label: '競合他社 (相場監視)', color: 'bg-gray-100 text-gray-800 border-gray-300' },
   { value: 'SYSTEM_PARTNER', short: 'システム', label: 'システム・開発', color: 'bg-gray-100 text-gray-800 border-gray-300' }
 ];
 
 export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: any }) => {
   const [activeTab, setActiveTab] = useState<'WIRES' | 'CASTINGS' | 'CLIENTS' | 'CONFIG'>('WIRES');
-  
-  // ★ トラスト・トグル（AIデータの表示/非表示）
   const [showAiData, setShowAiData] = useState(true);
 
-  // 編集用ステート
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<any>({});
-  
-  // 追加用ステート
   const [addingTab, setAddingTab] = useState<string | null>(null);
   const [addValues, setAddValues] = useState<any>({});
   
   const [isSaving, setIsSaving] = useState(false);
+  const [uploadingField, setUploadingField] = useState<string | null>(null);
+
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [aiSummary, setAiSummary] = useState<string>('');
 
@@ -65,14 +61,12 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
   const zincPrice = Number(config.zinc_price) || 450;
   const leadPrice = Number(config.lead_price) || 380;
 
-  // ★ AI由来のデータかどうかを判定するロジック
   const isAiGenerated = (item: any) => {
       if (item.source === 'AI' || item.source === 'AI_AUTO') return true;
       if (item.memo && String(item.memo).includes('AI')) return true;
       return false;
   };
 
-  // トグルに応じたフィルタリング
   const filteredWires = wires.filter(w => showAiData ? true : !isAiGenerated(w));
   const filteredCastings = castings.filter(c => showAiData ? true : !isAiGenerated(c));
   const filteredClients = clients.filter(c => showAiData ? true : !isAiGenerated(c));
@@ -97,6 +91,44 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
       setAddValues({});
   };
 
+  // ★ 画像アップロード処理 (Google Driveへ保存し、URLを取得)
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: string, colIndex: number) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      if (file.size > 5 * 1024 * 1024) {
+          alert('ファイルサイズは5MB以下にしてください。');
+          return;
+      }
+      
+      setUploadingField(fieldName);
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+          const base64Data = (ev.target?.result as string).split(',')[1];
+          const payload = {
+              action: 'UPLOAD_IMAGE',
+              sheetName: 'Products_Wire',
+              recordId: editingId,
+              colIndex: colIndex, 
+              fileName: `${editingId}_${fieldName}_${file.name}`,
+              mimeType: file.type,
+              data: base64Data
+          };
+          try {
+              const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+              const result = await res.json();
+              if (result.status === 'success') {
+                  setEditValues(prev => ({ ...prev, [fieldName]: result.url }));
+              } else {
+                  alert('アップロード失敗: ' + result.message);
+              }
+          } catch (err) {
+              alert('通信エラーが発生しました');
+          }
+          setUploadingField(null);
+      };
+      reader.readAsDataURL(file);
+  };
+
   const handleSave = async (sheetName: string, id: string) => {
       setIsSaving(true);
       try {
@@ -109,11 +141,7 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                   9: editValues.ratio 
               };
           } else if (sheetName === 'Products_Casting') {
-              updates = { 
-                  1: editValues.name, 
-                  2: editValues.type, 
-                  4: editValues.ratio 
-              };
+              updates = { 1: editValues.name, 2: editValues.type, 4: editValues.ratio };
           } else if (sheetName === 'Clients') {
               updates = { 
                   1: editValues.companyName || editValues.name,
@@ -142,16 +170,11 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
   const handleAdd = async (sheetName: string) => {
       setIsSaving(true);
       try {
-          // 人間がUIから追加した場合は、将来のためのsourceフラグも送信可能（現状はバックエンドで処理）
           const payload = { action: 'ADD_DB_RECORD', sheetName, data: addValues };
           const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
           const result = await res.json();
-          if (result.status === 'success') {
-              setAddingTab(null);
-              window.location.reload();
-          } else {
-              alert('エラー: ' + result.message);
-          }
+          if (result.status === 'success') { setAddingTab(null); window.location.reload(); }
+          else { alert('エラー: ' + result.message); }
       } catch(e) { alert('通信エラーが発生しました'); }
       setIsSaving(false);
   };
@@ -163,11 +186,8 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
           const payload = { action: 'DELETE_DB_RECORD', sheetName, recordId: id };
           const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
           const result = await res.json();
-          if (result.status === 'success') {
-              window.location.reload();
-          } else {
-              alert('エラー: ' + result.message);
-          }
+          if (result.status === 'success') { window.location.reload(); }
+          else { alert('エラー: ' + result.message); }
       } catch(e) { alert('通信エラーが発生しました'); }
       setIsSaving(false);
   };
@@ -220,7 +240,6 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-500 text-gray-900 pb-12 font-sans max-w-7xl mx-auto w-full relative" style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
       
-      {/* --- 通常の画面 --- */}
       <div className="print:hidden flex flex-col h-full">
           <header className="mb-4 md:mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4 border-b border-gray-200 pb-4 flex-shrink-0">
             <div>
@@ -232,22 +251,10 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
             </div>
             
             <div className="flex items-center gap-4">
-                {/* ★ トラスト・トグル */}
                 <div className="flex items-center gap-1 bg-white p-1 rounded-sm border border-gray-300 shadow-sm">
-                    <button 
-                        onClick={() => setShowAiData(true)}
-                        className={`px-4 py-1.5 text-xs font-bold font-mono transition-colors ${showAiData ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-100'}`}
-                    >
-                        MIX
-                    </button>
-                    <button 
-                        onClick={() => setShowAiData(false)}
-                        className={`px-4 py-1.5 text-xs font-bold font-mono transition-colors ${!showAiData ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-100'}`}
-                    >
-                        HUMAN ONLY
-                    </button>
+                    <button onClick={() => setShowAiData(true)} className={`px-4 py-1.5 text-xs font-bold font-mono transition-colors ${showAiData ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-100'}`}>MIX</button>
+                    <button onClick={() => setShowAiData(false)} className={`px-4 py-1.5 text-xs font-bold font-mono transition-colors ${!showAiData ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-100'}`}>HUMAN ONLY</button>
                 </div>
-
                 <button onClick={handlePrintReport} disabled={isGeneratingReport || activeTab === 'CONFIG'} className="bg-white border border-gray-300 text-gray-800 px-4 py-2 rounded-sm text-xs font-bold hover:border-[#D32F2F] hover:text-[#D32F2F] transition shadow-sm flex items-center justify-center gap-2 disabled:opacity-50">
                     {isGeneratingReport ? <Icons.Refresh /> : <Icons.Print />}
                     {activeTab === 'CONFIG' ? '印刷非対応' : isGeneratingReport ? 'AI分析中...' : 'このタブを印刷する'}
@@ -280,33 +287,36 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                               <Icons.Plus /> 新規追加
                           </button>
                       </div>
-                      <table className="w-full text-left border-collapse min-w-[700px]">
+                      <table className="w-full text-left border-collapse min-w-[900px]">
                           <thead className="bg-gray-100 border-b border-gray-200 text-[10px] font-bold text-gray-500 uppercase tracking-widest">
                               <tr>
                                   <th className="p-3 w-[10%]">ID</th>
-                                  <th className="p-3 w-[35%]">品名・詳細</th>
-                                  <th className="p-3 w-[15%] text-center">歩留設定 (%)</th>
-                                  <th className="p-3 w-[20%] text-right">参考単価</th>
-                                  <th className="p-3 w-[20%] text-center">操作</th>
+                                  <th className="p-3 w-[30%]">品名・詳細</th>
+                                  <th className="p-3 w-[20%]">登録画像</th>
+                                  <th className="p-3 w-[10%] text-center">歩留設定</th>
+                                  <th className="p-3 w-[15%] text-right">参考単価</th>
+                                  <th className="p-3 w-[15%] text-center">操作</th>
                               </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-100 text-sm">
-                              {/* 新規追加フォーム行 */}
                               {addingTab === 'WIRES' && (
                                   <tr className="bg-blue-50/30 border-b-2 border-blue-200">
                                       <td className="p-3 font-mono text-xs text-blue-400 font-bold">NEW</td>
                                       <td className="p-3 flex gap-2">
                                           <input type="text" placeholder="品名 (例: CV線)" value={addValues.name || ''} onChange={e => setAddValues({...addValues, name: e.target.value})} className="w-full p-1.5 border border-gray-300 rounded-sm text-xs outline-none focus:border-[#D32F2F]" />
-                                          <input type="text" placeholder="sq" value={addValues.sq || ''} onChange={e => setAddValues({...addValues, sq: e.target.value})} className="w-16 p-1.5 border border-gray-300 rounded-sm text-xs outline-none focus:border-[#D32F2F]" />
-                                          <input type="text" placeholder="C(芯)" value={addValues.core || ''} onChange={e => setAddValues({...addValues, core: e.target.value})} className="w-16 p-1.5 border border-gray-300 rounded-sm text-xs outline-none focus:border-[#D32F2F]" />
+                                          <input type="text" placeholder="sq" value={addValues.sq || ''} onChange={e => setAddValues({...addValues, sq: e.target.value})} className="w-12 p-1.5 border border-gray-300 rounded-sm text-xs outline-none focus:border-[#D32F2F]" />
+                                          <input type="text" placeholder="C" value={addValues.core || ''} onChange={e => setAddValues({...addValues, core: e.target.value})} className="w-12 p-1.5 border border-gray-300 rounded-sm text-xs outline-none focus:border-[#D32F2F]" />
                                       </td>
+                                      <td className="p-3 text-[10px] text-gray-400">※画像は登録後に追加可能</td>
                                       <td className="p-3 text-center">
-                                          <input type="number" placeholder="歩留" value={addValues.ratio || ''} onChange={e => setAddValues({...addValues, ratio: e.target.value})} className="w-20 p-1.5 border border-gray-300 rounded-sm text-xs text-center font-mono outline-none focus:border-[#D32F2F]" />
+                                          <input type="number" placeholder="歩留" value={addValues.ratio || ''} onChange={e => setAddValues({...addValues, ratio: e.target.value})} className="w-16 p-1.5 border border-gray-300 rounded-sm text-xs text-center font-mono outline-none focus:border-[#D32F2F]" />
                                       </td>
                                       <td className="p-3 text-right text-gray-400">-</td>
-                                      <td className="p-3 text-center flex gap-2 justify-center">
-                                          <button onClick={() => handleAdd('Products_Wire')} disabled={isSaving || !addValues.name || !addValues.ratio} className="bg-blue-600 text-white px-3 py-1 text-[10px] font-bold rounded-sm hover:bg-blue-700 transition disabled:opacity-50 shadow-sm"><Icons.Save /> 登録</button>
-                                          <button onClick={handleCancel} className="text-gray-500 hover:text-gray-900 text-[10px] font-bold">取消</button>
+                                      <td className="p-3 text-center">
+                                          <div className="flex gap-2 justify-center">
+                                              <button onClick={() => handleAdd('Products_Wire')} disabled={isSaving || !addValues.name || !addValues.ratio} className="bg-gray-900 text-white px-3 py-1.5 text-[10px] font-bold rounded-sm hover:bg-black transition disabled:opacity-50 shadow-sm"><Icons.Save /> 登録</button>
+                                              <button onClick={handleCancel} className="text-gray-500 hover:text-gray-900 text-[10px] font-bold">取消</button>
+                                          </div>
                                       </td>
                                   </tr>
                               )}
@@ -315,46 +325,112 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                                   const isEditing = editingId === w.id;
                                   const isAi = isAiGenerated(w);
                                   const calcPrice = Math.floor(copperPrice * (Number(w.ratio) / 100) * 0.85);
+                                  
                                   return (
-                                      <tr key={w.id} className={`hover:bg-gray-50 transition ${isEditing ? 'bg-red-50/10' : ''} ${isAi ? 'bg-blue-50/10' : ''}`}>
-                                          <td className="p-3 font-mono text-xs text-gray-400">{w.id}</td>
-                                          <td className="p-3">
-                                              {isEditing ? (
-                                                  <div className="flex gap-2">
-                                                      <input type="text" value={editValues.name || ''} onChange={e => setEditValues({...editValues, name: e.target.value})} className="w-full p-1.5 border border-gray-300 rounded-sm text-xs font-bold outline-none focus:border-[#D32F2F]" placeholder="品名" />
-                                                      <input type="text" value={editValues.sq || ''} onChange={e => setEditValues({...editValues, sq: e.target.value})} className="w-16 p-1.5 border border-gray-300 rounded-sm text-xs outline-none focus:border-[#D32F2F]" placeholder="sq" />
-                                                      <input type="text" value={editValues.core || ''} onChange={e => setEditValues({...editValues, core: e.target.value})} className="w-16 p-1.5 border border-gray-300 rounded-sm text-xs outline-none focus:border-[#D32F2F]" placeholder="C" />
+                                      <React.Fragment key={w.id}>
+                                          <tr className={`hover:bg-gray-50 transition ${isEditing ? 'bg-red-50/10' : ''}`}>
+                                              <td className="p-3 font-mono text-xs text-gray-400">{w.id}</td>
+                                              <td className="p-3">
+                                                  {isEditing ? (
+                                                      <div className="flex gap-2">
+                                                          <input type="text" value={editValues.name || ''} onChange={e => setEditValues({...editValues, name: e.target.value})} className="w-full p-1.5 border border-gray-300 rounded-sm text-xs font-bold outline-none focus:border-gray-900" placeholder="品名" />
+                                                          <input type="text" value={editValues.sq || ''} onChange={e => setEditValues({...editValues, sq: e.target.value})} className="w-12 p-1.5 border border-gray-300 rounded-sm text-xs outline-none focus:border-gray-900" placeholder="sq" />
+                                                          <input type="text" value={editValues.core || ''} onChange={e => setEditValues({...editValues, core: e.target.value})} className="w-12 p-1.5 border border-gray-300 rounded-sm text-xs outline-none focus:border-gray-900" placeholder="C" />
+                                                      </div>
+                                                  ) : (
+                                                      <div className="flex items-center gap-2">
+                                                          <span className="font-bold text-gray-900">{getDisplayName(w)}</span>
+                                                          <ProvenanceBadge type={isAi ? 'AI_AUTO' : 'HUMAN'} />
+                                                      </div>
+                                                  )}
+                                              </td>
+                                              
+                                              {/* ★ 画像サムネイル表示領域 */}
+                                              <td className="p-3">
+                                                  <div className="flex gap-1.5">
+                                                      {[w.image1, w.image2, w.image3].map((imgUrl, idx) => (
+                                                          imgUrl ? (
+                                                              <a key={idx} href={imgUrl} target="_blank" rel="noopener noreferrer" className="block w-8 h-8 rounded-sm overflow-hidden border border-gray-300 shadow-sm hover:border-[#D32F2F] hover:scale-150 transform transition-all z-10 hover:z-50 relative">
+                                                                  <img src={imgUrl} alt={`wire_img_${idx}`} className="w-full h-full object-cover" />
+                                                              </a>
+                                                          ) : (
+                                                              <div key={idx} className="w-8 h-8 rounded-sm border border-dashed border-gray-300 flex items-center justify-center bg-gray-50 opacity-50">
+                                                                  <Icons.ImagePlaceholder />
+                                                              </div>
+                                                          )
+                                                      ))}
                                                   </div>
-                                              ) : (
-                                                  <div className="flex items-center gap-2">
-                                                      <span className="font-bold text-gray-900">{getDisplayName(w)}</span>
-                                                      <ProvenanceBadge type={isAi ? 'AI_AUTO' : 'HUMAN'} />
-                                                  </div>
-                                              )}
-                                          </td>
-                                          <td className="p-3 text-center">
-                                              {isEditing ? (
-                                                  <input type="number" className="w-20 border border-red-300 p-1.5 text-center font-mono font-bold text-[#D32F2F] rounded-sm outline-none focus:border-red-500" value={editValues.ratio || ''} onChange={(e)=>setEditValues({...editValues, ratio: e.target.value})} />
-                                              ) : (
-                                                  <span className="font-mono font-bold">{w.ratio} %</span>
-                                              )}
-                                          </td>
-                                          <td className="p-3 text-right">
-                                              <span className="text-xs text-gray-400 mr-2">目安:</span>
-                                              <span className="font-black text-[#D32F2F] text-lg tracking-tighter">¥{calcPrice.toLocaleString()}</span>
-                                          </td>
-                                          <td className="p-3 text-center">
-                                              {isEditing ? (
-                                                  <div className="flex gap-2 justify-center">
-                                                      <button onClick={() => handleSave('Products_Wire', w.id)} disabled={isSaving} className="bg-gray-900 text-white px-3 py-1.5 text-[10px] font-bold rounded-sm hover:bg-black transition shadow-sm"><Icons.Save /> 保存</button>
-                                                      <button onClick={() => handleDelete('Products_Wire', w.id)} disabled={isSaving} className="bg-red-50 text-red-600 border border-red-200 px-2 py-1.5 text-[10px] font-bold rounded-sm hover:bg-red-100 transition shadow-sm"><Icons.Trash /></button>
-                                                      <button onClick={handleCancel} className="text-gray-400 text-[10px] font-bold hover:text-gray-900">取消</button>
-                                                  </div>
-                                              ) : (
-                                                  <button onClick={() => handleEdit(w)} className="text-gray-400 hover:text-gray-900 transition p-2"><Icons.Edit /></button>
-                                              )}
-                                          </td>
-                                      </tr>
+                                              </td>
+
+                                              <td className="p-3 text-center">
+                                                  {isEditing ? (
+                                                      <input type="number" className="w-16 border border-gray-900 p-1.5 text-center font-mono font-bold text-gray-900 rounded-sm outline-none focus:border-[#D32F2F]" value={editValues.ratio || ''} onChange={(e)=>setEditValues({...editValues, ratio: e.target.value})} />
+                                                  ) : (
+                                                      <span className="font-mono font-bold text-gray-800">{w.ratio} %</span>
+                                                  )}
+                                              </td>
+                                              <td className="p-3 text-right">
+                                                  <span className="text-xs text-gray-400 mr-2">目安:</span>
+                                                  <span className="font-black text-[#D32F2F] text-lg tracking-tighter">¥{calcPrice.toLocaleString()}</span>
+                                              </td>
+                                              <td className="p-3 text-center">
+                                                  {isEditing ? (
+                                                      <div className="flex gap-2 justify-center">
+                                                          <button onClick={() => handleSave('Products_Wire', w.id)} disabled={isSaving} className="bg-gray-900 text-white px-3 py-1.5 text-[10px] font-bold rounded-sm hover:bg-black transition shadow-sm"><Icons.Save /> 保存</button>
+                                                          <button onClick={() => handleDelete('Products_Wire', w.id)} disabled={isSaving} className="bg-white text-gray-600 border border-gray-300 px-2 py-1.5 text-[10px] font-bold rounded-sm hover:bg-red-50 hover:text-[#D32F2F] transition shadow-sm"><Icons.Trash /></button>
+                                                          <button onClick={handleCancel} className="text-gray-400 text-[10px] font-bold hover:text-gray-900">取消</button>
+                                                      </div>
+                                                  ) : (
+                                                      <button onClick={() => handleEdit(w)} className="text-gray-400 hover:text-gray-900 transition p-2 bg-white rounded-sm border border-gray-200 shadow-sm"><Icons.Edit /></button>
+                                                  )}
+                                              </td>
+                                          </tr>
+
+                                          {/* ★ 画像アップロード拡張UI (編集時のみ行の下に展開) */}
+                                          {isEditing && (
+                                              <tr className="bg-gray-50/50 border-b-2 border-gray-200">
+                                                  <td colSpan={6} className="p-4 pt-0">
+                                                      <div className="flex flex-col bg-white p-4 border border-gray-200 rounded-sm shadow-inner mt-2">
+                                                          <span className="text-xs font-bold text-gray-500 mb-3 flex items-center gap-1">
+                                                              <Icons.Camera /> 画像データ (AI教師データとしてGoogle Driveへ保存)
+                                                          </span>
+                                                          <div className="flex gap-4">
+                                                              {[1, 2, 3].map(num => {
+                                                                  const field = `image${num}`;
+                                                                  const url = editValues[field];
+                                                                  const isUploading = uploadingField === field;
+                                                                  // ★ L列(11), M列(12), N列(13) に対応
+                                                                  const colIndex = 10 + num; 
+                                                                  return (
+                                                                      <div key={num} className="flex flex-col gap-1">
+                                                                          <span className="text-[10px] font-mono text-gray-400 tracking-widest uppercase">Image {num}</span>
+                                                                          <div className={`w-28 h-28 bg-gray-50 border-2 border-dashed ${url ? 'border-gray-300' : 'border-gray-300 hover:border-gray-500'} rounded-sm flex flex-col items-center justify-center relative overflow-hidden group transition-colors cursor-pointer`}>
+                                                                              {isUploading ? (
+                                                                                  <div className="text-gray-900 animate-spin"><Icons.Refresh /></div>
+                                                                              ) : url ? (
+                                                                                  <>
+                                                                                      <img src={url} alt={`img${num}`} className="w-full h-full object-cover group-hover:opacity-40 transition-opacity" />
+                                                                                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none bg-black/40">
+                                                                                          <Icons.Upload />
+                                                                                      </div>
+                                                                                  </>
+                                                                              ) : (
+                                                                                  <>
+                                                                                      <Icons.Plus />
+                                                                                      <span className="text-[10px] text-gray-400 font-bold mt-1">Upload</span>
+                                                                                  </>
+                                                                              )}
+                                                                              <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, field, colIndex)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" title={`画像${num}をアップロード`} disabled={isUploading} />
+                                                                          </div>
+                                                                      </div>
+                                                                  )
+                                                              })}
+                                                          </div>
+                                                      </div>
+                                                  </td>
+                                              </tr>
+                                          )}
+                                      </React.Fragment>
                                   );
                               })}
                           </tbody>
@@ -386,10 +462,10 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                                   <tr className="bg-blue-50/30 border-b-2 border-blue-200">
                                       <td className="p-3 font-mono text-xs text-blue-400 font-bold">NEW</td>
                                       <td className="p-3">
-                                          <input type="text" placeholder="品名 (例: 砲金)" value={addValues.name || ''} onChange={e => setAddValues({...addValues, name: e.target.value})} className="w-full p-1.5 border border-gray-300 rounded-sm text-xs outline-none focus:border-[#D32F2F]" />
+                                          <input type="text" placeholder="品名 (例: 砲金)" value={addValues.name || ''} onChange={e => setAddValues({...addValues, name: e.target.value})} className="w-full p-1.5 border border-gray-300 rounded-sm text-xs outline-none focus:border-gray-900" />
                                       </td>
                                       <td className="p-3">
-                                          <select value={addValues.type || 'COPPER'} onChange={e => setAddValues({...addValues, type: e.target.value})} className="w-full p-1.5 border border-gray-300 rounded-sm text-xs outline-none focus:border-[#D32F2F]">
+                                          <select value={addValues.type || 'COPPER'} onChange={e => setAddValues({...addValues, type: e.target.value})} className="w-full p-1.5 border border-gray-300 rounded-sm text-xs outline-none focus:border-gray-900">
                                               <option value="COPPER">銅</option>
                                               <option value="BRASS">真鍮</option>
                                               <option value="ZINC">亜鉛</option>
@@ -397,11 +473,11 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                                           </select>
                                       </td>
                                       <td className="p-3 text-center">
-                                          <input type="number" placeholder="掛率" value={addValues.ratio || ''} onChange={e => setAddValues({...addValues, ratio: e.target.value})} className="w-20 p-1.5 border border-gray-300 rounded-sm text-xs text-center font-mono outline-none focus:border-[#D32F2F]" />
+                                          <input type="number" placeholder="掛率" value={addValues.ratio || ''} onChange={e => setAddValues({...addValues, ratio: e.target.value})} className="w-20 p-1.5 border border-gray-300 rounded-sm text-xs text-center font-mono outline-none focus:border-gray-900" />
                                       </td>
                                       <td className="p-3 text-right text-gray-400">-</td>
                                       <td className="p-3 text-center flex gap-2 justify-center">
-                                          <button onClick={() => handleAdd('Products_Casting')} disabled={isSaving || !addValues.name || !addValues.ratio} className="bg-blue-600 text-white px-3 py-1 text-[10px] font-bold rounded-sm hover:bg-blue-700 transition disabled:opacity-50 shadow-sm"><Icons.Save /> 登録</button>
+                                          <button onClick={() => handleAdd('Products_Casting')} disabled={isSaving || !addValues.name || !addValues.ratio} className="bg-gray-900 text-white px-3 py-1.5 text-[10px] font-bold rounded-sm hover:bg-black transition disabled:opacity-50 shadow-sm"><Icons.Save /> 登録</button>
                                           <button onClick={handleCancel} className="text-gray-500 hover:text-gray-900 text-[10px] font-bold">取消</button>
                                       </td>
                                   </tr>
@@ -417,11 +493,11 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                                   const calcPrice = Math.floor(basePrice * (Number(c.ratio) / 100) * 0.90);
                                   
                                   return (
-                                      <tr key={c.id} className={`hover:bg-gray-50 transition ${isEditing ? 'bg-red-50/10' : ''} ${isAi ? 'bg-blue-50/10' : ''}`}>
+                                      <tr key={c.id} className={`hover:bg-gray-50 transition ${isEditing ? 'bg-red-50/10' : ''}`}>
                                           <td className="p-3 font-mono text-xs text-gray-400">{c.id}</td>
                                           <td className="p-3">
                                               {isEditing ? (
-                                                  <input type="text" value={editValues.name || ''} onChange={e => setEditValues({...editValues, name: e.target.value})} className="w-full p-1.5 border border-gray-300 rounded-sm text-xs font-bold outline-none focus:border-[#D32F2F]" />
+                                                  <input type="text" value={editValues.name || ''} onChange={e => setEditValues({...editValues, name: e.target.value})} className="w-full p-1.5 border border-gray-300 rounded-sm text-xs font-bold outline-none focus:border-gray-900" />
                                               ) : (
                                                   <div className="flex items-center gap-2">
                                                       <span className="font-bold text-gray-900">{c.name}</span>
@@ -431,7 +507,7 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                                           </td>
                                           <td className="p-3 text-xs text-gray-500">
                                               {isEditing ? (
-                                                  <select value={editValues.type || ''} onChange={e => setEditValues({...editValues, type: e.target.value})} className="w-full p-1.5 border border-gray-300 rounded-sm outline-none focus:border-[#D32F2F]">
+                                                  <select value={editValues.type || ''} onChange={e => setEditValues({...editValues, type: e.target.value})} className="w-full p-1.5 border border-gray-300 rounded-sm outline-none focus:border-gray-900">
                                                       <option value="COPPER">銅</option>
                                                       <option value="BRASS">真鍮</option>
                                                       <option value="ZINC">亜鉛</option>
@@ -443,7 +519,7 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                                           </td>
                                           <td className="p-3 text-center">
                                               {isEditing ? (
-                                                  <input type="number" value={editValues.ratio || ''} onChange={e => setEditValues({...editValues, ratio: e.target.value})} className="w-20 p-1.5 border border-red-300 text-center font-mono font-bold text-[#D32F2F] rounded-sm outline-none focus:border-red-500" />
+                                                  <input type="number" value={editValues.ratio || ''} onChange={e => setEditValues({...editValues, ratio: e.target.value})} className="w-20 p-1.5 border border-gray-900 text-center font-mono font-bold text-gray-900 rounded-sm outline-none focus:border-[#D32F2F]" />
                                               ) : (
                                                   <span className="font-mono font-bold">{c.ratio} %</span>
                                               )}
@@ -456,11 +532,11 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                                               {isEditing ? (
                                                   <div className="flex gap-2 justify-center">
                                                       <button onClick={() => handleSave('Products_Casting', c.id)} disabled={isSaving} className="bg-gray-900 text-white px-3 py-1.5 text-[10px] font-bold rounded-sm hover:bg-black transition shadow-sm"><Icons.Save /> 保存</button>
-                                                      <button onClick={() => handleDelete('Products_Casting', c.id)} disabled={isSaving} className="bg-red-50 text-red-600 border border-red-200 px-2 py-1.5 text-[10px] font-bold rounded-sm hover:bg-red-100 transition shadow-sm"><Icons.Trash /></button>
+                                                      <button onClick={() => handleDelete('Products_Casting', c.id)} disabled={isSaving} className="bg-white text-gray-600 border border-gray-300 px-2 py-1.5 text-[10px] font-bold rounded-sm hover:bg-red-50 hover:text-[#D32F2F] transition shadow-sm"><Icons.Trash /></button>
                                                       <button onClick={handleCancel} className="text-gray-400 text-[10px] font-bold hover:text-gray-900">取消</button>
                                                   </div>
                                               ) : (
-                                                  <button onClick={() => handleEdit(c)} className="text-gray-400 hover:text-gray-900 transition p-2"><Icons.Edit /></button>
+                                                  <button onClick={() => handleEdit(c)} className="text-gray-400 hover:text-gray-900 transition p-2 bg-white rounded-sm border border-gray-200 shadow-sm"><Icons.Edit /></button>
                                               )}
                                           </td>
                                       </tr>
@@ -475,7 +551,7 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
               {activeTab === 'CLIENTS' && (
                   <div className="flex-1 overflow-y-auto overflow-x-auto p-0 relative">
                       <div className="sticky top-0 bg-white border-b border-gray-200 p-3 flex justify-end z-20">
-                          <button onClick={() => { setAddingTab('CLIENTS'); setEditingId(null); setAddValues({}); }} className="bg-blue-600 text-white px-4 py-2 text-xs font-bold rounded-sm flex items-center shadow-sm hover:bg-blue-700 transition">
+                          <button onClick={() => { setAddingTab('CLIENTS'); setEditingId(null); setAddValues({}); }} className="bg-[#111] text-white px-4 py-2 text-xs font-bold rounded-sm flex items-center shadow-sm hover:bg-[#D32F2F] transition">
                               <Icons.Plus /> 新規顧客の登録
                           </button>
                       </div>
@@ -494,8 +570,8 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                               {addingTab === 'CLIENTS' && (
                                   <tr className="bg-blue-50/30 border-b-2 border-blue-200">
                                       <td className="p-3">
-                                          <input type="text" placeholder="企業名" value={addValues.name || ''} onChange={e => setAddValues({...addValues, name: e.target.value})} className="w-full mb-1 p-1.5 border border-gray-300 rounded-sm text-xs font-bold outline-none focus:border-blue-500" />
-                                          <input type="text" placeholder="電話番号" value={addValues.phone || ''} onChange={e => setAddValues({...addValues, phone: e.target.value})} className="w-full p-1.5 border border-gray-300 rounded-sm text-xs font-mono outline-none focus:border-blue-500" />
+                                          <input type="text" placeholder="企業名" value={addValues.name || ''} onChange={e => setAddValues({...addValues, name: e.target.value})} className="w-full mb-1 p-1.5 border border-gray-300 rounded-sm text-xs font-bold outline-none focus:border-gray-900" />
+                                          <input type="text" placeholder="電話番号" value={addValues.phone || ''} onChange={e => setAddValues({...addValues, phone: e.target.value})} className="w-full p-1.5 border border-gray-300 rounded-sm text-xs font-mono outline-none focus:border-gray-900" />
                                       </td>
                                       <td className="p-3 text-center">
                                           <select value={addValues.rank || 'B'} onChange={e => setAddValues({...addValues, rank: e.target.value})} className="bg-white border border-gray-300 p-1.5 rounded-sm text-xs font-bold outline-none shadow-sm">
@@ -516,7 +592,7 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                                                               if (isChecked) newRoles = newRoles.filter(r => r !== opt.value);
                                                               else newRoles.push(opt.value);
                                                               setAddValues({...addValues, businessRole: newRoles.join(',')});
-                                                          }} className="accent-blue-600" />
+                                                          }} className="accent-gray-900" />
                                                           {opt.label}
                                                       </label>
                                                   );
@@ -524,13 +600,13 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                                           </div>
                                       </td>
                                       <td className="p-3">
-                                          <input type="text" placeholder="所在地" value={addValues.address || ''} onChange={e => setAddValues({...addValues, address: e.target.value})} className="w-full mb-1 p-1.5 border border-gray-300 rounded-sm text-xs outline-none focus:border-blue-500" />
-                                          <input type="text" placeholder="業種" value={addValues.industry || ''} onChange={e => setAddValues({...addValues, industry: e.target.value})} className="w-full mb-1 p-1.5 border border-gray-300 rounded-sm text-xs outline-none focus:border-blue-500" />
-                                          <input type="text" placeholder="メモ" value={addValues.memo || ''} onChange={e => setAddValues({...addValues, memo: e.target.value})} className="w-full p-1.5 border border-gray-300 rounded-sm text-xs outline-none focus:border-blue-500" />
+                                          <input type="text" placeholder="所在地" value={addValues.address || ''} onChange={e => setAddValues({...addValues, address: e.target.value})} className="w-full mb-1 p-1.5 border border-gray-300 rounded-sm text-xs outline-none focus:border-gray-900" />
+                                          <input type="text" placeholder="業種" value={addValues.industry || ''} onChange={e => setAddValues({...addValues, industry: e.target.value})} className="w-full mb-1 p-1.5 border border-gray-300 rounded-sm text-xs outline-none focus:border-gray-900" />
+                                          <input type="text" placeholder="メモ" value={addValues.memo || ''} onChange={e => setAddValues({...addValues, memo: e.target.value})} className="w-full p-1.5 border border-gray-300 rounded-sm text-xs outline-none focus:border-gray-900" />
                                       </td>
                                       <td className="p-3 text-right">
                                           <div className="flex flex-col gap-2 items-end">
-                                              <button onClick={() => handleAdd('Clients')} disabled={isSaving || !addValues.name} className="bg-blue-600 text-white px-4 py-2 text-[10px] font-bold rounded-sm hover:bg-blue-700 transition shadow-sm w-full"><Icons.Save /> 登録</button>
+                                              <button onClick={() => handleAdd('Clients')} disabled={isSaving || !addValues.name} className="bg-gray-900 text-white px-4 py-2 text-[10px] font-bold rounded-sm hover:bg-black transition shadow-sm w-full"><Icons.Save /> 登録</button>
                                               <button onClick={handleCancel} className="text-gray-500 hover:text-gray-900 text-[10px] font-bold w-full">取消</button>
                                           </div>
                                       </td>
@@ -548,15 +624,15 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                                   const rolesArray = currentRoles.split(/[,/，、]+/).map((r:string) => r.trim()).filter(Boolean);
 
                                   return (
-                                      <tr key={c.id || c.clientId} className={`hover:bg-blue-50/20 transition ${isEditing ? 'bg-red-50/10' : ''} ${isAi ? 'bg-blue-50/10' : ''}`}>
+                                      <tr key={c.id || c.clientId} className={`hover:bg-gray-50 transition ${isEditing ? 'bg-red-50/10' : ''}`}>
                                           <td className="p-3">
                                               {isEditing ? (
                                                   <div className="space-y-1.5">
-                                                      <input type="text" value={editValues.companyName || editValues.name || ''} onChange={e => setEditValues({...editValues, companyName: e.target.value})} className="w-full p-1.5 border border-gray-300 rounded-sm text-xs font-bold outline-none focus:border-[#D32F2F]" placeholder="企業名" />
-                                                      <input type="text" value={editValues.phone || ''} onChange={e => setEditValues({...editValues, phone: e.target.value})} className="w-full p-1.5 border border-gray-300 rounded-sm text-xs font-mono outline-none focus:border-[#D32F2F]" placeholder="連絡先" />
+                                                      <input type="text" value={editValues.companyName || editValues.name || ''} onChange={e => setEditValues({...editValues, companyName: e.target.value})} className="w-full p-1.5 border border-gray-300 rounded-sm text-xs font-bold outline-none focus:border-gray-900" placeholder="企業名" />
+                                                      <input type="text" value={editValues.phone || ''} onChange={e => setEditValues({...editValues, phone: e.target.value})} className="w-full p-1.5 border border-gray-300 rounded-sm text-xs font-mono outline-none focus:border-gray-900" placeholder="連絡先" />
                                                   </div>
                                               ) : (
-                                                  <div className="cursor-pointer" onClick={() => onNavigate && onNavigate('CLIENT_DETAIL', c.companyName || c.name)}>
+                                                  <div className="cursor-pointer" onClick={() => !isEditing && onNavigate && onNavigate('CLIENT_DETAIL', c.companyName || c.name)}>
                                                       <div className="flex items-center gap-2">
                                                           <p className="font-bold text-gray-900 hover:text-[#D32F2F] transition-colors">{c.companyName || c.name}</p>
                                                           <ProvenanceBadge type={isAi ? 'AI_AUTO' : 'HUMAN'} />
@@ -584,13 +660,13 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                                                       {ROLE_OPTIONS.map(opt => {
                                                           const isChecked = rolesArray.includes(opt.value);
                                                           return (
-                                                              <label key={opt.value} className={`flex items-center gap-2 text-xs font-bold cursor-pointer px-2 py-1.5 rounded-sm border transition-colors ${isChecked ? 'bg-white border-blue-400 text-gray-900 shadow-sm' : 'bg-transparent border-transparent text-gray-500 hover:bg-gray-100'}`}>
+                                                              <label key={opt.value} className={`flex items-center gap-2 text-xs font-bold cursor-pointer px-2 py-1.5 rounded-sm border transition-colors ${isChecked ? 'bg-white border-gray-400 text-gray-900 shadow-sm' : 'bg-transparent border-transparent text-gray-500 hover:bg-gray-100'}`}>
                                                                   <input type="checkbox" checked={isChecked} onChange={() => {
                                                                       let newRoles = [...rolesArray];
                                                                       if (isChecked) newRoles = newRoles.filter(r => r !== opt.value);
                                                                       else newRoles.push(opt.value);
                                                                       setEditValues({...editValues, businessRole: newRoles.join(',')});
-                                                                  }} className="accent-blue-600 w-4 h-4" />
+                                                                  }} className="accent-gray-900 w-4 h-4" />
                                                                   <span className={`px-2 py-0.5 rounded-sm border text-[10px] ${opt.color}`}>{opt.short}</span>
                                                                   <span className="text-[10px] font-normal text-gray-500">{opt.label.replace(opt.short, '').trim()}</span>
                                                               </label>
@@ -603,11 +679,7 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                                                           const matchedOption = ROLE_OPTIONS.find(opt => opt.value === roleStr);
                                                           const colorClass = matchedOption ? matchedOption.color : 'bg-gray-100 text-gray-600 border-gray-200';
                                                           const label = matchedOption ? matchedOption.short : roleStr;
-                                                          return (
-                                                              <span key={i} className={`text-[10px] px-2 py-1 border rounded-sm font-bold shadow-sm ${colorClass}`}>
-                                                                  {label}
-                                                              </span>
-                                                          );
+                                                          return <span key={i} className={`text-[10px] px-2 py-1 border rounded-sm font-bold shadow-sm ${colorClass}`}>{label}</span>;
                                                       }) : <span className="text-[10px] text-gray-400 border border-gray-200 px-2 py-1 rounded-sm">未設定</span>}
                                                   </div>
                                               )}
@@ -616,9 +688,9 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                                           <td className="p-3">
                                               {isEditing ? (
                                                   <div className="space-y-1.5">
-                                                      <input type="text" value={editValues.address || ''} onChange={e => setEditValues({...editValues, address: e.target.value})} className="w-full p-1.5 border border-gray-300 rounded-sm text-xs outline-none focus:border-[#D32F2F] shadow-sm" placeholder="所在地" />
-                                                      <input type="text" value={editValues.industry || ''} onChange={e => setEditValues({...editValues, industry: e.target.value})} className="w-full p-1.5 border border-gray-300 rounded-sm text-xs outline-none focus:border-[#D32F2F] shadow-sm" placeholder="業種" />
-                                                      <input type="text" value={editValues.memo || ''} onChange={e => setEditValues({...editValues, memo: e.target.value})} className="w-full p-1.5 border border-gray-300 rounded-sm text-xs outline-none focus:border-[#D32F2F] shadow-sm" placeholder="特記事項..." />
+                                                      <input type="text" value={editValues.address || ''} onChange={e => setEditValues({...editValues, address: e.target.value})} className="w-full p-1.5 border border-gray-300 rounded-sm text-xs outline-none focus:border-gray-900 shadow-sm" placeholder="所在地" />
+                                                      <input type="text" value={editValues.industry || ''} onChange={e => setEditValues({...editValues, industry: e.target.value})} className="w-full p-1.5 border border-gray-300 rounded-sm text-xs outline-none focus:border-gray-900 shadow-sm" placeholder="業種" />
+                                                      <input type="text" value={editValues.memo || ''} onChange={e => setEditValues({...editValues, memo: e.target.value})} className="w-full p-1.5 border border-gray-300 rounded-sm text-xs outline-none focus:border-gray-900 shadow-sm" placeholder="特記事項..." />
                                                   </div>
                                               ) : (
                                                   <div>
@@ -633,12 +705,12 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                                                   <div className="flex flex-col gap-2 items-end">
                                                       <button onClick={() => handleSave('Clients', c.id || c.clientId)} disabled={isSaving} className="bg-gray-900 text-white px-4 py-2 text-[10px] font-bold rounded-sm hover:bg-black transition flex items-center justify-center gap-1 shadow-sm w-full"><Icons.Save /> 保存</button>
                                                       <div className="flex w-full gap-2">
-                                                          <button onClick={() => handleDelete('Clients', c.id || c.clientId)} disabled={isSaving} className="bg-red-50 text-red-600 border border-red-200 py-1.5 text-[10px] font-bold rounded-sm hover:bg-red-100 transition shadow-sm w-1/2 flex justify-center"><Icons.Trash /></button>
+                                                          <button onClick={() => handleDelete('Clients', c.id || c.clientId)} disabled={isSaving} className="bg-white text-gray-600 border border-gray-300 py-1.5 text-[10px] font-bold rounded-sm hover:bg-red-50 hover:text-[#D32F2F] transition shadow-sm w-1/2 flex justify-center"><Icons.Trash /></button>
                                                           <button onClick={handleCancel} className="text-gray-500 bg-gray-100 border border-gray-200 py-1.5 text-[10px] font-bold hover:bg-gray-200 transition rounded-sm w-1/2">取消</button>
                                                       </div>
                                                   </div>
                                               ) : (
-                                                  <button onClick={(e) => { e.stopPropagation(); handleEdit(c); }} className="text-gray-400 hover:text-blue-600 transition p-2"><Icons.Edit /></button>
+                                                  <button onClick={(e) => { e.stopPropagation(); handleEdit(c); }} className="text-gray-400 hover:text-gray-900 transition p-2 bg-white rounded-sm border border-gray-200 shadow-sm"><Icons.Edit /></button>
                                               )}
                                           </td>
                                       </tr>
