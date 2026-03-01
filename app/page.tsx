@@ -51,7 +51,6 @@ export default function WireMasterCloud() {
     const savedView = localStorage.getItem('factoryOS_view');
     const cachedData = localStorage.getItem('factoryOS_masterData');
 
-    // キャッシュのパースエラー回避（自己修復機能）
     if (savedUser && savedUser !== 'undefined' && savedView) {
       try {
         setUser(JSON.parse(savedUser));
@@ -71,7 +70,6 @@ export default function WireMasterCloud() {
         }
     }
 
-    // 裏側で最新データをGASにフェッチ
     fetch('/api/gas')
       .then(res => res.json())
       .then(d => { 
@@ -90,7 +88,7 @@ export default function WireMasterCloud() {
   const marketPrice = data?.config?.market_price || 0;
 
   // ==========================================
-  // ログイン処理
+  // ★ 2. ログイン処理：RBAC対応
   // ==========================================
   const handleLogin = async (e: any) => {
     e.preventDefault();
@@ -103,10 +101,13 @@ export default function WireMasterCloud() {
             body: JSON.stringify({ action: 'AUTH_LOGIN', loginId: e.target.loginId.value, password: e.target.password.value }) 
         });
         const result = await res.json();
+        
         if (result.status === 'success') {
           const userData = result.user;
           setUser(userData);
-          const nextView = userData.role === 'ADMIN' ? 'ADMIN' : 'MEMBER';
+          
+          // ★ MEMBER（顧客）以外はすべてADMINダッシュボードへ飛ばし、そこで権限を制御する
+          const nextView = userData.role === 'MEMBER' ? 'MEMBER' : 'ADMIN';
           setView(nextView);
           
           localStorage.setItem('factoryOS_user', JSON.stringify(userData));
@@ -136,7 +137,9 @@ export default function WireMasterCloud() {
     );
   }
 
-  if (view === 'ADMIN') return <AdminDashboard data={data} setView={setView} onLogout={handleLogout} />;
+  // ★ ADMINダッシュボードにuserデータを丸ごと渡し、中でガードレールを敷かせる
+  if (view === 'ADMIN') return <AdminDashboard user={user} data={data} setView={setView} onLogout={handleLogout} />;
+  
   if (view === 'MEMBER') return <MemberDashboard user={user} data={data} setView={setView} onLogout={handleLogout} />;
   
   if (view === 'COMPANY' || view === 'CONTACT') {
