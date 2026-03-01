@@ -22,32 +22,61 @@ const Icons = {
   Logout: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>,
   Menu: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" /></svg>,
   X: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>,
-  Brain: () => <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+  Brain: () => <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>,
+  Shield: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
 };
 
-export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView: any; onLogout?: any }) => {
-  const [adminTab, setAdminTab] = useState<'HOME' | 'OPERATIONS' | 'POS' | 'PRODUCTION' | 'COMPETITOR' | 'DATABASE' | 'CLIENT_DETAIL' | 'SALES'>('HOME');
+// ★ RBAC: 権限マスター定義
+const ROLE_PERMISSIONS = {
+  ADMIN:   ['HOME', 'OPERATIONS', 'POS', 'PRODUCTION', 'COMPETITOR', 'DATABASE', 'SALES', 'CLIENT_DETAIL'],
+  MANAGER: ['HOME', 'OPERATIONS', 'POS', 'PRODUCTION', 'COMPETITOR', 'DATABASE', 'SALES', 'CLIENT_DETAIL'],
+  FRONT:   ['HOME', 'OPERATIONS', 'POS', 'CLIENT_DETAIL'],
+  PLANT:   ['HOME', 'OPERATIONS', 'PRODUCTION'],
+  SALES:   ['HOME', 'SALES', 'CLIENT_DETAIL', 'COMPETITOR']
+};
+
+export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; data: any; setView: any; onLogout?: any }) => {
+  // ★ 初期タブの決定: 権限によって最初に開く画面を変える
+  const defaultTab = () => {
+    if (!user || !user.role) return 'HOME';
+    if (user.role === 'FRONT') return 'OPERATIONS';
+    if (user.role === 'PLANT') return 'PRODUCTION';
+    if (user.role === 'SALES') return 'SALES';
+    return 'HOME'; // ADMIN, MANAGER
+  };
+
+  const [adminTab, setAdminTab] = useState<'HOME' | 'OPERATIONS' | 'POS' | 'PRODUCTION' | 'COMPETITOR' | 'DATABASE' | 'CLIENT_DETAIL' | 'SALES'>(defaultTab());
   const [localReservations, setLocalReservations] = useState<any[]>([]);
   const [editingResId, setEditingResId] = useState<string | null>(null);
   const [selectedClientName, setSelectedClientName] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // ★ AI Co-Pilot 用のステート
-  const [coPilotMessage, setCoPilotMessage] = useState("お疲れ様です！本日の稼働データがまとまっています。右上の「日次レポート作成」から工場長へ報告しましょう！");
+  const [coPilotMessage, setCoPilotMessage] = useState("");
   const [isCoPilotVisible, setIsCoPilotVisible] = useState(true);
+
+  const currentRole = user?.role || 'FRONT';
+  const allowedTabs = ROLE_PERMISSIONS[currentRole as keyof typeof ROLE_PERMISSIONS] || ROLE_PERMISSIONS.FRONT;
+
+  // ★ 強制アクセス遮断ガードレール (Guardrail)
+  useEffect(() => {
+    if (!allowedTabs.includes(adminTab)) {
+      console.warn(`[FACTORY OS Guard] Access Denied: User role ${currentRole} cannot access ${adminTab}`);
+      setAdminTab(defaultTab()); // 権限がない画面にいる場合は初期画面へ強制送還
+    }
+  }, [adminTab, currentRole, allowedTabs]);
 
   useEffect(() => {
       if (data?.reservations) { setLocalReservations(data.reservations); }
   }, [data?.reservations]);
 
-  // ★ タブが切り替わるたびに、AIが「今すべきこと」を空気を読んで発言する
+  // AI Co-Pilot
   useEffect(() => {
       setIsCoPilotVisible(false);
       setTimeout(() => {
           let newMessage = "";
           switch(adminTab) {
               case 'HOME':
-                  newMessage = "ダッシュボードですね。まずは右上の「日次レポート」を作って印刷してみてください。私が本日の戦略アドバイスを書き下ろしますよ！";
+                  newMessage = currentRole === 'ADMIN' ? "ダッシュボードですね。右上の「日次レポート」から戦略アドバイスを書き下ろします！" : "本日の稼働状況です。今日も1日安全第一でいきましょう。";
                   break;
               case 'OPERATIONS':
                   newMessage = "ここは現場のカンバンです。トラックが到着したら、カードをドラッグ＆ドロップして『計量』へ進めてくださいね。";
@@ -72,10 +101,15 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
           }
           setCoPilotMessage(newMessage);
           setIsCoPilotVisible(true);
-      }, 300); // フワッと切り替わる演出
-  }, [adminTab]);
+      }, 300);
+  }, [adminTab, currentRole]);
 
   const handleNavigate = (tab: any, id?: string) => {
+      // 権限チェック
+      if (!allowedTabs.includes(tab)) {
+          alert("この機能にアクセスする権限がありません。");
+          return;
+      }
       if (tab === 'POS' && id) setEditingResId(id); else setEditingResId(null);
       if (tab === 'CLIENT_DETAIL' && id) setSelectedClientName(id); else setSelectedClientName(null);
       setAdminTab(tab);
@@ -84,7 +118,8 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
 
   const handlePosSuccess = () => { setEditingResId(null); setAdminTab('OPERATIONS'); window.location.reload(); };
 
-  const MENU_ITEMS = [
+  // メニュー一覧（全量）
+  const ALL_MENU_ITEMS = [
       { id: 'HOME', icon: Icons.Home, label: 'ダッシュボード' },
       { id: 'OPERATIONS', icon: Icons.Kanban, label: '現場状況管理' },
       { id: 'POS', icon: Icons.Calc, label: 'POS (受付・計量)' },
@@ -93,6 +128,9 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
       { id: 'COMPETITOR', icon: Icons.Radar, label: '相場レーダー' },
       { id: 'DATABASE', icon: Icons.Database, label: 'マスターDB' },
   ];
+
+  // ★ 権限フィルタリングされたメニュー
+  const MENU_ITEMS = ALL_MENU_ITEMS.filter(item => allowedTabs.includes(item.id));
 
   return (
     <div className="h-screen w-full bg-[#FFFFFF] text-[#111111] font-sans flex flex-col md:flex-row overflow-hidden relative">
@@ -122,8 +160,17 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
             <h1 className="text-xl font-black tracking-tighter font-serif">FACTORY OS</h1>
         </div>
         
+        {/* ★ ログインユーザー情報の表示（バッジ付き） */}
+        <div className="px-5 pb-4 border-b border-gray-200 flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+                <p className="text-sm font-bold text-gray-800 truncate">{user?.name || user?.companyName || 'スタッフ'}</p>
+                {currentRole === 'ADMIN' && <Icons.Shield />}
+            </div>
+            <p className="text-[10px] font-mono text-gray-500 font-bold bg-gray-200 px-2 py-0.5 rounded-sm inline-block w-fit">ROLE: {currentRole}</p>
+        </div>
+
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-            <p className="px-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 mt-4">メインメニュー</p>
+            <p className="px-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 mt-2">メインメニュー</p>
             {MENU_ITEMS.map((item) => {
                 const isActive = adminTab === item.id || (item.id === 'HOME' && adminTab === 'CLIENT_DETAIL');
                 return (
@@ -162,7 +209,6 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
 
       {/* ★ AI Co-Pilot (画面右下のフローティングウィジェット) */}
       <div className="fixed bottom-4 right-4 md:bottom-8 md:right-8 z-50 flex items-end gap-3 pointer-events-none">
-          {/* 吹き出し部分 */}
           <div className={`transition-all duration-500 ease-out origin-bottom-right pointer-events-auto ${isCoPilotVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'}`}>
               <div className="bg-white border border-blue-200 shadow-2xl rounded-2xl rounded-br-sm p-4 w-64 md:w-72 relative">
                   <div className="flex justify-between items-start mb-1">
@@ -172,12 +218,10 @@ export const AdminDashboard = ({ data, setView, onLogout }: { data: any; setView
                   <p className="text-sm font-bold text-gray-800 leading-relaxed">
                       {coPilotMessage}
                   </p>
-                  {/* しっぽ部分 */}
                   <div className="absolute -bottom-2 right-4 w-4 h-4 bg-white border-b border-r border-blue-200 transform rotate-45"></div>
               </div>
           </div>
           
-          {/* アイコン部分 */}
           <button 
               onClick={() => setIsCoPilotVisible(!isCoPilotVisible)}
               className="bg-blue-600 hover:bg-blue-700 shadow-xl rounded-full p-4 transition-transform hover:scale-105 pointer-events-auto flex-shrink-0"
