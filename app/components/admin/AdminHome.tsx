@@ -14,22 +14,18 @@ const Icons = {
     Print: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>,
     Refresh: () => <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
     Brain: () => <svg className="w-4 h-4 inline-block mr-1" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 18a8 8 0 110-16 8 8 0 010 16zm1-11h-2v2h2V9zm0 4h-2v6h2v-6z" /></svg>,
-    ShieldCheck: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>,
-    Handshake: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
+    Camera: () => <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+    UploadCloud: () => <svg className="w-8 h-8 text-blue-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
 };
 
-// ★ プロベナンス・バッジ
+// プロベナンス・バッジ
 const ProvenanceBadge = ({ type }: { type: 'HUMAN' | 'AI_AUTO' | 'CO_OP' }) => {
     const baseStyle = "inline-block px-1.5 py-0.5 text-[9px] font-mono font-bold tracking-widest rounded-sm text-white cursor-default shadow-sm";
     switch (type) {
-        case 'HUMAN':
-            return <span className={`${baseStyle} bg-gray-900`} title="実測・確定データ">HUMAN</span>;
-        case 'CO_OP':
-            return <span className={`${baseStyle} bg-gray-600`} title="AI＋人間 協調データ">CO-P</span>;
-        case 'AI_AUTO':
-            return <span className={`${baseStyle} bg-gray-400`} title="AI予測・推論データ">AI</span>;
-        default:
-            return null;
+        case 'HUMAN': return <span className={`${baseStyle} bg-gray-900`} title="実測・確定データ">HUMAN</span>;
+        case 'CO_OP': return <span className={`${baseStyle} bg-gray-600`} title="AI＋人間 協調データ">CO-P</span>;
+        case 'AI_AUTO': return <span className={`${baseStyle} bg-gray-400`} title="AI予測・推論データ">AI</span>;
+        default: return null;
     }
 };
 
@@ -77,8 +73,11 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
     
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
-    
     const [showAiData, setShowAiData] = useState(true);
+
+    // ★ 写真アップロード用のステート
+    const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+    const [uploadedPhotoUrl, setUploadedPhotoUrl] = useState<string | null>(null);
 
     useEffect(() => {
         setIsMounted(true);
@@ -236,12 +235,86 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
         }, 500);
     };
 
+    // ★ 現場写真・ウェブ用素材の圧縮＆アップロード機能
+    const compressImage = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target?.result as string;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    // ウェブサイト・広報用なので2K〜4Kで十分。汎用性のため4K圧縮。
+                    const MAX_WIDTH = 3840; 
+                    const MAX_HEIGHT = 3840;
+                    let width = img.width;
+                    let height = img.height;
+                    if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
+                    else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) return reject(new Error('Canvas context could not be created'));
+                    ctx.drawImage(img, 0, 0, width, height);
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                    resolve(dataUrl.split(',')[1]); 
+                };
+                img.onerror = (error) => reject(error);
+            };
+            reader.onerror = (error) => reject(error);
+        });
+    };
+
+    const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        
+        setIsUploadingPhoto(true);
+        setUploadedPhotoUrl(null);
+        
+        try {
+            // ログインユーザーIDの取得 (ローカルストレージから)
+            let uploaderId = 'Staff';
+            try {
+                const userStr = localStorage.getItem('factoryOS_user');
+                if (userStr) {
+                    const user = JSON.parse(userStr);
+                    uploaderId = user.companyName || user.clientId || 'Staff';
+                }
+            } catch(err) {}
+
+            const base64Data = await compressImage(file);
+            const payload = {
+                action: 'UPLOAD_STAFF_PHOTO',
+                uploaderId: uploaderId,
+                fileName: `Photo_${new Date().getTime()}.jpg`,
+                mimeType: 'image/jpeg',
+                data: base64Data
+            };
+            
+            const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            const result = await res.json();
+            
+            if (result.status === 'success') {
+                setUploadedPhotoUrl(result.url);
+            } else {
+                alert('アップロード失敗: ' + result.message);
+            }
+        } catch (err) {
+            alert('画像圧縮または通信エラーが発生しました: ' + err);
+        } finally {
+            setIsUploadingPhoto(false);
+            // inputの中身をリセットして同じ画像を再度選べるようにする
+            e.target.value = '';
+        }
+    };
+
     if (!isMounted) return null;
 
     return (
         <div className="flex flex-col h-full animate-in fade-in duration-500 w-full text-gray-900 pb-24 font-sans bg-[#FAFAFA] min-h-screen relative" style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
             
-            {/* --- 通常のダッシュボード画面 --- */}
             <div className="print:hidden max-w-[1400px] mx-auto w-full">
                 <header className="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4 border-b border-gray-200 pb-6 px-2">
                     <div>
@@ -253,40 +326,23 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                     </div>
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-1 bg-white p-1 rounded-sm border border-gray-300 shadow-sm">
-                            <button 
-                                onClick={() => setShowAiData(true)}
-                                className={`px-4 py-1.5 text-xs font-bold font-mono transition-colors ${showAiData ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-100'}`}
-                            >
-                                MIX
-                            </button>
-                            <button 
-                                onClick={() => setShowAiData(false)}
-                                className={`px-4 py-1.5 text-xs font-bold font-mono transition-colors ${!showAiData ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-100'}`}
-                            >
-                                HUMAN ONLY
-                            </button>
+                            <button onClick={() => setShowAiData(true)} className={`px-4 py-1.5 text-xs font-bold font-mono transition-colors ${showAiData ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-100'}`}>MIX</button>
+                            <button onClick={() => setShowAiData(false)} className={`px-4 py-1.5 text-xs font-bold font-mono transition-colors ${!showAiData ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-100'}`}>HUMAN ONLY</button>
                         </div>
-
-                        <button 
-                            onClick={handlePrintReport} 
-                            disabled={isGeneratingReport}
-                            className="bg-white border border-gray-300 text-gray-800 px-4 py-2 rounded-sm text-xs font-bold hover:border-[#D32F2F] hover:text-[#D32F2F] transition shadow-sm flex items-center gap-2 disabled:opacity-50"
-                        >
+                        <button onClick={handlePrintReport} disabled={isGeneratingReport} className="bg-white border border-gray-300 text-gray-800 px-4 py-2 rounded-sm text-xs font-bold hover:border-[#D32F2F] hover:text-[#D32F2F] transition shadow-sm flex items-center gap-2 disabled:opacity-50">
                             {isGeneratingReport ? <span className="animate-spin"><Icons.Refresh /></span> : <Icons.Print />}
                             日次レポート作成
                         </button>
                     </div>
                 </header>
 
+                {/* 相場ティッカー等の既存コンテンツ */}
                 <div className="mb-10 px-2 w-full">
-                    {/* 相場ティッカー */}
                     <div className={`transition-opacity duration-300 ${showAiData ? 'opacity-100' : 'opacity-20 grayscale pointer-events-none'}`}>
                         <div className="flex xl:grid xl:grid-cols-6 gap-4 overflow-x-auto xl:overflow-visible no-scrollbar pb-4 xl:pb-0 snap-x w-full">
                             {marketItems.map((m, i) => (
                                 <div key={i} className={`snap-start relative bg-white border ${m.isPrimary ? 'border-[#D32F2F] shadow-md ring-1 ring-red-50' : 'border-gray-200 shadow-sm hover:border-gray-300'} rounded-sm p-4 transition-all duration-300 w-[180px] shrink-0 xl:w-auto xl:shrink flex flex-col justify-between overflow-hidden group`}>
-                                    <div className="absolute top-2 right-2 z-20">
-                                        <ProvenanceBadge type={m.provenance as any} />
-                                    </div>
+                                    <div className="absolute top-2 right-2 z-20"><ProvenanceBadge type={m.provenance as any} /></div>
                                     {m.sparkData && (
                                         <div className="absolute bottom-0 left-0 w-full h-1/2 opacity-60 group-hover:opacity-100 transition-opacity duration-500">
                                             <Sparkline data={m.sparkData} color={m.isPrimary ? '#D32F2F' : '#D1D5DB'} />
@@ -313,37 +369,22 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 px-2">
-                    {/* 推定総在庫 評価額 */}
                     <div className="bg-[#111] text-white p-6 md:p-8 rounded-sm shadow-xl flex flex-col relative overflow-hidden group">
-                        <div className="absolute top-4 right-4 z-20">
-                            <ProvenanceBadge type="CO_OP" />
-                        </div>
-                        <div className="absolute -right-4 -top-4 opacity-10 transform scale-150 group-hover:rotate-12 transition-transform duration-700">
-                            <Icons.Scale />
-                        </div>
-                        <p className="text-xs font-bold text-gray-400 mb-4 uppercase tracking-widest flex items-center gap-2 relative z-10">
-                            推定総在庫 評価額
-                        </p>
+                        <div className="absolute top-4 right-4 z-20"><ProvenanceBadge type="CO_OP" /></div>
+                        <div className="absolute -right-4 -top-4 opacity-10 transform scale-150 group-hover:rotate-12 transition-transform duration-700"><Icons.Scale /></div>
+                        <p className="text-xs font-bold text-gray-400 mb-4 uppercase tracking-widest flex items-center gap-2 relative z-10">推定総在庫 評価額</p>
                         <div className="flex items-baseline gap-2 mt-auto relative z-10">
                             <span className="text-2xl font-light text-gray-500">¥</span>
-                            <span className={`text-5xl md:text-6xl font-black tracking-tighter transition-colors ${showAiData ? 'text-white' : 'text-gray-700'}`}>
-                                {showAiData ? inventoryValue.toLocaleString() : '---'}
-                            </span>
+                            <span className={`text-5xl md:text-6xl font-black tracking-tighter transition-colors ${showAiData ? 'text-white' : 'text-gray-700'}`}>{showAiData ? inventoryValue.toLocaleString() : '---'}</span>
                         </div>
                         <div className="mt-5 pt-4 border-t border-gray-800 text-xs text-gray-400 font-mono relative z-10 flex justify-between items-center">
-                            <span className="flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 bg-[#D32F2F] rounded-full animate-pulse"></span>銅換算在庫 
-                                <span className="ml-2"><ProvenanceBadge type="HUMAN" /></span>
-                            </span>
+                            <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 bg-[#D32F2F] rounded-full animate-pulse"></span>銅換算在庫 <span className="ml-2"><ProvenanceBadge type="HUMAN" /></span></span>
                             <span className="font-bold text-white text-sm">{totalCopperStock.toLocaleString()} kg</span>
                         </div>
                     </div>
 
-                    {/* 本日の現場稼働 */}
                     <div className="bg-white p-6 md:p-8 rounded-sm border border-gray-200 shadow-sm flex flex-col justify-between group hover:border-gray-300 transition-colors relative">
-                        <div className="absolute top-4 right-4 z-20">
-                            <ProvenanceBadge type="HUMAN" />
-                        </div>
+                        <div className="absolute top-4 right-4 z-20"><ProvenanceBadge type="HUMAN" /></div>
                         <p className="text-xs font-bold text-gray-500 mb-4 uppercase tracking-widest flex items-center gap-2"><Icons.Truck /> 本日の現場稼働</p>
                         <div className="flex items-center gap-6 mt-auto">
                             <div>
@@ -358,150 +399,78 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                         </div>
                     </div>
 
-                    {/* AIコンシェルジュ稼働 */}
                     <div className={`bg-gray-100 p-6 md:p-8 rounded-sm border border-gray-200 shadow-sm flex flex-col justify-between relative overflow-hidden group transition-opacity duration-300 ${showAiData ? 'opacity-100' : 'opacity-20 grayscale pointer-events-none'}`}>
-                        <div className="absolute top-4 right-4 z-20">
-                            <ProvenanceBadge type="AI_AUTO" />
-                        </div>
+                        <div className="absolute top-4 right-4 z-20"><ProvenanceBadge type="AI_AUTO" /></div>
                         <div className="absolute -right-4 -top-4 opacity-10 transform scale-150 text-gray-900 transition-transform duration-700"><Icons.Message /></div>
-                        <p className="text-xs font-bold text-gray-900 mb-4 uppercase tracking-widest flex items-center gap-2 relative z-10">
-                            <span className="w-2 h-2 rounded-full bg-gray-900 animate-pulse"></span>
-                            AIコンシェルジュ稼働
-                        </p>
+                        <p className="text-xs font-bold text-gray-900 mb-4 uppercase tracking-widest flex items-center gap-2 relative z-10"><span className="w-2 h-2 rounded-full bg-gray-900 animate-pulse"></span>AIコンシェルジュ稼働</p>
                         <div className="flex items-baseline gap-2 mt-auto relative z-10">
                             <span className="text-5xl md:text-6xl font-black text-gray-900 tracking-tighter">{data?.chatStats?.today || 0}</span>
                             <span className="text-sm font-bold text-gray-600">件の対応</span>
                         </div>
                         <div className="mt-5 pt-4 border-t border-gray-300 text-xs text-gray-600 font-mono relative z-10 flex justify-between items-center">
                             <span className="font-bold">累計対応数: {data?.chatStats?.total || 0} 件</span>
-                            
-                            <button 
-                                onClick={async (e) => {
-                                    const btn = e.currentTarget;
-                                    const originalText = btn.innerHTML;
-                                    btn.disabled = true;
-                                    btn.innerHTML = '<span class="animate-spin mr-1">↻</span> トレーニング中...';
-                                    try {
-                                        const res = await fetch('/api/simulate', { method: 'POST' });
-                                        const simData = await res.json();
-                                        if(simData.success) {
-                                            alert("仮想トレーニング完了！\n\n【ペルソナ】\n" + simData.persona + "\n\n【生成された会話】\n" + simData.chatHistory);
-                                            window.location.reload();
-                                        } else {
-                                            alert("エラー: " + simData.message);
-                                        }
-                                    } catch(err) {
-                                        alert("通信エラーが発生しました。");
-                                    }
-                                    btn.disabled = false;
-                                    btn.innerHTML = originalText;
-                                }}
-                                className="bg-gray-900 hover:bg-black text-white px-3 py-1.5 rounded-sm text-[10px] font-bold shadow-sm transition flex items-center gap-1 disabled:opacity-50"
-                            >
+                            <button onClick={async (e) => {
+                                const btn = e.currentTarget; const originalText = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<span class="animate-spin mr-1">↻</span> トレーニング中...';
+                                try {
+                                    const res = await fetch('/api/simulate', { method: 'POST' }); const simData = await res.json();
+                                    if(simData.success) { alert("仮想トレーニング完了！\n\n【ペルソナ】\n" + simData.persona + "\n\n【生成された会話】\n" + simData.chatHistory); window.location.reload(); } else { alert("エラー: " + simData.message); }
+                                } catch(err) { alert("通信エラーが発生しました。"); }
+                                btn.disabled = false; btn.innerHTML = originalText;
+                            }} className="bg-gray-900 hover:bg-black text-white px-3 py-1.5 rounded-sm text-[10px] font-bold shadow-sm transition flex items-center gap-1 disabled:opacity-50">
                                 <Icons.Brain /> 仮想トレーニング実行
                             </button>
-
                         </div>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 px-2">
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 px-2 mb-10">
                     <div className="xl:col-span-2 space-y-8">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             
-                            {/* AI 競合価格勝敗 */}
                             <div className={`group bg-white rounded-sm border border-gray-200 shadow-sm p-6 md:p-8 flex flex-col cursor-pointer transition-all relative ${showAiData ? 'hover:border-[#D32F2F] hover:shadow-md' : 'opacity-20 grayscale pointer-events-none'}`} onClick={() => showAiData && onNavigate('COMPETITOR')}>
-                                <div className="absolute top-4 right-4 z-20">
-                                    <ProvenanceBadge type="AI_AUTO" />
-                                </div>
-                                <div className="flex justify-between items-start mb-6">
-                                    <h3 className="font-bold text-gray-900 flex items-center gap-2 text-sm"><Icons.Radar /> AI 競合価格勝敗</h3>
-                                </div>
+                                <div className="absolute top-4 right-4 z-20"><ProvenanceBadge type="AI_AUTO" /></div>
+                                <div className="flex justify-between items-start mb-6"><h3 className="font-bold text-gray-900 flex items-center gap-2 text-sm"><Icons.Radar /> AI 競合価格勝敗</h3></div>
                                 <div className="flex-1 flex flex-col justify-center">
-                                    <div className="flex items-end justify-between mb-3">
-                                        <span className="text-xs text-gray-500 font-bold mb-1">自社優勢 (Win)</span>
-                                        <span className="text-4xl font-black text-gray-900 tracking-tighter">{win}</span>
-                                    </div>
-                                    <div className="w-full bg-gray-100 h-3 rounded-sm overflow-hidden mb-4 border border-gray-200 shadow-inner">
-                                        <div className="h-full bg-gray-900 transition-all duration-1000" style={{ width: `${(win / Math.max(1, win + lose + draw)) * 100}%` }}></div>
-                                    </div>
-                                    <div className="flex justify-between text-xs font-bold text-gray-500">
-                                        <span>同値: {draw}</span>
-                                        <span>劣勢: {lose}</span>
-                                    </div>
+                                    <div className="flex items-end justify-between mb-3"><span className="text-xs text-gray-500 font-bold mb-1">自社優勢 (Win)</span><span className="text-4xl font-black text-gray-900 tracking-tighter">{win}</span></div>
+                                    <div className="w-full bg-gray-100 h-3 rounded-sm overflow-hidden mb-4 border border-gray-200 shadow-inner"><div className="h-full bg-gray-900 transition-all duration-1000" style={{ width: `${(win / Math.max(1, win + lose + draw)) * 100}%` }}></div></div>
+                                    <div className="flex justify-between text-xs font-bold text-gray-500"><span>同値: {draw}</span><span>劣勢: {lose}</span></div>
                                 </div>
                             </div>
 
-                            {/* 今月の生産実績 */}
                             <div className="group bg-white rounded-sm border border-gray-200 shadow-sm p-6 md:p-8 flex flex-col cursor-pointer hover:border-[#D32F2F] hover:shadow-md transition-all relative" onClick={() => onNavigate('PRODUCTION')}>
-                                <div className="absolute top-4 right-4 z-20 flex gap-1">
-                                    <ProvenanceBadge type="HUMAN" />
-                                </div>
-                                <div className="flex justify-between items-start mb-6">
-                                    <h3 className="font-bold text-gray-900 flex items-center gap-2 text-sm"><Icons.Factory /> 今月の生産実績</h3>
-                                    <Icons.ArrowRight />
-                                </div>
+                                <div className="absolute top-4 right-4 z-20 flex gap-1"><ProvenanceBadge type="HUMAN" /></div>
+                                <div className="flex justify-between items-start mb-6"><h3 className="font-bold text-gray-900 flex items-center gap-2 text-sm"><Icons.Factory /> 今月の生産実績</h3><Icons.ArrowRight /></div>
                                 <div className="flex-1 flex flex-col justify-center gap-6">
                                     <div className="flex items-center justify-between border-l-4 border-gray-900 pl-4 py-1">
-                                        <div>
-                                            <p className="text-xs text-gray-500 font-bold mb-1">ピカ銅 生産量</p>
-                                            <div className="flex items-baseline gap-1">
-                                                <span className="text-2xl font-black text-gray-900">{mCopper.toLocaleString()}</span>
-                                                <span className="text-xs text-gray-400 font-bold">kg</span>
-                                            </div>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-xs text-gray-500 font-bold mb-1">月末予測 <span className="ml-1"><ProvenanceBadge type="AI_AUTO" /></span></p>
-                                            <div className="flex items-baseline gap-1 justify-end">
-                                                <span className={`text-xl font-black ${showAiData ? 'text-[#D32F2F]' : 'text-gray-300'}`}>{showAiData ? projectedCopper.toLocaleString() : '---'}</span>
-                                                <span className="text-xs text-gray-400 font-bold">kg</span>
-                                            </div>
-                                        </div>
+                                        <div><p className="text-xs text-gray-500 font-bold mb-1">ピカ銅 生産量</p><div className="flex items-baseline gap-1"><span className="text-2xl font-black text-gray-900">{mCopper.toLocaleString()}</span><span className="text-xs text-gray-400 font-bold">kg</span></div></div>
+                                        <div className="text-right"><p className="text-xs text-gray-500 font-bold mb-1">月末予測 <span className="ml-1"><ProvenanceBadge type="AI_AUTO" /></span></p><div className="flex items-baseline gap-1 justify-end"><span className={`text-xl font-black ${showAiData ? 'text-[#D32F2F]' : 'text-gray-300'}`}>{showAiData ? projectedCopper.toLocaleString() : '---'}</span><span className="text-xs text-gray-400 font-bold">kg</span></div></div>
                                     </div>
-
                                     <div className="bg-gray-50 p-4 rounded-sm border border-gray-200 flex justify-between items-center">
                                         <span className="text-xs text-gray-500 font-bold">マスター比 乖離 (直近10件)</span>
                                         <div className="flex items-baseline gap-1 bg-white px-3 py-1 rounded-sm shadow-sm border border-gray-100">
-                                            <span className={`text-xl font-black tracking-tighter ${yieldStats.isPositive ? 'text-gray-900' : 'text-[#D32F2F]'}`}>
-                                                {yieldStats.isPositive ? '+' : ''}{yieldStats.diff.toFixed(1)}
-                                            </span>
-                                            <span className="text-xs text-gray-500 font-bold">%</span>
+                                            <span className={`text-xl font-black tracking-tighter ${yieldStats.isPositive ? 'text-gray-900' : 'text-[#D32F2F]'}`}>{yieldStats.isPositive ? '+' : ''}{yieldStats.diff.toFixed(1)}</span><span className="text-xs text-gray-500 font-bold">%</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-
                         </div>
 
-                        {/* ★ 本日の買取価格表（余白を追加して見切れを修正） */}
                         <div className="bg-white rounded-sm border border-gray-200 shadow-sm overflow-hidden group hover:border-gray-300 transition-colors h-fit relative">
-                            <div className="absolute top-4 right-4 z-20">
-                                <ProvenanceBadge type="CO_OP" />
-                            </div>
+                            <div className="absolute top-4 right-4 z-20"><ProvenanceBadge type="CO_OP" /></div>
                             <div className="p-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center cursor-pointer pr-24" onClick={() => onNavigate('DATABASE')}>
-                                <h3 className="font-bold text-sm text-gray-900 flex items-center gap-2">本日の買取価格表 <span className="text-xs text-gray-400 font-normal">(主要品目)</span></h3>
-                                <Icons.ArrowRight />
+                                <h3 className="font-bold text-sm text-gray-900 flex items-center gap-2">本日の買取価格表 <span className="text-xs text-gray-400 font-normal">(主要品目)</span></h3><Icons.ArrowRight />
                             </div>
-                            {/* pb-2 を追加してテーブル下部の見切れを解消 */}
                             <div className="p-0 overflow-x-auto pb-2">
                                 <table className="w-full text-left mb-2">
                                     <thead className="bg-white border-b border-gray-100 text-xs font-bold text-gray-400 uppercase tracking-widest">
-                                        <tr>
-                                            <th className="p-4 pl-6">品名</th>
-                                            <th className="p-4 text-center">設定歩留まり</th>
-                                            <th className="p-4 pr-6 text-right">買取単価</th>
-                                        </tr>
+                                        <tr><th className="p-4 pl-6">品名</th><th className="p-4 text-center">設定歩留まり</th><th className="p-4 pr-6 text-right">買取単価</th></tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-50 text-sm">
                                         {data?.wires?.slice(0, 5).map((w: any) => (
                                             <tr key={w.id} className="hover:bg-gray-50 transition cursor-pointer" onClick={() => onNavigate('DATABASE')}>
                                                 <td className="p-4 pl-6 font-bold text-gray-800">{getDisplayName(w)}</td>
-                                                <td className="p-4 text-center text-gray-500 font-bold">
-                                                    {w.ratio}% <span className="ml-1"><ProvenanceBadge type="HUMAN" /></span>
-                                                </td>
-                                                <td className="p-4 pr-6 text-right font-black text-xl text-[#D32F2F] tracking-tighter">
-                                                    {showAiData ? `¥${Math.floor(copperPrice * (w.ratio/100) * 0.85).toLocaleString()}` : '---'}
-                                                </td>
+                                                <td className="p-4 text-center text-gray-500 font-bold">{w.ratio}% <span className="ml-1"><ProvenanceBadge type="HUMAN" /></span></td>
+                                                <td className="p-4 pr-6 text-right font-black text-xl text-[#D32F2F] tracking-tighter">{showAiData ? `¥${Math.floor(copperPrice * (w.ratio/100) * 0.85).toLocaleString()}` : '---'}</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -512,56 +481,30 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
 
                     <div className="space-y-8">
                         <div className="bg-white rounded-sm border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-[500px] relative">
-                            <div className="absolute top-4 right-4 z-20">
-                                <ProvenanceBadge type="HUMAN" />
-                            </div>
+                            <div className="absolute top-4 right-4 z-20"><ProvenanceBadge type="HUMAN" /></div>
                             <div className="p-5 border-b border-gray-200 bg-[#111] text-white flex justify-between items-center cursor-pointer group transition pr-24" onClick={() => onNavigate('OPERATIONS')}>
                                 <h3 className="font-bold text-sm flex items-center gap-3 tracking-widest">
-                                    <span className="relative flex h-2.5 w-2.5">
-                                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#D32F2F] opacity-75"></span>
-                                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#D32F2F]"></span>
-                                    </span>
+                                    <span className="relative flex h-2.5 w-2.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#D32F2F] opacity-75"></span><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#D32F2F]"></span></span>
                                     LIVE タイムライン
                                 </h3>
                                 <Icons.ArrowRight />
                             </div>
-                            
                             <div className="p-6 overflow-y-auto flex-1 bg-white">
                                 {activeReservations.length === 0 ? (
-                                    <div className="p-10 text-center text-gray-400 text-sm font-bold flex flex-col items-center gap-3">
-                                        <Icons.Truck />
-                                        本日の予定はありません
-                                    </div>
+                                    <div className="p-10 text-center text-gray-400 text-sm font-bold flex flex-col items-center gap-3"><Icons.Truck />本日の予定はありません</div>
                                 ) : (
                                     <ul className="space-y-0">
                                         {activeReservations.map((res: any) => {
-                                            let w = 0;
-                                            let p = "品目不明";
-                                            try {
-                                                let items = res.items;
-                                                if (typeof items === 'string') items = JSON.parse(items);
-                                                if (Array.isArray(items) && items.length > 0) {
-                                                    w = items.reduce((s:number, i:any) => s + (Number(i.weight)||0), 0);
-                                                    p = items[0].product || items[0].productName;
-                                                    if(items.length > 1) p += " 他";
-                                                }
-                                            } catch(e){}
-                                            
+                                            let w = 0; let p = "品目不明";
+                                            try { let items = res.items; if (typeof items === 'string') items = JSON.parse(items); if (Array.isArray(items) && items.length > 0) { w = items.reduce((s:number, i:any) => s + (Number(i.weight)||0), 0); p = items[0].product || items[0].productName; if(items.length > 1) p += " 他"; } } catch(e){}
                                             return (
                                                 <li key={res.id} className="relative pl-6 pb-8 last:pb-0 group cursor-pointer" onClick={() => onNavigate('OPERATIONS')}>
                                                     <div className="absolute left-[7px] top-3 w-px h-full bg-gray-200 group-last:hidden"></div>
                                                     <div className={`absolute left-0 top-1.5 w-4 h-4 rounded-full border-2 border-white ${res.status === 'PROCESSING' ? 'bg-gray-400' : 'bg-gray-900'} shadow-sm ring-1 ring-gray-100 z-10`}></div>
-                                                    
                                                     <div className="bg-white border border-gray-100 p-4 rounded-sm shadow-sm group-hover:border-[#D32F2F] transition-colors ml-4 -mt-2">
-                                                        <div className="flex justify-between items-center mb-2">
-                                                            <span className="text-xs font-bold text-gray-500 bg-gray-50 px-2 py-0.5 rounded-sm border border-gray-100">{formatTime(res.visitDate)}</span>
-                                                            <span className="text-[10px] font-mono text-gray-400">{res.id}</span>
-                                                        </div>
+                                                        <div className="flex justify-between items-center mb-2"><span className="text-xs font-bold text-gray-500 bg-gray-50 px-2 py-0.5 rounded-sm border border-gray-100">{formatTime(res.visitDate)}</span><span className="text-[10px] font-mono text-gray-400">{res.id}</span></div>
                                                         <p className="font-black text-base text-gray-900 mb-1 truncate">{res.memberName}</p>
-                                                        <p className="text-xs text-gray-600 font-bold flex items-center justify-between">
-                                                            <span>{p}</span>
-                                                            <span className="font-black text-[#D32F2F] text-lg">{w} <span className="text-xs font-normal text-gray-400">kg</span></span>
-                                                        </p>
+                                                        <p className="text-xs text-gray-600 font-bold flex items-center justify-between"><span>{p}</span><span className="font-black text-[#D32F2F] text-lg">{w} <span className="text-xs font-normal text-gray-400">kg</span></span></p>
                                                     </div>
                                                 </li>
                                             )
@@ -572,9 +515,63 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                         </div>
                     </div>
                 </div>
+
+                {/* ★ 新設: 広報・現場写真アップロードパネル */}
+                <div className="px-2 mb-10 w-full">
+                    <div className="bg-white border border-gray-200 shadow-sm rounded-sm p-6 relative overflow-hidden">
+                        <div className="absolute top-4 right-4 z-20"><ProvenanceBadge type="HUMAN" /></div>
+                        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-4">
+                            <div>
+                                <h3 className="font-bold text-gray-900 flex items-center gap-2 text-base">
+                                    <Icons.Camera /> 広報・現場写真アップロード
+                                </h3>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    撮影した写真をGoogle Driveの「Web_Photos」フォルダに直接保存します。
+                                    あなたのログインIDごとにフォルダが自動整理されます。
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className={`w-full border-2 border-dashed ${isUploadingPhoto ? 'border-gray-400 bg-gray-50' : 'border-blue-300 bg-blue-50/30 hover:bg-blue-50'} rounded-sm p-8 flex flex-col items-center justify-center transition-colors relative cursor-pointer`}>
+                            {isUploadingPhoto ? (
+                                <div className="flex flex-col items-center">
+                                    <div className="text-blue-500 animate-spin mb-2"><Icons.Refresh /></div>
+                                    <p className="text-sm font-bold text-gray-600">自動圧縮＆アップロード中...</p>
+                                </div>
+                            ) : uploadedPhotoUrl ? (
+                                <div className="flex flex-col items-center text-center">
+                                    <div className="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-2">
+                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>
+                                    </div>
+                                    <p className="text-sm font-bold text-gray-900 mb-1">アップロード完了！</p>
+                                    <a href={uploadedPhotoUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline mb-4 font-mono truncate max-w-xs">
+                                        {uploadedPhotoUrl}
+                                    </a>
+                                    <p className="text-xs text-gray-500 bg-white px-3 py-1 border border-gray-200 rounded-sm">続けて他の写真をアップロードするには、ここをタップしてください。</p>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center text-center">
+                                    <Icons.UploadCloud />
+                                    <p className="text-sm font-bold text-blue-800 mb-1">ここをタップしてカメラを起動 / 写真を選択</p>
+                                    <p className="text-[10px] text-gray-500">※自動的に4K解像度に圧縮されて送信されるため、通信容量の心配はありません。</p>
+                                </div>
+                            )}
+                            
+                            <input 
+                                type="file" 
+                                accept="image/*" 
+                                capture="environment" 
+                                onChange={handlePhotoUpload} 
+                                disabled={isUploadingPhoto}
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                            />
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
-            {/* --- 🖨️ 印刷用レポート専用レイアウト --- */}
+            {/* --- 🖨️ 印刷用レポート (AdminHome下部) --- */}
             <div className="hidden print:block w-[210mm] min-h-[297mm] bg-white text-black p-8 mx-auto font-sans">
                 <div className="border-b-2 border-black pb-4 mb-6 flex justify-between items-end">
                     <div>
@@ -590,7 +587,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                 </div>
 
                 <div className="grid grid-cols-2 gap-8 mb-8">
-                    {/* 左カラム: 本日の市況と稼働 */}
                     <div className="space-y-6">
                         <section>
                             <h2 className="text-sm font-bold text-white bg-black px-3 py-1.5 inline-block mb-3">1. 本日の市況</h2>
@@ -646,7 +642,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                         </section>
                     </div>
 
-                    {/* 右カラム: 生産進捗 */}
                     <div className="space-y-6">
                         <section>
                             <h2 className="text-sm font-bold text-white bg-black px-3 py-1.5 inline-block mb-3">3. 生産実績と目標進捗</h2>
