@@ -17,7 +17,6 @@ const Icons = {
   ImagePlaceholder: () => <svg className="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
 };
 
-// ★ プロベナンス・バッジ（白抜き・グレー濃淡）
 const ProvenanceBadge = ({ type }: { type: 'HUMAN' | 'AI_AUTO' | 'CO_OP' }) => {
     const baseStyle = "inline-block px-1.5 py-0.5 text-[9px] font-mono font-bold tracking-widest rounded-sm text-white cursor-default shadow-sm";
     switch (type) {
@@ -91,42 +90,75 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
       setAddValues({});
   };
 
-  // ★ 画像アップロード処理 (Google Driveへ保存し、URLを取得)
+  // ★ 修正：産業用Vision AI向け 4K高解像度・圧縮エンジン
+  const compressImage = (file: File): Promise<string> => {
+      return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = (event) => {
+              const img = new Image();
+              img.src = event.target?.result as string;
+              img.onload = () => {
+                  const canvas = document.createElement('canvas');
+                  
+                  // 4K UHD解像度（3840px）を許容上限とする。数ミリの線も潰れない。
+                  const MAX_WIDTH = 3840; 
+                  const MAX_HEIGHT = 3840;
+                  let width = img.width;
+                  let height = img.height;
+
+                  if (width > height) {
+                      if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                  } else {
+                      if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+                  }
+
+                  canvas.width = width;
+                  canvas.height = height;
+                  const ctx = canvas.getContext('2d');
+                  if (!ctx) return reject(new Error('Canvas context could not be created'));
+                  ctx.drawImage(img, 0, 0, width, height);
+
+                  // 画質を85%に設定。4Kの超高画質を維持したままファイルサイズを削減。
+                  const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                  resolve(dataUrl.split(',')[1]); 
+              };
+              img.onerror = (error) => reject(error);
+          };
+          reader.onerror = (error) => reject(error);
+      });
+  };
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: string, colIndex: number) => {
       const file = e.target.files?.[0];
       if (!file) return;
-      if (file.size > 5 * 1024 * 1024) {
-          alert('ファイルサイズは5MB以下にしてください。');
-          return;
-      }
       
       setUploadingField(fieldName);
-      const reader = new FileReader();
-      reader.onload = async (ev) => {
-          const base64Data = (ev.target?.result as string).split(',')[1];
+      
+      try {
+          const base64Data = await compressImage(file);
           const payload = {
               action: 'UPLOAD_IMAGE',
               sheetName: 'Products_Wire',
               recordId: editingId,
               colIndex: colIndex, 
-              fileName: `${editingId}_${fieldName}_${file.name}`,
-              mimeType: file.type,
+              fileName: `${editingId}_${fieldName}.jpg`,
+              mimeType: 'image/jpeg',
               data: base64Data
           };
-          try {
-              const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-              const result = await res.json();
-              if (result.status === 'success') {
-                  setEditValues(prev => ({ ...prev, [fieldName]: result.url }));
-              } else {
-                  alert('アップロード失敗: ' + result.message);
-              }
-          } catch (err) {
-              alert('通信エラーが発生しました');
+          
+          const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+          const result = await res.json();
+          if (result.status === 'success') {
+              setEditValues(prev => ({ ...prev, [fieldName]: result.url }));
+          } else {
+              alert('アップロード失敗: ' + result.message);
           }
+      } catch (err) {
+          alert('画像圧縮または通信エラーが発生しました: ' + err);
+      } finally {
           setUploadingField(null);
-      };
-      reader.readAsDataURL(file);
+      }
   };
 
   const handleSave = async (sheetName: string, id: string) => {
@@ -392,14 +424,13 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                                                   <td colSpan={6} className="p-4 pt-0">
                                                       <div className="flex flex-col bg-white p-4 border border-gray-200 rounded-sm shadow-inner mt-2">
                                                           <span className="text-xs font-bold text-gray-500 mb-3 flex items-center gap-1">
-                                                              <Icons.Camera /> 画像データ (AI教師データとしてGoogle Driveへ保存)
+                                                              <Icons.Camera /> 画像データ (アップロード時に自動で軽量化され、Driveへ保存されます)
                                                           </span>
                                                           <div className="flex gap-4">
                                                               {[1, 2, 3].map(num => {
                                                                   const field = `image${num}`;
                                                                   const url = editValues[field];
                                                                   const isUploading = uploadingField === field;
-                                                                  // ★ L列(11), M列(12), N列(13) に対応
                                                                   const colIndex = 10 + num; 
                                                                   return (
                                                                       <div key={num} className="flex flex-col gap-1">
@@ -566,7 +597,6 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                               </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-100 text-sm">
-                              {/* 新規追加フォーム行 */}
                               {addingTab === 'CLIENTS' && (
                                   <tr className="bg-blue-50/30 border-b-2 border-blue-200">
                                       <td className="p-3">
