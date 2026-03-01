@@ -7,6 +7,7 @@ const Icons = {
   Save: () => <svg className="w-4 h-4 inline-block md:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>,
   Settings: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
   Users: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
+  ShieldCheck: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>,
   Print: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>,
   Refresh: () => <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
   Brain: () => <svg className="w-5 h-5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>,
@@ -35,8 +36,18 @@ const ROLE_OPTIONS = [
   { value: 'SYSTEM_PARTNER', short: 'システム', label: 'システム・開発', color: 'bg-gray-100 text-gray-800 border-gray-300' }
 ];
 
+// ★ 新設：スタッフ権限リスト
+const STAFF_ROLES = [
+  { value: 'ADMIN', label: 'ADMIN (全権限)', color: 'bg-red-100 text-red-800 border-red-200' },
+  { value: 'MANAGER', label: 'MANAGER (管理・工場長)', color: 'bg-blue-100 text-blue-800 border-blue-200' },
+  { value: 'FRONT', label: 'FRONT (受付・POS専任)', color: 'bg-green-100 text-green-800 border-green-200' },
+  { value: 'PLANT', label: 'PLANT (製造・カンバン専任)', color: 'bg-orange-100 text-orange-800 border-orange-200' },
+  { value: 'SALES', label: 'SALES (営業・顧客DB専任)', color: 'bg-purple-100 text-purple-800 border-purple-200' }
+];
+
 export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: any }) => {
-  const [activeTab, setActiveTab] = useState<'WIRES' | 'CASTINGS' | 'CLIENTS' | 'CONFIG'>('WIRES');
+  // ★ STAFFタブを追加
+  const [activeTab, setActiveTab] = useState<'WIRES' | 'CASTINGS' | 'CLIENTS' | 'STAFF' | 'CONFIG'>('WIRES');
   const [showAiData, setShowAiData] = useState(true);
 
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -53,6 +64,7 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
   const wires = data?.wires || [];
   const castings = data?.castings || [];
   const clients = data?.clients || [];
+  const staffs = data?.staffs || []; // ★ スタッフデータを取得
   const config = data?.config || {};
 
   const copperPrice = Number(config.market_price) || 1450;
@@ -90,7 +102,7 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
       setAddValues({});
   };
 
-  // ★ 修正：産業用Vision AI向け 4K高解像度・圧縮エンジン
+  // 4K圧縮エンジン
   const compressImage = (file: File): Promise<string> => {
       return new Promise((resolve, reject) => {
           const reader = new FileReader();
@@ -100,8 +112,6 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
               img.src = event.target?.result as string;
               img.onload = () => {
                   const canvas = document.createElement('canvas');
-                  
-                  // 4K UHD解像度（3840px）を許容上限とする。数ミリの線も潰れない。
                   const MAX_WIDTH = 3840; 
                   const MAX_HEIGHT = 3840;
                   let width = img.width;
@@ -119,7 +129,6 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                   if (!ctx) return reject(new Error('Canvas context could not be created'));
                   ctx.drawImage(img, 0, 0, width, height);
 
-                  // 画質を85%に設定。4Kの超高画質を維持したままファイルサイズを削減。
                   const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
                   resolve(dataUrl.split(',')[1]); 
               };
@@ -166,32 +175,21 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
       try {
           let updates = {};
           if (sheetName === 'Products_Wire') {
-              updates = { 
-                  2: editValues.name, 
-                  4: editValues.sq, 
-                  7: editValues.core, 
-                  9: editValues.ratio 
-              };
+              updates = { 2: editValues.name, 4: editValues.sq, 7: editValues.core, 9: editValues.ratio };
           } else if (sheetName === 'Products_Casting') {
               updates = { 1: editValues.name, 2: editValues.type, 4: editValues.ratio };
           } else if (sheetName === 'Clients') {
-              updates = { 
-                  1: editValues.companyName || editValues.name,
-                  2: editValues.rank, 
-                  4: editValues.phone,
-                  8: editValues.memo, 
-                  9: editValues.address,
-                  10: editValues.industry,
-                  11: editValues.businessRole
-              };
+              updates = { 1: editValues.companyName || editValues.name, 2: editValues.rank, 4: editValues.phone, 8: editValues.memo, 9: editValues.address, 10: editValues.industry, 11: editValues.businessRole };
+          } else if (sheetName === 'Staff') {
+              // ★ スタッフの更新項目
+              updates = { 1: editValues.name, 2: editValues.role, 4: editValues.status, 5: editValues.loginId, 6: editValues.password };
           }
 
           const payload = { action: 'UPDATE_DB_RECORD', sheetName, recordId: id, updates };
           const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
           const result = await res.json();
           if (result.status === 'success') {
-              setEditingId(null);
-              window.location.reload();
+              setEditingId(null); window.location.reload();
           } else {
               alert('エラー: ' + result.message);
           }
@@ -226,47 +224,7 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
 
   const handlePrintReport = async () => {
       setIsGeneratingReport(true);
-      let promptData = '';
-      let pageName = '';
-
-      if (activeTab === 'WIRES' || activeTab === 'CASTINGS') {
-          pageName = '本日の買取価格表（マスタ一覧）';
-          promptData = `
-          ・データモード: ${showAiData ? 'AI予測データ含む' : '実測確定データのみ'}
-          ・本日の銅建値: ${copperPrice} 円/kg
-          ・本日の真鍮建値: ${brassPrice} 円/kg
-          ・登録されている電線類: ${filteredWires.length} 品目
-          ・登録されている非鉄類: ${filteredCastings.length} 品目
-          ※顧客に提示・配布するための相場表です。現在の相場動向に対する一言を添えてください。
-          `;
-      } else if (activeTab === 'CLIENTS') {
-          pageName = '顧客ディレクトリ（名簿）';
-          promptData = `
-          ・データモード: ${showAiData ? 'AI予測データ含む' : '実測確定データのみ'}
-          ・現在の登録顧客数: ${filteredClients.length} 社
-          ・ランクS顧客: ${filteredClients.filter((c:any)=>c.rank==='S').length} 社
-          ・ランクA顧客: ${filteredClients.filter((c:any)=>c.rank==='A').length} 社
-          ※社内管理用の顧客リストです。上位顧客の割合などから今後の営業戦略に対する一言を添えてください。
-          `;
-      } else {
-          pageName = 'システム設定一覧';
-          promptData = `システム稼働用のコンフィグデータです。`;
-      }
-
-      try {
-          const res = await fetch('/api/print-summary', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ pageName, promptData })
-          });
-          const result = await res.json();
-          if (result.success) {
-              setAiSummary(result.summary);
-              setTimeout(() => { window.print(); setIsGeneratingReport(false); }, 500);
-          } else {
-              alert('AI要約の生成に失敗しました'); setIsGeneratingReport(false);
-          }
-      } catch(e) { alert('通信エラー'); setIsGeneratingReport(false); }
+      setTimeout(() => { window.print(); setIsGeneratingReport(false); }, 500);
   };
 
   return (
@@ -287,9 +245,9 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                     <button onClick={() => setShowAiData(true)} className={`px-4 py-1.5 text-xs font-bold font-mono transition-colors ${showAiData ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-100'}`}>MIX</button>
                     <button onClick={() => setShowAiData(false)} className={`px-4 py-1.5 text-xs font-bold font-mono transition-colors ${!showAiData ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-100'}`}>HUMAN ONLY</button>
                 </div>
-                <button onClick={handlePrintReport} disabled={isGeneratingReport || activeTab === 'CONFIG'} className="bg-white border border-gray-300 text-gray-800 px-4 py-2 rounded-sm text-xs font-bold hover:border-[#D32F2F] hover:text-[#D32F2F] transition shadow-sm flex items-center justify-center gap-2 disabled:opacity-50">
+                <button onClick={handlePrintReport} disabled={isGeneratingReport || activeTab === 'CONFIG' || activeTab === 'STAFF'} className="bg-white border border-gray-300 text-gray-800 px-4 py-2 rounded-sm text-xs font-bold hover:border-[#D32F2F] hover:text-[#D32F2F] transition shadow-sm flex items-center justify-center gap-2 disabled:opacity-50">
                     {isGeneratingReport ? <Icons.Refresh /> : <Icons.Print />}
-                    {activeTab === 'CONFIG' ? '印刷非対応' : isGeneratingReport ? 'AI分析中...' : 'このタブを印刷する'}
+                    {activeTab === 'CONFIG' || activeTab === 'STAFF' ? '印刷非対応' : isGeneratingReport ? 'AI分析中...' : 'このタブを印刷'}
                 </button>
             </div>
           </header>
@@ -302,10 +260,13 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                   非鉄類 マスター
               </button>
               <button onClick={() => {setActiveTab('CLIENTS'); handleCancel();}} className={`px-4 py-3 md:py-4 text-xs md:text-sm font-bold tracking-widest whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'CLIENTS' ? 'bg-white border-t-2 border-t-blue-600 text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>
-                  <Icons.Users /> 顧客・ロール管理
+                  <Icons.Users /> 顧客ロール管理
+              </button>
+              <button onClick={() => {setActiveTab('STAFF'); handleCancel();}} className={`px-4 py-3 md:py-4 text-xs md:text-sm font-bold tracking-widest whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'STAFF' ? 'bg-white border-t-2 border-t-green-600 text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>
+                  <Icons.ShieldCheck /> スタッフ・権限
               </button>
               <button onClick={() => {setActiveTab('CONFIG'); handleCancel();}} className={`px-4 py-3 md:py-4 text-xs md:text-sm font-bold tracking-widest whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'CONFIG' ? 'bg-white border-t-2 border-t-gray-800 text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>
-                  <Icons.Settings /> システム設定
+                  <Icons.Settings /> 設定
               </button>
           </div>
 
@@ -377,7 +338,6 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                                                   )}
                                               </td>
                                               
-                                              {/* ★ 画像サムネイル表示領域 */}
                                               <td className="p-3">
                                                   <div className="flex gap-1.5">
                                                       {[w.image1, w.image2, w.image3].map((imgUrl, idx) => (
@@ -418,13 +378,13 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                                               </td>
                                           </tr>
 
-                                          {/* ★ 画像アップロード拡張UI (編集時のみ行の下に展開) */}
+                                          {/* 画像アップロード拡張UI */}
                                           {isEditing && (
                                               <tr className="bg-gray-50/50 border-b-2 border-gray-200">
                                                   <td colSpan={6} className="p-4 pt-0">
                                                       <div className="flex flex-col bg-white p-4 border border-gray-200 rounded-sm shadow-inner mt-2">
                                                           <span className="text-xs font-bold text-gray-500 mb-3 flex items-center gap-1">
-                                                              <Icons.Camera /> 画像データ (アップロード時に自動で軽量化され、Driveへ保存されます)
+                                                              <Icons.Camera /> 画像データ (アップロード時に自動で4K軽量化され、Driveへ保存されます)
                                                           </span>
                                                           <div className="flex gap-4">
                                                               {[1, 2, 3].map(num => {
@@ -643,10 +603,6 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                                   </tr>
                               )}
 
-                              {filteredClients.length === 0 && (
-                                  <tr><td colSpan={5} className="p-16 text-center text-sm text-gray-400 font-bold bg-white">表示するデータがありません</td></tr>
-                              )}
-
                               {filteredClients.map((c:any) => {
                                   const isEditing = editingId === (c.id || c.clientId);
                                   const isAi = isAiGenerated(c);
@@ -751,6 +707,123 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
                   </div>
               )}
 
+              {/* ★ 新設 ================= STAFF TAB ================= */}
+              {activeTab === 'STAFF' && (
+                  <div className="flex-1 overflow-y-auto overflow-x-auto p-0 relative">
+                      <div className="sticky top-0 bg-white border-b border-gray-200 p-3 flex justify-between items-center z-20">
+                          <p className="text-xs text-gray-500 font-bold ml-2">※ ここで発行したID・パスワードでシステムにログインできます。</p>
+                          <button onClick={() => { setAddingTab('STAFF'); setEditingId(null); setAddValues({}); }} className="bg-green-600 text-white px-4 py-2 text-xs font-bold rounded-sm flex items-center shadow-sm hover:bg-green-700 transition">
+                              <Icons.Plus /> アカウント発行
+                          </button>
+                      </div>
+                      <table className="w-full text-left border-collapse min-w-[800px]">
+                          <thead className="bg-gray-100 border-b border-gray-200 text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                              <tr>
+                                  <th className="p-3 w-[20%]">スタッフ名</th>
+                                  <th className="p-3 w-[25%]">認証情報 (ログインID / PASS)</th>
+                                  <th className="p-3 w-[25%]">権限・ロール</th>
+                                  <th className="p-3 w-[15%] text-center">状態</th>
+                                  <th className="p-3 w-[15%] text-right">操作</th>
+                              </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100 text-sm">
+                              {/* 新規発行フォーム行 */}
+                              {addingTab === 'STAFF' && (
+                                  <tr className="bg-green-50/30 border-b-2 border-green-200">
+                                      <td className="p-3">
+                                          <input type="text" placeholder="氏名" value={addValues.name || ''} onChange={e => setAddValues({...addValues, name: e.target.value})} className="w-full p-1.5 border border-gray-300 rounded-sm text-xs font-bold outline-none focus:border-green-600" />
+                                      </td>
+                                      <td className="p-3 space-y-1.5">
+                                          <input type="text" placeholder="ログインID (英数字)" value={addValues.loginId || ''} onChange={e => setAddValues({...addValues, loginId: e.target.value})} className="w-full p-1.5 border border-gray-300 rounded-sm text-xs font-mono outline-none focus:border-green-600" />
+                                          <input type="text" placeholder="パスワード" value={addValues.password || ''} onChange={e => setAddValues({...addValues, password: e.target.value})} className="w-full p-1.5 border border-gray-300 rounded-sm text-xs font-mono outline-none focus:border-green-600" />
+                                      </td>
+                                      <td className="p-3">
+                                          <select value={addValues.role || 'FRONT'} onChange={e => setAddValues({...addValues, role: e.target.value})} className="w-full bg-white border border-gray-300 p-2 rounded-sm text-xs font-bold outline-none shadow-sm focus:border-green-600">
+                                              {STAFF_ROLES.map(role => <option key={role.value} value={role.value}>{role.label}</option>)}
+                                          </select>
+                                      </td>
+                                      <td className="p-3 text-center">
+                                          <span className="bg-green-100 text-green-800 text-[10px] font-bold px-2 py-1 rounded-sm">ACTIVE</span>
+                                      </td>
+                                      <td className="p-3 text-right">
+                                          <div className="flex flex-col gap-2 items-end">
+                                              <button onClick={() => handleAdd('Staff')} disabled={isSaving || !addValues.name || !addValues.loginId || !addValues.password} className="bg-green-600 text-white px-4 py-2 text-[10px] font-bold rounded-sm hover:bg-green-700 transition shadow-sm w-full"><Icons.Save /> 発行</button>
+                                              <button onClick={handleCancel} className="text-gray-500 hover:text-gray-900 text-[10px] font-bold w-full">取消</button>
+                                          </div>
+                                      </td>
+                                  </tr>
+                              )}
+
+                              {staffs.map((s:any) => {
+                                  const isEditing = editingId === s.id;
+                                  const roleObj = STAFF_ROLES.find(r => r.value === s.role) || STAFF_ROLES[2];
+
+                                  return (
+                                      <tr key={s.id} className={`hover:bg-gray-50 transition ${isEditing ? 'bg-red-50/10' : ''} ${s.status === 'INACTIVE' ? 'opacity-50' : ''}`}>
+                                          <td className="p-3">
+                                              {isEditing ? (
+                                                  <input type="text" value={editValues.name || ''} onChange={e => setEditValues({...editValues, name: e.target.value})} className="w-full p-1.5 border border-gray-300 rounded-sm text-xs font-bold outline-none focus:border-[#D32F2F]" />
+                                              ) : (
+                                                  <div className="font-bold text-gray-900">{s.name}</div>
+                                              )}
+                                          </td>
+                                          <td className="p-3">
+                                              {isEditing ? (
+                                                  <div className="space-y-1.5">
+                                                      <input type="text" value={editValues.loginId || ''} onChange={e => setEditValues({...editValues, loginId: e.target.value})} className="w-full p-1.5 border border-gray-300 rounded-sm text-xs font-mono outline-none focus:border-[#D32F2F]" placeholder="ID" />
+                                                      <input type="text" value={editValues.password || ''} onChange={e => setEditValues({...editValues, password: e.target.value})} className="w-full p-1.5 border border-gray-300 rounded-sm text-xs font-mono outline-none focus:border-[#D32F2F]" placeholder="PASS" />
+                                                  </div>
+                                              ) : (
+                                                  <div className="text-xs font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded-sm border border-gray-200 inline-block">
+                                                      ID: {s.loginId} <br/>
+                                                      <span className="text-gray-400 text-[10px]">Pass: {s.password}</span>
+                                                  </div>
+                                              )}
+                                          </td>
+                                          <td className="p-3">
+                                              {isEditing ? (
+                                                  <select value={editValues.role || 'FRONT'} onChange={e => setEditValues({...editValues, role: e.target.value})} className="w-full bg-white border border-gray-300 p-2 rounded-sm text-xs font-bold outline-none shadow-sm focus:border-[#D32F2F]">
+                                                      {STAFF_ROLES.map(role => <option key={role.value} value={role.value}>{role.label}</option>)}
+                                                  </select>
+                                              ) : (
+                                                  <span className={`px-2 py-1 border rounded-sm text-[10px] font-bold shadow-sm ${roleObj.color}`}>
+                                                      {roleObj.value}
+                                                  </span>
+                                              )}
+                                          </td>
+                                          <td className="p-3 text-center">
+                                              {isEditing ? (
+                                                  <select value={editValues.status || 'ACTIVE'} onChange={e => setEditValues({...editValues, status: e.target.value})} className="bg-white border border-gray-300 p-1.5 rounded-sm text-xs font-bold outline-none">
+                                                      <option value="ACTIVE">有効 (ACTIVE)</option>
+                                                      <option value="INACTIVE">停止 (INACTIVE)</option>
+                                                  </select>
+                                              ) : (
+                                                  <span className={`text-[10px] font-bold px-2 py-1 rounded-sm ${s.status === 'INACTIVE' ? 'bg-gray-200 text-gray-500' : 'bg-green-100 text-green-800'}`}>
+                                                      {s.status || 'ACTIVE'}
+                                                  </span>
+                                              )}
+                                          </td>
+                                          <td className="p-3 text-right">
+                                              {isEditing ? (
+                                                  <div className="flex flex-col gap-2 items-end">
+                                                      <button onClick={() => handleSave('Staff', s.id)} disabled={isSaving} className="bg-gray-900 text-white px-4 py-2 text-[10px] font-bold rounded-sm hover:bg-black transition flex items-center justify-center gap-1 shadow-sm w-full"><Icons.Save /> 保存</button>
+                                                      <div className="flex w-full gap-2">
+                                                          <button onClick={() => handleDelete('Staff', s.id)} disabled={isSaving} className="bg-white text-gray-600 border border-gray-300 py-1.5 text-[10px] font-bold rounded-sm hover:bg-red-50 hover:text-[#D32F2F] transition shadow-sm w-1/2 flex justify-center"><Icons.Trash /></button>
+                                                          <button onClick={handleCancel} className="text-gray-500 bg-gray-100 border border-gray-200 py-1.5 text-[10px] font-bold hover:bg-gray-200 transition rounded-sm w-1/2">取消</button>
+                                                      </div>
+                                                  </div>
+                                              ) : (
+                                                  <button onClick={(e) => { e.stopPropagation(); handleEdit(s); }} className="text-gray-400 hover:text-gray-900 transition p-2 bg-white rounded-sm border border-gray-200 shadow-sm"><Icons.Edit /></button>
+                                              )}
+                                          </td>
+                                      </tr>
+                                  );
+                              })}
+                          </tbody>
+                      </table>
+                  </div>
+              )}
+
               {/* ================= CONFIG TAB ================= */}
               {activeTab === 'CONFIG' && (
                   <div className="p-6 overflow-y-auto relative">
@@ -779,101 +852,6 @@ export const AdminDatabase = ({ data, onNavigate }: { data: any, onNavigate?: an
               )}
 
           </div>
-      </div>
-
-      {/* --- 🖨️ 印刷用レポート専用レイアウト (通常時は非表示) --- */}
-      <div className="hidden print:block w-[210mm] min-h-[297mm] bg-white text-black p-8 mx-auto font-sans">
-          <div className="border-b-2 border-black pb-4 mb-6 flex justify-between items-end">
-              <div>
-                  <h1 className="text-3xl font-black font-serif tracking-widest">
-                      {activeTab === 'WIRES' || activeTab === 'CASTINGS' ? '本日の買取価格表' : 
-                       activeTab === 'CLIENTS' ? '顧客ディレクトリ (社内秘)' : 'システムレポート'}
-                  </h1>
-                  <p className="text-sm font-bold text-gray-600 mt-2">株式会社月寒製作所 苫小牧工場</p>
-              </div>
-              <div className="text-right">
-                  <p className="text-lg font-bold font-mono">{new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}</p>
-                  <p className="text-xs font-bold bg-black text-white px-2 py-0.5 inline-block mt-1">
-                      {showAiData ? 'MIX (AI予測 + 実測)' : 'HUMAN ONLY (実測確定のみ)'}
-                  </p>
-              </div>
-          </div>
-
-          <section className="mb-8 border-2 border-black p-6 rounded-sm bg-gray-50 relative">
-              {showAiData && <div className="absolute top-2 right-2"><ProvenanceBadge type="AI_AUTO" /></div>}
-              <h2 className="text-lg font-black text-black flex items-center gap-2 mb-4">
-                  <Icons.Brain /> 本日の相場概況とインサイト
-              </h2>
-              <div className="text-sm leading-relaxed whitespace-pre-wrap font-bold text-gray-800">
-                  {showAiData ? (aiSummary || "（データ処理中です...）") : "※AI予測モードがOFFのため、インサイトは表示されません。"}
-              </div>
-          </section>
-
-          {(activeTab === 'WIRES' || activeTab === 'CASTINGS') && (
-              <div className="mb-8">
-                  <div className="flex justify-between text-sm font-bold bg-black text-white px-4 py-2 mb-4">
-                      <span>基準相場: 銅建値 {copperPrice}円/kg | 真鍮建値 {brassPrice}円/kg | 亜鉛建値 {zincPrice}円/kg</span>
-                  </div>
-                  <table className="w-full text-left border-collapse text-sm">
-                      <thead>
-                          <tr className="border-b-2 border-black text-xs">
-                              <th className="py-2 w-[40%]">品目名</th>
-                              <th className="py-2 text-center w-[20%]">評価ベース</th>
-                              <th className="py-2 text-center w-[20%]">歩留/掛率</th>
-                              <th className="py-2 text-right w-[20%]">参考買取単価</th>
-                          </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-300">
-                          {activeTab === 'WIRES' ? filteredWires.map((w:any) => (
-                              <tr key={w.id} className="py-1">
-                                  <td className="py-2 font-bold">{getDisplayName(w)} {isAiGenerated(w) && <ProvenanceBadge type="AI_AUTO" />}</td>
-                                  <td className="py-2 text-center text-gray-600">銅</td>
-                                  <td className="py-2 text-center font-mono">{w.ratio}%</td>
-                                  <td className="py-2 text-right font-black font-mono">¥{Math.floor(copperPrice * (w.ratio/100) * 0.85).toLocaleString()} /kg</td>
-                              </tr>
-                          )) : filteredCastings.map((c:any) => (
-                              <tr key={c.id} className="py-1">
-                                  <td className="py-2 font-bold">{c.name} {isAiGenerated(c) && <ProvenanceBadge type="AI_AUTO" />}</td>
-                                  <td className="py-2 text-center text-gray-600">{c.type === 'BRASS' ? '真鍮' : c.type === 'ZINC' ? '亜鉛' : c.type === 'LEAD' ? '鉛' : '銅'}</td>
-                                  <td className="py-2 text-center font-mono">{c.ratio}%</td>
-                                  <td className="py-2 text-right font-black font-mono">
-                                      ¥{Math.floor((c.type === 'BRASS' ? brassPrice : c.type === 'ZINC' ? zincPrice : c.type === 'LEAD' ? leadPrice : copperPrice) * (c.ratio/100) * 0.90).toLocaleString()} /kg
-                                  </td>
-                              </tr>
-                          ))}
-                      </tbody>
-                  </table>
-              </div>
-          )}
-
-          {activeTab === 'CLIENTS' && (
-              <div className="mb-8">
-                  <table className="w-full text-left border-collapse text-sm">
-                      <thead>
-                          <tr className="border-b-2 border-black text-xs">
-                              <th className="py-2 w-[35%]">顧客・企業名</th>
-                              <th className="py-2 text-center w-[10%]">ランク</th>
-                              <th className="py-2 w-[20%]">役割</th>
-                              <th className="py-2 w-[35%]">特記事項</th>
-                          </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-300">
-                          {filteredClients.map((c:any) => (
-                              <tr key={c.clientId} className="py-1">
-                                  <td className="py-2">
-                                      <p className="font-bold flex items-center gap-1">{c.companyName || c.name} {isAiGenerated(c) && <ProvenanceBadge type="AI_AUTO" />}</p>
-                                      <p className="text-[10px] text-gray-500 font-mono mt-0.5">{c.phone || '-'}</p>
-                                  </td>
-                                  <td className="py-2 text-center font-black">{c.rank || 'B'}</td>
-                                  <td className="py-2 font-mono text-xs">{c.businessRole || '-'}</td>
-                                  <td className="py-2 text-xs text-gray-600 truncate">{c.memo || '-'}</td>
-                              </tr>
-                          ))}
-                      </tbody>
-                  </table>
-              </div>
-          )}
-
       </div>
     </div>
   );
