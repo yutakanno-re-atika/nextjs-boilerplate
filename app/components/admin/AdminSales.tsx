@@ -11,6 +11,20 @@ const Icons = {
   Briefcase: () => <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
 };
 
+// ★追加：時間をスマートに表示するためのフォーマッター (MM/DD HH:mm)
+const formatTimeShort = (timeStr: string) => {
+  if (!timeStr) return '--/-- --:--';
+  try {
+    const d = new Date(timeStr);
+    if (isNaN(d.getTime())) return timeStr.substring(0, 16);
+    const MM = String(d.getMonth() + 1).padStart(2, '0');
+    const DD = String(d.getDate()).padStart(2, '0');
+    const HH = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    return `${MM}/${DD} ${HH}:${mm}`;
+  } catch(e) { return timeStr; }
+};
+
 const ProvenanceBadge = ({ type }: { type: 'HUMAN' | 'AI_AUTO' | 'CO_OP' }) => {
     const baseStyle = "inline-block px-1.5 py-0.5 text-[9px] font-mono font-bold tracking-widest rounded-sm text-white cursor-default shadow-sm";
     switch (type) {
@@ -191,7 +205,7 @@ export const AdminSales = ({ data }: { data: any }) => {
                             const isAi = t.memo?.includes('AI_AUTO') || t.source === 'AI_AUTO';
                             return (
                                 <tr key={t.id} className="hover:bg-gray-50 transition group">
-                                    <td className="p-4">
+                                    <td className="p-4 align-top">
                                         <div className="flex items-start gap-2">
                                             <p className="font-bold text-gray-900 mb-1">{t.company}</p>
                                             {isAi && <ProvenanceBadge type="AI_AUTO" />}
@@ -200,18 +214,24 @@ export const AdminSales = ({ data }: { data: any }) => {
                                         <span className="inline-block bg-gray-100 border border-gray-200 text-gray-600 text-[10px] px-2 py-0.5 rounded-sm font-bold">
                                             {t.industry || '業種不明'}
                                         </span>
+                                        
+                                        {/* ★追加：タイムスタンプを企業名の下に控えめに表示 */}
+                                        <div className="flex gap-3 mt-3 text-[10px] text-gray-400 font-mono">
+                                            <span title={`抽出日時: ${t.createdAt}`}>🕒 {formatTimeShort(t.createdAt)}</span>
+                                            <span title={`最終更新: ${t.updatedAt}`}>✏️ {formatTimeShort(t.updatedAt)}</span>
+                                        </div>
                                     </td>
-                                    <td className="p-4 text-center">
+                                    <td className="p-4 text-center align-top">
                                         <span className={`inline-flex items-center justify-center w-8 h-8 rounded text-sm font-black shadow-sm ${t.priority === 'S' ? 'bg-[#D32F2F] text-white' : t.priority === 'A' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 border border-gray-200'}`}>
                                             {t.priority || 'B'}
                                         </span>
                                     </td>
-                                    <td className="p-4">
+                                    <td className="p-4 align-top">
                                         <p className="text-xs text-gray-700 leading-relaxed font-medium line-clamp-3 group-hover:line-clamp-none transition-all">
                                             {t.reason || '-'}
                                         </p>
                                     </td>
-                                    <td className="p-4">
+                                    <td className="p-4 align-top">
                                         <div className="bg-blue-50/50 p-3 rounded-sm border border-blue-100">
                                             <p className="text-xs text-blue-900 leading-relaxed font-bold flex gap-1">
                                                 <Icons.Brain />
