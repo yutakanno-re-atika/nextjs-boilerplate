@@ -10,8 +10,9 @@ const Icons = {
   Sparkles: () => <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 8.134a1 1 0 010 1.932l-3.354.933-1.179 4.456a1 1 0 01-1.934 0l-1.179-4.456-3.354-.933a1 1 0 010-1.932l3.354-.933 1.179-4.456A1 1 0 0112 2z" clipRule="evenodd" /></svg>,
   ArrowUp: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>,
   Close: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>,
-  Refresh: () => <svg className="w-5 h-5 animate-spin text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
-  Filter: () => <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
+  Refresh: () => <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
+  Filter: () => <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>,
+  Camera: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
 };
 
 export const AdminDatabase = ({ data }: { data: any }) => {
@@ -24,6 +25,18 @@ export const AdminDatabase = ({ data }: { data: any }) => {
   const [editingItem, setEditingItem] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadingImageId, setUploadingImageId] = useState<string | null>(null);
+
+  // ★ AIアシスト登録用のステート
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [aiStatus, setAiStatus] = useState<'IDLE' | 'ANALYZING'>('IDLE');
+  const [imgData1, setImgData1] = useState<string>('');
+  const [imgData2, setImgData2] = useState<string>('');
+  const fileInputRef1 = useRef<HTMLInputElement>(null);
+  const fileInputRef2 = useRef<HTMLInputElement>(null);
+
+  // ★ 実測計算用のステート
+  const [sampleTotal, setSampleTotal] = useState<number | ''>('');
+  const [sampleCopper, setSampleCopper] = useState<number | ''>('');
 
   const wires = data?.wires || [];
   const unknownWires = data?.unknownWires || []; 
@@ -54,12 +67,37 @@ export const AdminDatabase = ({ data }: { data: any }) => {
 
   const handleOpenModal = (item: any = null) => {
     setEditingItem(item || {});
+    setSampleTotal(item?.sampleTotal || '');
+    setSampleCopper(item?.sampleCopper || '');
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
     setEditingItem(null);
+    setSampleTotal('');
+    setSampleCopper('');
     setIsModalOpen(false);
+  };
+
+  // 実測値から歩留まりを自動計算
+  const calculateRatio = (total: number | '', copper: number | '') => {
+      if (total && copper && Number(total) > 0) {
+          const r = (Number(copper) / Number(total)) * 100;
+          return r.toFixed(2);
+      }
+      return '';
+  };
+
+  const handleSampleTotalChange = (val: string) => {
+      const num = val ? Number(val) : '';
+      setSampleTotal(num);
+      setEditingItem({...editingItem, sampleTotal: num, ratio: calculateRatio(num, sampleCopper)});
+  };
+
+  const handleSampleCopperChange = (val: string) => {
+      const num = val ? Number(val) : '';
+      setSampleCopper(num);
+      setEditingItem({...editingItem, sampleCopper: num, ratio: calculateRatio(sampleTotal, num)});
   };
 
   const handlePromoteToWire = (unknownItem: any) => {
@@ -86,6 +124,8 @@ export const AdminDatabase = ({ data }: { data: any }) => {
     if (activeTab === 'STAFF') sheetName = 'Staff';
 
     const action = editingItem.id ? 'UPDATE_DB_RECORD' : 'ADD_DB_RECORD';
+    
+    // ★ 必須項目の「サンプル総量」「サンプル銅量」を登録データに含める
     const payload = editingItem.id 
       ? { action, sheetName, recordId: editingItem.id, updates: getUpdatesMap(editingItem, activeTab) }
       : { action, sheetName, data: editingItem };
@@ -123,7 +163,11 @@ export const AdminDatabase = ({ data }: { data: any }) => {
   };
 
   const getUpdatesMap = (item: any, tab: string) => {
-    if (tab === 'WIRES') return { 1: item.maker, 2: item.name, 3: item.year, 4: item.sq, 7: item.core, 8: item.conductor, 9: item.ratio, 10: item.memo };
+    if (tab === 'WIRES') return { 
+        1: item.maker, 2: item.name, 3: item.year, 4: item.sq, 
+        5: item.sampleTotal, 6: item.sampleCopper, // ★ 実測値を追加
+        7: item.core, 8: item.conductor, 9: item.ratio, 10: item.memo 
+    };
     if (tab === 'UNKNOWN') return { 2: item.name, 3: item.ratio, 4: item.reason };
     if (tab === 'CASTINGS') return { 1: item.name, 2: item.type, 4: item.ratio };
     if (tab === 'CLIENTS') return { 1: item.name, 2: item.rank, 4: item.phone, 5: item.loginId, 6: item.password, 7: item.points, 8: item.memo, 9: item.address, 10: item.industry };
@@ -138,7 +182,7 @@ export const AdminDatabase = ({ data }: { data: any }) => {
               const img = new Image(); img.src = event.target?.result as string;
               img.onload = () => {
                   const canvas = document.createElement('canvas');
-                  const MAX = 1920; let w = img.width; let h = img.height;
+                  const MAX = 1200; let w = img.width; let h = img.height;
                   if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } } else { if (h > MAX) { w *= MAX / h; h = MAX; } }
                   canvas.width = w; canvas.height = h;
                   const ctx = canvas.getContext('2d'); ctx?.drawImage(img, 0, 0, w, h);
@@ -164,7 +208,57 @@ export const AdminDatabase = ({ data }: { data: any }) => {
       setUploadingImageId(null);
   };
 
-const renderTable = () => {
+  // ★ AIアシスト解析実行
+  const runAiExtraction = async () => {
+    if (!imgData1) return alert('最低1枚の画像（断面など）をアップロードしてください');
+    setAiStatus('ANALYZING');
+    
+    try {
+      const res = await fetch('/api/gas', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'VISION_AI_REGISTER', imageData: imgData1, imageData2: imgData2 })
+      });
+      const result = await res.json();
+      
+      if (result.status === 'success') {
+          // AIが抽出したデータをセットして編集モーダルを開く
+          setEditingItem({
+              maker: result.data.maker === '-' ? '' : result.data.maker,
+              name: result.data.name === '-' ? '' : result.data.name,
+              year: result.data.year === '-' ? '' : result.data.year,
+              sq: result.data.size === '-' ? '' : result.data.size,
+              core: result.data.core === '-' ? '' : result.data.core,
+              conductor: result.data.conductor === '-' ? '' : result.data.conductor,
+              ratio: '', // 歩留まりは空にして人間が実測する
+              memo: '【AIアシスト抽出】\n画像を元に仕様を自動入力しました。実測による歩留まりを入力してください。',
+              // 登録時に画像を自動アップロードするためのデータを持たせる
+              _pendingImageData1: imgData1,
+              _pendingImageData2: imgData2
+          });
+          setSampleTotal('');
+          setSampleCopper('');
+          
+          setIsAiModalOpen(false);
+          setIsModalOpen(true);
+      } else {
+          alert('AI抽出エラー: ' + result.message);
+      }
+    } catch(err) {
+      alert('通信エラーが発生しました。');
+    }
+    setAiStatus('IDLE');
+  };
+
+  const handleAiImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, num: 1 | 2) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+        const compressedBase64 = await compressImage(file);
+        if (num === 1) setImgData1(compressedBase64); else setImgData2(compressedBase64);
+    } catch (err) { alert("画像の処理に失敗しました。"); }
+  };
+
+  const renderTable = () => {
     let filteredData = [];
     
     if (activeTab === 'WIRES') {
@@ -277,20 +371,47 @@ const renderTable = () => {
     );
   };
 
-const renderModalContent = () => {
+  const renderModalContent = () => {
     if (activeTab === 'WIRES' || activeTab === 'UNKNOWN') return (
       <div className="space-y-4">
+        {editingItem._pendingImageData1 && (
+            <div className="bg-blue-50 border border-blue-200 p-3 rounded-sm text-xs text-blue-800 font-bold flex items-center gap-2">
+                <Icons.Sparkles /> 画像からAIが仕様を自動入力しました。サンプルを実測して確定してください。
+            </div>
+        )}
+        
         <div className="grid grid-cols-2 gap-4">
-            <div><label className="block text-xs font-bold text-gray-500 mb-1">メーカー</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.maker || ''} onChange={e => setEditingItem({...editingItem, maker: e.target.value})} /></div>
-            <div><label className="block text-xs font-bold text-gray-500 mb-1">品名</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.name || ''} onChange={e => setEditingItem({...editingItem, name: e.target.value})} /></div>
+            <div><label className="block text-xs font-bold text-gray-500 mb-1">メーカー</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-blue-500 font-bold" value={editingItem.maker || ''} onChange={e => setEditingItem({...editingItem, maker: e.target.value})} /></div>
+            <div><label className="block text-xs font-bold text-gray-500 mb-1">品名</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-blue-500 font-bold" value={editingItem.name || ''} onChange={e => setEditingItem({...editingItem, name: e.target.value})} /></div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div><label className="block text-xs font-bold text-gray-500 mb-1">製造年</label><input type="text" placeholder="例: 2020" className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.year || ''} onChange={e => setEditingItem({...editingItem, year: e.target.value})} /></div>
-            <div><label className="block text-xs font-bold text-gray-500 mb-1">SQ (断面積)</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.sq || ''} onChange={e => setEditingItem({...editingItem, sq: e.target.value})} /></div>
-            <div><label className="block text-xs font-bold text-gray-500 mb-1">芯数</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.core || ''} onChange={e => setEditingItem({...editingItem, core: e.target.value})} /></div>
-            <div><label className="block text-xs font-bold text-gray-500 mb-1">歩留まり (%)</label><input type="number" step="0.1" className="w-full border p-2 rounded-sm font-bold text-blue-600 outline-none focus:border-blue-500" value={editingItem.ratio || ''} onChange={e => setEditingItem({...editingItem, ratio: e.target.value})} /></div>
+        <div className="grid grid-cols-3 gap-4">
+            <div><label className="block text-xs font-bold text-gray-500 mb-1">製造年</label><input type="text" placeholder="例: 2024" className="w-full border p-2 rounded-sm outline-none focus:border-blue-500" value={editingItem.year || ''} onChange={e => setEditingItem({...editingItem, year: e.target.value})} /></div>
+            <div><label className="block text-xs font-bold text-gray-500 mb-1">SQ (サイズ)</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-blue-500" value={editingItem.sq || ''} onChange={e => setEditingItem({...editingItem, sq: e.target.value})} /></div>
+            <div><label className="block text-xs font-bold text-gray-500 mb-1">芯数 (C)</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-blue-500" value={editingItem.core || ''} onChange={e => setEditingItem({...editingItem, core: e.target.value})} /></div>
         </div>
-        <div><label className="block text-xs font-bold text-gray-500 mb-1">メモ / 推論の根拠</label><textarea className="w-full border p-2 rounded-sm h-24 text-sm outline-none focus:border-gray-500" value={editingItem.memo || editingItem.reason || ''} onChange={e => setEditingItem({...editingItem, memo: e.target.value, reason: e.target.value})} /></div>
+        
+        <div className="bg-gray-100 p-4 rounded-sm border border-gray-300 mt-4 relative">
+            <span className="absolute top-0 right-0 bg-gray-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-sm">HUMAN REQUIRED</span>
+            <label className="block text-sm font-black text-gray-800 mb-3 border-b border-gray-300 pb-2">⚖️ サンプル実測 (人間が入力)</label>
+            <div className="grid grid-cols-3 gap-4 items-end">
+                <div>
+                    <label className="block text-xs font-bold text-gray-600 mb-1">被覆込み 総重量 (g)</label>
+                    <input type="number" step="0.001" className="w-full border-none shadow-sm p-3 rounded-sm font-mono text-lg outline-none focus:ring-2 focus:ring-blue-500" value={sampleTotal} onChange={e => handleSampleTotalChange(e.target.value)} placeholder="0.000" />
+                </div>
+                <div>
+                    <label className="block text-xs font-bold text-[#D32F2F] mb-1">剥線後 銅重量 (g)</label>
+                    <input type="number" step="0.001" className="w-full border-none shadow-sm p-3 rounded-sm font-mono text-lg outline-none focus:ring-2 focus:ring-red-500" value={sampleCopper} onChange={e => handleSampleCopperChange(e.target.value)} placeholder="0.000" />
+                </div>
+                <div>
+                    <label className="block text-xs font-bold text-blue-800 mb-1">歩留まり (%)</label>
+                    <div className="w-full bg-white border border-blue-200 shadow-inner p-3 rounded-sm font-mono text-xl font-black text-blue-600 text-right">
+                        {editingItem.ratio || '---'} %
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div><label className="block text-xs font-bold text-gray-500 mb-1">メモ / 特記事項</label><textarea className="w-full border p-2 rounded-sm h-16 text-sm outline-none focus:border-gray-500" value={editingItem.memo || editingItem.reason || ''} onChange={e => setEditingItem({...editingItem, memo: e.target.value, reason: e.target.value})} /></div>
       </div>
     );
 
@@ -390,9 +511,9 @@ return (
       </header>
 
       <div className="bg-white border border-gray-200 shadow-sm rounded-sm flex-1 flex flex-col overflow-hidden">
-        <div className="p-4 border-b border-gray-200 bg-gray-50 flex flex-col md:flex-row gap-4">
+        <div className="p-4 border-b border-gray-200 bg-gray-50 flex flex-col md:flex-row gap-4 justify-between">
           <div className="flex flex-1 gap-2 flex-col md:flex-row">
-              <div className="relative flex-1">
+              <div className="relative flex-1 max-w-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Icons.Search />
                 </div>
@@ -421,9 +542,16 @@ return (
           </div>
 
           {activeTab !== 'UNKNOWN' && (
-              <button onClick={() => handleOpenModal()} className="bg-gray-900 text-white px-6 py-2 rounded-sm text-sm font-bold hover:bg-gray-800 transition flex items-center justify-center gap-2 whitespace-nowrap active:scale-95">
-                <Icons.Plus /> 新規登録
-              </button>
+              <div className="flex gap-2">
+                {activeTab === 'WIRES' && (
+                    <button onClick={() => setIsAiModalOpen(true)} className="bg-blue-50 text-blue-700 border border-blue-200 px-4 py-2 rounded-sm text-sm font-bold hover:bg-blue-100 transition flex items-center gap-2 whitespace-nowrap shadow-sm">
+                        <Icons.Sparkles /> AIアシストで新規登録
+                    </button>
+                )}
+                <button onClick={() => handleOpenModal()} className="bg-gray-900 text-white px-6 py-2 rounded-sm text-sm font-bold hover:bg-gray-800 transition flex items-center justify-center gap-2 whitespace-nowrap active:scale-95 shadow-sm">
+                    <Icons.Plus /> 手動で新規登録
+                </button>
+              </div>
           )}
         </div>
         <div className="flex-1 overflow-y-auto">
@@ -431,23 +559,69 @@ return (
         </div>
       </div>
 
+      {/* ★ AIアシスト用の画像アップロードモーダル */}
+      {isAiModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="bg-gray-900 w-full max-w-xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-black/50">
+              <h3 className="font-black text-white flex items-center gap-2">
+                <Icons.Sparkles /> AI マスター登録アシスタント
+              </h3>
+              <button onClick={() => setIsAiModalOpen(false)} className="text-gray-400 hover:text-white"><Icons.Close /></button>
+            </div>
+            
+            <div className="p-6">
+              <p className="text-sm text-gray-300 mb-6 leading-relaxed">
+                未知の線種をマスターに登録します。<br/>
+                断面写真や表面の印字（メーカー名等）の写真をアップロードしてください。<br/>
+                <span className="text-blue-400 font-bold">AIが画像を解析し、面倒な仕様入力を自動で代行します。</span>
+              </p>
+
+              <div className="flex gap-3 mb-6">
+                <button onClick={() => fileInputRef1.current?.click()} className={`flex-1 py-10 border-2 border-dashed rounded-md flex flex-col items-center justify-center transition-all ${imgData1 ? 'border-blue-500 bg-blue-900/20 text-blue-300' : 'border-gray-600 text-gray-400 hover:border-gray-400 hover:bg-gray-800'}`}>
+                  <Icons.Camera />
+                  <span className="text-sm font-bold mt-3">{imgData1 ? '断面画像 (読込済)' : '1. 断面画像 (必須)'}</span>
+                </button>
+                <input type="file" ref={fileInputRef1} onChange={e => handleAiImageUpload(e, 1)} className="hidden" accept="image/*" />
+                
+                <button onClick={() => fileInputRef2.current?.click()} className={`flex-1 py-10 border-2 border-dashed rounded-md flex flex-col items-center justify-center transition-all ${imgData2 ? 'border-blue-500 bg-blue-900/20 text-blue-300' : 'border-gray-600 text-gray-400 hover:border-gray-400 hover:bg-gray-800'}`}>
+                  <Icons.Camera />
+                  <span className="text-sm font-bold mt-3">{imgData2 ? '印字画像 (読込済)' : '2. 表面印字 (任意)'}</span>
+                </button>
+                <input type="file" ref={fileInputRef2} onChange={e => handleAiImageUpload(e, 2)} className="hidden" accept="image/*" />
+              </div>
+
+              <button 
+                onClick={runAiExtraction} 
+                disabled={!imgData1 || aiStatus === 'ANALYZING'} 
+                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-md flex justify-center items-center gap-2 disabled:bg-gray-700 transition shadow-lg text-lg"
+              >
+                {aiStatus === 'ANALYZING' ? <Icons.Refresh /> : <Icons.Sparkles />}
+                {aiStatus === 'ANALYZING' ? 'AIが仕様を抽出中...' : '画像を解析してフォームを埋める'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 編集・新規登録モーダル */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 md:p-0">
           <div className="bg-white w-full max-w-2xl rounded-sm shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="p-5 border-b border-gray-200 flex justify-between items-center bg-gray-50">
               <h3 className="font-black text-gray-900 text-lg flex items-center gap-2">
                   {editingItem?.id ? <Icons.Edit /> : <Icons.Plus />}
-                  {editingItem?.id ? 'データ編集' : '新規登録'}
+                  {editingItem?.id ? 'データ編集' : '新規マスター登録'}
               </h3>
               <button onClick={handleCloseModal} className="text-gray-400 hover:text-gray-900 p-1"><Icons.Close /></button>
             </div>
-            <div className="p-6 max-h-[70vh] overflow-y-auto">
+            <div className="p-6 max-h-[75vh] overflow-y-auto">
               {renderModalContent()}
             </div>
             <div className="p-5 border-t border-gray-200 flex justify-end gap-3 bg-gray-50">
               <button onClick={handleCloseModal} className="px-5 py-2.5 text-gray-600 font-bold hover:bg-gray-200 rounded-sm transition">キャンセル</button>
-              <button onClick={handleSave} disabled={isSubmitting} className="px-8 py-2.5 bg-blue-600 text-white font-bold rounded-sm hover:bg-blue-700 transition disabled:opacity-50 flex items-center gap-2 shadow-sm active:scale-95">
-                {isSubmitting ? '保存中...' : '保存する'}
+              <button onClick={handleSave} disabled={isSubmitting || (activeTab === 'WIRES' && (!sampleTotal || !sampleCopper))} className="px-8 py-2.5 bg-blue-600 text-white font-bold rounded-sm hover:bg-blue-700 transition disabled:opacity-50 flex items-center gap-2 shadow-sm active:scale-95">
+                {isSubmitting ? '保存中...' : '確定してマスターに登録'}
               </button>
             </div>
           </div>
