@@ -10,6 +10,26 @@ const Icons = {
   Refresh: () => <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
 };
 
+// ★追加：時間をスマートに表示するためのフォーマッター (MM/DD HH:mm)
+const formatTimeShort = (timeStr: string) => {
+  if (!timeStr) return '--/-- --:--';
+  try {
+    const d = new Date(timeStr);
+    if (isNaN(d.getTime())) return timeStr.substring(0, 16); // 万が一のフォールバック
+    const MM = String(d.getMonth() + 1).padStart(2, '0');
+    const DD = String(d.getDate()).padStart(2, '0');
+    const HH = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    return `${MM}/${DD} ${HH}:${mm}`;
+  } catch(e) { return timeStr; }
+};
+
+// ローカルでの仮時間生成用
+const getLocalNow = () => {
+  const d = new Date();
+  return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+};
+
 export const AdminKanban = ({ data }: { data: any }) => {
   const [reservations, setReservations] = useState<any[]>([]);
   const [productions, setProductions] = useState<any[]>([]);
@@ -17,7 +37,6 @@ export const AdminKanban = ({ data }: { data: any }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRes, setSelectedRes] = useState<any>(null);
   
-  // ★追加：各アクションのローディング状態を管理
   const [isProcessingId, setIsProcessingId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -39,9 +58,8 @@ export const AdminKanban = ({ data }: { data: any }) => {
     }
   }, [data]);
 
-  // ★修正：親のリロードを呼ばず、ローカルで即座にUIを動かす
   const updateStatus = async (id: string, status: string) => {
-    setIsProcessingId(id); // ボタンを「処理中」にする
+    setIsProcessingId(id);
     try {
       const res = await fetch('/api/gas', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -51,15 +69,16 @@ export const AdminKanban = ({ data }: { data: any }) => {
       const result = await res.json();
       
       if (result.status === 'success') {
-        // ★ローカルのStateだけを更新して、カードを即座に移動させる
-        setReservations(prev => prev.map(r => r.id === id ? { ...r, status } : r));
+        const nowStr = getLocalNow();
+        // ★修正：ステータス移動と同時に、updatedAtもローカルで即座に書き換える
+        setReservations(prev => prev.map(r => r.id === id ? { ...r, status, updatedAt: nowStr } : r));
       } else {
         alert('GAS側のエラー: ' + result.message);
       }
     } catch (e: any) { 
       alert('通信エラーの詳細: ' + e.message); 
     } finally {
-      setIsProcessingId(null); // ローディング解除
+      setIsProcessingId(null);
     }
   };
 
@@ -112,9 +131,15 @@ export const AdminKanban = ({ data }: { data: any }) => {
         // 2. ステータスを「完了」へ更新
         await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'UPDATE_RESERVATION_STATUS', reservationId: selectedRes.id, status: 'PROCESSED' }) });
         
-        // ★ローカルのStateを更新（カンバンから消し、履歴に追加）
+        const nowStr = getLocalNow();
+        // ★修正：ローカルのStateを更新（履歴側にもタイムスタンプを持たせる）
         setReservations(prev => prev.filter(r => r.id !== selectedRes.id));
-        setProductions(prev => [{ memberName: selectedRes.memberName, inputWeight: Number(inWeight), actualRatio: actualRatio.toFixed(1) }, ...prev]);
+        setProductions(prev => [{ 
+            memberName: selectedRes.memberName, 
+            inputWeight: Number(inWeight), 
+            actualRatio: actualRatio.toFixed(1),
+            createdAt: nowStr 
+        }, ...prev]);
         
         setIsModalOpen(false);
       } else {
@@ -139,7 +164,8 @@ export const AdminKanban = ({ data }: { data: any }) => {
           <h4 className="font-black text-gray-900 text-lg">{res.memberName}</h4>
           <span className="text-xs font-mono text-gray-400">{res.id.split('-')[1]}</span>
         </div>
-        <div className="text-sm text-gray-600 mb-4 bg-gray-50 p-2 rounded-sm border border-gray-100">
+        
+        <div className="text-sm text-gray-600 mb-3 bg-gray-50 p-2 rounded-sm border border-gray-100">
           {items.map((it:any, idx:number) => (
             <div key={idx} className="flex justify-between border-b border-gray-200 last:border-0 py-1">
               <span className="font-bold">{it.product}</span>
@@ -152,6 +178,16 @@ export const AdminKanban = ({ data }: { data: any }) => {
           </div>
         </div>
         
+        {/* ★追加：タイムスタンプ表示エリア（控えめなグレーで表示） */}
+        <div className="flex justify-between items-center text-[10px] text-gray-400 font-mono mb-3 bg-gray-50/50 p-1.5 rounded-sm border border-gray-100/50">
+          <div className="flex items-center gap-1" title={`登録日時: ${res.createdAt}`}>
+            <span>🕒</span> 登録 {formatTimeShort(res.createdAt)}
+          </div>
+          <div className="flex items-center gap-1" title={`最終更新: ${res.updatedAt}`}>
+            <span>✏️</span> 更新 {formatTimeShort(res.updatedAt)}
+          </div>
+        </div>
+
         {type === 'WAITING' ? (
           <button 
             onClick={() => updateStatus(res.id, 'PROCESSING')} 
@@ -172,7 +208,6 @@ export const AdminKanban = ({ data }: { data: any }) => {
     );
   };
 
-  // WN-800 自動整合性チェックの計算
   const valIn = Number(inWeight) || 0;
   const valRed = Number(outRed) || 0;
   const valMixed = Number(outMixed) || 0;
@@ -233,14 +268,22 @@ export const AdminKanban = ({ data }: { data: any }) => {
           <div className="p-0 flex-1 overflow-y-auto">
             <table className="w-full text-sm text-left">
               <thead className="bg-gray-50 border-b border-gray-200 text-xs text-gray-500 sticky top-0">
-                <tr><th className="p-3">業者名</th><th className="p-3 text-right">投入</th><th className="p-3 text-right">歩留</th></tr>
+                <tr>
+                  <th className="p-3">業者名 / 日時</th>
+                  <th className="p-3 text-right">投入</th>
+                  <th className="p-3 text-right">歩留</th>
+                </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {productions.map((p, i) => (
                   <tr key={i} className="hover:bg-gray-50">
-                    <td className="p-3 font-bold text-gray-800">{p.memberName}</td>
-                    <td className="p-3 text-right text-gray-600 font-mono">{p.inputWeight}kg</td>
-                    <td className="p-3 text-right font-black text-blue-600 font-mono">{p.actualRatio}%</td>
+                    <td className="p-3">
+                      <div className="font-bold text-gray-800">{p.memberName}</div>
+                      {/* ★追加：履歴テーブルにも完了日時を小さく表示 */}
+                      <div className="text-[10px] text-gray-400 font-mono mt-0.5">{formatTimeShort(p.createdAt)}</div>
+                    </td>
+                    <td className="p-3 text-right text-gray-600 font-mono align-middle">{p.inputWeight}kg</td>
+                    <td className="p-3 text-right font-black text-blue-600 font-mono align-middle">{p.actualRatio}%</td>
                   </tr>
                 ))}
               </tbody>
