@@ -18,7 +18,6 @@ const Icons = {
     UploadCloud: () => <svg className="w-8 h-8 text-blue-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
 };
 
-// プロベナンス・バッジ
 const ProvenanceBadge = ({ type }: { type: 'HUMAN' | 'AI_AUTO' | 'CO_OP' }) => {
     const baseStyle = "inline-block px-1.5 py-0.5 text-[9px] font-mono font-bold tracking-widest rounded-sm text-white cursor-default shadow-sm";
     switch (type) {
@@ -69,13 +68,24 @@ const getDisplayName = (w: any) => {
     return name;
 };
 
+// ★修正：時間をフォーマットする関数 (NaN対策)
+const formatTime = (dateStr: string) => {
+    if (!dateStr) return '--:--';
+    try {
+        const d = new Date(dateStr.replace(/-/g, '/')); // iOS/Safari対策
+        if (isNaN(d.getTime())) return '--:--';
+        return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+    } catch(e) {
+        return '--:--';
+    }
+};
+
 export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, localReservations: any[], onNavigate: any }) => {
     
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
     const [showAiData, setShowAiData] = useState(true);
 
-    // ★ 写真アップロード用のステート
     const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
     const [uploadedPhotoUrl, setUploadedPhotoUrl] = useState<string | null>(null);
 
@@ -223,10 +233,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
         return { win, lose, draw };
     }, [data?.competitorPrices, data?.config?.pricing_rules, copperPrice, brassPrice]);
 
-    const formatTime = (dateStr: string) => {
-        try { const d = new Date(dateStr); return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`; } catch(e) { return '-'; }
-    };
-
     const handlePrintReport = () => {
         setIsGeneratingReport(true);
         setTimeout(() => {
@@ -235,7 +241,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
         }, 500);
     };
 
-    // ★ 現場写真・ウェブ用素材の圧縮＆アップロード機能
     const compressImage = (file: File): Promise<string> => {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -245,7 +250,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                 img.src = event.target?.result as string;
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    // ウェブサイト・広報用なので2K〜4Kで十分。汎用性のため4K圧縮。
                     const MAX_WIDTH = 3840; 
                     const MAX_HEIGHT = 3840;
                     let width = img.width;
@@ -274,7 +278,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
         setUploadedPhotoUrl(null);
         
         try {
-            // ログインユーザーIDの取得 (ローカルストレージから)
             let uploaderId = 'Staff';
             try {
                 const userStr = localStorage.getItem('factoryOS_user');
@@ -305,7 +308,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
             alert('画像圧縮または通信エラーが発生しました: ' + err);
         } finally {
             setIsUploadingPhoto(false);
-            // inputの中身をリセットして同じ画像を再度選べるようにする
             e.target.value = '';
         }
     };
@@ -336,7 +338,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                     </div>
                 </header>
 
-                {/* 相場ティッカー等の既存コンテンツ */}
                 <div className="mb-10 px-2 w-full">
                     <div className={`transition-opacity duration-300 ${showAiData ? 'opacity-100' : 'opacity-20 grayscale pointer-events-none'}`}>
                         <div className="flex xl:grid xl:grid-cols-6 gap-4 overflow-x-auto xl:overflow-visible no-scrollbar pb-4 xl:pb-0 snap-x w-full">
@@ -496,13 +497,31 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                                     <ul className="space-y-0">
                                         {activeReservations.map((res: any) => {
                                             let w = 0; let p = "品目不明";
-                                            try { let items = res.items; if (typeof items === 'string') items = JSON.parse(items); if (Array.isArray(items) && items.length > 0) { w = items.reduce((s:number, i:any) => s + (Number(i.weight)||0), 0); p = items[0].product || items[0].productName; if(items.length > 1) p += " 他"; } } catch(e){}
+                                            try { 
+                                                let items = res.items; 
+                                                if (typeof items === 'string') items = JSON.parse(items); 
+                                                if (Array.isArray(items) && items.length > 0) { 
+                                                    w = items.reduce((s:number, i:any) => s + (Number(i.weight)||0), 0); 
+                                                    p = items[0].product || items[0].productName; 
+                                                    if(items.length > 1) p += " 他"; 
+                                                } 
+                                            } catch(e){}
+                                            
+                                            // ★修正：タイムラインの時間は createdAt から取得する
+                                            const displayTime = res.createdAt ? formatTime(res.createdAt) : '--:--';
+                                            
                                             return (
                                                 <li key={res.id} className="relative pl-6 pb-8 last:pb-0 group cursor-pointer" onClick={() => onNavigate('OPERATIONS')}>
                                                     <div className="absolute left-[7px] top-3 w-px h-full bg-gray-200 group-last:hidden"></div>
-                                                    <div className={`absolute left-0 top-1.5 w-4 h-4 rounded-full border-2 border-white ${res.status === 'PROCESSING' ? 'bg-gray-400' : 'bg-gray-900'} shadow-sm ring-1 ring-gray-100 z-10`}></div>
+                                                    <div className={`absolute left-0 top-1.5 w-4 h-4 rounded-full border-2 border-white ${res.status === 'PROCESSING' ? 'bg-gray-400' : 'bg-[#D32F2F] animate-pulse'} shadow-sm ring-1 ring-gray-100 z-10`}></div>
                                                     <div className="bg-white border border-gray-100 p-4 rounded-sm shadow-sm group-hover:border-[#D32F2F] transition-colors ml-4 -mt-2">
-                                                        <div className="flex justify-between items-center mb-2"><span className="text-xs font-bold text-gray-500 bg-gray-50 px-2 py-0.5 rounded-sm border border-gray-100">{formatTime(res.visitDate)}</span><span className="text-[10px] font-mono text-gray-400">{res.id}</span></div>
+                                                        <div className="flex justify-between items-center mb-2">
+                                                            {/* ★修正：NaN:NaN を回避して綺麗な時間を表示 */}
+                                                            <span className="text-xs font-bold text-gray-500 bg-gray-50 px-2 py-0.5 rounded-sm border border-gray-100">
+                                                                {displayTime}
+                                                            </span>
+                                                            <span className="text-[10px] font-mono text-gray-400">{res.id}</span>
+                                                        </div>
                                                         <p className="font-black text-base text-gray-900 mb-1 truncate">{res.memberName}</p>
                                                         <p className="text-xs text-gray-600 font-bold flex items-center justify-between"><span>{p}</span><span className="font-black text-[#D32F2F] text-lg">{w} <span className="text-xs font-normal text-gray-400">kg</span></span></p>
                                                     </div>
@@ -516,7 +535,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                     </div>
                 </div>
 
-                {/* ★ 新設: 広報・現場写真アップロードパネル */}
                 <div className="px-2 mb-10 w-full">
                     <div className="bg-white border border-gray-200 shadow-sm rounded-sm p-6 relative overflow-hidden">
                         <div className="absolute top-4 right-4 z-20"><ProvenanceBadge type="HUMAN" /></div>
@@ -571,7 +589,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
 
             </div>
 
-            {/* --- 🖨️ 印刷用レポート (AdminHome下部) --- */}
             <div className="hidden print:block w-[210mm] min-h-[297mm] bg-white text-black p-8 mx-auto font-sans">
                 <div className="border-b-2 border-black pb-4 mb-6 flex justify-between items-end">
                     <div>
@@ -630,7 +647,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                                         {activeReservations.slice(0, 5).map((r:any) => (
                                             <li key={r.id} className="flex justify-between">
                                                 <span className="truncate w-32">{r.memberName}</span>
-                                                <span className="font-mono text-gray-500">{formatTime(r.visitDate)}</span>
+                                                <span className="font-mono text-gray-500">{formatTime(r.createdAt)}</span>
                                             </li>
                                         ))}
                                         {activeReservations.length > 5 && <li className="text-right text-gray-400 mt-1">他 {activeReservations.length - 5} 件</li>}
