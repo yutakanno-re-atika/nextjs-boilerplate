@@ -26,23 +26,24 @@ const Icons = {
   Shield: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
 };
 
-// ★ RBAC: 権限マスター定義
+// ★ 修正：RBAC 権限マスターの厳格化（HOMEを一般層から剥奪）
 const ROLE_PERMISSIONS = {
   ADMIN:   ['HOME', 'OPERATIONS', 'POS', 'PRODUCTION', 'COMPETITOR', 'DATABASE', 'SALES', 'CLIENT_DETAIL'],
   MANAGER: ['HOME', 'OPERATIONS', 'POS', 'PRODUCTION', 'COMPETITOR', 'DATABASE', 'SALES', 'CLIENT_DETAIL'],
-  FRONT:   ['HOME', 'OPERATIONS', 'POS', 'CLIENT_DETAIL'],
-  PLANT:   ['HOME', 'OPERATIONS', 'PRODUCTION'],
-  SALES:   ['HOME', 'SALES', 'CLIENT_DETAIL', 'COMPETITOR']
+  FRONT:   ['OPERATIONS', 'POS', 'CLIENT_DETAIL'],
+  PLANT:   ['OPERATIONS', 'PRODUCTION'],
+  SALES:   ['SALES', 'CLIENT_DETAIL', 'COMPETITOR']
 };
 
 export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; data: any; setView: any; onLogout?: any }) => {
-  // ★ 初期タブの決定: 権限によって最初に開く画面を変える
+  // ★ 修正：初期タブの最適化（ダッシュボードを見れない人のためのフォールバック）
   const defaultTab = () => {
-    if (!user || !user.role) return 'HOME';
-    if (user.role === 'FRONT') return 'OPERATIONS';
+    if (!user || !user.role) return 'OPERATIONS';
+    if (user.role === 'ADMIN' || user.role === 'MANAGER') return 'HOME';
+    if (user.role === 'FRONT') return 'POS';
     if (user.role === 'PLANT') return 'PRODUCTION';
     if (user.role === 'SALES') return 'SALES';
-    return 'HOME'; // ADMIN, MANAGER
+    return 'OPERATIONS';
   };
 
   const [adminTab, setAdminTab] = useState<'HOME' | 'OPERATIONS' | 'POS' | 'PRODUCTION' | 'COMPETITOR' | 'DATABASE' | 'CLIENT_DETAIL' | 'SALES'>(defaultTab());
@@ -57,11 +58,11 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
   const currentRole = user?.role || 'FRONT';
   const allowedTabs = ROLE_PERMISSIONS[currentRole as keyof typeof ROLE_PERMISSIONS] || ROLE_PERMISSIONS.FRONT;
 
-  // ★ 強制アクセス遮断ガードレール (Guardrail)
+  // 強制アクセス遮断ガードレール (Guardrail)
   useEffect(() => {
     if (!allowedTabs.includes(adminTab)) {
       console.warn(`[FACTORY OS Guard] Access Denied: User role ${currentRole} cannot access ${adminTab}`);
-      setAdminTab(defaultTab()); // 権限がない画面にいる場合は初期画面へ強制送還
+      setAdminTab(defaultTab()); 
     }
   }, [adminTab, currentRole, allowedTabs]);
 
@@ -76,28 +77,28 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
           let newMessage = "";
           switch(adminTab) {
               case 'HOME':
-                  newMessage = currentRole === 'ADMIN' ? "ダッシュボードですね。右上の「日次レポート」から戦略アドバイスを書き下ろします！" : "本日の稼働状況です。今日も1日安全第一でいきましょう。";
+                  newMessage = "ダッシュボードですね。右上の「日次レポート」から戦略アドバイスを書き下ろします！";
                   break;
               case 'OPERATIONS':
-                  newMessage = "ここは現場のカンバンです。トラックが到着したら、カードをドラッグ＆ドロップして『計量』へ進めてくださいね。";
+                  newMessage = "現場のカンバンです。処理待ちのロットを『プラント稼働』へ進めてください。";
                   break;
               case 'POS':
-                  newMessage = "POS画面です。業者名を選ぶと、過去の取引データから『ダスト引きすべきか、高値で買うべきか』を私がこっそり教えます。";
+                  newMessage = "POS画面です。カメラアイコンから『AIブラックボックス・オープナー』が使えますよ。";
                   break;
               case 'PRODUCTION':
-                  newMessage = "ナゲット製造の要です。『加工ヤード』タブで複数のロットをまとめて選んで『ブレンド加工』を押せば、一発で原価計算が終わりますよ！";
+                  newMessage = "ナゲット製造(WN-800)の要です。排出された4種類の重量を計量し、確実に入力してください。";
                   break;
               case 'SALES':
-                  newMessage = "営業リスト画面です。リストが空なら右上の『🤖AIリード自動収集』を押してください！私が北海道中の解体業者を自動でリストアップしてきます。";
+                  newMessage = "営業リスト画面です。右上の『🤖AIリード自動収集』で私が解体業者を自動リストアップします！";
                   break;
               case 'COMPETITOR':
-                  newMessage = "他社の買取価格を監視しています。右上の『AI指示書』ボタンから、私に新しいスクレイピングの指示を出すことも可能です。";
+                  newMessage = "他社の買取価格を監視しています。";
                   break;
               case 'DATABASE':
-                  newMessage = "マスターデータです。ここの「設定歩留まり」を変えると、システム全体の原価計算やPOSの買取価格に瞬時に連動しますのでご注意を。";
+                  newMessage = "マスターデータです。『未知線種(AI)』タブから、現場で推論された新種を確定マスターに昇格できます。";
                   break;
               default:
-                  newMessage = "何かお手伝いできることはありますか？";
+                  newMessage = "今日も1日、ご安全に！";
           }
           setCoPilotMessage(newMessage);
           setIsCoPilotVisible(true);
@@ -105,7 +106,6 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
   }, [adminTab, currentRole]);
 
   const handleNavigate = (tab: any, id?: string) => {
-      // 権限チェック
       if (!allowedTabs.includes(tab)) {
           alert("この機能にアクセスする権限がありません。");
           return;
@@ -118,10 +118,10 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
 
   const handlePosSuccess = () => { setEditingResId(null); setAdminTab('OPERATIONS'); window.location.reload(); };
 
-  // ★ 修正：メニュー一覧に「要求レベル（最低権限）」を明記
+  // ★ 修正：メニューの要求レベル表記も実態に合わせて変更
   const ALL_MENU_ITEMS = [
-      { id: 'HOME', icon: Icons.Home, label: 'ダッシュボード', reqRole: 'ALL' }, // 基本誰でも見れるが制限あり
-      { id: 'OPERATIONS', icon: Icons.Kanban, label: '現場状況管理', reqRole: 'FRONT〜' },
+      { id: 'HOME', icon: Icons.Home, label: 'ダッシュボード', reqRole: 'MANAGER〜' },
+      { id: 'OPERATIONS', icon: Icons.Kanban, label: '現場状況管理', reqRole: 'FRONT/PLANT〜' },
       { id: 'POS', icon: Icons.Calc, label: 'POS (受付・計量)', reqRole: 'FRONT〜' },
       { id: 'PRODUCTION', icon: Icons.Factory, label: '製造(WN-800)', reqRole: 'PLANT〜' },
       { id: 'SALES', icon: Icons.Briefcase, label: '営業・顧客', reqRole: 'SALES〜' },
@@ -129,7 +129,6 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
       { id: 'DATABASE', icon: Icons.Database, label: 'マスターDB', reqRole: 'MANAGER〜' },
   ];
 
-  // 権限フィルタリングされたメニュー
   const MENU_ITEMS = ALL_MENU_ITEMS.filter(item => allowedTabs.includes(item.id as keyof typeof ROLE_PERMISSIONS['ADMIN']));
 
   return (
@@ -186,7 +185,6 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
                             <item.icon />
                             {item.label}
                         </div>
-                        {/* ★ 修正：メニューの右端に解放条件のバッジを表示 */}
                         <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded-sm ${isActive ? 'bg-gray-100 text-gray-500' : 'bg-gray-200 text-gray-400 group-hover:bg-gray-300'}`}>
                             {item.reqRole}
                         </span>
@@ -215,7 +213,7 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
          {adminTab === 'CLIENT_DETAIL' && selectedClientName && <AdminClientDetail data={data} clientName={selectedClientName} onBack={() => handleNavigate('HOME')} />}
       </main>
 
-      {/* AI Co-Pilot (画面右下のフローティングウィジェット) */}
+      {/* AI Co-Pilot */}
       <div className="fixed bottom-4 right-4 md:bottom-8 md:right-8 z-50 flex items-end gap-3 pointer-events-none">
           <div className={`transition-all duration-500 ease-out origin-bottom-right pointer-events-auto ${isCoPilotVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'}`}>
               <div className="bg-white border border-blue-200 shadow-2xl rounded-2xl rounded-br-sm p-4 w-64 md:w-72 relative">
