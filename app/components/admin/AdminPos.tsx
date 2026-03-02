@@ -5,7 +5,7 @@ const Icons = {
   Search: () => <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
   Camera: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
   Trash: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
-  Sparkles: () => <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 8.134a1 1 0 010 1.932l-3.354.933-1.179 4.456a1 1 0 01-1.934 0l-1.179-4.456-3.354-.933a1 1 0 010-1.932l3.354-.933 1.179-4.456A1 1 0 0112 2z" clipRule="evenodd" /></svg>,
+  Sparkles: () => <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 8.134a1 1 0 010 1.932l-3.354.933-1.179 4.456a1 1 0 01-1.934 0l-1.179-4.456-3.354-.933a1 1 0 010-1.932l3.354-.933 1.179-4.456A1 1 0 0112 2z" clipRule="evenodd" /></svg>,
   Close: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>,
   Refresh: () => <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
   Settings: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
@@ -59,7 +59,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
     }
   }, [editingResId, localReservations, data]);
 
-  // ★ カートに追加する時の「フルネーム生成ロジック」を追加
   const buildProductName = (p: any) => {
     const maker = p.maker && p.maker !== '-' ? `【${p.maker}】` : '';
     const sizeStr = p.size || p.sq;
@@ -72,7 +71,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   const addToCart = (product: any) => {
     setCart(prev => [...prev, { 
         id: Date.now().toString(), 
-        product: buildProductName(product), // ★ フルネームでカートに入る
+        product: buildProductName(product),
         ratio: product.ratio, 
         weight: 0,
         percentage: 0
@@ -220,7 +219,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
     setIsProcessing(false);
   };
 
-  // ★ 検索機能も全項目（サイズ・芯数など）に対応
   const filteredProducts = (data?.wires || []).filter((w:any) => {
       const searchTarget = `${w.name} ${w.maker} ${w.size || w.sq} ${w.core || w.cores || w.coreCount} ${w.year}`.toLowerCase();
       return searchTarget.includes(searchTerm.toLowerCase());
@@ -254,17 +252,17 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
               <button 
                 key={p.id} 
                 onClick={() => addToCart(p)} 
-                className="bg-white border border-gray-200 p-3 rounded-md shadow-sm hover:shadow-md hover:border-blue-400 text-left transition-all active:scale-95 flex flex-col justify-between min-h-[95px] relative overflow-hidden group"
+                className="bg-white border border-gray-200 p-3 rounded-md shadow-sm hover:shadow-md hover:border-blue-400 text-left transition-all active:scale-95 flex flex-col justify-between min-h-[105px] relative overflow-hidden group"
               >
                 <div>
                   <div className="font-bold text-gray-800 text-sm leading-tight line-clamp-2">{p.name}</div>
                   
-                  {/* ★ タイル内に詳細バッジ（タグ）を表示 */}
+                  {/* ★ 修正ポイント: タグ（バッジ）を濃い背景＋白文字＋12pxに大型化 */}
                   <div className="flex flex-wrap gap-1.5 mt-2">
-                    {p.maker && p.maker !== '-' && <span className="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-sm font-bold">{p.maker}</span>}
-                    {(p.size || p.sq) && (p.size !== '-' && p.sq !== '-') && <span className="text-[10px] bg-blue-50 text-blue-700 border border-blue-100 px-1.5 py-0.5 rounded-sm font-mono font-bold">{(p.size || p.sq)}sq</span>}
-                    {(p.core || p.cores || p.coreCount) && (p.core !== '-' && p.cores !== '-' && p.coreCount !== '-') && <span className="text-[10px] bg-orange-50 text-orange-700 border border-orange-100 px-1.5 py-0.5 rounded-sm font-mono font-bold">{(p.core || p.cores || p.coreCount)}C</span>}
-                    {p.year && p.year !== '-' && <span className="text-[10px] bg-gray-50 text-gray-500 border border-gray-200 px-1.5 py-0.5 rounded-sm font-mono">{p.year}</span>}
+                    {p.maker && p.maker !== '-' && <span className="text-xs bg-gray-700 text-white px-2 py-0.5 rounded-sm font-bold shadow-sm">{p.maker}</span>}
+                    {(p.size || p.sq) && (p.size !== '-' && p.sq !== '-') && <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded-sm font-mono font-bold shadow-sm">{(p.size || p.sq)}sq</span>}
+                    {(p.core || p.cores || p.coreCount) && (p.core !== '-' && p.cores !== '-' && p.coreCount !== '-') && <span className="text-xs bg-orange-600 text-white px-2 py-0.5 rounded-sm font-mono font-bold shadow-sm">{(p.core || p.cores || p.coreCount)}C</span>}
+                    {p.year && p.year !== '-' && <span className="text-xs bg-slate-600 text-white px-2 py-0.5 rounded-sm font-mono font-bold shadow-sm">{p.year}</span>}
                   </div>
                 </div>
                 <div className="flex justify-end mt-2">
