@@ -10,12 +10,16 @@ const Icons = {
   Sparkles: () => <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 8.134a1 1 0 010 1.932l-3.354.933-1.179 4.456a1 1 0 01-1.934 0l-1.179-4.456-3.354-.933a1 1 0 010-1.932l3.354-.933 1.179-4.456A1 1 0 0112 2z" clipRule="evenodd" /></svg>,
   ArrowUp: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>,
   Close: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>,
-  Refresh: () => <svg className="w-5 h-5 animate-spin text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+  Refresh: () => <svg className="w-5 h-5 animate-spin text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
+  Filter: () => <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
 };
 
 export const AdminDatabase = ({ data }: { data: any }) => {
   const [activeTab, setActiveTab] = useState<'WIRES' | 'UNKNOWN' | 'CASTINGS' | 'CLIENTS' | 'STAFF'>('WIRES');
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterMaker, setFilterMaker] = useState('');
+  const [filterType, setFilterType] = useState('');
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -26,6 +30,16 @@ export const AdminDatabase = ({ data }: { data: any }) => {
   const castings = data?.castings || [];
   const clients = data?.clients || [];
   const staffs = data?.staffs || [];
+
+  const uniqueMakers = Array.from(new Set(wires.map((w:any) => w.maker).filter((m:any) => m && m !== '-')));
+  const uniqueTypes = Array.from(new Set(castings.map((c:any) => c.type).filter(Boolean)));
+
+  const handleTabChange = (tab: any) => {
+    setActiveTab(tab);
+    setSearchTerm('');
+    setFilterMaker('');
+    setFilterType('');
+  };
 
   const getDriveImageUrl = (url: string) => {
       if (!url) return '';
@@ -53,7 +67,7 @@ export const AdminDatabase = ({ data }: { data: any }) => {
       setEditingItem({
           name: unknownItem.name.replace(/【.*?】/g, ''), 
           maker: '', 
-          year: '', // ★ 追加：昇格時にも製造年を初期化
+          year: '', 
           sq: '', 
           core: '', 
           ratio: unknownItem.ratio,
@@ -109,7 +123,6 @@ export const AdminDatabase = ({ data }: { data: any }) => {
   };
 
   const getUpdatesMap = (item: any, tab: string) => {
-    // ★ 3: item.year でデータベースのD列（製造年）と連携
     if (tab === 'WIRES') return { 1: item.maker, 2: item.name, 3: item.year, 4: item.sq, 7: item.core, 8: item.conductor, 9: item.ratio, 10: item.memo };
     if (tab === 'UNKNOWN') return { 2: item.name, 3: item.ratio, 4: item.reason };
     if (tab === 'CASTINGS') return { 1: item.name, 2: item.type, 4: item.ratio };
@@ -151,11 +164,24 @@ export const AdminDatabase = ({ data }: { data: any }) => {
       setUploadingImageId(null);
   };
 
-  const renderTable = () => {
+const renderTable = () => {
     let filteredData = [];
-    if (activeTab === 'WIRES') filteredData = wires.filter((w:any) => w.name.includes(searchTerm) || w.maker?.includes(searchTerm));
-    if (activeTab === 'UNKNOWN') filteredData = unknownWires.filter((u:any) => u.name?.includes(searchTerm) || u.reason?.includes(searchTerm));
-    if (activeTab === 'CASTINGS') filteredData = castings.filter((c:any) => c.name.includes(searchTerm));
+    
+    if (activeTab === 'WIRES') {
+        filteredData = wires.filter((w:any) => 
+            (w.name.includes(searchTerm) || w.maker?.includes(searchTerm)) &&
+            (filterMaker === '' || w.maker === filterMaker)
+        );
+    }
+    if (activeTab === 'UNKNOWN') {
+        filteredData = unknownWires.filter((u:any) => u.name?.includes(searchTerm) || u.reason?.includes(searchTerm));
+    }
+    if (activeTab === 'CASTINGS') {
+        filteredData = castings.filter((c:any) => 
+            c.name.includes(searchTerm) &&
+            (filterType === '' || c.type === filterType)
+        );
+    }
     if (activeTab === 'CLIENTS') filteredData = clients.filter((c:any) => c.name.includes(searchTerm));
     if (activeTab === 'STAFF') filteredData = staffs.filter((s:any) => s.name.includes(searchTerm));
 
@@ -164,7 +190,6 @@ export const AdminDatabase = ({ data }: { data: any }) => {
         <table className="w-full text-left border-collapse text-sm whitespace-nowrap md:whitespace-normal">
           <thead>
             <tr className="bg-gray-100 text-gray-500 uppercase tracking-wider text-xs">
-              {/* ★ 修正：ヘッダーに「製造年」を追加 */}
               {activeTab === 'WIRES' && <><th className="p-3">メーカー</th><th className="p-3">品名</th><th className="p-3">製造年</th><th className="p-3">SQ/芯数</th><th className="p-3">歩留まり</th><th className="p-3">画像 (印字/断面)</th></>}
               {activeTab === 'UNKNOWN' && <><th className="p-3">登録日時</th><th className="p-3">AI推定品名</th><th className="p-3">算出歩留まり</th><th className="p-3 w-1/3">推論の根拠 (Reasoning)</th></>}
               {activeTab === 'CASTINGS' && <><th className="p-3">品目名</th><th className="p-3">種別</th><th className="p-3">歩留まり</th></>}
@@ -176,12 +201,10 @@ export const AdminDatabase = ({ data }: { data: any }) => {
           <tbody className="divide-y divide-gray-200 bg-white">
             {filteredData.map((item: any, idx: number) => (
               <tr key={idx} className="hover:bg-gray-50 transition">
-                
                 {activeTab === 'WIRES' && (
                   <>
                     <td className="p-3 font-bold text-gray-700">{item.maker || '-'}</td>
                     <td className="p-3 font-bold text-gray-900">{item.name}</td>
-                    {/* ★ 修正：データ列に「製造年」を追加 */}
                     <td className="p-3 text-gray-600">{item.year || '-'}</td>
                     <td className="p-3 text-gray-600">{item.sq || '-'} sq / {item.core || '-'}C</td>
                     <td className="p-3 font-mono font-bold text-blue-600 text-base">{item.ratio}%</td>
@@ -261,7 +284,6 @@ const renderModalContent = () => {
             <div><label className="block text-xs font-bold text-gray-500 mb-1">メーカー</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.maker || ''} onChange={e => setEditingItem({...editingItem, maker: e.target.value})} /></div>
             <div><label className="block text-xs font-bold text-gray-500 mb-1">品名</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.name || ''} onChange={e => setEditingItem({...editingItem, name: e.target.value})} /></div>
         </div>
-        {/* ★ 修正：製造年の入力フィールドを追加し、4カラム配置に変更 */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div><label className="block text-xs font-bold text-gray-500 mb-1">製造年</label><input type="text" placeholder="例: 2020" className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.year || ''} onChange={e => setEditingItem({...editingItem, year: e.target.value})} /></div>
             <div><label className="block text-xs font-bold text-gray-500 mb-1">SQ (断面積)</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.sq || ''} onChange={e => setEditingItem({...editingItem, sq: e.target.value})} /></div>
@@ -351,7 +373,7 @@ const renderModalContent = () => {
     return null;
   };
 
-  return (
+return (
     <div className="flex flex-col h-full animate-in fade-in duration-500">
       <header className="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
         <div>
@@ -360,7 +382,7 @@ const renderModalContent = () => {
         </div>
         <div className="flex bg-gray-100 p-1 rounded-sm overflow-x-auto">
           {['WIRES', 'UNKNOWN', 'CASTINGS', 'CLIENTS', 'STAFF'].map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab as any)} className={`px-4 py-2 rounded-sm text-sm font-bold transition-all whitespace-nowrap ${activeTab === tab ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+            <button key={tab} onClick={() => handleTabChange(tab as any)} className={`px-4 py-2 rounded-sm text-sm font-bold transition-all whitespace-nowrap ${activeTab === tab ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
               {tab === 'WIRES' ? '電線' : tab === 'UNKNOWN' ? '💡 未知線種 (AI)' : tab === 'CASTINGS' ? '非鉄金属' : tab === 'CLIENTS' ? '顧客' : 'スタッフ'}
             </button>
           ))}
@@ -368,15 +390,38 @@ const renderModalContent = () => {
       </header>
 
       <div className="bg-white border border-gray-200 shadow-sm rounded-sm flex-1 flex flex-col overflow-hidden">
-        <div className="p-4 border-b border-gray-200 bg-gray-50 flex gap-4">
-          <div className="relative flex-1">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Icons.Search />
-            </div>
-            <input type="text" placeholder="検索..." className="w-full border border-gray-300 rounded-sm pl-10 pr-4 py-2 text-sm focus:border-gray-500 outline-none shadow-inner" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+        <div className="p-4 border-b border-gray-200 bg-gray-50 flex flex-col md:flex-row gap-4">
+          <div className="flex flex-1 gap-2 flex-col md:flex-row">
+              <div className="relative flex-1">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Icons.Search />
+                </div>
+                <input type="text" placeholder="キーワード検索..." className="w-full border border-gray-300 rounded-sm pl-10 pr-4 py-2 text-sm focus:border-gray-500 outline-none shadow-inner" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+              </div>
+
+              {activeTab === 'WIRES' && uniqueMakers.length > 0 && (
+                  <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Icons.Filter /></div>
+                      <select className="w-full md:w-auto border border-gray-300 rounded-sm pl-10 pr-8 py-2 text-sm outline-none focus:border-gray-500 bg-white appearance-none cursor-pointer" value={filterMaker} onChange={e => setFilterMaker(e.target.value)}>
+                          <option value="">すべてのメーカー</option>
+                          {uniqueMakers.map((m: any) => <option key={m} value={m}>{m}</option>)}
+                      </select>
+                  </div>
+              )}
+
+              {activeTab === 'CASTINGS' && uniqueTypes.length > 0 && (
+                  <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Icons.Filter /></div>
+                      <select className="w-full md:w-auto border border-gray-300 rounded-sm pl-10 pr-8 py-2 text-sm outline-none focus:border-gray-500 bg-white appearance-none cursor-pointer" value={filterType} onChange={e => setFilterType(e.target.value)}>
+                          <option value="">すべての種別</option>
+                          {uniqueTypes.map((t: any) => <option key={t} value={t}>{t === 'BRASS' ? '真鍮' : t === 'ZINC' ? '亜鉛' : t === 'LEAD' ? '鉛' : t}</option>)}
+                      </select>
+                  </div>
+              )}
           </div>
+
           {activeTab !== 'UNKNOWN' && (
-              <button onClick={() => handleOpenModal()} className="bg-gray-900 text-white px-4 py-2 rounded-sm text-sm font-bold hover:bg-gray-800 transition flex items-center gap-2 whitespace-nowrap active:scale-95">
+              <button onClick={() => handleOpenModal()} className="bg-gray-900 text-white px-6 py-2 rounded-sm text-sm font-bold hover:bg-gray-800 transition flex items-center justify-center gap-2 whitespace-nowrap active:scale-95">
                 <Icons.Plus /> 新規登録
               </button>
           )}
