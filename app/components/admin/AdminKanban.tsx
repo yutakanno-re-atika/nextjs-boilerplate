@@ -6,15 +6,19 @@ const Icons = {
   Check: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   Alert: () => <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
   Scale: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>,
-  Close: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+  Close: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>,
+  Refresh: () => <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
 };
 
-export const AdminKanban = ({ data, onSuccess }: { data: any, onSuccess?: () => void }) => {
+export const AdminKanban = ({ data }: { data: any }) => {
   const [reservations, setReservations] = useState<any[]>([]);
   const [productions, setProductions] = useState<any[]>([]);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRes, setSelectedRes] = useState<any>(null);
+  
+  // ★追加：各アクションのローディング状態を管理
+  const [isProcessingId, setIsProcessingId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // WN-800 専用の入力ステート
@@ -31,20 +35,13 @@ export const AdminKanban = ({ data, onSuccess }: { data: any, onSuccess?: () => 
       setReservations(activeFlow);
     }
     if (data?.productions) {
-      setProductions(data.productions.slice(-20).reverse()); // 最新20件の履歴
+      setProductions(data.productions.slice(-20).reverse());
     }
   }, [data]);
 
-  // ★ 修正：画面リロードの安全装置
-  const handleSuccessRefresh = () => {
-    if (typeof onSuccess === 'function') {
-      onSuccess();
-    } else {
-      window.location.reload();
-    }
-  };
-
+  // ★修正：親のリロードを呼ばず、ローカルで即座にUIを動かす
   const updateStatus = async (id: string, status: string) => {
+    setIsProcessingId(id); // ボタンを「処理中」にする
     try {
       const res = await fetch('/api/gas', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -54,11 +51,16 @@ export const AdminKanban = ({ data, onSuccess }: { data: any, onSuccess?: () => 
       const result = await res.json();
       
       if (result.status === 'success') {
-        handleSuccessRefresh(); // ★ 修正：安全なリロードを呼び出す
+        // ★ローカルのStateだけを更新して、カードを即座に移動させる
+        setReservations(prev => prev.map(r => r.id === id ? { ...r, status } : r));
       } else {
         alert('GAS側のエラー: ' + result.message);
       }
-    } catch (e: any) { alert('通信エラーの詳細: ' + e.message); }
+    } catch (e: any) { 
+      alert('通信エラーの詳細: ' + e.message); 
+    } finally {
+      setIsProcessingId(null); // ローディング解除
+    }
   };
 
   const handleOpenModal = (res: any) => {
@@ -102,12 +104,19 @@ export const AdminKanban = ({ data, onSuccess }: { data: any, onSuccess?: () => 
     };
 
     try {
+      // 1. 実績の保存
       const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const result = await res.json();
+      
       if (result.status === 'success') {
+        // 2. ステータスを「完了」へ更新
         await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'UPDATE_RESERVATION_STATUS', reservationId: selectedRes.id, status: 'PROCESSED' }) });
+        
+        // ★ローカルのStateを更新（カンバンから消し、履歴に追加）
+        setReservations(prev => prev.filter(r => r.id !== selectedRes.id));
+        setProductions(prev => [{ memberName: selectedRes.memberName, inputWeight: Number(inWeight), actualRatio: actualRatio.toFixed(1) }, ...prev]);
+        
         setIsModalOpen(false);
-        handleSuccessRefresh(); // ★ 修正：安全なリロードを呼び出す
       } else {
         alert('エラー: ' + result.message);
       }
@@ -122,9 +131,10 @@ export const AdminKanban = ({ data, onSuccess }: { data: any, onSuccess?: () => 
     let items = [];
     try { items = typeof res.items === 'string' ? JSON.parse(res.items) : res.items; } catch (e) {}
     const totalWeight = items.reduce((sum: number, it: any) => sum + (Number(it.weight) || 0), 0);
+    const isLoading = isProcessingId === res.id;
 
     return (
-      <div key={res.id} className="bg-white border border-gray-200 rounded-sm shadow-sm p-4 mb-3 hover:shadow-md transition">
+      <div key={res.id} className={`bg-white border border-gray-200 rounded-sm shadow-sm p-4 mb-3 transition-all ${isLoading ? 'opacity-50 pointer-events-none' : 'hover:shadow-md'}`}>
         <div className="flex justify-between items-start mb-2">
           <h4 className="font-black text-gray-900 text-lg">{res.memberName}</h4>
           <span className="text-xs font-mono text-gray-400">{res.id.split('-')[1]}</span>
@@ -143,11 +153,18 @@ export const AdminKanban = ({ data, onSuccess }: { data: any, onSuccess?: () => 
         </div>
         
         {type === 'WAITING' ? (
-          <button onClick={() => updateStatus(res.id, 'PROCESSING')} className="w-full py-2 bg-blue-50 text-blue-700 font-bold border border-blue-200 rounded-sm hover:bg-blue-600 hover:text-white transition flex items-center justify-center gap-2">
-            <Icons.Play /> プラント投入 (稼働)
+          <button 
+            onClick={() => updateStatus(res.id, 'PROCESSING')} 
+            disabled={isLoading}
+            className="w-full py-2 bg-blue-50 text-blue-700 font-bold border border-blue-200 rounded-sm hover:bg-blue-600 hover:text-white transition flex items-center justify-center gap-2 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200"
+          >
+            {isLoading ? <><Icons.Refresh /> 処理中...</> : <><Icons.Play /> プラント投入 (稼働)</>}
           </button>
         ) : (
-          <button onClick={() => handleOpenModal(res)} className="w-full py-3 bg-gray-900 text-white font-bold rounded-sm hover:bg-gray-800 transition shadow-md flex items-center justify-center gap-2 animate-pulse">
+          <button 
+            onClick={() => handleOpenModal(res)} 
+            className="w-full py-3 bg-gray-900 text-white font-bold rounded-sm hover:bg-gray-800 transition shadow-md flex items-center justify-center gap-2 animate-pulse"
+          >
             <Icons.Scale /> WN-800 排出計量
           </button>
         )}
@@ -275,7 +292,6 @@ export const AdminKanban = ({ data, onSuccess }: { data: any, onSuccess?: () => 
                 </div>
               </div>
 
-              {/* 自動整合性チェック＆計算パネル */}
               <div className="bg-white border-2 border-dashed border-gray-300 p-5 rounded-sm mb-4 relative">
                 {isWarning && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-red-600 text-white px-4 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-md animate-pulse whitespace-nowrap">
@@ -309,8 +325,12 @@ export const AdminKanban = ({ data, onSuccess }: { data: any, onSuccess?: () => 
 
             <div className="p-5 border-t border-gray-200 flex justify-end gap-3 bg-white rounded-b-sm">
               <button onClick={() => setIsModalOpen(false)} className="px-6 py-3 text-gray-600 font-bold hover:bg-gray-100 rounded-sm transition">キャンセル</button>
-              <button onClick={handleSaveProduction} disabled={isSubmitting || !inWeight || isWarning} className="px-8 py-3 bg-blue-600 text-white font-bold rounded-sm hover:bg-blue-700 transition disabled:opacity-50 disabled:bg-gray-400 flex items-center gap-2 shadow-md active:scale-95">
-                {isSubmitting ? '保存中...' : <><Icons.Check /> 計量確定して完了</>}
+              <button 
+                onClick={handleSaveProduction} 
+                disabled={isSubmitting || !inWeight || isWarning} 
+                className="px-8 py-3 bg-blue-600 text-white font-bold rounded-sm hover:bg-blue-700 transition disabled:opacity-50 disabled:bg-gray-400 flex items-center gap-2 shadow-md active:scale-95"
+              >
+                {isSubmitting ? <><Icons.Refresh /> 保存中...</> : <><Icons.Check /> 計量確定して完了</>}
               </button>
             </div>
             
