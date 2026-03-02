@@ -27,7 +27,6 @@ export const AdminDatabase = ({ data }: { data: any }) => {
   const clients = data?.clients || [];
   const staffs = data?.staffs || [];
 
-  // ★ 追加：Google Driveの画像URLを「リンク切れしないサムネイル用URL」に変換する関数
   const getDriveImageUrl = (url: string) => {
       if (!url) return '';
       if (url.includes('drive.google.com/uc')) {
@@ -54,6 +53,7 @@ export const AdminDatabase = ({ data }: { data: any }) => {
       setEditingItem({
           name: unknownItem.name.replace(/【.*?】/g, ''), 
           maker: '', 
+          year: '', // ★ 追加：昇格時にも製造年を初期化
           sq: '', 
           core: '', 
           ratio: unknownItem.ratio,
@@ -109,6 +109,7 @@ export const AdminDatabase = ({ data }: { data: any }) => {
   };
 
   const getUpdatesMap = (item: any, tab: string) => {
+    // ★ 3: item.year でデータベースのD列（製造年）と連携
     if (tab === 'WIRES') return { 1: item.maker, 2: item.name, 3: item.year, 4: item.sq, 7: item.core, 8: item.conductor, 9: item.ratio, 10: item.memo };
     if (tab === 'UNKNOWN') return { 2: item.name, 3: item.ratio, 4: item.reason };
     if (tab === 'CASTINGS') return { 1: item.name, 2: item.type, 4: item.ratio };
@@ -150,7 +151,7 @@ export const AdminDatabase = ({ data }: { data: any }) => {
       setUploadingImageId(null);
   };
 
-const renderTable = () => {
+  const renderTable = () => {
     let filteredData = [];
     if (activeTab === 'WIRES') filteredData = wires.filter((w:any) => w.name.includes(searchTerm) || w.maker?.includes(searchTerm));
     if (activeTab === 'UNKNOWN') filteredData = unknownWires.filter((u:any) => u.name?.includes(searchTerm) || u.reason?.includes(searchTerm));
@@ -163,7 +164,8 @@ const renderTable = () => {
         <table className="w-full text-left border-collapse text-sm whitespace-nowrap md:whitespace-normal">
           <thead>
             <tr className="bg-gray-100 text-gray-500 uppercase tracking-wider text-xs">
-              {activeTab === 'WIRES' && <><th className="p-3">メーカー</th><th className="p-3">品名</th><th className="p-3">SQ/芯数</th><th className="p-3">歩留まり</th><th className="p-3">画像 (印字/断面)</th></>}
+              {/* ★ 修正：ヘッダーに「製造年」を追加 */}
+              {activeTab === 'WIRES' && <><th className="p-3">メーカー</th><th className="p-3">品名</th><th className="p-3">製造年</th><th className="p-3">SQ/芯数</th><th className="p-3">歩留まり</th><th className="p-3">画像 (印字/断面)</th></>}
               {activeTab === 'UNKNOWN' && <><th className="p-3">登録日時</th><th className="p-3">AI推定品名</th><th className="p-3">算出歩留まり</th><th className="p-3 w-1/3">推論の根拠 (Reasoning)</th></>}
               {activeTab === 'CASTINGS' && <><th className="p-3">品目名</th><th className="p-3">種別</th><th className="p-3">歩留まり</th></>}
               {activeTab === 'CLIENTS' && <><th className="p-3">業者名</th><th className="p-3">ランク</th><th className="p-3">電話番号</th><th className="p-3">保有ポイント</th></>}
@@ -179,13 +181,14 @@ const renderTable = () => {
                   <>
                     <td className="p-3 font-bold text-gray-700">{item.maker || '-'}</td>
                     <td className="p-3 font-bold text-gray-900">{item.name}</td>
+                    {/* ★ 修正：データ列に「製造年」を追加 */}
+                    <td className="p-3 text-gray-600">{item.year || '-'}</td>
                     <td className="p-3 text-gray-600">{item.sq || '-'} sq / {item.core || '-'}C</td>
                     <td className="p-3 font-mono font-bold text-blue-600 text-base">{item.ratio}%</td>
                     <td className="p-3 flex gap-2">
                         {[11, 12].map(colIdx => (
                             <div key={colIdx} className="relative w-10 h-10 border border-gray-300 rounded-sm overflow-hidden bg-gray-100 flex items-center justify-center group">
                                 {item[`image${colIdx-10}`] ? (
-                                    /* ★ 修正：getDriveImageUrl で画像を安全に表示 */
                                     <img src={getDriveImageUrl(item[`image${colIdx-10}`])} className="w-full h-full object-cover" alt="Wire" />
                                 ) : (
                                     <Icons.Image />
@@ -251,14 +254,16 @@ const renderTable = () => {
     );
   };
 
-  const renderModalContent = () => {
+const renderModalContent = () => {
     if (activeTab === 'WIRES' || activeTab === 'UNKNOWN') return (
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
             <div><label className="block text-xs font-bold text-gray-500 mb-1">メーカー</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.maker || ''} onChange={e => setEditingItem({...editingItem, maker: e.target.value})} /></div>
             <div><label className="block text-xs font-bold text-gray-500 mb-1">品名</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.name || ''} onChange={e => setEditingItem({...editingItem, name: e.target.value})} /></div>
         </div>
-        <div className="grid grid-cols-3 gap-4">
+        {/* ★ 修正：製造年の入力フィールドを追加し、4カラム配置に変更 */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div><label className="block text-xs font-bold text-gray-500 mb-1">製造年</label><input type="text" placeholder="例: 2020" className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.year || ''} onChange={e => setEditingItem({...editingItem, year: e.target.value})} /></div>
             <div><label className="block text-xs font-bold text-gray-500 mb-1">SQ (断面積)</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.sq || ''} onChange={e => setEditingItem({...editingItem, sq: e.target.value})} /></div>
             <div><label className="block text-xs font-bold text-gray-500 mb-1">芯数</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.core || ''} onChange={e => setEditingItem({...editingItem, core: e.target.value})} /></div>
             <div><label className="block text-xs font-bold text-gray-500 mb-1">歩留まり (%)</label><input type="number" step="0.1" className="w-full border p-2 rounded-sm font-bold text-blue-600 outline-none focus:border-blue-500" value={editingItem.ratio || ''} onChange={e => setEditingItem({...editingItem, ratio: e.target.value})} /></div>
