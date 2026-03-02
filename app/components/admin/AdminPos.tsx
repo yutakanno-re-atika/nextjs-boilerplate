@@ -19,7 +19,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [aiStatus, setAiStatus] = useState<'IDLE' | 'ANALYZING'>('IDLE');
   
-  // シミュレーター詳細設定の開閉
   const [showSimDetails, setShowSimDetails] = useState(false);
 
   const fileInputRef1 = useRef<HTMLInputElement>(null);
@@ -27,12 +26,11 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   const [imgData1, setImgData1] = useState<string>('');
   const [imgData2, setImgData2] = useState<string>('');
 
-  // ★ 超現実的利益シミュレーター設定
   const [simConfig, setSimConfig] = useState({
-    disposalCostPerKg: 40,   // 産廃処理費(円/kg)
-    laborCostPerHour: 3000,  // WN-800稼働コスト(円/時)
-    capacityPerHour: 150,    // WN-800処理能力(kg/時)
-    targetMargin: 15         // 確保したい利益率(%)
+    disposalCostPerKg: 40,   
+    laborCostPerHour: 3000,  
+    capacityPerHour: 150,    
+    targetMargin: 15         
   });
 
   const copperPrice = data?.market?.copper?.price || 1400;
@@ -63,16 +61,37 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
 
   const removeItem = (id: string) => { setCart(prev => prev.filter(item => item.id !== id)); };
 
-  // AI推論処理 (モーダル内)
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, num: 1 | 2) => {
+  // ★ 画像圧縮処理の追加（超重要）
+  const compressImage = (file: File): Promise<string> => {
+      return new Promise((resolve, reject) => {
+          const reader = new FileReader(); reader.readAsDataURL(file);
+          reader.onload = (event) => {
+              const img = new Image(); img.src = event.target?.result as string;
+              img.onload = () => {
+                  const canvas = document.createElement('canvas');
+                  // 最大幅・高さを1200pxに制限して大幅に軽くする
+                  const MAX = 1200; let w = img.width; let h = img.height;
+                  if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } } else { if (h > MAX) { w *= MAX / h; h = MAX; } }
+                  canvas.width = w; canvas.height = h;
+                  const ctx = canvas.getContext('2d'); ctx?.drawImage(img, 0, 0, w, h);
+                  // JPEG品質0.8で圧縮してBase64を返す
+                  resolve(canvas.toDataURL('image/jpeg', 0.8).split(',')[1]);
+              };
+              img.onerror = () => reject(new Error('Image loading failed'));
+          };
+          reader.onerror = () => reject(new Error('File reading failed'));
+      });
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, num: 1 | 2) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64 = (event.target?.result as string).split(',')[1];
-      if (num === 1) setImgData1(base64); else setImgData2(base64);
-    };
-    reader.readAsDataURL(file);
+    try {
+        const compressedBase64 = await compressImage(file);
+        if (num === 1) setImgData1(compressedBase64); else setImgData2(compressedBase64);
+    } catch (err) {
+        alert("画像の処理に失敗しました。別の画像を試してください。");
+    }
   };
 
   const runAiAnalysis = async () => {
@@ -83,9 +102,13 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'VISION_AI_ASSESS', imageData: imgData1, imageData2: imgData2 })
       });
+      
+      if (!res.ok) {
+          throw new Error(`サーバーエラー: HTTP ${res.status}`);
+      }
+
       const result = await res.json();
       if (result.status === 'success') {
-        // カートに直接ぶち込む
         const isMixed = result.data.wireType.includes('フレコン') || result.data.wireType.includes('混合');
         const displayName = result.data.isNewFlag || isMixed ? `💡 AI査定: ${result.data.wireType}` : result.data.wireType;
         
@@ -103,11 +126,13 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       } else {
         alert('AI解析エラー: ' + result.message);
       }
-    } catch(err) { alert('通信エラーが発生しました'); }
-    setAiStatus('IDLE');
+    } catch(err: any) { 
+        alert(`通信エラーが発生しました: ${err.message}\n※画像サイズが大きすぎるか、ネットワークが不安定な可能性があります。`); 
+    } finally {
+        setAiStatus('IDLE');
+    }
   };
 
-  // ★ シミュレーション計算
   const simulation = useMemo(() => {
     let totalWeight = 0;
     let cuWeight = 0;
@@ -156,7 +181,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       if (result.status === 'success') {
         onSuccess();
       } else { alert('エラー: ' + result.message); }
-    } catch(err) { alert('通信エラーが発生しました'); }
+    } catch(err: any) { alert('通信エラーが発生しました: ' + err.message); }
     setIsProcessing(false);
   };
 
@@ -165,12 +190,9 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   return (
     <div className="flex flex-col lg:flex-row gap-4 h-full animate-in fade-in duration-300">
       
-      {/* =========================================
-          左パネル: レジ画面 (超速入力特化)
-      ========================================= */}
+      {/* 左パネル: レジ画面 (超速入力特化) */}
       <div className="w-full lg:w-7/12 flex flex-col bg-white border border-gray-200 rounded-sm shadow-sm overflow-hidden">
         
-        {/* 上部ヘッダー部: 検索 ＆ AI呼び出し */}
         <div className="p-4 bg-gray-50 border-b border-gray-200 flex flex-col md:flex-row gap-3 items-center">
           <div className="relative flex-1 w-full">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Icons.Search /></div>
@@ -186,7 +208,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           </button>
         </div>
 
-        {/* 品目リスト (iPadのレジのようなタイル表示) */}
         <div className="flex-1 overflow-y-auto p-4 bg-gray-100/50">
           <p className="text-xs font-bold text-gray-500 mb-3 tracking-widest">よく使うマスター線種をタップ</p>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -210,12 +231,9 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         </div>
       </div>
 
-      {/* =========================================
-          右パネル: カート＆利益計算 (交渉ツール)
-      ========================================= */}
+      {/* 右パネル: カート＆利益計算 */}
       <div className="w-full lg:w-5/12 bg-white border border-gray-200 rounded-sm flex flex-col shadow-lg">
         
-        {/* 顧客選択 */}
         <div className="p-3 border-b border-gray-200 bg-gray-50">
           <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Customer / 持込業者</label>
           <select className="w-full border-none bg-gray-200/50 p-2 rounded-sm text-sm font-bold text-gray-800 outline-none focus:bg-white focus:ring-1 focus:ring-gray-300 cursor-pointer" value={selectedClient?.id || ''} onChange={e => { const client = data?.clients?.find((c:any) => c.id === e.target.value); setSelectedClient(client || null); }}>
@@ -224,7 +242,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           </select>
         </div>
 
-        {/* カート内容 (計量入力) */}
         <div className="flex-1 overflow-y-auto p-3">
           {cart.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-gray-300">
@@ -244,7 +261,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                     <button onClick={() => removeItem(item.id)} className="text-gray-300 hover:text-red-500 absolute top-2 right-2"><Icons.Trash /></button>
                   </div>
                   
-                  {/* 重量入力エリアを大きく目立たせる */}
                   <div className="flex justify-end items-center mt-1">
                     <div className="w-40 relative">
                       <input type="number" className="w-full border border-gray-300 bg-gray-50 p-2 text-right font-mono font-black text-xl rounded-sm outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200 transition-all" value={item.weight || ''} onChange={e => updateWeight(item.id, Number(e.target.value))} placeholder="0" />
@@ -252,7 +268,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                     </div>
                   </div>
                   
-                  {/* AI推論の根拠があれば表示 */}
                   {item.reason && (
                     <div className="mt-1 bg-white border border-blue-100 p-2 rounded-sm text-[10px] text-gray-500 leading-relaxed">
                       <span className="font-bold text-blue-600">AI根拠:</span> {item.reason}
@@ -264,9 +279,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           )}
         </div>
 
-        {/* =========================================
-            限界利益シミュレーター (ブラックボックス開放)
-        ========================================= */}
         <div className="bg-[#111111] text-white p-5 border-t-4 border-red-600 relative">
           
           <div className="flex justify-between items-center mb-2">
@@ -276,7 +288,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
             </button>
           </div>
 
-          {/* 隠し設定: 現場で交渉中にササッと変えられるように */}
           {showSimDetails && (
             <div className="grid grid-cols-3 gap-2 mb-4 bg-gray-800 p-3 rounded-sm border border-gray-700 animate-in fade-in slide-in-from-top-2">
               <div>
@@ -294,7 +305,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
             </div>
           )}
 
-          {/* メインの金額表示 (お客様に見せながら交渉できるUI) */}
           <div className="flex justify-between items-end mb-4 bg-gray-800 p-4 rounded-sm border border-gray-700">
             <div>
               <p className="text-[10px] text-gray-400 font-bold tracking-widest mb-1">単価上限 (これ以上は赤字)</p>
@@ -319,9 +329,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         </div>
       </div>
 
-      {/* =========================================
-          AI モーダル (必殺技を呼び出す画面)
-      ========================================= */}
+      {/* AI モーダル */}
       {isAiModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-gray-900 w-full max-w-xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col">
