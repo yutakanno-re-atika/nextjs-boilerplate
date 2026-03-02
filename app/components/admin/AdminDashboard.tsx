@@ -118,19 +118,19 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
 
   const handlePosSuccess = () => { setEditingResId(null); setAdminTab('OPERATIONS'); window.location.reload(); };
 
-  // メニュー一覧（全量）
+  // ★ 修正：メニュー一覧に「要求レベル（最低権限）」を明記
   const ALL_MENU_ITEMS = [
-      { id: 'HOME', icon: Icons.Home, label: 'ダッシュボード' },
-      { id: 'OPERATIONS', icon: Icons.Kanban, label: '現場状況管理' },
-      { id: 'POS', icon: Icons.Calc, label: 'POS (受付・計量)' },
-      { id: 'PRODUCTION', icon: Icons.Factory, label: 'ナゲット製造管理' },
-      { id: 'SALES', icon: Icons.Briefcase, label: '営業・顧客' },
-      { id: 'COMPETITOR', icon: Icons.Radar, label: '相場レーダー' },
-      { id: 'DATABASE', icon: Icons.Database, label: 'マスターDB' },
+      { id: 'HOME', icon: Icons.Home, label: 'ダッシュボード', reqRole: 'ALL' }, // 基本誰でも見れるが制限あり
+      { id: 'OPERATIONS', icon: Icons.Kanban, label: '現場状況管理', reqRole: 'FRONT〜' },
+      { id: 'POS', icon: Icons.Calc, label: 'POS (受付・計量)', reqRole: 'FRONT〜' },
+      { id: 'PRODUCTION', icon: Icons.Factory, label: '製造(WN-800)', reqRole: 'PLANT〜' },
+      { id: 'SALES', icon: Icons.Briefcase, label: '営業・顧客', reqRole: 'SALES〜' },
+      { id: 'COMPETITOR', icon: Icons.Radar, label: '相場レーダー', reqRole: 'MANAGER〜' },
+      { id: 'DATABASE', icon: Icons.Database, label: 'マスターDB', reqRole: 'MANAGER〜' },
   ];
 
-  // ★ 権限フィルタリングされたメニュー
-  const MENU_ITEMS = ALL_MENU_ITEMS.filter(item => allowedTabs.includes(item.id));
+  // 権限フィルタリングされたメニュー
+  const MENU_ITEMS = ALL_MENU_ITEMS.filter(item => allowedTabs.includes(item.id as keyof typeof ROLE_PERMISSIONS['ADMIN']));
 
   return (
     <div className="h-screen w-full bg-[#FFFFFF] text-[#111111] font-sans flex flex-col md:flex-row overflow-hidden relative">
@@ -160,13 +160,15 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
             <h1 className="text-xl font-black tracking-tighter font-serif">FACTORY OS</h1>
         </div>
         
-        {/* ★ ログインユーザー情報の表示（バッジ付き） */}
+        {/* ログインユーザー情報の表示 */}
         <div className="px-5 pb-4 border-b border-gray-200 flex flex-col gap-1">
             <div className="flex items-center gap-2">
                 <p className="text-sm font-bold text-gray-800 truncate">{user?.name || user?.companyName || 'スタッフ'}</p>
                 {currentRole === 'ADMIN' && <Icons.Shield />}
             </div>
-            <p className="text-[10px] font-mono text-gray-500 font-bold bg-gray-200 px-2 py-0.5 rounded-sm inline-block w-fit">ROLE: {currentRole}</p>
+            <p className="text-[10px] font-mono text-white font-bold bg-gray-800 px-2 py-0.5 rounded-sm inline-block w-fit">
+               [現在] ROLE: {currentRole}
+            </p>
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
@@ -177,11 +179,17 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
                     <button 
                         key={item.id}
                         onClick={() => handleNavigate(item.id)} 
-                        className={`w-full text-left px-3 py-2.5 rounded-md text-sm font-bold transition-all flex items-center gap-3 relative ${isActive ? 'text-gray-900 bg-white shadow-sm border border-gray-200' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'}`}
+                        className={`w-full text-left px-3 py-2.5 rounded-md text-sm font-bold transition-all flex items-center justify-between group relative ${isActive ? 'text-gray-900 bg-white shadow-sm border border-gray-200' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'}`}
                     >
                         {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-4 bg-[#D32F2F] rounded-r-md"></div>}
-                        <item.icon />
-                        {item.label}
+                        <div className="flex items-center gap-3">
+                            <item.icon />
+                            {item.label}
+                        </div>
+                        {/* ★ 修正：メニューの右端に解放条件のバッジを表示 */}
+                        <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded-sm ${isActive ? 'bg-gray-100 text-gray-500' : 'bg-gray-200 text-gray-400 group-hover:bg-gray-300'}`}>
+                            {item.reqRole}
+                        </span>
                     </button>
                 )
             })}
@@ -198,16 +206,16 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
 
       <main className="flex-1 overflow-y-auto bg-[#FFFFFF] p-4 md:p-8 lg:p-10 flex flex-col relative w-full selection:bg-red-100 selection:text-red-900 pb-32 md:pb-10">
          {adminTab === 'HOME' && <AdminHome data={data} localReservations={localReservations} onNavigate={handleNavigate} />}
-         {adminTab === 'OPERATIONS' && <AdminKanban data={data} localReservations={localReservations} setLocalReservations={setLocalReservations} onOpenPos={(resId) => handleNavigate('POS', resId)} onAddClick={() => handleNavigate('POS')} />}
+         {adminTab === 'OPERATIONS' && <AdminKanban data={data} onSuccess={() => {}} />}
          {adminTab === 'POS' && <AdminPos data={data} editingResId={editingResId} localReservations={localReservations} onSuccess={handlePosSuccess} onClear={() => setEditingResId(null)} />}
          {adminTab === 'PRODUCTION' && <AdminProduction data={data} localReservations={localReservations} />}
          {adminTab === 'COMPETITOR' && <AdminCompetitor data={data} />}
          {adminTab === 'SALES' && <AdminSales data={data} />}
-         {adminTab === 'DATABASE' && <AdminDatabase data={data} onNavigate={handleNavigate} />}
+         {adminTab === 'DATABASE' && <AdminDatabase data={data} />}
          {adminTab === 'CLIENT_DETAIL' && selectedClientName && <AdminClientDetail data={data} clientName={selectedClientName} onBack={() => handleNavigate('HOME')} />}
       </main>
 
-      {/* ★ AI Co-Pilot (画面右下のフローティングウィジェット) */}
+      {/* AI Co-Pilot (画面右下のフローティングウィジェット) */}
       <div className="fixed bottom-4 right-4 md:bottom-8 md:right-8 z-50 flex items-end gap-3 pointer-events-none">
           <div className={`transition-all duration-500 ease-out origin-bottom-right pointer-events-auto ${isCoPilotVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'}`}>
               <div className="bg-white border border-blue-200 shadow-2xl rounded-2xl rounded-br-sm p-4 w-64 md:w-72 relative">
