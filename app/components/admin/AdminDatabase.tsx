@@ -27,6 +27,18 @@ export const AdminDatabase = ({ data }: { data: any }) => {
   const clients = data?.clients || [];
   const staffs = data?.staffs || [];
 
+  // ★ 追加：Google Driveの画像URLを「リンク切れしないサムネイル用URL」に変換する関数
+  const getDriveImageUrl = (url: string) => {
+      if (!url) return '';
+      if (url.includes('drive.google.com/uc')) {
+          const match = url.match(/id=([^&]+)/);
+          if (match && match[1]) {
+              return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`;
+          }
+      }
+      return url;
+  };
+
   const handleOpenModal = (item: any = null) => {
     setEditingItem(item || {});
     setIsModalOpen(true);
@@ -173,7 +185,8 @@ const renderTable = () => {
                         {[11, 12].map(colIdx => (
                             <div key={colIdx} className="relative w-10 h-10 border border-gray-300 rounded-sm overflow-hidden bg-gray-100 flex items-center justify-center group">
                                 {item[`image${colIdx-10}`] ? (
-                                    <img src={item[`image${colIdx-10}`]} className="w-full h-full object-cover" alt="Wire" />
+                                    /* ★ 修正：getDriveImageUrl で画像を安全に表示 */
+                                    <img src={getDriveImageUrl(item[`image${colIdx-10}`])} className="w-full h-full object-cover" alt="Wire" />
                                 ) : (
                                     <Icons.Image />
                                 )}
@@ -238,7 +251,7 @@ const renderTable = () => {
     );
   };
 
-const renderModalContent = () => {
+  const renderModalContent = () => {
     if (activeTab === 'WIRES' || activeTab === 'UNKNOWN') return (
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
