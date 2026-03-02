@@ -35,14 +35,29 @@ export const AdminKanban = ({ data, onSuccess }: { data: any, onSuccess: () => v
     }
   }, [data]);
 
+// 修正版：エラーの詳細を炙り出す関数
   const updateStatus = async (id: string, status: string) => {
     try {
-      await fetch('/api/gas', {
+      const res = await fetch('/api/gas', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'UPDATE_RESERVATION_STATUS', reservationId: id, status })
       });
-      onSuccess();
-    } catch (e) { alert('通信エラー'); }
+      
+      if (!res.ok) {
+        throw new Error(`サーバーエラー (HTTP ${res.status})`);
+      }
+      
+      const result = await res.json();
+      
+      if (result.status === 'success') {
+        onSuccess(); // 成功したら画面をリロード
+      } else {
+        alert('GAS側のエラー: ' + result.message);
+      }
+    } catch (e: any) { 
+      alert('通信エラーの詳細: ' + e.message); 
+      console.error("Update Status Error:", e);
+    }
   };
 
   const handleOpenModal = (res: any) => {
