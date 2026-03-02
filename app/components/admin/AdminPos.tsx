@@ -21,7 +21,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [aiStatus, setAiStatus] = useState<'IDLE' | 'ANALYZING'>('IDLE');
   
-  // ★ モード切替ステート
   const [posMode, setPosMode] = useState<'INDIVIDUAL' | 'BULK'>('INDIVIDUAL');
   const [bulkTotalWeight, setBulkTotalWeight] = useState<number | ''>('');
 
@@ -48,7 +47,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         try { 
             const items = typeof res.items === 'string' ? JSON.parse(res.items) : res.items;
             setCart(items); 
-            // 編集時にBULKモードっぽければ切り替える(割合が入っている等)
             if (items.some((i:any) => i.percentage !== undefined)) setPosMode('BULK');
         } catch(e){}
         if (res.memberId !== 'GUEST' && data?.clients) {
@@ -61,13 +59,23 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
     }
   }, [editingResId, localReservations, data]);
 
+  // ★ カートに追加する時の「フルネーム生成ロジック」を追加
+  const buildProductName = (p: any) => {
+    const maker = p.maker && p.maker !== '-' ? `【${p.maker}】` : '';
+    const sizeStr = p.size || p.sq;
+    const size = sizeStr && sizeStr !== '-' ? ` ${sizeStr}sq` : '';
+    const coreStr = p.core || p.cores || p.coreCount;
+    const core = coreStr && coreStr !== '-' ? ` ${coreStr}C` : '';
+    return `${maker}${p.name}${size}${core}`.trim();
+  };
+
   const addToCart = (product: any) => {
     setCart(prev => [...prev, { 
         id: Date.now().toString(), 
-        product: product.name, 
+        product: buildProductName(product), // ★ フルネームでカートに入る
         ratio: product.ratio, 
         weight: 0,
-        percentage: 0 // BULKモード用
+        percentage: 0
     }]);
     setSearchTerm('');
   };
@@ -133,7 +141,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
             product: displayName,
             ratio: result.data.estimatedRatio,
             weight: 0,
-            percentage: 0, // BULK用
+            percentage: 0, 
             isNewAi: true,
             reason: result.data.reason
         }, ...prev]);
@@ -145,13 +153,11 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
     finally { setAiStatus('IDLE'); }
   };
 
-  // ★ シミュレーション（BULK/INDIVIDUAL両対応）
   const simulation = useMemo(() => {
     let totalWeight = 0;
     let cuWeight = 0;
     
     cart.forEach(item => {
-      // モードによって重量の計算元を切り替える
       const w = posMode === 'BULK' 
           ? (Number(bulkTotalWeight) || 0) * ((Number(item.percentage) || 0) / 100) 
           : (Number(item.weight) || 0);
@@ -173,8 +179,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
     if (limitTotalCost < 0) limitTotalCost = 0;
 
     const limitUnitPrice = totalWeight > 0 ? Math.floor(limitTotalCost / totalWeight) : 0;
-
-    // 全体の予測歩留まり
     const expectedYield = totalWeight > 0 ? (cuWeight / totalWeight) * 100 : 0;
 
     return { totalWeight, cuWeight, wasteWeight, grossCuValue, disposalCost, laborCost, targetProfitAmount, limitTotalCost, limitUnitPrice, processingHours, expectedYield };
@@ -193,7 +197,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
     
     setIsProcessing(true);
 
-    // 送信前に最終的なweightを各アイテムにセットする（後続の処理を共通化するため）
     const finalCart = cart.map(item => ({
         ...item,
         weight: posMode === 'BULK' ? ((Number(bulkTotalWeight) || 0) * ((Number(item.percentage) || 0) / 100)).toFixed(1) : item.weight
@@ -217,7 +220,11 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
     setIsProcessing(false);
   };
 
-  const filteredProducts = (data?.wires || []).filter((w:any) => w.name.includes(searchTerm) || w.maker?.includes(searchTerm));
+  // ★ 検索機能も全項目（サイズ・芯数など）に対応
+  const filteredProducts = (data?.wires || []).filter((w:any) => {
+      const searchTarget = `${w.name} ${w.maker} ${w.size || w.sq} ${w.core || w.cores || w.coreCount} ${w.year}`.toLowerCase();
+      return searchTarget.includes(searchTerm.toLowerCase());
+  });
 
   return (
     <div className="flex flex-col lg:flex-row gap-4 h-full animate-in fade-in duration-300">
@@ -228,7 +235,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         <div className="p-4 bg-gray-50 border-b border-gray-200 flex flex-col md:flex-row gap-3 items-center">
           <div className="relative flex-1 w-full">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Icons.Search /></div>
-            <input type="text" placeholder="品名やメーカーで素早く検索..." className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-sm text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none shadow-inner" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+            <input type="text" placeholder="品目、メーカー、サイズ(sq)等で検索..." className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-sm text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none shadow-inner" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
           </div>
           
           <button 
@@ -247,12 +254,21 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
               <button 
                 key={p.id} 
                 onClick={() => addToCart(p)} 
-                className="bg-white border border-gray-200 p-4 rounded-md shadow-sm hover:shadow-md hover:border-blue-300 text-left transition-all active:scale-95 flex flex-col justify-between min-h-[90px]"
+                className="bg-white border border-gray-200 p-3 rounded-md shadow-sm hover:shadow-md hover:border-blue-400 text-left transition-all active:scale-95 flex flex-col justify-between min-h-[95px] relative overflow-hidden group"
               >
-                <div className="font-bold text-gray-800 text-sm leading-tight line-clamp-2">{p.name}</div>
-                <div className="flex justify-between items-end mt-2">
-                  <span className="text-[10px] text-gray-400">{p.maker !== '-' ? p.maker : ''}</span>
-                  <span className="font-mono font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-sm">{p.ratio}%</span>
+                <div>
+                  <div className="font-bold text-gray-800 text-sm leading-tight line-clamp-2">{p.name}</div>
+                  
+                  {/* ★ タイル内に詳細バッジ（タグ）を表示 */}
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {p.maker && p.maker !== '-' && <span className="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-sm font-bold">{p.maker}</span>}
+                    {(p.size || p.sq) && (p.size !== '-' && p.sq !== '-') && <span className="text-[10px] bg-blue-50 text-blue-700 border border-blue-100 px-1.5 py-0.5 rounded-sm font-mono font-bold">{(p.size || p.sq)}sq</span>}
+                    {(p.core || p.cores || p.coreCount) && (p.core !== '-' && p.cores !== '-' && p.coreCount !== '-') && <span className="text-[10px] bg-orange-50 text-orange-700 border border-orange-100 px-1.5 py-0.5 rounded-sm font-mono font-bold">{(p.core || p.cores || p.coreCount)}C</span>}
+                    {p.year && p.year !== '-' && <span className="text-[10px] bg-gray-50 text-gray-500 border border-gray-200 px-1.5 py-0.5 rounded-sm font-mono">{p.year}</span>}
+                  </div>
+                </div>
+                <div className="flex justify-end mt-2">
+                  <span className="font-mono font-black text-blue-600 bg-blue-50/50 px-2 py-0.5 rounded-sm text-sm group-hover:bg-blue-100 transition-colors">{p.ratio}%</span>
                 </div>
               </button>
             ))}
@@ -266,7 +282,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       {/* 右パネル: カート＆利益計算 */}
       <div className="w-full lg:w-5/12 bg-white border border-gray-200 rounded-sm flex flex-col shadow-lg relative overflow-hidden">
         
-        {/* ★ モード切替タブ */}
         <div className="flex">
           <button 
             onClick={() => setPosMode('INDIVIDUAL')}
@@ -290,7 +305,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           </select>
         </div>
 
-        {/* ★ BULKモード時: フレコン総重量入力 */}
         {posMode === 'BULK' && (
           <div className="p-4 bg-blue-50 border-b border-blue-100 shadow-inner">
             <label className="block text-xs font-bold text-blue-800 mb-2 uppercase tracking-widest">フレコン総重量 (一括計量)</label>
@@ -326,16 +340,13 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                     <button onClick={() => removeItem(item.id)} className="text-gray-300 hover:text-red-500 absolute top-3 right-3"><Icons.Trash /></button>
                   </div>
                   
-                  {/* ★ モードによる入力UIの分岐 */}
                   <div className="flex justify-end items-center mt-2">
                     {posMode === 'INDIVIDUAL' ? (
-                      // 個別モード：重量(kg)を直接入力
                       <div className="w-44 relative">
                         <input type="number" className="w-full border border-gray-300 bg-gray-50 p-3 text-right font-mono font-black text-2xl rounded-sm outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200 transition-all" value={item.weight || ''} onChange={e => updateWeight(item.id, Number(e.target.value))} placeholder="0" />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-bold pointer-events-none">kg</span>
                       </div>
                     ) : (
-                      // フレコン一括モード：割合(%)とスライダー
                       <div className="w-full flex items-center gap-3">
                         <input 
                           type="range" min="0" max="100" 
@@ -364,7 +375,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                 </div>
               ))}
 
-              {/* BULKモード時の割合バリデーション表示 */}
               {posMode === 'BULK' && cart.length > 0 && (
                 <div className={`p-3 rounded-sm text-center text-sm font-bold border transition-colors ${isPercentageValid ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-600 border-red-200 animate-pulse'}`}>
                   割合の合計: {totalPercentage}% {isPercentageValid ? '✨ 完璧です' : '⚠️ 100%に合わせてください'}
@@ -399,7 +409,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
             </div>
           )}
 
-          {/* BULKモード時の「予測ブレンド歩留まり」を表示 */}
           {posMode === 'BULK' && simulation.totalWeight > 0 && (
             <div className="mb-3 flex justify-between items-center bg-blue-900/30 border border-blue-800 p-2 rounded-sm">
                 <span className="text-xs text-blue-300 font-bold">AI ＋ 目利き 予測ブレンド歩留まり</span>
