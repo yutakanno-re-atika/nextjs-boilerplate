@@ -32,7 +32,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   const [imgData1, setImgData1] = useState<string>('');
   const [imgData2, setImgData2] = useState<string>('');
 
-  // ★ 音声入力用のステート
   const [isListening, setIsListening] = useState(false);
   const [voiceText, setVoiceText] = useState('');
   const [isProcessingVoice, setIsProcessingVoice] = useState(false);
@@ -126,7 +125,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
     } catch (err) { alert("画像の処理に失敗しました。"); }
   };
 
-  const runAiAnalysis = async () => {
+const runAiAnalysis = async () => {
     if (!imgData1) return alert('最低1枚の画像をアップロードしてください');
     setAiStatus('ANALYZING');
     try {
@@ -159,7 +158,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
     finally { setAiStatus('IDLE'); }
   };
 
-  // ★ 音声入力（Web Speech API）の処理
   const startVoiceInput = () => {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
@@ -197,7 +195,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       recognition.start();
   };
 
-  // ★ 取得した音声をGASに投げてパースし、カートに入れる
   const processVoiceCommand = async (text: string) => {
       if (!text) return;
       setIsProcessingVoice(true);
@@ -210,7 +207,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           
           if (result.status === 'success' && result.parsed) {
               const p = result.parsed;
-              // 抽出した条件に一番近いマスターを探す
               const matchedWire = (data?.wires || []).find((w: any) => {
                   const mName = String(w.name || '').toLowerCase();
                   const mMaker = String(w.maker || '').toLowerCase();
@@ -222,7 +218,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                   const isSqMatch = p.sq ? mSq === String(p.sq) : true;
                   const isCoreMatch = p.core ? mCore === String(p.core) : true;
                   
-                  // 名前かメーカーのどちらかが一致し、サイズ等の条件も合うものを優先
                   return (isNameMatch || isMakerMatch) && isSqMatch && isCoreMatch;
               });
 
@@ -314,15 +309,13 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       return searchTarget.includes(searchTerm.toLowerCase());
   });
 
-  return (
-    <div className="flex flex-col lg:flex-row gap-4 h-full animate-in fade-in duration-300">
+return (
+    <div className="flex flex-col lg:flex-row gap-4 h-auto lg:h-full animate-in fade-in duration-300 pb-24 lg:pb-0">
       
-      {/* 左パネル: レジ画面 */}
-      <div className="w-full lg:w-7/12 flex flex-col bg-white border border-gray-200 rounded-sm shadow-sm overflow-hidden">
+      {/* 左パネル: 商品リスト (スマホ時は高さを50vhに制限して内部スクロール) */}
+      <div className="w-full lg:w-7/12 flex flex-col bg-white border border-gray-200 rounded-sm shadow-sm overflow-hidden h-[50vh] lg:h-full shrink-0">
         
-        <div className="p-4 bg-gray-50 border-b border-gray-200 flex flex-col md:flex-row gap-3 items-center relative">
-          
-          {/* ★ 音声入力ステータス表示 */}
+        <div className="p-4 bg-gray-50 border-b border-gray-200 flex flex-col md:flex-row gap-3 items-center relative shrink-0">
           {(isListening || isProcessingVoice || voiceText) && (
               <div className="absolute top-full left-0 w-full z-10 bg-blue-900 text-white p-2 text-center text-sm font-bold shadow-md animate-in slide-in-from-top-2">
                   {isListening ? <span className="animate-pulse">🎤 お話しください...</span> :
@@ -330,14 +323,11 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                    <span>{voiceText}</span>}
               </div>
           )}
-
           <div className="flex w-full gap-2">
               <div className="relative flex-1">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Icons.Search /></div>
                 <input type="text" placeholder="品目、メーカー等で検索..." className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-sm text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none shadow-inner" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
               </div>
-              
-              {/* ★ マイクボタン */}
               <button 
                   onClick={startVoiceInput}
                   disabled={isListening || isProcessingVoice}
@@ -347,7 +337,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                   <Icons.Mic />
               </button>
           </div>
-          
           <button 
             onClick={() => setIsAiModalOpen(true)}
             className="w-full md:w-auto bg-gradient-to-r from-blue-700 to-blue-900 hover:from-blue-600 hover:to-blue-800 text-white font-bold py-3 px-5 rounded-sm flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 whitespace-nowrap"
@@ -387,10 +376,10 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         </div>
       </div>
 
-      {/* 右パネル: カート＆利益計算 */}
-      <div className="w-full lg:w-5/12 bg-white border border-gray-200 rounded-sm flex flex-col shadow-lg relative overflow-hidden">
+      {/* 右パネル: カート＆利益計算 (スマホ時は自然に伸びる) */}
+      <div className="w-full lg:w-5/12 bg-white border border-gray-200 rounded-sm flex flex-col shadow-lg relative overflow-hidden min-h-[50vh] lg:h-full shrink-0">
         
-        <div className="flex">
+        <div className="flex shrink-0">
           <button 
             onClick={() => setPosMode('INDIVIDUAL')}
             className={`flex-1 py-3 text-sm font-bold flex items-center justify-center gap-2 transition-all ${posMode === 'INDIVIDUAL' ? 'bg-white text-blue-700 border-t-4 border-t-blue-600' : 'bg-gray-100 text-gray-400 border-t-4 border-t-transparent hover:bg-gray-50 border-b border-b-gray-200'}`}
@@ -405,7 +394,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           </button>
         </div>
 
-        <div className="p-3 border-b border-gray-200 bg-white">
+        <div className="p-3 border-b border-gray-200 bg-white shrink-0">
           <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Customer / 持込業者</label>
           <select className="w-full border border-gray-300 bg-white p-2 rounded-sm text-sm font-bold text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer shadow-sm" value={selectedClient?.id || ''} onChange={e => { const client = data?.clients?.find((c:any) => c.id === e.target.value); setSelectedClient(client || null); }}>
             <option value="">新規 / 非会員 (飛込ゲスト)</option>
@@ -414,7 +403,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         </div>
 
         {posMode === 'BULK' && (
-          <div className="p-4 bg-blue-50 border-b border-blue-100 shadow-inner">
+          <div className="p-4 bg-blue-50 border-b border-blue-100 shadow-inner shrink-0">
             <label className="block text-xs font-bold text-blue-800 mb-2 uppercase tracking-widest">フレコン総重量 (一括計量)</label>
             <div className="relative">
               <input 
@@ -429,9 +418,9 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto p-3 bg-gray-50/50">
+        <div className="flex-1 overflow-y-auto p-3 bg-gray-50/50 min-h-[200px]">
           {cart.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-gray-300">
+            <div className="h-full flex flex-col items-center justify-center text-gray-300 py-10">
               <p className="font-bold text-sm">左から商材を選択するか、マイクで入力してください</p>
             </div>
           ) : (
@@ -492,7 +481,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           )}
         </div>
 
-        <div className="bg-[#111111] text-white p-5 border-t-4 border-red-600 relative">
+        <div className="bg-[#111111] text-white p-5 border-t-4 border-red-600 relative shrink-0">
           <div className="flex justify-between items-center mb-3">
             <h3 className="font-black text-sm tracking-widest text-gray-300 flex items-center gap-2">限界買取シミュレーター</h3>
             <button onClick={() => setShowSimDetails(!showSimDetails)} className="text-gray-400 hover:text-white flex items-center gap-1 text-[10px] uppercase font-bold bg-gray-800 px-2 py-1 rounded-sm transition">
@@ -554,7 +543,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
 
       {/* AI モーダル */}
       {isAiModalOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-gray-900 w-full max-w-xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col">
             <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-black/50">
               <h3 className="font-black text-white flex items-center gap-2">
