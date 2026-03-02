@@ -61,7 +61,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
 
   const removeItem = (id: string) => { setCart(prev => prev.filter(item => item.id !== id)); };
 
-  // ★ 画像圧縮処理の追加（超重要）
   const compressImage = (file: File): Promise<string> => {
       return new Promise((resolve, reject) => {
           const reader = new FileReader(); reader.readAsDataURL(file);
@@ -69,12 +68,10 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
               const img = new Image(); img.src = event.target?.result as string;
               img.onload = () => {
                   const canvas = document.createElement('canvas');
-                  // 最大幅・高さを1200pxに制限して大幅に軽くする
                   const MAX = 1200; let w = img.width; let h = img.height;
                   if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } } else { if (h > MAX) { w *= MAX / h; h = MAX; } }
                   canvas.width = w; canvas.height = h;
                   const ctx = canvas.getContext('2d'); ctx?.drawImage(img, 0, 0, w, h);
-                  // JPEG品質0.8で圧縮してBase64を返す
                   resolve(canvas.toDataURL('image/jpeg', 0.8).split(',')[1]);
               };
               img.onerror = () => reject(new Error('Image loading failed'));
@@ -190,7 +187,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   return (
     <div className="flex flex-col lg:flex-row gap-4 h-full animate-in fade-in duration-300">
       
-      {/* 左パネル: レジ画面 (超速入力特化) */}
+      {/* 左パネル: レジ画面 */}
       <div className="w-full lg:w-7/12 flex flex-col bg-white border border-gray-200 rounded-sm shadow-sm overflow-hidden">
         
         <div className="p-4 bg-gray-50 border-b border-gray-200 flex flex-col md:flex-row gap-3 items-center">
@@ -248,29 +245,32 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
               <p className="font-bold text-sm">左から商材を選択してください</p>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {cart.map(item => (
-                <div key={item.id} className={`border p-3 rounded-sm flex flex-col gap-2 relative ${item.isNewAi ? 'bg-blue-50/30 border-blue-200' : 'bg-white border-gray-200'}`}>
+                <div key={item.id} className={`border p-4 rounded-sm flex flex-col gap-2 relative ${item.isNewAi ? 'bg-blue-50/30 border-blue-200' : 'bg-white border-gray-200'}`}>
                   <div className="flex justify-between items-start">
                     <div className="pr-6">
-                      <div className="font-bold text-gray-900 text-sm leading-tight flex items-center gap-1">
+                      {/* ★ 修正: 品名と歩留まりの文字サイズを拡大 */}
+                      <div className="font-bold text-gray-900 text-base leading-tight flex items-center gap-1">
                         {item.product}
                       </div>
-                      <div className="text-xs text-gray-500 mt-0.5">歩留まり: <span className="font-mono font-bold text-blue-600">{item.ratio}%</span></div>
+                      <div className="text-sm text-gray-500 mt-1">歩留まり: <span className="font-mono font-bold text-blue-600">{item.ratio}%</span></div>
                     </div>
-                    <button onClick={() => removeItem(item.id)} className="text-gray-300 hover:text-red-500 absolute top-2 right-2"><Icons.Trash /></button>
+                    <button onClick={() => removeItem(item.id)} className="text-gray-300 hover:text-red-500 absolute top-3 right-3"><Icons.Trash /></button>
                   </div>
                   
-                  <div className="flex justify-end items-center mt-1">
-                    <div className="w-40 relative">
-                      <input type="number" className="w-full border border-gray-300 bg-gray-50 p-2 text-right font-mono font-black text-xl rounded-sm outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200 transition-all" value={item.weight || ''} onChange={e => updateWeight(item.id, Number(e.target.value))} placeholder="0" />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold pointer-events-none">kg</span>
+                  <div className="flex justify-end items-center mt-2">
+                    <div className="w-44 relative">
+                      <input type="number" className="w-full border border-gray-300 bg-gray-50 p-3 text-right font-mono font-black text-2xl rounded-sm outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200 transition-all" value={item.weight || ''} onChange={e => updateWeight(item.id, Number(e.target.value))} placeholder="0" />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-bold pointer-events-none">kg</span>
                     </div>
                   </div>
                   
+                  {/* ★ 修正: AI推論の根拠の文字サイズを拡大し、デザインを見やすく調整 */}
                   {item.reason && (
-                    <div className="mt-1 bg-white border border-blue-100 p-2 rounded-sm text-[10px] text-gray-500 leading-relaxed">
-                      <span className="font-bold text-blue-600">AI根拠:</span> {item.reason}
+                    <div className="mt-3 bg-white border border-blue-200 p-3 rounded-sm text-xs lg:text-sm text-gray-700 leading-relaxed shadow-sm">
+                      <span className="font-black text-blue-700 block mb-1">💡 AI推論の根拠</span> 
+                      {item.reason}
                     </div>
                   )}
                 </div>
