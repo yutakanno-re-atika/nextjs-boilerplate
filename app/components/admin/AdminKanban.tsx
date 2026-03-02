@@ -9,7 +9,7 @@ const Icons = {
   Close: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
 };
 
-export const AdminKanban = ({ data, onSuccess }: { data: any, onSuccess: () => void }) => {
+export const AdminKanban = ({ data, onSuccess }: { data: any, onSuccess?: () => void }) => {
   const [reservations, setReservations] = useState<any[]>([]);
   const [productions, setProductions] = useState<any[]>([]);
   
@@ -35,29 +35,30 @@ export const AdminKanban = ({ data, onSuccess }: { data: any, onSuccess: () => v
     }
   }, [data]);
 
-// 修正版：エラーの詳細を炙り出す関数
+  // ★ 修正：画面リロードの安全装置
+  const handleSuccessRefresh = () => {
+    if (typeof onSuccess === 'function') {
+      onSuccess();
+    } else {
+      window.location.reload();
+    }
+  };
+
   const updateStatus = async (id: string, status: string) => {
     try {
       const res = await fetch('/api/gas', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'UPDATE_RESERVATION_STATUS', reservationId: id, status })
       });
-      
-      if (!res.ok) {
-        throw new Error(`サーバーエラー (HTTP ${res.status})`);
-      }
-      
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const result = await res.json();
       
       if (result.status === 'success') {
-        onSuccess(); // 成功したら画面をリロード
+        handleSuccessRefresh(); // ★ 修正：安全なリロードを呼び出す
       } else {
         alert('GAS側のエラー: ' + result.message);
       }
-    } catch (e: any) { 
-      alert('通信エラーの詳細: ' + e.message); 
-      console.error("Update Status Error:", e);
-    }
+    } catch (e: any) { alert('通信エラーの詳細: ' + e.message); }
   };
 
   const handleOpenModal = (res: any) => {
@@ -106,7 +107,7 @@ export const AdminKanban = ({ data, onSuccess }: { data: any, onSuccess: () => v
       if (result.status === 'success') {
         await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'UPDATE_RESERVATION_STATUS', reservationId: selectedRes.id, status: 'PROCESSED' }) });
         setIsModalOpen(false);
-        onSuccess();
+        handleSuccessRefresh(); // ★ 修正：安全なリロードを呼び出す
       } else {
         alert('エラー: ' + result.message);
       }
