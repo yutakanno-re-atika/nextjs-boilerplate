@@ -65,17 +65,18 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
   const [selectedClientName, setSelectedClientName] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // 各種トグル
   const [isCoPilotEnabled, setIsCoPilotEnabled] = useState(true);
   const [isVoiceOutputEnabled, setIsVoiceOutputEnabled] = useState(true); 
-  const [isLearningMode, setIsLearningMode] = useState(false); // ★ 追加: 学習モード
+  const [isLearningMode, setIsLearningMode] = useState(false); 
   
-  // Co-Pilotチャット用ステート
   const [coPilotMessages, setCoPilotMessages] = useState<{role: 'user' | 'ai', text: string}[]>([]);
   const [coPilotInput, setCoPilotInput] = useState("");
   const [isCoPilotVisible, setIsCoPilotVisible] = useState(false);
   const [isCoPilotTyping, setIsCoPilotTyping] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
+
+  // ★ 追加：教育メンター用のセッションIDを生成（再読み込みするまで同一セッション）
+  const [tutorSessionId] = useState(`TUTOR_${new Date().getTime().toString().slice(-6)}`);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -85,7 +86,6 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
 
   useEffect(() => {
     if (!allowedTabs.includes(adminTab)) {
-      console.warn(`[FACTORY OS Guard] Access Denied: User role ${currentRole} cannot access ${adminTab}`);
       setAdminTab(defaultTab()); 
     }
   }, [adminTab, currentRole, allowedTabs]);
@@ -94,7 +94,6 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
       if (data?.reservations) { setLocalReservations(data.reservations); }
   }, [data?.reservations]);
 
-  // タブ切り替え時の初期メッセージ生成
   useEffect(() => {
       if (!isCoPilotEnabled) {
           setIsCoPilotVisible(false);
@@ -130,22 +129,28 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
       }
   }, [coPilotMessages, isCoPilotTyping]);
 
+  // ★ 修正：tutorSessionId をAPIに投げるように変更
   const handleSendCoPilot = async (e: React.FormEvent) => {
       e.preventDefault();
       if (!coPilotInput.trim() || isCoPilotTyping) return;
 
       const userText = coPilotInput;
       setCoPilotInput("");
-      setCoPilotMessages(prev => [...prev, { role: 'user', text: userText }]);
+      
+      const newMessages = [...coPilotMessages, { role: 'user' as const, text: userText }];
+      setCoPilotMessages(newMessages);
       setIsCoPilotTyping(true);
 
       try {
+          const apiMessages = newMessages.map(m => ({ role: m.role === 'ai' ? 'assistant' : 'user', content: m.text }));
+          
           const res = await fetch('/api/tutor', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ 
-                  messages: [{ role: 'user', content: userText }],
-                  currentTab: adminTab 
+                  messages: apiMessages,
+                  currentTab: adminTab,
+                  sessionId: tutorSessionId // ログにTUTORセッションとして記録
               })
           });
           const result = await res.json();
@@ -227,7 +232,6 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
                         <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${isCoPilotEnabled ? 'translate-x-5' : 'translate-x-1'}`} />
                     </button>
                 </div>
-                {/* ★ 学習モード・トグル */}
                 <div className="flex items-center justify-between bg-white border border-gray-200 p-2 rounded-md shadow-sm">
                     <span className="text-xs font-bold text-gray-600 flex items-center gap-1.5">
                         <span className="text-green-600"><Icons.School /></span> 学習モード
@@ -290,13 +294,11 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
          {adminTab === 'CLIENT_DETAIL' && selectedClientName && <AdminClientDetail data={data} clientName={selectedClientName} onBack={() => handleNavigate('HOME')} />}
       </main>
 
-      {/* ★ 拡張された AI Co-Pilot (学習モード対応) */}
       {isCoPilotEnabled && (
           <div className="fixed bottom-4 right-4 md:bottom-8 md:right-8 z-50 flex items-end gap-3 pointer-events-none">
               <div className={`transition-all duration-500 ease-out origin-bottom-right pointer-events-auto ${isCoPilotVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'}`}>
                   <div className={`bg-white border shadow-2xl rounded-2xl rounded-br-sm flex flex-col overflow-hidden relative ${isLearningMode ? 'w-80 md:w-96 h-96 border-green-300' : 'w-64 md:w-72 border-blue-200 p-4'}`}>
                       
-                      {/* 通常モードの表示 */}
                       {!isLearningMode && (
                           <>
                               <div className="flex justify-between items-start mb-1">
@@ -310,7 +312,6 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
                           </>
                       )}
 
-                      {/* 学習モードの表示 (チャットUI) */}
                       {isLearningMode && (
                           <>
                               <div className="bg-gradient-to-r from-green-600 to-green-500 p-3 flex justify-between items-center shrink-0">
