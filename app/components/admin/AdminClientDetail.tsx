@@ -21,7 +21,8 @@ export const AdminClientDetail = ({ data, clientName, onBack }: { data: any, cli
   const clientProductions = useMemo(() => {
       return (data?.productions || [])
           .filter((p: any) => p.memberName === clientName)
-          .sort((a: any, b: any) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
+          // ★ 修正: date から createdAt へ変更
+          .sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
   }, [data?.productions, clientName]);
 
   // 総計データの算出
@@ -147,7 +148,8 @@ export const AdminClientDetail = ({ data, clientName, onBack }: { data: any, cli
                           return (
                               <div key={prod.id} className="border border-gray-200 rounded-xl p-4 bg-white hover:border-[#D32F2F] hover:shadow-md transition">
                                   <div className="flex justify-between text-xs font-bold text-gray-500 mb-2">
-                                      <span>{prod.date ? String(prod.date).substring(0, 16) : '日時不明'}</span>
+                                      {/* ★ 修正: createdAt へ変更 */}
+                                      <span>{prod.createdAt ? String(prod.createdAt).substring(0, 16) : '日時不明'}</span>
                                       <span className="font-mono bg-gray-100 px-2 py-0.5 rounded">元荷物: {prod.reservationId}</span>
                                   </div>
                                   <div className="flex justify-between items-center mb-4">
