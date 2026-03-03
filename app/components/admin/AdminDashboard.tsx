@@ -22,11 +22,10 @@ const Icons = {
   Logout: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>,
   Menu: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" /></svg>,
   X: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>,
-  Brain: () => <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>,
+  Brain: () => <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 18a8 8 0 110-16 8 8 0 010 16zm1-11h-2v2h2V9zm0 4h-2v6h2v-6z" /></svg>,
   Shield: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
 };
 
-// ★ 修正：RBAC 権限マスターの厳格化（HOMEを一般層から剥奪）
 const ROLE_PERMISSIONS = {
   ADMIN:   ['HOME', 'OPERATIONS', 'POS', 'PRODUCTION', 'COMPETITOR', 'DATABASE', 'SALES', 'CLIENT_DETAIL'],
   MANAGER: ['HOME', 'OPERATIONS', 'POS', 'PRODUCTION', 'COMPETITOR', 'DATABASE', 'SALES', 'CLIENT_DETAIL'],
@@ -36,7 +35,6 @@ const ROLE_PERMISSIONS = {
 };
 
 export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; data: any; setView: any; onLogout?: any }) => {
-  // ★ 修正：初期タブの最適化（ダッシュボードを見れない人のためのフォールバック）
   const defaultTab = () => {
     if (!user || !user.role) return 'OPERATIONS';
     if (user.role === 'ADMIN' || user.role === 'MANAGER') return 'HOME';
@@ -52,13 +50,14 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
   const [selectedClientName, setSelectedClientName] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
+  // ★ AI Co-Pilot機能のマスターON/OFFスイッチ
+  const [isCoPilotEnabled, setIsCoPilotEnabled] = useState(true);
   const [coPilotMessage, setCoPilotMessage] = useState("");
-  const [isCoPilotVisible, setIsCoPilotVisible] = useState(true);
+  const [isCoPilotVisible, setIsCoPilotVisible] = useState(false);
 
   const currentRole = user?.role || 'FRONT';
   const allowedTabs = ROLE_PERMISSIONS[currentRole as keyof typeof ROLE_PERMISSIONS] || ROLE_PERMISSIONS.FRONT;
 
-  // 強制アクセス遮断ガードレール (Guardrail)
   useEffect(() => {
     if (!allowedTabs.includes(adminTab)) {
       console.warn(`[FACTORY OS Guard] Access Denied: User role ${currentRole} cannot access ${adminTab}`);
@@ -70,8 +69,13 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
       if (data?.reservations) { setLocalReservations(data.reservations); }
   }, [data?.reservations]);
 
-  // AI Co-Pilot
+  // AI Co-Pilot メッセージ自動生成 (機能が有効な場合のみ)
   useEffect(() => {
+      if (!isCoPilotEnabled) {
+          setIsCoPilotVisible(false);
+          return;
+      }
+      
       setIsCoPilotVisible(false);
       setTimeout(() => {
           let newMessage = "";
@@ -83,13 +87,13 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
                   newMessage = "現場のカンバンです。処理待ちのロットを『プラント稼働』へ進めてください。";
                   break;
               case 'POS':
-                  newMessage = "POS画面です。カメラアイコンから『AIブラックボックス・オープナー』が使えますよ。";
+                  newMessage = "POS画面です。カメラアイコンから『AI 線種分析』が使えますよ。";
                   break;
               case 'PRODUCTION':
                   newMessage = "ナゲット製造(WN-800)の要です。排出された4種類の重量を計量し、確実に入力してください。";
                   break;
               case 'SALES':
-                  newMessage = "営業リスト画面です。右上の『🤖AIリード自動収集』で私が解体業者を自動リストアップします！";
+                  newMessage = "営業リスト画面です。右上の『🤖AIスナイパー』で私がターゲット企業を自動リストアップします！";
                   break;
               case 'COMPETITOR':
                   newMessage = "他社の買取価格を監視しています。";
@@ -103,7 +107,7 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
           setCoPilotMessage(newMessage);
           setIsCoPilotVisible(true);
       }, 300);
-  }, [adminTab, currentRole]);
+  }, [adminTab, currentRole, isCoPilotEnabled]);
 
   const handleNavigate = (tab: any, id?: string) => {
       if (!allowedTabs.includes(tab)) {
@@ -118,7 +122,6 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
 
   const handlePosSuccess = () => { setEditingResId(null); setAdminTab('OPERATIONS'); window.location.reload(); };
 
-  // ★ 修正：メニューの要求レベル表記も実態に合わせて変更
   const ALL_MENU_ITEMS = [
       { id: 'HOME', icon: Icons.Home, label: 'ダッシュボード', reqRole: 'MANAGER〜' },
       { id: 'OPERATIONS', icon: Icons.Kanban, label: '現場状況管理', reqRole: 'FRONT/PLANT〜' },
@@ -168,6 +171,19 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
             <p className="text-[10px] font-mono text-white font-bold bg-gray-800 px-2 py-0.5 rounded-sm inline-block w-fit">
                [現在] ROLE: {currentRole}
             </p>
+            
+            {/* ★ AIアシストのON/OFFトグルを追加 */}
+            <div className="flex items-center justify-between mt-3 bg-white border border-gray-200 p-2 rounded-md shadow-sm">
+                <span className="text-xs font-bold text-gray-600 flex items-center gap-1.5">
+                    <span className="text-blue-500"><Icons.Brain /></span> AI Co-Pilot
+                </span>
+                <button 
+                    onClick={() => setIsCoPilotEnabled(!isCoPilotEnabled)}
+                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${isCoPilotEnabled ? 'bg-blue-600' : 'bg-gray-300'}`}
+                >
+                    <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${isCoPilotEnabled ? 'translate-x-5' : 'translate-x-1'}`} />
+                </button>
+            </div>
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
@@ -213,30 +229,32 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
          {adminTab === 'CLIENT_DETAIL' && selectedClientName && <AdminClientDetail data={data} clientName={selectedClientName} onBack={() => handleNavigate('HOME')} />}
       </main>
 
-      {/* AI Co-Pilot */}
-      <div className="fixed bottom-4 right-4 md:bottom-8 md:right-8 z-50 flex items-end gap-3 pointer-events-none">
-          <div className={`transition-all duration-500 ease-out origin-bottom-right pointer-events-auto ${isCoPilotVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'}`}>
-              <div className="bg-white border border-blue-200 shadow-2xl rounded-2xl rounded-br-sm p-4 w-64 md:w-72 relative">
-                  <div className="flex justify-between items-start mb-1">
-                      <span className="text-[10px] font-bold text-blue-600 tracking-widest uppercase">FACTORY OS Co-Pilot</span>
-                      <button onClick={() => setIsCoPilotVisible(false)} className="text-gray-400 hover:text-gray-600"><Icons.X /></button>
+      {/* ★ AI Co-Pilot (トグルがONの場合のみレンダリング) */}
+      {isCoPilotEnabled && (
+          <div className="fixed bottom-4 right-4 md:bottom-8 md:right-8 z-50 flex items-end gap-3 pointer-events-none">
+              <div className={`transition-all duration-500 ease-out origin-bottom-right pointer-events-auto ${isCoPilotVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'}`}>
+                  <div className="bg-white border border-blue-200 shadow-2xl rounded-2xl rounded-br-sm p-4 w-64 md:w-72 relative">
+                      <div className="flex justify-between items-start mb-1">
+                          <span className="text-[10px] font-bold text-blue-600 tracking-widest uppercase">FACTORY OS Co-Pilot</span>
+                          <button onClick={() => setIsCoPilotVisible(false)} className="text-gray-400 hover:text-gray-600"><Icons.X /></button>
+                      </div>
+                      <p className="text-sm font-bold text-gray-800 leading-relaxed">
+                          {coPilotMessage}
+                      </p>
+                      <div className="absolute -bottom-2 right-4 w-4 h-4 bg-white border-b border-r border-blue-200 transform rotate-45"></div>
                   </div>
-                  <p className="text-sm font-bold text-gray-800 leading-relaxed">
-                      {coPilotMessage}
-                  </p>
-                  <div className="absolute -bottom-2 right-4 w-4 h-4 bg-white border-b border-r border-blue-200 transform rotate-45"></div>
               </div>
+              
+              <button 
+                  onClick={() => setIsCoPilotVisible(!isCoPilotVisible)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white shadow-xl rounded-full p-4 transition-transform hover:scale-105 pointer-events-auto flex-shrink-0"
+              >
+                  <div className={isCoPilotVisible ? 'animate-pulse' : ''}>
+                      <Icons.Brain />
+                  </div>
+              </button>
           </div>
-          
-          <button 
-              onClick={() => setIsCoPilotVisible(!isCoPilotVisible)}
-              className="bg-blue-600 hover:bg-blue-700 shadow-xl rounded-full p-4 transition-transform hover:scale-105 pointer-events-auto flex-shrink-0"
-          >
-              <div className={isCoPilotVisible ? 'animate-pulse' : ''}>
-                  <Icons.Brain />
-              </div>
-          </button>
-      </div>
+      )}
 
     </div>
   );
