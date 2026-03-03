@@ -113,6 +113,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       setIsModalOpen(true);
   };
 
+  // ★ 修正: DB登録時にAI解析用の画像をDriveにアップロードし、URLをセットする
   const handleSave = async () => {
     setIsSubmitting(true);
     let sheetName = '';
@@ -122,22 +123,45 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     if (activeTab === 'CLIENTS') sheetName = 'Clients';
     if (activeTab === 'STAFF') sheetName = 'Staff';
 
-    const action = editingItem.id ? 'UPDATE_DB_RECORD' : 'ADD_DB_RECORD';
-    
-    const payload = editingItem.id 
-      ? { action, sheetName, recordId: editingItem.id, updates: getUpdatesMap(editingItem, activeTab) }
-      : { action, sheetName, data: editingItem };
+    let finalItem = { ...editingItem };
+
+    // AIアシストで取得した保留画像があれば、レコード保存前にDriveへアップロードしてURL化する
+    if (finalItem._pendingImageData1) {
+        try {
+            const res = await fetch('/api/gas', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'UPLOAD_IMAGE', data: finalItem._pendingImageData1, mimeType: 'image/jpeg', fileName: `master_sec_${Date.now()}.jpg` })
+            });
+            const r = await res.json();
+            if (r.status === 'success') finalItem.image1 = r.url;
+        } catch(e) { console.error("画像1の保存に失敗"); }
+    }
+    if (finalItem._pendingImageData2) {
+        try {
+            const res = await fetch('/api/gas', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'UPLOAD_IMAGE', data: finalItem._pendingImageData2, mimeType: 'image/jpeg', fileName: `master_prt_${Date.now()}.jpg` })
+            });
+            const r = await res.json();
+            if (r.status === 'success') finalItem.image2 = r.url;
+        } catch(e) { console.error("画像2の保存に失敗"); }
+    }
+
+    const action = finalItem.id ? 'UPDATE_DB_RECORD' : 'ADD_DB_RECORD';
+    const payload = finalItem.id 
+      ? { action, sheetName, recordId: finalItem.id, updates: getUpdatesMap(finalItem, activeTab) }
+      : { action, sheetName, data: finalItem };
 
     try {
       const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const result = await res.json();
       if (result.status === 'success') {
-        alert('保存しました');
+        alert('マスターに登録しました');
         window.location.reload();
       } else {
         alert('エラー: ' + result.message);
       }
-    } catch (e) { alert('通信エラー'); }
+    } catch (e) { alert('通信エラーが発生しました'); }
     setIsSubmitting(false);
   };
 
@@ -165,6 +189,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         1: item.maker, 2: item.name, 3: item.year, 4: item.sq, 
         5: item.sampleTotal, 6: item.sampleCopper,
         7: item.core, 8: item.conductor, 9: item.ratio, 10: item.memo 
+        // 既存のレコード更新時はここでは画像URLは更新しない（別途UPLOAD_IMAGEで直接叩かれるため）
     };
     if (tab === 'UNKNOWN') return { 1: item.name, 2: item.ratio, 3: item.reason }; 
     if (tab === 'CASTINGS') return { 1: item.name, 2: item.type, 4: item.ratio };
@@ -209,7 +234,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
   const runAiExtraction = async () => {
     if (!imgData1) return alert('最低1枚の画像（断面など）をアップロードしてください');
-    
     setAiStatus('ANALYZING');
     setAiProgressStep(1); 
 
@@ -233,7 +257,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
       setTimeout(() => {
           if (result.status === 'success') {
-              // ★ 音声読み上げを簡潔に、スピード1.4に統一
               if (isVoiceOutputEnabled && 'speechSynthesis' in window) {
                   window.speechSynthesis.cancel();
                   const makerText = result.data.maker && result.data.maker !== '-' ? result.data.maker : 'メーカー不明';
@@ -403,9 +426,11 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const renderModalContent = () => {
     if (activeTab === 'WIRES' || activeTab === 'UNKNOWN') return (
       <div className="space-y-4">
+        {/* ★ UIメッセージの変更 */}
         {editingItem._pendingImageData1 && (
-            <div className="bg-blue-50 border border-blue-200 p-3 rounded-sm text-xs text-blue-800 font-bold flex items-center gap-2">
-                <Icons.Sparkles /> 画像からAIが仕様を自動入力しました。サンプルを実測して確定してください。
+            <div className="bg-blue-50 border border-blue-200 p-3 rounded-sm text-xs text-blue-800 font-bold flex flex-col gap-1">
+                <div className="flex items-center gap-2"><Icons.Sparkles /> 画像からAIが仕様を自動入力しました。</div>
+                <div className="text-gray-600 ml-6 font-normal">※ 下の「確定してマスターに登録」を押すと、アップロードした画像も同時に保存されます。</div>
             </div>
         )}
         
@@ -588,7 +613,7 @@ return (
         </div>
       </div>
 
-      {/* ★ AIアシスト用の画像アップロードモーダル (分割ボタン) */}
+      {/* ★ AIアシスト用の画像アップロードモーダル */}
       {isAiModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-gray-900 w-full max-w-2xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col">
@@ -696,6 +721,7 @@ return (
                     <button onClick={runAiExtraction} disabled={!imgData1} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-md flex justify-center items-center gap-2 disabled:bg-gray-700 transition shadow-lg text-lg">
                         <Icons.Sparkles />解析してデータを埋める
                     </button>
+
                 </div>
               )}
             </div>
