@@ -54,12 +54,15 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     setFilterType('');
   };
 
-  const getDriveImageUrl = (url: string) => {
+  const getDriveImageUrl = (url: string, asThumbnail: boolean = true) => {
       if (!url) return '';
       if (url.includes('drive.google.com/uc')) {
           const match = url.match(/id=([^&]+)/);
           if (match && match[1]) {
-              return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`;
+              // サムネイル表示か、フルサイズ表示かでURLを切り替える
+              return asThumbnail 
+                  ? `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`
+                  : `https://drive.google.com/uc?id=${match[1]}`;
           }
       }
       return url;
@@ -114,7 +117,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   };
 
   const handleSave = async () => {
-    // ★ 最終防衛ライン: 手動入力時も含めた重複チェック
     if (!editingItem.id && activeTab === 'WIRES') {
         const isDuplicate = wires.some((w:any) => 
             (w.maker || '') === (editingItem.maker || '') && 
@@ -268,38 +270,11 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
       setTimeout(() => {
           if (result.status === 'success') {
-              const maker = result.data.maker === '-' ? '' : result.data.maker;
-              const name = result.data.name === '-' ? '' : result.data.name;
-              const sq = result.data.size === '-' ? '' : result.data.size;
-              const core = result.data.core === '-' ? '' : result.data.core;
-
-              // ★ 既存マスターとの重複チェックインターロック
-              const isDuplicate = wires.some((w:any) => 
-                  (w.maker || '') === maker && 
-                  (w.name || '') === name && 
-                  (String(w.sq) || '') === String(sq) && 
-                  (String(w.core) || '') === String(core)
-              );
-
-              if (isDuplicate) {
-                  if (isVoiceOutputEnabled && 'speechSynthesis' in window) {
-                      window.speechSynthesis.cancel();
-                      const speakText = `この線種は既に登録されています。`;
-                      const utterance = new SpeechSynthesisUtterance(speakText);
-                      utterance.lang = 'ja-JP';
-                      utterance.rate = 1.4;
-                      window.speechSynthesis.speak(utterance);
-                  }
-                  alert(`⚠️ この線種は既に登録されています。\n【 ${maker} ${name} ${sq ? sq+'sq' : ''} ${core ? core+'C' : ''} 】\n\n重複を避けるため、一覧から既存のデータを編集（画像の追加など）してください。`);
-                  setIsAiModalOpen(false);
-                  setImgData1(''); setImgData2(''); setAiProgressStep(0);
-                  setAiStatus('IDLE');
-                  return;
-              }
-
               if (isVoiceOutputEnabled && 'speechSynthesis' in window) {
                   window.speechSynthesis.cancel();
-                  const speakText = `抽出完了。メーカー、${maker || '不明'}。品名、${name || '不明'}。`;
+                  const makerText = result.data.maker && result.data.maker !== '-' ? result.data.maker : 'メーカー不明';
+                  const nameText = result.data.name && result.data.name !== '-' ? result.data.name : '品名不明';
+                  const speakText = `抽出完了。メーカー、${makerText}。品名、${nameText}。`;
                   const utterance = new SpeechSynthesisUtterance(speakText);
                   utterance.lang = 'ja-JP';
                   utterance.rate = 1.4;
@@ -307,11 +282,11 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
               }
 
               setEditingItem({
-                  maker: maker,
-                  name: name,
+                  maker: result.data.maker === '-' ? '' : result.data.maker,
+                  name: result.data.name === '-' ? '' : result.data.name,
                   year: result.data.year === '-' ? '' : result.data.year,
-                  sq: sq,
-                  core: core,
+                  sq: result.data.size === '-' ? '' : result.data.size,
+                  core: result.data.core === '-' ? '' : result.data.core,
                   conductor: result.data.conductor === '-' ? '' : result.data.conductor,
                   ratio: '',
                   memo: '【AIアシスト抽出】\n画像を元に仕様を自動入力しました。実測による歩留まりを入力してください。',
@@ -396,11 +371,18 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                         {[11, 12].map(colIdx => (
                             <div key={colIdx} className="relative w-10 h-10 border border-gray-300 rounded-sm overflow-hidden bg-gray-100 flex items-center justify-center group">
                                 {item[`image${colIdx-10}`] ? (
-                                    <img src={getDriveImageUrl(item[`image${colIdx-10}`])} className="w-full h-full object-cover" alt="Wire" />
+                                    // ★ 修正：サムネイル画像クリックで、別タブでフルサイズ表示
+                                    <a href={getDriveImageUrl(item[`image${colIdx-10}`], false)} target="_blank" rel="noopener noreferrer" className="w-full h-full block">
+                                        <img src={getDriveImageUrl(item[`image${colIdx-10}`])} className="w-full h-full object-cover group-hover:scale-110 transition-transform cursor-zoom-in" alt="Wire" />
+                                    </a>
                                 ) : (
                                     <Icons.Image />
                                 )}
-                                <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleImageUpload(e, item.id, colIdx, 'Products_Wire')} />
+                                {/* アップロードボタンは画像の右上に小さくオーバーレイ配置 */}
+                                <label className="absolute bottom-0 right-0 bg-black/60 text-white p-0.5 rounded-tl-sm cursor-pointer hover:bg-blue-600 transition" title="画像をアップロード/上書き">
+                                    <Icons.Edit />
+                                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, item.id, colIdx, 'Products_Wire')} />
+                                </label>
                                 {uploadingImageId === `${item.id}-${colIdx}` && <div className="absolute inset-0 bg-black/50 flex items-center justify-center"><Icons.Refresh /></div>}
                             </div>
                         ))}
@@ -464,6 +446,32 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const renderModalContent = () => {
     if (activeTab === 'WIRES' || activeTab === 'UNKNOWN') return (
       <div className="space-y-4">
+        
+        {/* ★ 修正: モーダル上部に既存の登録画像を大きくプレビュー表示する機能を追加 */}
+        {editingItem.id && (editingItem.image1 || editingItem.image2) && !editingItem._pendingImageData1 && (
+            <div className="bg-gray-50 p-4 border border-gray-200 rounded-sm">
+                <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-widest">現在登録されているマスター画像</label>
+                <div className="flex gap-4">
+                    {editingItem.image1 && (
+                        <div className="flex-1">
+                            <p className="text-[10px] text-gray-400 mb-1">画像1 (断面など)</p>
+                            <a href={getDriveImageUrl(editingItem.image1, false)} target="_blank" rel="noopener noreferrer">
+                                <img src={getDriveImageUrl(editingItem.image1, false)} alt="master img 1" className="w-full h-32 md:h-48 object-cover rounded-sm border border-gray-300 shadow-sm hover:opacity-80 transition cursor-zoom-in" />
+                            </a>
+                        </div>
+                    )}
+                    {editingItem.image2 && (
+                        <div className="flex-1">
+                            <p className="text-[10px] text-gray-400 mb-1">画像2 (印字など)</p>
+                            <a href={getDriveImageUrl(editingItem.image2, false)} target="_blank" rel="noopener noreferrer">
+                                <img src={getDriveImageUrl(editingItem.image2, false)} alt="master img 2" className="w-full h-32 md:h-48 object-cover rounded-sm border border-gray-300 shadow-sm hover:opacity-80 transition cursor-zoom-in" />
+                            </a>
+                        </div>
+                    )}
+                </div>
+            </div>
+        )}
+
         {editingItem._pendingImageData1 && (
             <div className="bg-blue-50 border border-blue-200 p-3 rounded-sm text-xs text-blue-800 font-bold flex flex-col gap-1">
                 <div className="flex items-center gap-2"><Icons.Sparkles /> 画像からAIが仕様を自動入力しました。</div>
@@ -650,7 +658,7 @@ return (
         </div>
       </div>
 
-      {/* ★ AIアシスト用の画像アップロードモーダル (分割ボタン) */}
+      {/* ★ AIアシスト用の画像アップロードモーダル */}
       {isAiModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-gray-900 w-full max-w-2xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col">
@@ -696,6 +704,7 @@ return (
                     </p>
 
                     <div className="flex flex-col md:flex-row gap-4 mb-6">
+                        {/* ★ 1. 断面画像 (プレビュー機能付き) */}
                         <div className={`flex-1 p-4 border-2 border-dashed rounded-md flex flex-col items-center justify-center transition-all relative overflow-hidden ${imgData1 ? 'border-blue-500 bg-blue-900/20 p-2' : 'border-gray-600 bg-gray-800/50'}`}>
                             {imgData1 ? (
                                 <div className="w-full flex flex-col items-center">
@@ -724,6 +733,7 @@ return (
                             )}
                         </div>
 
+                        {/* ★ 2. 表面印字画像 (プレビュー機能付き) */}
                         <div className={`flex-1 p-4 border-2 border-dashed rounded-md flex flex-col items-center justify-center transition-all relative overflow-hidden ${imgData2 ? 'border-blue-500 bg-blue-900/20 p-2' : 'border-gray-600 bg-gray-800/50'}`}>
                             {imgData2 ? (
                                 <div className="w-full flex flex-col items-center">
