@@ -50,8 +50,10 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
   const [selectedClientName, setSelectedClientName] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // ★ AI Co-Pilot機能のマスターON/OFFスイッチ
+  // AI Co-Pilot & 音声読み上げトグル
   const [isCoPilotEnabled, setIsCoPilotEnabled] = useState(true);
+  const [isVoiceOutputEnabled, setIsVoiceOutputEnabled] = useState(true); // ★ 追加: 音声読み上げの一括管理
+  
   const [coPilotMessage, setCoPilotMessage] = useState("");
   const [isCoPilotVisible, setIsCoPilotVisible] = useState(false);
 
@@ -69,7 +71,6 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
       if (data?.reservations) { setLocalReservations(data.reservations); }
   }, [data?.reservations]);
 
-  // AI Co-Pilot メッセージ自動生成 (機能が有効な場合のみ)
   useEffect(() => {
       if (!isCoPilotEnabled) {
           setIsCoPilotVisible(false);
@@ -162,7 +163,6 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
             <h1 className="text-xl font-black tracking-tighter font-serif">FACTORY OS</h1>
         </div>
         
-        {/* ログインユーザー情報の表示 */}
         <div className="px-5 pb-4 border-b border-gray-200 flex flex-col gap-1">
             <div className="flex items-center gap-2">
                 <p className="text-sm font-bold text-gray-800 truncate">{user?.name || user?.companyName || 'スタッフ'}</p>
@@ -172,17 +172,30 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
                [現在] ROLE: {currentRole}
             </p>
             
-            {/* ★ AIアシストのON/OFFトグルを追加 */}
-            <div className="flex items-center justify-between mt-3 bg-white border border-gray-200 p-2 rounded-md shadow-sm">
-                <span className="text-xs font-bold text-gray-600 flex items-center gap-1.5">
-                    <span className="text-blue-500"><Icons.Brain /></span> AI Co-Pilot
-                </span>
-                <button 
-                    onClick={() => setIsCoPilotEnabled(!isCoPilotEnabled)}
-                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${isCoPilotEnabled ? 'bg-blue-600' : 'bg-gray-300'}`}
-                >
-                    <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${isCoPilotEnabled ? 'translate-x-5' : 'translate-x-1'}`} />
-                </button>
+            <div className="flex flex-col gap-2 mt-3">
+                <div className="flex items-center justify-between bg-white border border-gray-200 p-2 rounded-md shadow-sm">
+                    <span className="text-xs font-bold text-gray-600 flex items-center gap-1.5">
+                        <span className="text-blue-500"><Icons.Brain /></span> AI Co-Pilot
+                    </span>
+                    <button 
+                        onClick={() => setIsCoPilotEnabled(!isCoPilotEnabled)}
+                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${isCoPilotEnabled ? 'bg-blue-600' : 'bg-gray-300'}`}
+                    >
+                        <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${isCoPilotEnabled ? 'translate-x-5' : 'translate-x-1'}`} />
+                    </button>
+                </div>
+                {/* ★ 音声読み上げON/OFFトグルを追加 */}
+                <div className="flex items-center justify-between bg-white border border-gray-200 p-2 rounded-md shadow-sm">
+                    <span className="text-xs font-bold text-gray-600 flex items-center gap-1.5">
+                        <span className="text-blue-500">🔊</span> 音声読み上げ
+                    </span>
+                    <button 
+                        onClick={() => setIsVoiceOutputEnabled(!isVoiceOutputEnabled)}
+                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${isVoiceOutputEnabled ? 'bg-blue-600' : 'bg-gray-300'}`}
+                    >
+                        <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${isVoiceOutputEnabled ? 'translate-x-5' : 'translate-x-1'}`} />
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -221,15 +234,16 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
       <main className="flex-1 overflow-y-auto bg-[#FFFFFF] p-4 md:p-8 lg:p-10 flex flex-col relative w-full selection:bg-red-100 selection:text-red-900 pb-32 md:pb-10">
          {adminTab === 'HOME' && <AdminHome data={data} localReservations={localReservations} onNavigate={handleNavigate} />}
          {adminTab === 'OPERATIONS' && <AdminKanban data={data} onSuccess={() => {}} />}
-         {adminTab === 'POS' && <AdminPos data={data} editingResId={editingResId} localReservations={localReservations} onSuccess={handlePosSuccess} onClear={() => setEditingResId(null)} />}
+         {/* ★ PropsとしてisVoiceOutputEnabledを渡す */}
+         {adminTab === 'POS' && <AdminPos data={data} editingResId={editingResId} localReservations={localReservations} onSuccess={handlePosSuccess} onClear={() => setEditingResId(null)} isVoiceOutputEnabled={isVoiceOutputEnabled} />}
          {adminTab === 'PRODUCTION' && <AdminProduction data={data} localReservations={localReservations} />}
          {adminTab === 'COMPETITOR' && <AdminCompetitor data={data} />}
          {adminTab === 'SALES' && <AdminSales data={data} />}
-         {adminTab === 'DATABASE' && <AdminDatabase data={data} />}
+         {/* ★ PropsとしてisVoiceOutputEnabledを渡す */}
+         {adminTab === 'DATABASE' && <AdminDatabase data={data} isVoiceOutputEnabled={isVoiceOutputEnabled} />}
          {adminTab === 'CLIENT_DETAIL' && selectedClientName && <AdminClientDetail data={data} clientName={selectedClientName} onBack={() => handleNavigate('HOME')} />}
       </main>
 
-      {/* ★ AI Co-Pilot (トグルがONの場合のみレンダリング) */}
       {isCoPilotEnabled && (
           <div className="fixed bottom-4 right-4 md:bottom-8 md:right-8 z-50 flex items-end gap-3 pointer-events-none">
               <div className={`transition-all duration-500 ease-out origin-bottom-right pointer-events-auto ${isCoPilotVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'}`}>
