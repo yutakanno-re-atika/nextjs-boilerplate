@@ -39,7 +39,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   const [voiceText, setVoiceText] = useState('');
   const [isProcessingVoice, setIsProcessingVoice] = useState(false);
 
-  // ★ 音声読み上げ機能のON/OFFステート
   const [isVoiceOutputEnabled, setIsVoiceOutputEnabled] = useState(true);
 
   const [simConfig, setSimConfig] = useState({
@@ -178,15 +177,15 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                 showToast('既存マスターと一致', `「${result.data.wireType}」として査定しました。`, 'info');
             }
 
-            // ★ Web Speech API による音声読み上げ処理
+            // ★ Web Speech API による音声読み上げ処理 (スピードを 1.4 に向上)
             if (isVoiceOutputEnabled && 'speechSynthesis' in window) {
-                window.speechSynthesis.cancel(); // 前の音声をクリア
+                window.speechSynthesis.cancel();
                 const speakText = result.data.isNewFlag
                     ? `AI査定完了。未知の線種として、${result.data.wireType} を仮登録しました。理由は、${result.data.reason} です。`
                     : `AI査定完了。マスターデータから、${result.data.wireType} と特定しました。理由は、${result.data.reason} です。`;
                 const utterance = new SpeechSynthesisUtterance(speakText);
                 utterance.lang = 'ja-JP';
-                utterance.rate = 1.1; // 少し早めのテンポ
+                utterance.rate = 1.4; // スピードアップ
                 window.speechSynthesis.speak(utterance);
             }
 
@@ -461,7 +460,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         </div>
       </div>
 
-      {/* ★ AI モーダル（音声ON/OFFスイッチ追加） */}
+      {/* ★ AI モーダル（カメラ・フォルダ選択分割版） */}
       {isAiModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-gray-900 w-full max-w-2xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col">
@@ -542,7 +541,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                         <Icons.Sparkles />解析してカートに追加する
                     </button>
 
-                    {/* ★ 音声読み上げON/OFFトグル */}
                     <div className="mt-4 flex justify-center">
                         <label className="flex items-center gap-2 text-sm text-gray-400 cursor-pointer hover:text-gray-300 transition-colors">
                             <input 
