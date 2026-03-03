@@ -10,26 +10,21 @@ const Icons = {
 
 export const AdminClientDetail = ({ data, clientName, onBack }: { data: any, clientName: string, onBack: () => void }) => {
   
-  // 該当顧客の受付・買取履歴
   const clientReservations = useMemo(() => {
       return (data?.reservations || [])
           .filter((r: any) => r.memberName === clientName && (r.status === 'COMPLETED' || r.status === 'ARCHIVED'))
           .sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
   }, [data?.reservations, clientName]);
 
-  // 該当顧客のナゲット加工履歴
   const clientProductions = useMemo(() => {
       return (data?.productions || [])
           .filter((p: any) => p.memberName === clientName)
-          // ★ 修正: date から createdAt へ変更
           .sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
   }, [data?.productions, clientName]);
 
-  // 総計データの算出
   const totalPurchaseAmount = clientReservations.reduce((sum, r) => sum + (Number(r.totalEstimate) || 0), 0);
   const totalPurchaseWeight = clientProductions.reduce((sum, p) => sum + (Number(p.inputWeight) || 0), 0);
   
-  // 平均歩留まり差分
   let yieldDiffSum = 0;
   let yieldCount = 0;
   clientProductions.forEach(p => {
@@ -66,7 +61,6 @@ export const AdminClientDetail = ({ data, clientName, onBack }: { data: any, cli
         </div>
       </header>
 
-      {/* 統計カード */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-between">
               <p className="text-sm font-bold text-gray-500 mb-2 flex items-center gap-2"><Icons.Scale /> 累計 買取金額</p>
@@ -96,7 +90,6 @@ export const AdminClientDetail = ({ data, clientName, onBack }: { data: any, cli
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 flex-1 min-h-[500px]">
-          {/* 左側：買取履歴 */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col overflow-hidden">
               <div className="p-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
                   <h3 className="text-lg font-bold text-gray-900">🛒 過去の買取履歴</h3>
@@ -124,7 +117,6 @@ export const AdminClientDetail = ({ data, clientName, onBack }: { data: any, cli
               </div>
           </div>
 
-          {/* 右側：加工実績 */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col overflow-hidden">
               <div className="p-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
                   <h3 className="text-lg font-bold text-gray-900">⚡ ナゲット加工実績 (品質評価)</h3>
@@ -148,7 +140,6 @@ export const AdminClientDetail = ({ data, clientName, onBack }: { data: any, cli
                           return (
                               <div key={prod.id} className="border border-gray-200 rounded-xl p-4 bg-white hover:border-[#D32F2F] hover:shadow-md transition">
                                   <div className="flex justify-between text-xs font-bold text-gray-500 mb-2">
-                                      {/* ★ 修正: createdAt へ変更 */}
                                       <span>{prod.createdAt ? String(prod.createdAt).substring(0, 16) : '日時不明'}</span>
                                       <span className="font-mono bg-gray-100 px-2 py-0.5 rounded">元荷物: {prod.reservationId}</span>
                                   </div>
