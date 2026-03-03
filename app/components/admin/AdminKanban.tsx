@@ -10,18 +10,19 @@ const Icons = {
   Refresh: () => <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
 };
 
-// ★追加：時間をスマートに表示するためのフォーマッター (MM/DD HH:mm)
+// ★修正：タイムゾーン問題を回避する安全な文字列切り出し
 const formatTimeShort = (timeStr: string) => {
   if (!timeStr) return '--/-- --:--';
-  try {
-    const d = new Date(timeStr);
-    if (isNaN(d.getTime())) return timeStr.substring(0, 16); // 万が一のフォールバック
-    const MM = String(d.getMonth() + 1).padStart(2, '0');
-    const DD = String(d.getDate()).padStart(2, '0');
-    const HH = String(d.getHours()).padStart(2, '0');
-    const mm = String(d.getMinutes()).padStart(2, '0');
+  const str = String(timeStr);
+  const match = str.match(/(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})[T\s](\d{1,2}):(\d{1,2})/);
+  if (match) {
+    const MM = match[2].padStart(2, '0');
+    const DD = match[3].padStart(2, '0');
+    const HH = match[4].padStart(2, '0');
+    const mm = match[5].padStart(2, '0');
     return `${MM}/${DD} ${HH}:${mm}`;
-  } catch(e) { return timeStr; }
+  }
+  return str.substring(0, 16);
 };
 
 // ローカルでの仮時間生成用
@@ -40,7 +41,6 @@ export const AdminKanban = ({ data }: { data: any }) => {
   const [isProcessingId, setIsProcessingId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // WN-800 専用の入力ステート
   const [inWeight, setInWeight] = useState<number | ''>('');
   const [outRed, setOutRed] = useState<number | ''>('');
   const [outMixed, setOutMixed] = useState<number | ''>('');
@@ -70,7 +70,6 @@ export const AdminKanban = ({ data }: { data: any }) => {
       
       if (result.status === 'success') {
         const nowStr = getLocalNow();
-        // ★修正：ステータス移動と同時に、updatedAtもローカルで即座に書き換える
         setReservations(prev => prev.map(r => r.id === id ? { ...r, status, updatedAt: nowStr } : r));
       } else {
         alert('GAS側のエラー: ' + result.message);
@@ -123,16 +122,13 @@ export const AdminKanban = ({ data }: { data: any }) => {
     };
 
     try {
-      // 1. 実績の保存
       const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const result = await res.json();
       
       if (result.status === 'success') {
-        // 2. ステータスを「完了」へ更新
         await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'UPDATE_RESERVATION_STATUS', reservationId: selectedRes.id, status: 'PROCESSED' }) });
         
         const nowStr = getLocalNow();
-        // ★修正：ローカルのStateを更新（履歴側にもタイムスタンプを持たせる）
         setReservations(prev => prev.filter(r => r.id !== selectedRes.id));
         setProductions(prev => [{ 
             memberName: selectedRes.memberName, 
@@ -178,7 +174,6 @@ export const AdminKanban = ({ data }: { data: any }) => {
           </div>
         </div>
         
-        {/* ★追加：タイムスタンプ表示エリア（控えめなグレーで表示） */}
         <div className="flex justify-between items-center text-[10px] text-gray-400 font-mono mb-3 bg-gray-50/50 p-1.5 rounded-sm border border-gray-100/50">
           <div className="flex items-center gap-1" title={`登録日時: ${res.createdAt}`}>
             <span>🕒</span> 登録 {formatTimeShort(res.createdAt)}
@@ -279,7 +274,6 @@ export const AdminKanban = ({ data }: { data: any }) => {
                   <tr key={i} className="hover:bg-gray-50">
                     <td className="p-3">
                       <div className="font-bold text-gray-800">{p.memberName}</div>
-                      {/* ★追加：履歴テーブルにも完了日時を小さく表示 */}
                       <div className="text-[10px] text-gray-400 font-mono mt-0.5">{formatTimeShort(p.createdAt)}</div>
                     </td>
                     <td className="p-3 text-right text-gray-600 font-mono align-middle">{p.inputWeight}kg</td>
