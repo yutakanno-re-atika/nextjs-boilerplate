@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef } from 'react';
 
 const Icons = {
   Plus: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>,
@@ -14,10 +14,25 @@ const Icons = {
   Filter: () => <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>,
   Camera: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
   UploadCloud: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>,
-  // ★ ソート用アイコン
   SortAsc: () => <svg className="w-3 h-3 inline-block ml-1 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 15l7-7 7 7" /></svg>,
   SortDesc: () => <svg className="w-3 h-3 inline-block ml-1 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" /></svg>,
   SortNone: () => <svg className="w-3 h-3 inline-block ml-1 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" /></svg>
+};
+
+// ★ 安全な時間フォーマッタ
+const formatTimeShort = (timeStr: string) => {
+  if (!timeStr) return '-';
+  const str = String(timeStr);
+  const match = str.match(/(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})[T\s](\d{1,2}):(\d{1,2})/);
+  if (match) {
+    const YY = match[1].substring(2);
+    const MM = match[2].padStart(2, '0');
+    const DD = match[3].padStart(2, '0');
+    const HH = match[4].padStart(2, '0');
+    const mm = match[5].padStart(2, '0');
+    return `${YY}/${MM}/${DD} ${HH}:${mm}`;
+  }
+  return str.substring(0, 16);
 };
 
 export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoiceOutputEnabled?: boolean }) => {
@@ -26,7 +41,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const [filterMaker, setFilterMaker] = useState('');
   const [filterType, setFilterType] = useState('');
 
-  // ★ 追加：ソート機能のステート
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -59,7 +73,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     setSearchTerm('');
     setFilterMaker('');
     setFilterType('');
-    setSortConfig(null); // タブ切り替え時にソートをリセット
+    setSortConfig(null); 
   };
 
   const getDriveImageUrl = (url: string, asThumbnail: boolean = true) => {
@@ -331,7 +345,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     e.target.value = '';
   };
 
-  // ★ 追加：ソートの実行関数
   const handleSort = (key: string) => {
     let direction: 'asc' | 'desc' = 'asc';
     if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
@@ -340,14 +353,12 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     setSortConfig({ key, direction });
   };
 
-  // ★ 追加：ソートアイコンを生成するコンポーネント
   const SortIcon = ({ columnKey }: { columnKey: string }) => {
     if (sortConfig?.key !== columnKey) return <Icons.SortNone />;
     return sortConfig.direction === 'asc' ? <Icons.SortAsc /> : <Icons.SortDesc />;
   };
 
   const renderTable = () => {
-    // 1. 検索・フィルター処理
     let filteredData = [];
     
     if (activeTab === 'WIRES') {
@@ -368,14 +379,12 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     if (activeTab === 'CLIENTS') filteredData = clients.filter((c:any) => c.name.includes(searchTerm));
     if (activeTab === 'STAFF') filteredData = staffs.filter((s:any) => s.name.includes(searchTerm));
 
-    // 2. ソート処理
     let sortedData = [...filteredData];
     if (sortConfig !== null) {
       sortedData.sort((a, b) => {
         let aValue = a[sortConfig.key];
         let bValue = b[sortConfig.key];
 
-        // 数値として扱えるものは数値比較（ratio, points, rate等）
         if (!isNaN(Number(aValue)) && !isNaN(Number(bValue))) {
              aValue = Number(aValue);
              bValue = Number(bValue);
@@ -391,11 +400,11 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     }
 
     return (
-      <div className="overflow-x-auto">
+      <div className="h-full overflow-y-auto relative">
         <table className="w-full text-left border-collapse text-sm whitespace-nowrap md:whitespace-normal">
-          <thead>
-            {/* ★ 修正：各ヘッダーをクリック可能にし、ソートアイコンを配置 */}
-            <tr className="bg-gray-100 text-gray-500 uppercase tracking-wider text-xs">
+          {/* ★ 修正：thead に sticky と z-20 を付与してスクロール追従させる */}
+          <thead className="bg-gray-100 text-gray-500 uppercase tracking-wider text-xs sticky top-0 z-20 shadow-sm">
+            <tr>
               {activeTab === 'WIRES' && (
                   <>
                       <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('maker')}>メーカー <SortIcon columnKey="maker" /></th>
@@ -436,6 +445,8 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                       <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('status')}>ステータス <SortIcon columnKey="status" /></th>
                   </>
               )}
+              {/* ★ 修正：登録日・更新日を追加表示 */}
+              <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('createdAt')}>登録/更新 <SortIcon columnKey="createdAt" /></th>
               <th className="p-3 text-right">操作</th>
             </tr>
           </thead>
@@ -449,8 +460,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                     <td className="p-3 text-gray-600">{item.year || '-'}</td>
                     <td className="p-3 text-gray-600">{item.sq || '-'} sq / {item.core || '-'}C</td>
                     <td className="p-3 font-mono font-bold text-blue-600 text-base">{item.ratio}%</td>
-                    
-                    {/* ★ 修正：画像を大きくし、閲覧と編集(アップロード)を分離 */}
                     <td className="p-3">
                         <div className="flex gap-4">
                             {[11, 12].map(colIdx => {
@@ -481,7 +490,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
                 {activeTab === 'UNKNOWN' && (
                   <>
-                    <td className="p-3 text-xs text-gray-500 font-mono">{item.createdAt?.split(' ')[0]}</td>
+                    <td className="p-3 text-xs text-gray-500 font-mono">{formatTimeShort(item.createdAt)}</td>
                     <td className="p-3 font-bold text-orange-700 flex items-center gap-1"><Icons.Sparkles /> {item.name}</td>
                     <td className="p-3 font-mono font-black text-orange-600 text-lg">{item.ratio}%</td>
                     <td className="p-3 text-xs text-gray-600 leading-relaxed bg-orange-50/50 rounded-sm m-1 whitespace-normal">{item.reason}</td>
@@ -513,7 +522,15 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                   </>
                 )}
 
-                <td className="p-3 text-right">
+                {/* ★ 修正：登録日・更新日を改行してスマートに表示 */}
+                <td className="p-3 text-[10px] text-gray-400 font-mono align-top">
+                    <div className="flex flex-col gap-1">
+                        <span title="登録日">➕ {formatTimeShort(item.createdAt)}</span>
+                        <span title="更新日">🔄 {formatTimeShort(item.updatedAt)}</span>
+                    </div>
+                </td>
+
+                <td className="p-3 text-right align-top">
                   <div className="flex justify-end gap-2">
                     {activeTab === 'UNKNOWN' && (
                         <button onClick={() => handlePromoteToWire(item)} className="p-2 text-white bg-blue-600 hover:bg-blue-700 rounded-sm flex items-center gap-1 text-xs font-bold transition shadow-sm">
@@ -697,8 +714,8 @@ return (
         </div>
       </header>
 
-      <div className="bg-white border border-gray-200 shadow-sm rounded-sm flex-1 flex flex-col overflow-hidden">
-        <div className="p-4 border-b border-gray-200 bg-gray-50 flex flex-col md:flex-row gap-4 justify-between">
+      <div className="bg-white border border-gray-200 shadow-sm rounded-sm flex-1 flex flex-col overflow-hidden relative">
+        <div className="p-4 border-b border-gray-200 bg-gray-50 flex flex-col md:flex-row gap-4 justify-between z-30">
           <div className="flex flex-1 gap-2 flex-col md:flex-row">
               <div className="relative flex-1 max-w-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -741,8 +758,10 @@ return (
               </div>
           )}
         </div>
-        <div className="flex-1 overflow-y-auto">
-          {renderTable()}
+        
+        {/* ★ テーブル描画エリア */}
+        <div className="flex-1 overflow-hidden relative">
+            {renderTable()}
         </div>
       </div>
 
@@ -861,7 +880,7 @@ return (
 
       {/* 編集・新規登録モーダル */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 md:p-0">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4 md:p-0">
           <div className="bg-white w-full max-w-2xl rounded-sm shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="p-5 border-b border-gray-200 flex justify-between items-center bg-gray-50">
               <h3 className="font-black text-gray-900 text-lg flex items-center gap-2">
