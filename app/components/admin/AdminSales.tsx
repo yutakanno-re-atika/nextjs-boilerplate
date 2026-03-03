@@ -11,18 +11,20 @@ const Icons = {
   Briefcase: () => <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
 };
 
-// ★追加：時間をスマートに表示するためのフォーマッター (MM/DD HH:mm)
+// ★修正：タイムゾーン問題を回避する安全な文字列切り出し
 const formatTimeShort = (timeStr: string) => {
   if (!timeStr) return '--/-- --:--';
-  try {
-    const d = new Date(timeStr);
-    if (isNaN(d.getTime())) return timeStr.substring(0, 16);
-    const MM = String(d.getMonth() + 1).padStart(2, '0');
-    const DD = String(d.getDate()).padStart(2, '0');
-    const HH = String(d.getHours()).padStart(2, '0');
-    const mm = String(d.getMinutes()).padStart(2, '0');
+  const str = String(timeStr);
+  // 例: "2026-03-03 17:46:35" または "2026/03/03 17:46"
+  const match = str.match(/(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})[T\s](\d{1,2}):(\d{1,2})/);
+  if (match) {
+    const MM = match[2].padStart(2, '0');
+    const DD = match[3].padStart(2, '0');
+    const HH = match[4].padStart(2, '0');
+    const mm = match[5].padStart(2, '0');
     return `${MM}/${DD} ${HH}:${mm}`;
-  } catch(e) { return timeStr; }
+  }
+  return str.substring(0, 16);
 };
 
 const ProvenanceBadge = ({ type }: { type: 'HUMAN' | 'AI_AUTO' | 'CO_OP' }) => {
@@ -39,7 +41,6 @@ export const AdminSales = ({ data }: { data: any }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPriority, setFilterPriority] = useState('ALL');
   
-  // ★ AIスナイパー用のステート
   const [isAiPanelOpen, setIsAiPanelOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [targetArea, setTargetArea] = useState('北海道札幌市');
@@ -54,7 +55,6 @@ export const AdminSales = ({ data }: { data: any }) => {
       return matchSearch && matchPriority;
   });
 
-  // ★ AIによる動的リードジェネレーション実行
   const handleGenerateLeads = async () => {
       if (!targetArea || !targetIndustry) {
           alert('エリアと業種を入力してください。');
@@ -79,7 +79,7 @@ export const AdminSales = ({ data }: { data: any }) => {
           const result = await res.json();
           if (result.status === 'success') {
               alert(`成功！ ${result.count}件の新規ターゲットを抽出しました。`);
-              window.location.reload(); // リロードして最新データを表示
+              window.location.reload(); 
           } else {
               alert('エラーが発生しました: ' + result.message);
           }
@@ -110,7 +110,6 @@ export const AdminSales = ({ data }: { data: any }) => {
         </div>
       </header>
 
-      {/* ★ AIスナイパー・コントロールパネル */}
       {isAiPanelOpen && (
           <div className="mb-8 bg-blue-50/50 border border-blue-200 p-6 rounded-sm shadow-inner relative overflow-hidden animate-in slide-in-from-top-4">
               <div className="absolute top-4 right-4"><ProvenanceBadge type="AI_AUTO" /></div>
@@ -158,7 +157,6 @@ export const AdminSales = ({ data }: { data: any }) => {
           </div>
       )}
 
-      {/* 検索・フィルター */}
       <div className="bg-gray-50 p-4 border border-gray-200 rounded-sm flex flex-col md:flex-row gap-4 mb-6 shadow-sm">
         <div className="flex-1 relative">
             <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><Icons.Search /></div>
@@ -185,7 +183,6 @@ export const AdminSales = ({ data }: { data: any }) => {
         </div>
       </div>
 
-      {/* ターゲットリスト */}
       <div className="bg-white border border-gray-200 rounded-sm shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[900px]">
@@ -202,7 +199,7 @@ export const AdminSales = ({ data }: { data: any }) => {
                         <tr><td colSpan={4} className="p-12 text-center text-gray-400 font-bold">ターゲットが見つかりません。AIスナイパーで抽出してください。</td></tr>
                     ) : (
                         filteredTargets.reverse().map((t: any) => {
-                            const isAi = t.memo?.includes('AI_AUTO') || t.source === 'AI_AUTO';
+                            const isAi = t.memo?.includes('AI_AUTO') || t.source === 'AI_AUTO' || t.memo?.includes('AIスナイパー');
                             return (
                                 <tr key={t.id} className="hover:bg-gray-50 transition group">
                                     <td className="p-4 align-top">
@@ -215,7 +212,6 @@ export const AdminSales = ({ data }: { data: any }) => {
                                             {t.industry || '業種不明'}
                                         </span>
                                         
-                                        {/* ★追加：タイムスタンプを企業名の下に控えめに表示 */}
                                         <div className="flex gap-3 mt-3 text-[10px] text-gray-400 font-mono">
                                             <span title={`抽出日時: ${t.createdAt}`}>🕒 {formatTimeShort(t.createdAt)}</span>
                                             <span title={`最終更新: ${t.updatedAt}`}>✏️ {formatTimeShort(t.updatedAt)}</span>
