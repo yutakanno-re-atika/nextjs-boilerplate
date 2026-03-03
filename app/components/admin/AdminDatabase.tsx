@@ -220,13 +220,15 @@ export const AdminDatabase = ({ data }: { data: any }) => {
       const result = await res.json();
       
       if (result.status === 'success') {
-          // ★ Web Speech API による音声読み上げ処理
+          // ★ Web Speech API による音声読み上げ処理 (超簡潔化＆スピード1.4)
           if (isVoiceOutputEnabled && 'speechSynthesis' in window) {
               window.speechSynthesis.cancel();
-              const speakText = `画像の解析が完了しました。メーカーは${result.data.maker === '-' ? '不明' : result.data.maker}、品名は${result.data.name === '-' ? '不明' : result.data.name}です。サンプルを計量して歩留まりを確定させてください。`;
+              const makerText = result.data.maker && result.data.maker !== '-' ? result.data.maker : 'メーカー不明';
+              const nameText = result.data.name && result.data.name !== '-' ? result.data.name : '品名不明';
+              const speakText = `解析完了。${makerText}、${nameText}。実測を行ってください。`;
               const utterance = new SpeechSynthesisUtterance(speakText);
               utterance.lang = 'ja-JP';
-              utterance.rate = 1.1;
+              utterance.rate = 1.4;
               window.speechSynthesis.speak(utterance);
           }
 
@@ -567,7 +569,7 @@ return (
         </div>
       </div>
 
-      {/* ★ AIアシスト用の画像アップロードモーダル */}
+      {/* ★ AIアシスト用の画像アップロードモーダル (分割ボタン) */}
       {isAiModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-gray-900 w-full max-w-2xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col">
@@ -613,6 +615,7 @@ return (
                     </p>
 
                     <div className="flex flex-col md:flex-row gap-4 mb-6">
+                        {/* 1. 断面画像 */}
                         <div className={`flex-1 p-4 border-2 border-dashed rounded-md flex flex-col items-center justify-center transition-all ${imgData1 ? 'border-blue-500 bg-blue-900/20' : 'border-gray-600 bg-gray-800/50'}`}>
                             <span className={`text-sm font-bold mb-4 ${imgData1 ? 'text-blue-400' : 'text-gray-300'}`}>
                                 {imgData1 ? '✅ 断面画像 (読込済)' : '1. 断面画像 (必須)'}
@@ -629,6 +632,7 @@ return (
                             </div>
                         </div>
 
+                        {/* 2. 表面印字画像 */}
                         <div className={`flex-1 p-4 border-2 border-dashed rounded-md flex flex-col items-center justify-center transition-all ${imgData2 ? 'border-blue-500 bg-blue-900/20' : 'border-gray-600 bg-gray-800/50'}`}>
                             <span className={`text-sm font-bold mb-4 ${imgData2 ? 'text-blue-400' : 'text-gray-300'}`}>
                                 {imgData2 ? '✅ 印字画像 (読込済)' : '2. 表面印字 (任意)'}
