@@ -1,11 +1,11 @@
 // @ts-nocheck
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 
 const Icons = {
     TrendingUp: () => <svg className="w-4 h-4 text-[#D32F2F]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>,
     TrendingDown: () => <svg className="w-4 h-4 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>,
     Minus: () => <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M20 12H4" /></svg>,
-    Truck: () => <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>,
+    Truck: () => <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4-4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>,
     Radar: () => <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>,
     Factory: () => <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>,
     Scale: () => <svg className="w-6 h-6 text-[#D32F2F]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>,
@@ -14,16 +14,16 @@ const Icons = {
     Print: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>,
     Refresh: () => <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
     Brain: () => <svg className="w-4 h-4 inline-block mr-1" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 18a8 8 0 110-16 8 8 0 010 16zm1-11h-2v2h2V9zm0 4h-2v6h2v-6z" /></svg>,
-    Camera: () => <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
-    UploadCloud: () => <svg className="w-8 h-8 text-blue-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+    Camera: () => <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+    UploadCloud: () => <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
 };
 
 const ProvenanceBadge = ({ type }: { type: 'HUMAN' | 'AI_AUTO' | 'CO_OP' }) => {
     const baseStyle = "inline-block px-1.5 py-0.5 text-[9px] font-mono font-bold tracking-widest rounded-sm text-white cursor-default shadow-sm";
     switch (type) {
-        case 'HUMAN': return <span className={`${baseStyle} bg-gray-900`} title="実測・確定データ">HUMAN</span>;
-        case 'CO_OP': return <span className={`${baseStyle} bg-gray-600`} title="AI＋人間 協調データ">CO-P</span>;
-        case 'AI_AUTO': return <span className={`${baseStyle} bg-gray-400`} title="AI予測・推論データ">AI</span>;
+        case 'HUMAN': return <span className={`${baseStyle} bg-gray-900`} title="実測・確定データ">実測</span>;
+        case 'CO_OP': return <span className={`${baseStyle} bg-gray-600`} title="AI＋人間 協調データ">AI+人</span>;
+        case 'AI_AUTO': return <span className={`${baseStyle} bg-gray-400`} title="AI予測・推論データ">AI推論</span>;
         default: return null;
     }
 };
@@ -68,16 +68,22 @@ const getDisplayName = (w: any) => {
     return name;
 };
 
-// ★修正：時間をフォーマットする関数 (NaN対策)
-const formatTime = (dateStr: string) => {
-    if (!dateStr) return '--:--';
+// ★修正: 最強の時間フォーマッター (iOS Safariのバグも、変な文字列も強引に解析)
+const formatTime = (val: any) => {
+    if (!val) return '--:--';
     try {
-        const d = new Date(dateStr.replace(/-/g, '/')); // iOS/Safari対策
-        if (isNaN(d.getTime())) return '--:--';
-        return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
-    } catch(e) {
+        let d = new Date(val);
+        if (typeof val === 'string') d = new Date(val.replace(/-/g, '/'));
+        if (!isNaN(d.getTime())) {
+            return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+        }
+        
+        const strVal = String(val);
+        const match = strVal.match(/(\d{1,2}):(\d{2})/);
+        if (match) return `${match[1].padStart(2, '0')}:${match[2]}`;
+        
         return '--:--';
-    }
+    } catch(e) { return '--:--'; }
 };
 
 export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, localReservations: any[], onNavigate: any }) => {
@@ -86,12 +92,15 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
     const [isMounted, setIsMounted] = useState(false);
     const [showAiData, setShowAiData] = useState(true);
 
+    // ★修正: 複数画像アップロード用ステート
     const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
-    const [uploadedPhotoUrl, setUploadedPhotoUrl] = useState<string | null>(null);
+    const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
+    const [uploadedPhotoUrls, setUploadedPhotoUrls] = useState<string[]>([]);
+    
+    const cameraRef = useRef<HTMLInputElement>(null);
+    const galleryRef = useRef<HTMLInputElement>(null);
 
-    useEffect(() => {
-        setIsMounted(true);
-    }, []);
+    useEffect(() => { setIsMounted(true); }, []);
 
     const copperPrice = Number(data?.config?.market_price) || 1450;
     const brassPrice = Number(data?.config?.brass_price) || 980;
@@ -138,9 +147,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
         try {
             let items = r.items;
             if (typeof items === 'string') items = JSON.parse(items);
-            if (Array.isArray(items)) {
-                weight = items.reduce((s:number, i:any) => s + (Number(i.weight)||0), 0);
-            }
+            if (Array.isArray(items)) { weight = items.reduce((s:number, i:any) => s + (Number(i.weight)||0), 0); }
         } catch(e){}
         return sum + weight;
     }, 0);
@@ -187,9 +194,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
             mCopper: curCop, 
             monthlyAvgYield: mYield, 
             yieldStats: { diff: avgDiff, isPositive: avgDiff >= 0 }, 
-            targetMonthly,
-            projectedCopper: projected,
-            progressPercent: progress
+            targetMonthly, projectedCopper: projected, progressPercent: progress
         };
     }, [data?.productions, data?.wires, data?.config?.target_monthly]);
 
@@ -235,81 +240,71 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
 
     const handlePrintReport = () => {
         setIsGeneratingReport(true);
-        setTimeout(() => {
-            window.print();
-            setIsGeneratingReport(false);
-        }, 500);
+        setTimeout(() => { window.print(); setIsGeneratingReport(false); }, 500);
     };
 
     const compressImage = (file: File): Promise<string> => {
         return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
+            const reader = new FileReader(); reader.readAsDataURL(file);
             reader.onload = (event) => {
-                const img = new Image();
-                img.src = event.target?.result as string;
+                const img = new Image(); img.src = event.target?.result as string;
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 3840; 
-                    const MAX_HEIGHT = 3840;
-                    let width = img.width;
-                    let height = img.height;
-                    if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
-                    else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    if (!ctx) return reject(new Error('Canvas context could not be created'));
-                    ctx.drawImage(img, 0, 0, width, height);
-                    const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-                    resolve(dataUrl.split(',')[1]); 
+                    const MAX = 2000; let w = img.width; let h = img.height;
+                    if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } } else { if (h > MAX) { w *= MAX / h; h = MAX; } }
+                    canvas.width = w; canvas.height = h;
+                    const ctx = canvas.getContext('2d'); ctx?.drawImage(img, 0, 0, w, h);
+                    resolve(canvas.toDataURL('image/jpeg', 0.85).split(',')[1]); 
                 };
-                img.onerror = (error) => reject(error);
+                img.onerror = (e) => reject(e);
             };
-            reader.onerror = (error) => reject(error);
+            reader.onerror = (e) => reject(e);
         });
     };
 
-    const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+    const handleMultiPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
         
         setIsUploadingPhoto(true);
-        setUploadedPhotoUrl(null);
+        setUploadProgress({ current: 0, total: files.length });
+        setUploadedPhotoUrls([]);
         
+        let uploaderId = 'Staff';
         try {
-            let uploaderId = 'Staff';
-            try {
-                const userStr = localStorage.getItem('factoryOS_user');
-                if (userStr) {
-                    const user = JSON.parse(userStr);
-                    uploaderId = user.companyName || user.clientId || 'Staff';
-                }
-            } catch(err) {}
-
-            const base64Data = await compressImage(file);
-            const payload = {
-                action: 'UPLOAD_STAFF_PHOTO',
-                uploaderId: uploaderId,
-                fileName: `Photo_${new Date().getTime()}.jpg`,
-                mimeType: 'image/jpeg',
-                data: base64Data
-            };
-            
-            const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-            const result = await res.json();
-            
-            if (result.status === 'success') {
-                setUploadedPhotoUrl(result.url);
-            } else {
-                alert('アップロード失敗: ' + result.message);
+            const userStr = localStorage.getItem('factoryOS_user');
+            if (userStr) {
+                const user = JSON.parse(userStr);
+                uploaderId = user.companyName || user.clientId || 'Staff';
             }
-        } catch (err) {
-            alert('画像圧縮または通信エラーが発生しました: ' + err);
-        } finally {
-            setIsUploadingPhoto(false);
-            e.target.value = '';
+        } catch(err) {}
+
+        const newUrls: string[] = [];
+
+        for (let i = 0; i < files.length; i++) {
+            setUploadProgress({ current: i + 1, total: files.length });
+            try {
+                const base64Data = await compressImage(files[i]);
+                const payload = {
+                    action: 'UPLOAD_STAFF_PHOTO',
+                    uploaderId: uploaderId,
+                    fileName: `Photo_${new Date().getTime()}_${i+1}.jpg`,
+                    mimeType: 'image/jpeg',
+                    data: base64Data
+                };
+                
+                const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                const result = await res.json();
+                
+                if (result.status === 'success') {
+                    newUrls.push(result.url);
+                } else { alert(`画像 ${i+1}枚目のアップロード失敗: ` + result.message); }
+            } catch (err) { alert(`画像 ${i+1}枚目の処理エラー: ` + err); }
         }
+        
+        setUploadedPhotoUrls(newUrls);
+        setIsUploadingPhoto(false);
+        e.target.value = ''; 
     };
 
     if (!isMounted) return null;
@@ -324,12 +319,12 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                             <span className="w-1.5 h-6 bg-[#D32F2F] rounded-full"></span>
                             エグゼクティブ・ダッシュボード
                         </h2>
-                        <p className="text-xs text-gray-500 mt-2 font-mono tracking-widest ml-4 uppercase font-bold">Executive Overview & KPIs</p>
+                        <p className="text-xs text-gray-500 mt-2 font-mono tracking-widest ml-4 uppercase font-bold">経営概況および重要指標</p>
                     </div>
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-1 bg-white p-1 rounded-sm border border-gray-300 shadow-sm">
-                            <button onClick={() => setShowAiData(true)} className={`px-4 py-1.5 text-xs font-bold font-mono transition-colors ${showAiData ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-100'}`}>MIX</button>
-                            <button onClick={() => setShowAiData(false)} className={`px-4 py-1.5 text-xs font-bold font-mono transition-colors ${!showAiData ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-100'}`}>HUMAN ONLY</button>
+                            <button onClick={() => setShowAiData(true)} className={`px-4 py-1.5 text-xs font-bold font-mono transition-colors ${showAiData ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-100'}`}>AI予測あり</button>
+                            <button onClick={() => setShowAiData(false)} className={`px-4 py-1.5 text-xs font-bold font-mono transition-colors ${!showAiData ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-100'}`}>実測データのみ</button>
                         </div>
                         <button onClick={handlePrintReport} disabled={isGeneratingReport} className="bg-white border border-gray-300 text-gray-800 px-4 py-2 rounded-sm text-xs font-bold hover:border-[#D32F2F] hover:text-[#D32F2F] transition shadow-sm flex items-center gap-2 disabled:opacity-50">
                             {isGeneratingReport ? <span className="animate-spin"><Icons.Refresh /></span> : <Icons.Print />}
@@ -486,7 +481,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                             <div className="p-5 border-b border-gray-200 bg-[#111] text-white flex justify-between items-center cursor-pointer group transition pr-24" onClick={() => onNavigate('OPERATIONS')}>
                                 <h3 className="font-bold text-sm flex items-center gap-3 tracking-widest">
                                     <span className="relative flex h-2.5 w-2.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#D32F2F] opacity-75"></span><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#D32F2F]"></span></span>
-                                    LIVE タイムライン
+                                    リアルタイム稼働状況
                                 </h3>
                                 <Icons.ArrowRight />
                             </div>
@@ -507,18 +502,14 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                                                 } 
                                             } catch(e){}
                                             
-                                            // ★修正：タイムラインの時間は createdAt から取得する
-                                            const displayTime = res.createdAt ? formatTime(res.createdAt) : '--:--';
-                                            
                                             return (
                                                 <li key={res.id} className="relative pl-6 pb-8 last:pb-0 group cursor-pointer" onClick={() => onNavigate('OPERATIONS')}>
                                                     <div className="absolute left-[7px] top-3 w-px h-full bg-gray-200 group-last:hidden"></div>
                                                     <div className={`absolute left-0 top-1.5 w-4 h-4 rounded-full border-2 border-white ${res.status === 'PROCESSING' ? 'bg-gray-400' : 'bg-[#D32F2F] animate-pulse'} shadow-sm ring-1 ring-gray-100 z-10`}></div>
                                                     <div className="bg-white border border-gray-100 p-4 rounded-sm shadow-sm group-hover:border-[#D32F2F] transition-colors ml-4 -mt-2">
                                                         <div className="flex justify-between items-center mb-2">
-                                                            {/* ★修正：NaN:NaN を回避して綺麗な時間を表示 */}
                                                             <span className="text-xs font-bold text-gray-500 bg-gray-50 px-2 py-0.5 rounded-sm border border-gray-100">
-                                                                {displayTime}
+                                                                {formatTime(res.createdAt || res.visitDate)}
                                                             </span>
                                                             <span className="text-[10px] font-mono text-gray-400">{res.id}</span>
                                                         </div>
@@ -544,159 +535,52 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                                     <Icons.Camera /> 広報・現場写真アップロード
                                 </h3>
                                 <p className="text-xs text-gray-500 mt-1">
-                                    撮影した写真をGoogle Driveの「Web_Photos」フォルダに直接保存します。
-                                    あなたのログインIDごとにフォルダが自動整理されます。
+                                    撮影した写真をGoogle Driveに保存します。一括アップロードに対応しました。
                                 </p>
                             </div>
                         </div>
 
-                        <div className={`w-full border-2 border-dashed ${isUploadingPhoto ? 'border-gray-400 bg-gray-50' : 'border-blue-300 bg-blue-50/30 hover:bg-blue-50'} rounded-sm p-8 flex flex-col items-center justify-center transition-colors relative cursor-pointer`}>
-                            {isUploadingPhoto ? (
-                                <div className="flex flex-col items-center">
-                                    <div className="text-blue-500 animate-spin mb-2"><Icons.Refresh /></div>
-                                    <p className="text-sm font-bold text-gray-600">自動圧縮＆アップロード中...</p>
-                                </div>
-                            ) : uploadedPhotoUrl ? (
-                                <div className="flex flex-col items-center text-center">
-                                    <div className="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-2">
-                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>
-                                    </div>
-                                    <p className="text-sm font-bold text-gray-900 mb-1">アップロード完了！</p>
-                                    <a href={uploadedPhotoUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline mb-4 font-mono truncate max-w-xs">
-                                        {uploadedPhotoUrl}
-                                    </a>
-                                    <p className="text-xs text-gray-500 bg-white px-3 py-1 border border-gray-200 rounded-sm">続けて他の写真をアップロードするには、ここをタップしてください。</p>
-                                </div>
-                            ) : (
-                                <div className="flex flex-col items-center text-center">
-                                    <Icons.UploadCloud />
-                                    <p className="text-sm font-bold text-blue-800 mb-1">ここをタップしてカメラを起動 / 写真を選択</p>
-                                    <p className="text-[10px] text-gray-500">※自動的に4K解像度に圧縮されて送信されるため、通信容量の心配はありません。</p>
-                                </div>
-                            )}
-                            
-                            <input 
-                                type="file" 
-                                accept="image/*" 
-                                capture="environment" 
-                                onChange={handlePhotoUpload} 
-                                disabled={isUploadingPhoto}
-                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
-                            />
+                        <div className="flex gap-3 mb-4">
+                            <button onClick={() => cameraRef.current?.click()} disabled={isUploadingPhoto} className="flex-1 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 py-6 rounded-sm font-bold flex flex-col items-center justify-center gap-2 transition disabled:opacity-50">
+                                <Icons.Camera />
+                                <span className="text-sm">カメラで撮影</span>
+                            </button>
+                            <button onClick={() => galleryRef.current?.click()} disabled={isUploadingPhoto} className="flex-1 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 py-6 rounded-sm font-bold flex flex-col items-center justify-center gap-2 transition disabled:opacity-50">
+                                <Icons.UploadCloud />
+                                <span className="text-sm">フォルダから複数選択</span>
+                            </button>
                         </div>
+
+                        <input type="file" accept="image/*" capture="environment" ref={cameraRef} onChange={handleMultiPhotoUpload} className="hidden" disabled={isUploadingPhoto} />
+                        <input type="file" accept="image/*" multiple ref={galleryRef} onChange={handleMultiPhotoUpload} className="hidden" disabled={isUploadingPhoto} />
+
+                        {isUploadingPhoto && (
+                            <div className="text-center p-4 bg-gray-50 border border-gray-200 rounded-sm">
+                                <div className="text-blue-500 animate-spin mb-2 flex justify-center"><Icons.Refresh /></div>
+                                <p className="text-sm font-bold text-gray-700">自動圧縮＆送信中... ({uploadProgress.current} / {uploadProgress.total} 枚)</p>
+                                <div className="w-full bg-gray-200 h-2 mt-3 rounded-full overflow-hidden">
+                                    <div className="bg-blue-500 h-full transition-all duration-300" style={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }}></div>
+                                </div>
+                            </div>
+                        )}
+
+                        {!isUploadingPhoto && uploadedPhotoUrls.length > 0 && (
+                            <div className="p-4 bg-green-50 border border-green-200 rounded-sm">
+                                <div className="flex items-center gap-2 mb-2 text-green-700">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>
+                                    <span className="font-bold text-sm">{uploadedPhotoUrls.length}枚のアップロード完了！</span>
+                                </div>
+                                <ul className="text-xs text-blue-600 space-y-1">
+                                    {uploadedPhotoUrls.map((url, idx) => (
+                                        <li key={idx} className="truncate"><a href={url} target="_blank" rel="noopener noreferrer" className="hover:underline">📎 画像 {idx+1}</a></li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
                     </div>
                 </div>
 
             </div>
-
-            <div className="hidden print:block w-[210mm] min-h-[297mm] bg-white text-black p-8 mx-auto font-sans">
-                <div className="border-b-2 border-black pb-4 mb-6 flex justify-between items-end">
-                    <div>
-                        <h1 className="text-3xl font-black font-serif tracking-widest">FACTORY OS 日次レポート</h1>
-                        <p className="text-sm font-bold text-gray-600 mt-2">株式会社月寒製作所 苫小牧工場</p>
-                    </div>
-                    <div className="text-right">
-                        <p className="text-lg font-bold font-mono">{new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}</p>
-                        <p className="text-xs font-bold bg-black text-white px-2 py-0.5 inline-block mt-1">
-                            {showAiData ? 'MIX (AI予測 + 実測)' : 'HUMAN ONLY (実測確定のみ)'}
-                        </p>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-8 mb-8">
-                    <div className="space-y-6">
-                        <section>
-                            <h2 className="text-sm font-bold text-white bg-black px-3 py-1.5 inline-block mb-3">1. 本日の市況</h2>
-                            <div className="border border-gray-300 rounded-sm p-4 bg-gray-50 relative">
-                                {showAiData && <div className="absolute top-2 right-2"><ProvenanceBadge type="AI_AUTO" /></div>}
-                                <div className="flex justify-between items-end mb-3 border-b border-gray-300 pb-2">
-                                    <span className="font-bold text-gray-700">銅建値 (JX)</span>
-                                    <div className="flex items-baseline gap-2">
-                                        <span className="text-3xl font-black font-mono">{showAiData ? copperPrice.toLocaleString() : '---'}</span>
-                                        <span className="text-sm font-bold">円/kg</span>
-                                        {showAiData && (
-                                            <span className={`text-sm font-bold ml-2 ${copperDiff > 0 ? 'text-[#D32F2F]' : copperDiff < 0 ? 'text-gray-900' : 'text-gray-500'}`}>
-                                                ({copperDiff > 0 ? '+' : ''}{copperDiff})
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-2 text-sm font-bold text-gray-600">
-                                    <div className="flex justify-between"><span>真鍮建値:</span><span className="font-mono">{showAiData ? brassPrice.toLocaleString() : '---'} 円</span></div>
-                                    <div className="flex justify-between"><span>LME銅:</span><span className="font-mono">${showAiData ? lmeCopper.toLocaleString() : '---'} /t</span></div>
-                                </div>
-                            </div>
-                        </section>
-
-                        <section>
-                            <h2 className="text-sm font-bold text-white bg-black px-3 py-1.5 inline-block mb-3">2. 現場稼働予定</h2>
-                            <div className="border border-gray-300 rounded-sm p-4 relative">
-                                <div className="absolute top-2 right-2"><ProvenanceBadge type="HUMAN" /></div>
-                                <div className="flex justify-between items-center mb-4">
-                                    <div className="text-center">
-                                        <p className="text-xs text-gray-500 font-bold mb-1">受付件数</p>
-                                        <p className="text-2xl font-black font-mono">{todayCount} 件</p>
-                                    </div>
-                                    <div className="text-center">
-                                        <p className="text-xs text-gray-500 font-bold mb-1">持込予定量</p>
-                                        <p className="text-2xl font-black font-mono">{todayWeight.toLocaleString()} kg</p>
-                                    </div>
-                                </div>
-                                {activeReservations.length > 0 ? (
-                                    <ul className="text-xs font-bold text-gray-700 space-y-1 border-t border-dashed pt-2">
-                                        {activeReservations.slice(0, 5).map((r:any) => (
-                                            <li key={r.id} className="flex justify-between">
-                                                <span className="truncate w-32">{r.memberName}</span>
-                                                <span className="font-mono text-gray-500">{formatTime(r.createdAt)}</span>
-                                            </li>
-                                        ))}
-                                        {activeReservations.length > 5 && <li className="text-right text-gray-400 mt-1">他 {activeReservations.length - 5} 件</li>}
-                                    </ul>
-                                ) : (
-                                    <p className="text-xs text-gray-400 text-center">本日の予定はありません</p>
-                                )}
-                            </div>
-                        </section>
-                    </div>
-
-                    <div className="space-y-6">
-                        <section>
-                            <h2 className="text-sm font-bold text-white bg-black px-3 py-1.5 inline-block mb-3">3. 生産実績と目標進捗</h2>
-                            <div className="border border-gray-300 rounded-sm p-4 relative">
-                                <div className="absolute top-2 right-2"><ProvenanceBadge type="HUMAN" /></div>
-                                <div className="mb-4">
-                                    <div className="flex justify-between text-xs font-bold text-gray-500 mb-1">
-                                        <span>当月 ピカ銅生産量</span>
-                                        <span>目標: {targetMonthly.toLocaleString()} kg</span>
-                                    </div>
-                                    <div className="flex items-end gap-2 mb-2">
-                                        <span className="text-4xl font-black font-mono">{mCopper.toLocaleString()}</span>
-                                        <span className="font-bold text-gray-600 pb-1">kg</span>
-                                    </div>
-                                    <div className="w-full bg-gray-200 h-4 rounded-sm overflow-hidden border border-gray-300">
-                                        <div className="bg-black h-full" style={{ width: `${progressPercent || 0}%` }}></div>
-                                    </div>
-                                    <div className="flex justify-between text-[10px] font-bold mt-1">
-                                        <span className="text-gray-500">進捗率: {progressPercent || 0}%</span>
-                                        <span className="text-gray-900">月末予測: {showAiData && projectedCopper ? projectedCopper.toLocaleString() : '---'} kg</span>
-                                    </div>
-                                </div>
-                                <div className="border-t border-gray-300 pt-3 flex justify-between items-center">
-                                    <span className="text-xs font-bold text-gray-700">直近の歩留まり乖離</span>
-                                    <span className={`text-lg font-black font-mono ${yieldStats.isPositive ? 'text-black' : 'text-[#D32F2F]'}`}>
-                                        {yieldStats.isPositive ? '+' : ''}{yieldStats.diff.toFixed(1)}%
-                                    </span>
-                                </div>
-                            </div>
-                        </section>
-                    </div>
-                </div>
-
-                <div className="mt-8 text-center text-[10px] font-mono text-gray-400">
-                    GENERATED BY FACTORY OS - AI CONCIERGE ENGINE
-                </div>
-            </div>
-
         </div>
     );
 };
