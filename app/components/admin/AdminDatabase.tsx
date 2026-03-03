@@ -26,7 +26,6 @@ export const AdminDatabase = ({ data }: { data: any }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadingImageId, setUploadingImageId] = useState<string | null>(null);
 
-  // ★ AIアシスト登録用のステート
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [aiStatus, setAiStatus] = useState<'IDLE' | 'ANALYZING'>('IDLE');
   const [imgData1, setImgData1] = useState<string>('');
@@ -34,7 +33,6 @@ export const AdminDatabase = ({ data }: { data: any }) => {
   const fileInputRef1 = useRef<HTMLInputElement>(null);
   const fileInputRef2 = useRef<HTMLInputElement>(null);
 
-  // ★ 実測計算用のステート
   const [sampleTotal, setSampleTotal] = useState<number | ''>('');
   const [sampleCopper, setSampleCopper] = useState<number | ''>('');
 
@@ -79,7 +77,6 @@ export const AdminDatabase = ({ data }: { data: any }) => {
     setIsModalOpen(false);
   };
 
-  // 実測値から歩留まりを自動計算
   const calculateRatio = (total: number | '', copper: number | '') => {
       if (total && copper && Number(total) > 0) {
           const r = (Number(copper) / Number(total)) * 100;
@@ -109,7 +106,7 @@ export const AdminDatabase = ({ data }: { data: any }) => {
           sq: '', 
           core: '', 
           ratio: unknownItem.ratio,
-          memo: `【AI推論からの昇格】\n推論日時: ${unknownItem.date}\nAIの根拠: ${unknownItem.reason}`
+          memo: `【AI推論からの昇格】\n推論日時: ${unknownItem.createdAt}\nAIの根拠: ${unknownItem.reason}`
       });
       setIsModalOpen(true);
   };
@@ -125,7 +122,6 @@ export const AdminDatabase = ({ data }: { data: any }) => {
 
     const action = editingItem.id ? 'UPDATE_DB_RECORD' : 'ADD_DB_RECORD';
     
-    // ★ 必須項目の「サンプル総量」「サンプル銅量」を登録データに含める
     const payload = editingItem.id 
       ? { action, sheetName, recordId: editingItem.id, updates: getUpdatesMap(editingItem, activeTab) }
       : { action, sheetName, data: editingItem };
@@ -165,10 +161,11 @@ export const AdminDatabase = ({ data }: { data: any }) => {
   const getUpdatesMap = (item: any, tab: string) => {
     if (tab === 'WIRES') return { 
         1: item.maker, 2: item.name, 3: item.year, 4: item.sq, 
-        5: item.sampleTotal, 6: item.sampleCopper, // ★ 実測値を追加
+        5: item.sampleTotal, 6: item.sampleCopper,
         7: item.core, 8: item.conductor, 9: item.ratio, 10: item.memo 
     };
-    if (tab === 'UNKNOWN') return { 2: item.name, 3: item.ratio, 4: item.reason };
+    // ★ date削除によるインデックスズレ対応 (1:name, 2:ratio, 3:reason)
+    if (tab === 'UNKNOWN') return { 1: item.name, 2: item.ratio, 3: item.reason }; 
     if (tab === 'CASTINGS') return { 1: item.name, 2: item.type, 4: item.ratio };
     if (tab === 'CLIENTS') return { 1: item.name, 2: item.rank, 4: item.phone, 5: item.loginId, 6: item.password, 7: item.points, 8: item.memo, 9: item.address, 10: item.industry };
     if (tab === 'STAFF') return { 1: item.name, 2: item.role, 3: item.rate, 4: item.status, 5: item.loginId, 6: item.password };
@@ -208,7 +205,6 @@ export const AdminDatabase = ({ data }: { data: any }) => {
       setUploadingImageId(null);
   };
 
-  // ★ AIアシスト解析実行
   const runAiExtraction = async () => {
     if (!imgData1) return alert('最低1枚の画像（断面など）をアップロードしてください');
     setAiStatus('ANALYZING');
@@ -221,7 +217,6 @@ export const AdminDatabase = ({ data }: { data: any }) => {
       const result = await res.json();
       
       if (result.status === 'success') {
-          // AIが抽出したデータをセットして編集モーダルを開く
           setEditingItem({
               maker: result.data.maker === '-' ? '' : result.data.maker,
               name: result.data.name === '-' ? '' : result.data.name,
@@ -229,9 +224,8 @@ export const AdminDatabase = ({ data }: { data: any }) => {
               sq: result.data.size === '-' ? '' : result.data.size,
               core: result.data.core === '-' ? '' : result.data.core,
               conductor: result.data.conductor === '-' ? '' : result.data.conductor,
-              ratio: '', // 歩留まりは空にして人間が実測する
+              ratio: '',
               memo: '【AIアシスト抽出】\n画像を元に仕様を自動入力しました。実測による歩留まりを入力してください。',
-              // 登録時に画像を自動アップロードするためのデータを持たせる
               _pendingImageData1: imgData1,
               _pendingImageData2: imgData2
           });
@@ -320,7 +314,8 @@ export const AdminDatabase = ({ data }: { data: any }) => {
 
                 {activeTab === 'UNKNOWN' && (
                   <>
-                    <td className="p-3 text-xs text-gray-500 font-mono">{item.date?.split(' ')[0]}</td>
+                    {/* ★ 修正: createdAtへ変更 */}
+                    <td className="p-3 text-xs text-gray-500 font-mono">{item.createdAt?.split(' ')[0]}</td>
                     <td className="p-3 font-bold text-orange-700 flex items-center gap-1"><Icons.Sparkles /> {item.name}</td>
                     <td className="p-3 font-mono font-black text-orange-600 text-lg">{item.ratio}%</td>
                     <td className="p-3 text-xs text-gray-600 leading-relaxed bg-orange-50/50 rounded-sm m-1 whitespace-normal">{item.reason}</td>
