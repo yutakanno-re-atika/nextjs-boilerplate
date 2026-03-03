@@ -35,6 +35,9 @@ const ROLE_PERMISSIONS = {
 };
 
 export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; data: any; setView: any; onLogout?: any }) => {
+  const currentRole = user?.role || 'FRONT';
+  const allowedTabs = ROLE_PERMISSIONS[currentRole as keyof typeof ROLE_PERMISSIONS] || ROLE_PERMISSIONS.FRONT;
+
   const defaultTab = () => {
     if (!user || !user.role) return 'OPERATIONS';
     if (user.role === 'ADMIN' || user.role === 'MANAGER') return 'HOME';
@@ -44,21 +47,37 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
     return 'OPERATIONS';
   };
 
-  const [adminTab, setAdminTab] = useState<'HOME' | 'OPERATIONS' | 'POS' | 'PRODUCTION' | 'COMPETITOR' | 'DATABASE' | 'CLIENT_DETAIL' | 'SALES'>(defaultTab());
+  // ★ 修正: リロード対策。初期表示時にローカルストレージから前回のタブを復元する
+  const [adminTab, setAdminTab] = useState<any>(() => {
+    if (typeof window !== 'undefined') {
+      const savedTab = localStorage.getItem('factoryOS_adminTab');
+      // ※ クライアント詳細画面は選択情報がないとエラーになるため、リロード時はHOMEに戻す安全設計
+      if (savedTab === 'CLIENT_DETAIL') return 'HOME';
+      
+      if (savedTab && allowedTabs.includes(savedTab)) {
+        return savedTab;
+      }
+    }
+    return defaultTab();
+  });
+
   const [localReservations, setLocalReservations] = useState<any[]>([]);
   const [editingResId, setEditingResId] = useState<string | null>(null);
   const [selectedClientName, setSelectedClientName] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // AI Co-Pilot & 音声読み上げトグル
   const [isCoPilotEnabled, setIsCoPilotEnabled] = useState(true);
-  const [isVoiceOutputEnabled, setIsVoiceOutputEnabled] = useState(true); // ★ 追加: 音声読み上げの一括管理
+  const [isVoiceOutputEnabled, setIsVoiceOutputEnabled] = useState(true); 
   
   const [coPilotMessage, setCoPilotMessage] = useState("");
   const [isCoPilotVisible, setIsCoPilotVisible] = useState(false);
 
-  const currentRole = user?.role || 'FRONT';
-  const allowedTabs = ROLE_PERMISSIONS[currentRole as keyof typeof ROLE_PERMISSIONS] || ROLE_PERMISSIONS.FRONT;
+  // ★ 修正: タブが切り替わるたびにローカルストレージに記憶させる
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('factoryOS_adminTab', adminTab);
+    }
+  }, [adminTab]);
 
   useEffect(() => {
     if (!allowedTabs.includes(adminTab)) {
@@ -184,7 +203,6 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
                         <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${isCoPilotEnabled ? 'translate-x-5' : 'translate-x-1'}`} />
                     </button>
                 </div>
-                {/* ★ 音声読み上げON/OFFトグルを追加 */}
                 <div className="flex items-center justify-between bg-white border border-gray-200 p-2 rounded-md shadow-sm">
                     <span className="text-xs font-bold text-gray-600 flex items-center gap-1.5">
                         <span className="text-blue-500">🔊</span> 音声読み上げ
@@ -234,12 +252,10 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
       <main className="flex-1 overflow-y-auto bg-[#FFFFFF] p-4 md:p-8 lg:p-10 flex flex-col relative w-full selection:bg-red-100 selection:text-red-900 pb-32 md:pb-10">
          {adminTab === 'HOME' && <AdminHome data={data} localReservations={localReservations} onNavigate={handleNavigate} />}
          {adminTab === 'OPERATIONS' && <AdminKanban data={data} onSuccess={() => {}} />}
-         {/* ★ PropsとしてisVoiceOutputEnabledを渡す */}
          {adminTab === 'POS' && <AdminPos data={data} editingResId={editingResId} localReservations={localReservations} onSuccess={handlePosSuccess} onClear={() => setEditingResId(null)} isVoiceOutputEnabled={isVoiceOutputEnabled} />}
          {adminTab === 'PRODUCTION' && <AdminProduction data={data} localReservations={localReservations} />}
          {adminTab === 'COMPETITOR' && <AdminCompetitor data={data} />}
          {adminTab === 'SALES' && <AdminSales data={data} />}
-         {/* ★ PropsとしてisVoiceOutputEnabledを渡す */}
          {adminTab === 'DATABASE' && <AdminDatabase data={data} isVoiceOutputEnabled={isVoiceOutputEnabled} />}
          {adminTab === 'CLIENT_DETAIL' && selectedClientName && <AdminClientDetail data={data} clientName={selectedClientName} onBack={() => handleNavigate('HOME')} />}
       </main>
