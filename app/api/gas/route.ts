@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 
+// ★追加：AIの画像解析が長引いてもタイムアウトさせないための設定 (最大60秒)
+export const maxDuration = 60;
+
 // ★ここにGASのウェブアプリURLを貼り付けてください（シングルクォート '' で囲む）
 const HARDCODED_GAS_URL = 'https://script.google.com/macros/s/AKfycbxuE0iPCEruoQLretA8R0cmSnRyZPYT9qd6YqDGVCCCY1h0wRVJX8P-MZF20I1whF7Z/exec'; 
 
