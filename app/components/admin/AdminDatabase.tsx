@@ -16,7 +16,7 @@ const Icons = {
   UploadCloud: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
 };
 
-export const AdminDatabase = ({ data }: { data: any }) => {
+export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoiceOutputEnabled?: boolean }) => {
   const [activeTab, setActiveTab] = useState<'WIRES' | 'UNKNOWN' | 'CASTINGS' | 'CLIENTS' | 'STAFF'>('WIRES');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMaker, setFilterMaker] = useState('');
@@ -34,8 +34,6 @@ export const AdminDatabase = ({ data }: { data: any }) => {
   const [imgData2, setImgData2] = useState<string>('');
   const fileInputRef1 = useRef<HTMLInputElement>(null);
   const fileInputRef2 = useRef<HTMLInputElement>(null);
-
-  const [isVoiceOutputEnabled, setIsVoiceOutputEnabled] = useState(true);
 
   const [sampleTotal, setSampleTotal] = useState<number | ''>('');
   const [sampleCopper, setSampleCopper] = useState<number | ''>('');
@@ -211,6 +209,7 @@ export const AdminDatabase = ({ data }: { data: any }) => {
 
   const runAiExtraction = async () => {
     if (!imgData1) return alert('最低1枚の画像（断面など）をアップロードしてください');
+    
     setAiStatus('ANALYZING');
     setAiProgressStep(1); 
 
@@ -234,7 +233,7 @@ export const AdminDatabase = ({ data }: { data: any }) => {
 
       setTimeout(() => {
           if (result.status === 'success') {
-              // ★ Web Speech API による音声読み上げ処理 (超簡潔化＆スピード1.4)
+              // ★ 音声読み上げを簡潔に、スピード1.4に統一
               if (isVoiceOutputEnabled && 'speechSynthesis' in window) {
                   window.speechSynthesis.cancel();
                   const makerText = result.data.maker && result.data.maker !== '-' ? result.data.maker : 'メーカー不明';
@@ -589,7 +588,7 @@ return (
         </div>
       </div>
 
-      {/* ★ AIアシスト用の画像アップロードモーダル */}
+      {/* ★ AIアシスト用の画像アップロードモーダル (分割ボタン) */}
       {isAiModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-gray-900 w-full max-w-2xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col">
@@ -697,20 +696,6 @@ return (
                     <button onClick={runAiExtraction} disabled={!imgData1} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-md flex justify-center items-center gap-2 disabled:bg-gray-700 transition shadow-lg text-lg">
                         <Icons.Sparkles />解析してデータを埋める
                     </button>
-
-                    {/* ★ 音声読み上げON/OFFトグル */}
-                    <div className="mt-4 flex justify-center">
-                        <label className="flex items-center gap-2 text-sm text-gray-400 cursor-pointer hover:text-gray-300 transition-colors">
-                            <input 
-                                type="checkbox" 
-                                checked={isVoiceOutputEnabled} 
-                                onChange={e => setIsVoiceOutputEnabled(e.target.checked)}
-                                className="w-4 h-4 accent-blue-500 rounded-sm cursor-pointer"
-                            />
-                            🔊 査定結果と根拠を音声で読み上げる
-                        </label>
-                    </div>
-
                 </div>
               )}
             </div>
