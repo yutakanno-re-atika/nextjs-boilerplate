@@ -22,24 +22,28 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [aiStatus, setAiStatus] = useState<'IDLE' | 'ANALYZING'>('IDLE');
-  
-  // ★ AI実況中継用のステート
   const [aiProgressStep, setAiProgressStep] = useState(0);
-
   const [toastMessage, setToastMessage] = useState<{title: string, desc: string, type: 'success' | 'info'} | null>(null);
+
   const [posMode, setPosMode] = useState<'INDIVIDUAL' | 'BULK'>('INDIVIDUAL');
   const [bulkTotalWeight, setBulkTotalWeight] = useState<number | ''>('');
+
   const [showSimDetails, setShowSimDetails] = useState(false);
+
   const fileInputRef1 = useRef<HTMLInputElement>(null);
   const fileInputRef2 = useRef<HTMLInputElement>(null);
   const [imgData1, setImgData1] = useState<string>('');
   const [imgData2, setImgData2] = useState<string>('');
+
   const [isListening, setIsListening] = useState(false);
   const [voiceText, setVoiceText] = useState('');
   const [isProcessingVoice, setIsProcessingVoice] = useState(false);
 
   const [simConfig, setSimConfig] = useState({
-    disposalCostPerKg: 40, laborCostPerHour: 3000, capacityPerHour: 150, targetMargin: 15         
+    disposalCostPerKg: 40,   
+    laborCostPerHour: 3000,  
+    capacityPerHour: 150,    
+    targetMargin: 15         
   });
 
   const copperPrice = data?.market?.copper?.price || 1400;
@@ -80,16 +84,25 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   const addToCart = (product: any, overrideWeight?: number) => {
     const newItemId = Date.now().toString();
     setCart(prev => [...prev, { 
-        id: newItemId, product: buildProductName(product), ratio: product.ratio, weight: overrideWeight !== undefined ? overrideWeight : 0, percentage: 0
+        id: newItemId, 
+        product: buildProductName(product),
+        ratio: product.ratio, 
+        weight: overrideWeight !== undefined ? overrideWeight : 0,
+        percentage: 0
     }]);
     setSearchTerm('');
   };
 
-  const updateWeight = (id: string, weight: number) => { setCart(prev => prev.map(item => item.id === id ? { ...item, weight } : item)); };
+  const updateWeight = (id: string, weight: number) => {
+    setCart(prev => prev.map(item => item.id === id ? { ...item, weight } : item));
+  };
+
   const updatePercentage = (id: string, percentage: number) => {
-    if (percentage < 0) percentage = 0; if (percentage > 100) percentage = 100;
+    if (percentage < 0) percentage = 0;
+    if (percentage > 100) percentage = 100;
     setCart(prev => prev.map(item => item.id === id ? { ...item, percentage } : item));
   };
+
   const removeItem = (id: string) => { setCart(prev => prev.filter(item => item.id !== id)); };
 
   const compressImage = (file: File): Promise<string> => {
@@ -120,19 +133,17 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
     } catch (err) { alert("画像の処理に失敗しました。"); }
   };
 
-// ★ AI実況中継アニメーションを組み込んだ解析ロジック
   const runAiAnalysis = async () => {
     if (!imgData1) return alert('最低1枚の画像をアップロードしてください');
     
     setAiStatus('ANALYZING');
     setAiProgressStep(1); 
 
-    // 擬似的なプログレス進行（待ち時間をエンタメ化）
     const progressInterval = setInterval(() => {
         setAiProgressStep(prev => {
             if (prev === 1) return 2;
             if (prev === 2) return 3;
-            return 3; // 完了するまではステップ3で待機
+            return 3; 
         });
     }, 2000);
 
@@ -146,9 +157,8 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       const result = await res.json();
       
       clearInterval(progressInterval);
-      setAiProgressStep(4); // 完了ステップへ
+      setAiProgressStep(4); 
 
-      // 少しだけ完了画面を見せてから閉じる
       setTimeout(() => {
           if (result.status === 'success') {
             const isMixed = result.data.wireType.includes('フレコン') || result.data.wireType.includes('混合');
@@ -159,7 +169,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
             }, ...prev]);
 
             if (result.data.isNewFlag) {
-                showToast('未知線種を仮登録しました', `「${result.data.wireType}」の画像とデータを裏で保存しました。`, 'success');
+                showToast('未知線種を仮登録しました', `「${result.data.wireType}」の画像とデータをデータベースに保存しました。`, 'success');
             } else {
                 showToast('既存マスターと一致', `「${result.data.wireType}」として査定しました。`, 'info');
             }
@@ -250,7 +260,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
     }
     setIsProcessing(true);
     const finalCart = cart.map(item => ({ ...item, weight: posMode === 'BULK' ? ((Number(bulkTotalWeight) || 0) * ((Number(item.percentage) || 0) / 100)).toFixed(1) : item.weight }));
-    const payload = { action: editingResId ? 'UPDATE_RESERVATION' : 'REGISTER_RESERVATION', reservationId: editingResId, memberId: selectedClient?.id || 'GUEST', memberName: selectedClient?.name || '新規/非会員 (現場持込)', items: finalCart, totalEstimate: simulation.limitTotalCost, status: 'RESERVED' };
+    const payload = { action: editingResId ? 'UPDATE_RESERVATION' : 'REGISTER_RESERVATION', reservationId: editingResId, memberId: selectedClient?.id || 'GUEST', memberName: selectedClient?.name || '新規・非会員 (飛込)', items: finalCart, totalEstimate: simulation.limitTotalCost, status: 'RESERVED' };
     try {
       const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const result = await res.json();
@@ -264,7 +274,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       return searchTarget.includes(searchTerm.toLowerCase());
   });
 
-return (
+  return (
     <div className="flex flex-col lg:flex-row gap-4 h-auto lg:h-full animate-in fade-in duration-300 pb-24 lg:pb-0 relative">
       
       {toastMessage && (
@@ -299,6 +309,7 @@ return (
                   onClick={startVoiceInput}
                   disabled={isListening || isProcessingVoice}
                   className={`px-4 py-3 border rounded-sm flex items-center justify-center transition-all ${isListening ? 'bg-red-500 border-red-600 text-white animate-pulse' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-100 hover:text-blue-600'}`}
+                  title="音声で追加"
               >
                   <Icons.Mic />
               </button>
@@ -308,7 +319,8 @@ return (
             className="w-full md:w-auto bg-gradient-to-r from-blue-700 to-blue-900 hover:from-blue-600 hover:to-blue-800 text-white font-bold py-3 px-5 rounded-sm flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 whitespace-nowrap"
           >
             <Icons.Camera />
-            <span>AI ブラックボックス・オープナー</span>
+            {/* ★ 名称変更 */}
+            <span>AI 線種分析</span>
           </button>
         </div>
 
@@ -344,9 +356,10 @@ return (
         </div>
 
         <div className="p-3 border-b border-gray-200 bg-white shrink-0">
-          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Customer / 持込業者</label>
+          {/* ★ 日本語化 */}
+          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">持込業者・顧客</label>
           <select className="w-full border border-gray-300 bg-white p-2 rounded-sm text-sm font-bold text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer shadow-sm" value={selectedClient?.id || ''} onChange={e => { const client = data?.clients?.find((c:any) => c.id === e.target.value); setSelectedClient(client || null); }}>
-            <option value="">新規 / 非会員 (飛込ゲスト)</option>
+            <option value="">新規・非会員 (飛込ゲスト)</option>
             {data?.clients?.map((c:any) => <option key={c.id} value={c.id}>{c.name} ({c.rank})</option>)}
           </select>
         </div>
@@ -430,16 +443,17 @@ return (
           </div>
 
           <button onClick={handleCheckout} disabled={isProcessing || simulation.totalWeight === 0 || (posMode === 'BULK' && !isPercentageValid)} className="w-full bg-red-600 hover:bg-red-700 text-white font-black py-4 rounded-sm transition shadow-[0_4px_14px_0_rgba(220,38,38,0.39)] disabled:opacity-50 flex justify-center items-center text-lg">{isProcessing ? <Icons.Refresh /> : '受付を確定してカンバンへ'}</button>
+          {/* ★ 日本語化 */}
           <div className="mt-3 text-center"><button onClick={() => {setCart([]); onClear(); setBulkTotalWeight('');}} className="text-[10px] text-gray-500 font-bold border border-gray-700 px-3 py-1 rounded-sm">カートをリセット</button></div>
         </div>
       </div>
 
-      {/* ★ 激変：AIモーダル (実況中継UI) */}
+      {/* AI モーダル */}
       {isAiModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-gray-900 w-full max-w-xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col">
             <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-black/50">
-              <h3 className="font-black text-white flex items-center gap-2"><Icons.Sparkles /> AI ブラックボックス・オープナー</h3>
+              <h3 className="font-black text-white flex items-center gap-2"><Icons.Sparkles /> AI 線種分析</h3>
               {aiStatus !== 'ANALYZING' && <button onClick={() => setIsAiModalOpen(false)} className="text-gray-400 hover:text-white"><Icons.Close /></button>}
             </div>
             
