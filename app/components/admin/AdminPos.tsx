@@ -28,15 +28,19 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
 
   const [posMode, setPosMode] = useState<'INDIVIDUAL' | 'BULK'>('INDIVIDUAL');
   const [bulkTotalWeight, setBulkTotalWeight] = useState<number | ''>('');
-
   const [showSimDetails, setShowSimDetails] = useState(false);
 
+  const fileInputRef1 = useRef<HTMLInputElement>(null);
+  const fileInputRef2 = useRef<HTMLInputElement>(null);
   const [imgData1, setImgData1] = useState<string>('');
   const [imgData2, setImgData2] = useState<string>('');
 
   const [isListening, setIsListening] = useState(false);
   const [voiceText, setVoiceText] = useState('');
   const [isProcessingVoice, setIsProcessingVoice] = useState(false);
+
+  // ★ 音声読み上げ機能のON/OFFステート
+  const [isVoiceOutputEnabled, setIsVoiceOutputEnabled] = useState(true);
 
   const [simConfig, setSimConfig] = useState({
     disposalCostPerKg: 40,   
@@ -130,7 +134,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         const compressedBase64 = await compressImage(file);
         if (num === 1) setImgData1(compressedBase64); else setImgData2(compressedBase64);
     } catch (err) { alert("画像の処理に失敗しました。"); }
-    // inputのvalueをクリアして同じ画像を再選択可能にする
     e.target.value = '';
   };
 
@@ -173,6 +176,18 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                 showToast('未知線種を仮登録しました', `「${result.data.wireType}」の画像とデータをデータベースに保存しました。`, 'success');
             } else {
                 showToast('既存マスターと一致', `「${result.data.wireType}」として査定しました。`, 'info');
+            }
+
+            // ★ Web Speech API による音声読み上げ処理
+            if (isVoiceOutputEnabled && 'speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); // 前の音声をクリア
+                const speakText = result.data.isNewFlag
+                    ? `AI査定完了。未知の線種として、${result.data.wireType} を仮登録しました。理由は、${result.data.reason} です。`
+                    : `AI査定完了。マスターデータから、${result.data.wireType} と特定しました。理由は、${result.data.reason} です。`;
+                const utterance = new SpeechSynthesisUtterance(speakText);
+                utterance.lang = 'ja-JP';
+                utterance.rate = 1.1; // 少し早めのテンポ
+                window.speechSynthesis.speak(utterance);
             }
 
             setIsAiModalOpen(false);
@@ -446,7 +461,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         </div>
       </div>
 
-      {/* ★ AI モーダル（カメラ・フォルダ選択分割版） */}
+      {/* ★ AI モーダル（音声ON/OFFスイッチ追加） */}
       {isAiModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-gray-900 w-full max-w-2xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col">
@@ -490,7 +505,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                     </p>
 
                     <div className="flex flex-col md:flex-row gap-4 mb-6">
-                        {/* 1. 断面画像 */}
                         <div className={`flex-1 p-4 border-2 border-dashed rounded-md flex flex-col items-center justify-center transition-all ${imgData1 ? 'border-blue-500 bg-blue-900/20' : 'border-gray-600 bg-gray-800/50'}`}>
                             <span className={`text-sm font-bold mb-4 ${imgData1 ? 'text-blue-400' : 'text-gray-300'}`}>
                                 {imgData1 ? '✅ 断面画像 (読込済)' : '1. 断面画像 (必須)'}
@@ -507,7 +521,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                             </div>
                         </div>
 
-                        {/* 2. 表面印字画像 */}
                         <div className={`flex-1 p-4 border-2 border-dashed rounded-md flex flex-col items-center justify-center transition-all ${imgData2 ? 'border-blue-500 bg-blue-900/20' : 'border-gray-600 bg-gray-800/50'}`}>
                             <span className={`text-sm font-bold mb-4 ${imgData2 ? 'text-blue-400' : 'text-gray-300'}`}>
                                 {imgData2 ? '✅ 印字画像 (読込済)' : '2. 表面印字 (任意)'}
@@ -528,6 +541,20 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                     <button onClick={runAiAnalysis} disabled={!imgData1} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-md flex justify-center items-center gap-2 disabled:bg-gray-700 transition shadow-lg text-lg">
                         <Icons.Sparkles />解析してカートに追加する
                     </button>
+
+                    {/* ★ 音声読み上げON/OFFトグル */}
+                    <div className="mt-4 flex justify-center">
+                        <label className="flex items-center gap-2 text-sm text-gray-400 cursor-pointer hover:text-gray-300 transition-colors">
+                            <input 
+                                type="checkbox" 
+                                checked={isVoiceOutputEnabled} 
+                                onChange={e => setIsVoiceOutputEnabled(e.target.checked)}
+                                className="w-4 h-4 accent-blue-500 rounded-sm cursor-pointer"
+                            />
+                            🔊 査定結果と根拠を音声で読み上げる
+                        </label>
+                    </div>
+
                 </div>
               )}
             </div>
