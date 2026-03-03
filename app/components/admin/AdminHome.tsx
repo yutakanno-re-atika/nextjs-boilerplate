@@ -68,7 +68,6 @@ const getDisplayName = (w: any) => {
     return name;
 };
 
-// ★修正: 最強の時間フォーマッター (iOS Safariのバグも、変な文字列も強引に解析)
 const formatTime = (val: any) => {
     if (!val) return '--:--';
     try {
@@ -92,14 +91,10 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
     const [isMounted, setIsMounted] = useState(false);
     const [showAiData, setShowAiData] = useState(true);
 
-    // ★修正: 複数画像アップロード用ステート
     const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
     const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
     const [uploadedPhotoUrls, setUploadedPhotoUrls] = useState<string[]>([]);
     
-    const cameraRef = useRef<HTMLInputElement>(null);
-    const galleryRef = useRef<HTMLInputElement>(null);
-
     useEffect(() => { setIsMounted(true); }, []);
 
     const copperPrice = Number(data?.config?.market_price) || 1450;
@@ -171,7 +166,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
         const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
 
         const thisMonthProds = productions.filter((p: any) => {
-            try { const d = new Date(p.date); return d.getMonth() === currentMonth && d.getFullYear() === currentYear; } catch(e) { return false; }
+            try { const d = new Date(p.createdAt); return d.getMonth() === currentMonth && d.getFullYear() === currentYear; } catch(e) { return false; }
         });
 
         const curCop = thisMonthProds.reduce((sum, p) => sum + (Number(p.outputCopper) || 0), 0);
@@ -262,6 +257,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
         });
     };
 
+    // ★ 修正：ファイルピッカーが確実に開くように label 経由での発火に変更、さらに1秒スリープを追加
     const handleMultiPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
         if (files.length === 0) return;
@@ -281,30 +277,37 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
 
         const newUrls: string[] = [];
 
-        for (let i = 0; i < files.length; i++) {
-            setUploadProgress({ current: i + 1, total: files.length });
-            try {
-                const base64Data = await compressImage(files[i]);
-                const payload = {
-                    action: 'UPLOAD_STAFF_PHOTO',
-                    uploaderId: uploaderId,
-                    fileName: `Photo_${new Date().getTime()}_${i+1}.jpg`,
-                    mimeType: 'image/jpeg',
-                    data: base64Data
-                };
-                
-                const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                const result = await res.json();
-                
-                if (result.status === 'success') {
-                    newUrls.push(result.url);
-                } else { alert(`画像 ${i+1}枚目のアップロード失敗: ` + result.message); }
-            } catch (err) { alert(`画像 ${i+1}枚目の処理エラー: ` + err); }
+        try {
+            for (let i = 0; i < files.length; i++) {
+                setUploadProgress({ current: i + 1, total: files.length });
+                try {
+                    const base64Data = await compressImage(files[i]);
+                    const payload = {
+                        action: 'UPLOAD_STAFF_PHOTO',
+                        uploaderId: uploaderId,
+                        fileName: `Photo_${new Date().getTime()}_${i+1}.jpg`,
+                        mimeType: 'image/jpeg',
+                        data: base64Data
+                    };
+                    
+                    const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    const result = await res.json();
+                    
+                    if (result.status === 'success') {
+                        newUrls.push(result.url);
+                    } else { alert(`画像 ${i+1}枚目のアップロード失敗: ` + result.message); }
+
+                    // ★ GASへの過負荷（Too many concurrent requests）を防ぐための安全なスリープ処理
+                    if (i < files.length - 1) {
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    }
+                } catch (err) { alert(`画像 ${i+1}枚目の処理エラー: ` + err); }
+            }
+        } finally {
+            setUploadedPhotoUrls(newUrls);
+            setIsUploadingPhoto(false);
+            e.target.value = ''; 
         }
-        
-        setUploadedPhotoUrls(newUrls);
-        setIsUploadingPhoto(false);
-        e.target.value = ''; 
     };
 
     if (!isMounted) return null;
@@ -540,19 +543,20 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                             </div>
                         </div>
 
+                        {/* ★ 修正：label要素を使った直接起動に変更（機能不全対策） */}
                         <div className="flex gap-3 mb-4">
-                            <button onClick={() => cameraRef.current?.click()} disabled={isUploadingPhoto} className="flex-1 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 py-6 rounded-sm font-bold flex flex-col items-center justify-center gap-2 transition disabled:opacity-50">
+                            <label className={`flex-1 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 py-6 rounded-sm font-bold flex flex-col items-center justify-center gap-2 transition cursor-pointer ${isUploadingPhoto ? 'opacity-50 pointer-events-none' : ''}`}>
                                 <Icons.Camera />
                                 <span className="text-sm">カメラで撮影</span>
-                            </button>
-                            <button onClick={() => galleryRef.current?.click()} disabled={isUploadingPhoto} className="flex-1 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 py-6 rounded-sm font-bold flex flex-col items-center justify-center gap-2 transition disabled:opacity-50">
+                                <input type="file" accept="image/*" capture="environment" onChange={handleMultiPhotoUpload} className="hidden" disabled={isUploadingPhoto} />
+                            </label>
+                            
+                            <label className={`flex-1 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 py-6 rounded-sm font-bold flex flex-col items-center justify-center gap-2 transition cursor-pointer ${isUploadingPhoto ? 'opacity-50 pointer-events-none' : ''}`}>
                                 <Icons.UploadCloud />
                                 <span className="text-sm">フォルダから複数選択</span>
-                            </button>
+                                <input type="file" accept="image/*" multiple onChange={handleMultiPhotoUpload} className="hidden" disabled={isUploadingPhoto} />
+                            </label>
                         </div>
-
-                        <input type="file" accept="image/*" capture="environment" ref={cameraRef} onChange={handleMultiPhotoUpload} className="hidden" disabled={isUploadingPhoto} />
-                        <input type="file" accept="image/*" multiple ref={galleryRef} onChange={handleMultiPhotoUpload} className="hidden" disabled={isUploadingPhoto} />
 
                         {isUploadingPhoto && (
                             <div className="text-center p-4 bg-gray-50 border border-gray-200 rounded-sm">
@@ -567,7 +571,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                         {!isUploadingPhoto && uploadedPhotoUrls.length > 0 && (
                             <div className="p-4 bg-green-50 border border-green-200 rounded-sm">
                                 <div className="flex items-center gap-2 mb-2 text-green-700">
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>
+                                    <Icons.Check />
                                     <span className="font-bold text-sm">{uploadedPhotoUrls.length}枚のアップロード完了！</span>
                                 </div>
                                 <ul className="text-xs text-blue-600 space-y-1">
