@@ -113,8 +113,21 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       setIsModalOpen(true);
   };
 
-  // ★ 修正: DB登録時にAI解析用の画像をDriveにアップロードし、URLをセットする
   const handleSave = async () => {
+    // ★ 最終防衛ライン: 手動入力時も含めた重複チェック
+    if (!editingItem.id && activeTab === 'WIRES') {
+        const isDuplicate = wires.some((w:any) => 
+            (w.maker || '') === (editingItem.maker || '') && 
+            (w.name || '') === (editingItem.name || '') && 
+            (String(w.sq) || '') === String(editingItem.sq || '') && 
+            (String(w.core) || '') === String(editingItem.core || '')
+        );
+        if (isDuplicate) {
+            alert('⚠️ この組み合わせ（メーカー・品名・サイズ・芯数）は既に登録されています。\n重複登録を防ぐため、一覧から既存のデータを編集してください。');
+            return;
+        }
+    }
+
     setIsSubmitting(true);
     let sheetName = '';
     if (activeTab === 'WIRES') sheetName = 'Products_Wire';
@@ -125,7 +138,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
     let finalItem = { ...editingItem };
 
-    // AIアシストで取得した保留画像があれば、レコード保存前にDriveへアップロードしてURL化する
     if (finalItem._pendingImageData1) {
         try {
             const res = await fetch('/api/gas', {
@@ -189,7 +201,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         1: item.maker, 2: item.name, 3: item.year, 4: item.sq, 
         5: item.sampleTotal, 6: item.sampleCopper,
         7: item.core, 8: item.conductor, 9: item.ratio, 10: item.memo 
-        // 既存のレコード更新時はここでは画像URLは更新しない（別途UPLOAD_IMAGEで直接叩かれるため）
     };
     if (tab === 'UNKNOWN') return { 1: item.name, 2: item.ratio, 3: item.reason }; 
     if (tab === 'CASTINGS') return { 1: item.name, 2: item.type, 4: item.ratio };
@@ -257,11 +268,38 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
       setTimeout(() => {
           if (result.status === 'success') {
+              const maker = result.data.maker === '-' ? '' : result.data.maker;
+              const name = result.data.name === '-' ? '' : result.data.name;
+              const sq = result.data.size === '-' ? '' : result.data.size;
+              const core = result.data.core === '-' ? '' : result.data.core;
+
+              // ★ 既存マスターとの重複チェックインターロック
+              const isDuplicate = wires.some((w:any) => 
+                  (w.maker || '') === maker && 
+                  (w.name || '') === name && 
+                  (String(w.sq) || '') === String(sq) && 
+                  (String(w.core) || '') === String(core)
+              );
+
+              if (isDuplicate) {
+                  if (isVoiceOutputEnabled && 'speechSynthesis' in window) {
+                      window.speechSynthesis.cancel();
+                      const speakText = `この線種は既に登録されています。`;
+                      const utterance = new SpeechSynthesisUtterance(speakText);
+                      utterance.lang = 'ja-JP';
+                      utterance.rate = 1.4;
+                      window.speechSynthesis.speak(utterance);
+                  }
+                  alert(`⚠️ この線種は既に登録されています。\n【 ${maker} ${name} ${sq ? sq+'sq' : ''} ${core ? core+'C' : ''} 】\n\n重複を避けるため、一覧から既存のデータを編集（画像の追加など）してください。`);
+                  setIsAiModalOpen(false);
+                  setImgData1(''); setImgData2(''); setAiProgressStep(0);
+                  setAiStatus('IDLE');
+                  return;
+              }
+
               if (isVoiceOutputEnabled && 'speechSynthesis' in window) {
                   window.speechSynthesis.cancel();
-                  const makerText = result.data.maker && result.data.maker !== '-' ? result.data.maker : 'メーカー不明';
-                  const nameText = result.data.name && result.data.name !== '-' ? result.data.name : '品名不明';
-                  const speakText = `抽出完了。メーカー、${makerText}。品名、${nameText}。`;
+                  const speakText = `抽出完了。メーカー、${maker || '不明'}。品名、${name || '不明'}。`;
                   const utterance = new SpeechSynthesisUtterance(speakText);
                   utterance.lang = 'ja-JP';
                   utterance.rate = 1.4;
@@ -269,11 +307,11 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
               }
 
               setEditingItem({
-                  maker: result.data.maker === '-' ? '' : result.data.maker,
-                  name: result.data.name === '-' ? '' : result.data.name,
+                  maker: maker,
+                  name: name,
                   year: result.data.year === '-' ? '' : result.data.year,
-                  sq: result.data.size === '-' ? '' : result.data.size,
-                  core: result.data.core === '-' ? '' : result.data.core,
+                  sq: sq,
+                  core: core,
                   conductor: result.data.conductor === '-' ? '' : result.data.conductor,
                   ratio: '',
                   memo: '【AIアシスト抽出】\n画像を元に仕様を自動入力しました。実測による歩留まりを入力してください。',
@@ -426,7 +464,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const renderModalContent = () => {
     if (activeTab === 'WIRES' || activeTab === 'UNKNOWN') return (
       <div className="space-y-4">
-        {/* ★ UIメッセージの変更 */}
         {editingItem._pendingImageData1 && (
             <div className="bg-blue-50 border border-blue-200 p-3 rounded-sm text-xs text-blue-800 font-bold flex flex-col gap-1">
                 <div className="flex items-center gap-2"><Icons.Sparkles /> 画像からAIが仕様を自動入力しました。</div>
@@ -613,7 +650,7 @@ return (
         </div>
       </div>
 
-      {/* ★ AIアシスト用の画像アップロードモーダル */}
+      {/* ★ AIアシスト用の画像アップロードモーダル (分割ボタン) */}
       {isAiModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-gray-900 w-full max-w-2xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col">
@@ -659,7 +696,6 @@ return (
                     </p>
 
                     <div className="flex flex-col md:flex-row gap-4 mb-6">
-                        {/* ★ 1. 断面画像 (プレビュー機能付き) */}
                         <div className={`flex-1 p-4 border-2 border-dashed rounded-md flex flex-col items-center justify-center transition-all relative overflow-hidden ${imgData1 ? 'border-blue-500 bg-blue-900/20 p-2' : 'border-gray-600 bg-gray-800/50'}`}>
                             {imgData1 ? (
                                 <div className="w-full flex flex-col items-center">
@@ -688,7 +724,6 @@ return (
                             )}
                         </div>
 
-                        {/* ★ 2. 表面印字画像 (プレビュー機能付き) */}
                         <div className={`flex-1 p-4 border-2 border-dashed rounded-md flex flex-col items-center justify-center transition-all relative overflow-hidden ${imgData2 ? 'border-blue-500 bg-blue-900/20 p-2' : 'border-gray-600 bg-gray-800/50'}`}>
                             {imgData2 ? (
                                 <div className="w-full flex flex-col items-center">
