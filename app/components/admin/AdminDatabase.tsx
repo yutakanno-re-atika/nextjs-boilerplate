@@ -1,19 +1,23 @@
 // @ts-nocheck
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 
 const Icons = {
   Plus: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>,
   Edit: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>,
   Trash: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
   Search: () => <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
-  Image: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
+  Image: () => <svg className="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
   Sparkles: () => <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 8.134a1 1 0 010 1.932l-3.354.933-1.179 4.456a1 1 0 01-1.934 0l-1.179-4.456-3.354-.933a1 1 0 010-1.932l3.354-.933 1.179-4.456A1 1 0 0112 2z" clipRule="evenodd" /></svg>,
   ArrowUp: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>,
   Close: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>,
   Refresh: () => <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
   Filter: () => <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>,
-  Camera: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
-  UploadCloud: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+  Camera: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+  UploadCloud: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>,
+  // ★ ソート用アイコン
+  SortAsc: () => <svg className="w-3 h-3 inline-block ml-1 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 15l7-7 7 7" /></svg>,
+  SortDesc: () => <svg className="w-3 h-3 inline-block ml-1 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" /></svg>,
+  SortNone: () => <svg className="w-3 h-3 inline-block ml-1 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" /></svg>
 };
 
 export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoiceOutputEnabled?: boolean }) => {
@@ -21,6 +25,9 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMaker, setFilterMaker] = useState('');
   const [filterType, setFilterType] = useState('');
+
+  // ★ 追加：ソート機能のステート
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
@@ -52,6 +59,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     setSearchTerm('');
     setFilterMaker('');
     setFilterType('');
+    setSortConfig(null); // タブ切り替え時にソートをリセット
   };
 
   const getDriveImageUrl = (url: string, asThumbnail: boolean = true) => {
@@ -116,7 +124,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   };
 
   const handleSave = async () => {
-    // ★ 修正：手動登録時の重複チェックにも「year(製造年)」を追加
     if (!editingItem.id && activeTab === 'WIRES') {
         const isDuplicate = wires.some((w:any) => 
             (w.maker || '') === (editingItem.maker || '') && 
@@ -324,7 +331,23 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     e.target.value = '';
   };
 
+  // ★ 追加：ソートの実行関数
+  const handleSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  // ★ 追加：ソートアイコンを生成するコンポーネント
+  const SortIcon = ({ columnKey }: { columnKey: string }) => {
+    if (sortConfig?.key !== columnKey) return <Icons.SortNone />;
+    return sortConfig.direction === 'asc' ? <Icons.SortAsc /> : <Icons.SortDesc />;
+  };
+
   const renderTable = () => {
+    // 1. 検索・フィルター処理
     let filteredData = [];
     
     if (activeTab === 'WIRES') {
@@ -345,22 +368,80 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     if (activeTab === 'CLIENTS') filteredData = clients.filter((c:any) => c.name.includes(searchTerm));
     if (activeTab === 'STAFF') filteredData = staffs.filter((s:any) => s.name.includes(searchTerm));
 
+    // 2. ソート処理
+    let sortedData = [...filteredData];
+    if (sortConfig !== null) {
+      sortedData.sort((a, b) => {
+        let aValue = a[sortConfig.key];
+        let bValue = b[sortConfig.key];
+
+        // 数値として扱えるものは数値比較（ratio, points, rate等）
+        if (!isNaN(Number(aValue)) && !isNaN(Number(bValue))) {
+             aValue = Number(aValue);
+             bValue = Number(bValue);
+        } else {
+             aValue = String(aValue || '').toLowerCase();
+             bValue = String(bValue || '').toLowerCase();
+        }
+
+        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
     return (
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse text-sm whitespace-nowrap md:whitespace-normal">
           <thead>
+            {/* ★ 修正：各ヘッダーをクリック可能にし、ソートアイコンを配置 */}
             <tr className="bg-gray-100 text-gray-500 uppercase tracking-wider text-xs">
-              {activeTab === 'WIRES' && <><th className="p-3">メーカー</th><th className="p-3">品名</th><th className="p-3">製造年</th><th className="p-3">SQ/芯数</th><th className="p-3">歩留まり</th><th className="p-3">画像 (印字/断面)</th></>}
-              {activeTab === 'UNKNOWN' && <><th className="p-3">登録日時</th><th className="p-3">AI推定品名</th><th className="p-3">算出歩留まり</th><th className="p-3 w-1/3">推論の根拠 (Reasoning)</th></>}
-              {activeTab === 'CASTINGS' && <><th className="p-3">品目名</th><th className="p-3">種別</th><th className="p-3">歩留まり</th></>}
-              {activeTab === 'CLIENTS' && <><th className="p-3">業者名</th><th className="p-3">ランク</th><th className="p-3">電話番号</th><th className="p-3">保有ポイント</th></>}
-              {activeTab === 'STAFF' && <><th className="p-3">スタッフ名</th><th className="p-3">権限</th><th className="p-3">ステータス</th></>}
+              {activeTab === 'WIRES' && (
+                  <>
+                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('maker')}>メーカー <SortIcon columnKey="maker" /></th>
+                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('name')}>品名 <SortIcon columnKey="name" /></th>
+                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('year')}>製造年 <SortIcon columnKey="year" /></th>
+                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('sq')}>SQ/芯数 <SortIcon columnKey="sq" /></th>
+                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('ratio')}>歩留まり <SortIcon columnKey="ratio" /></th>
+                      <th className="p-3">画像 (印字/断面)</th>
+                  </>
+              )}
+              {activeTab === 'UNKNOWN' && (
+                  <>
+                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('createdAt')}>登録日時 <SortIcon columnKey="createdAt" /></th>
+                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('name')}>AI推定品名 <SortIcon columnKey="name" /></th>
+                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('ratio')}>算出歩留まり <SortIcon columnKey="ratio" /></th>
+                      <th className="p-3 w-1/3">推論の根拠 (Reasoning)</th>
+                  </>
+              )}
+              {activeTab === 'CASTINGS' && (
+                  <>
+                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('name')}>品目名 <SortIcon columnKey="name" /></th>
+                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('type')}>種別 <SortIcon columnKey="type" /></th>
+                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('ratio')}>歩留まり <SortIcon columnKey="ratio" /></th>
+                  </>
+              )}
+              {activeTab === 'CLIENTS' && (
+                  <>
+                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('name')}>業者名 <SortIcon columnKey="name" /></th>
+                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('rank')}>ランク <SortIcon columnKey="rank" /></th>
+                      <th className="p-3">電話番号</th>
+                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('points')}>保有ポイント <SortIcon columnKey="points" /></th>
+                  </>
+              )}
+              {activeTab === 'STAFF' && (
+                  <>
+                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('name')}>スタッフ名 <SortIcon columnKey="name" /></th>
+                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('role')}>権限 <SortIcon columnKey="role" /></th>
+                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('status')}>ステータス <SortIcon columnKey="status" /></th>
+                  </>
+              )}
               <th className="p-3 text-right">操作</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 bg-white">
-            {filteredData.map((item: any, idx: number) => (
-              <tr key={idx} className="hover:bg-gray-50 transition">
+            {sortedData.map((item: any, idx: number) => (
+              <tr key={item.id || idx} className="hover:bg-gray-50 transition">
                 {activeTab === 'WIRES' && (
                   <>
                     <td className="p-3 font-bold text-gray-700">{item.maker || '-'}</td>
@@ -368,23 +449,32 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                     <td className="p-3 text-gray-600">{item.year || '-'}</td>
                     <td className="p-3 text-gray-600">{item.sq || '-'} sq / {item.core || '-'}C</td>
                     <td className="p-3 font-mono font-bold text-blue-600 text-base">{item.ratio}%</td>
-                    <td className="p-3 flex gap-2">
-                        {[11, 12].map(colIdx => (
-                            <div key={colIdx} className="relative w-10 h-10 border border-gray-300 rounded-sm overflow-hidden bg-gray-100 flex items-center justify-center group">
-                                {item[`image${colIdx-10}`] ? (
-                                    <a href={getDriveImageUrl(item[`image${colIdx-10}`], false)} target="_blank" rel="noopener noreferrer" className="w-full h-full block">
-                                        <img src={getDriveImageUrl(item[`image${colIdx-10}`])} className="w-full h-full object-cover group-hover:scale-110 transition-transform cursor-zoom-in" alt="Wire" />
-                                    </a>
-                                ) : (
-                                    <Icons.Image />
-                                )}
-                                <label className="absolute bottom-0 right-0 bg-black/60 text-white p-0.5 rounded-tl-sm cursor-pointer hover:bg-blue-600 transition" title="画像をアップロード/上書き">
-                                    <Icons.Edit />
-                                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, item.id, colIdx, 'Products_Wire')} />
-                                </label>
-                                {uploadingImageId === `${item.id}-${colIdx}` && <div className="absolute inset-0 bg-black/50 flex items-center justify-center"><Icons.Refresh /></div>}
-                            </div>
-                        ))}
+                    
+                    {/* ★ 修正：画像を大きくし、閲覧と編集(アップロード)を分離 */}
+                    <td className="p-3">
+                        <div className="flex gap-4">
+                            {[11, 12].map(colIdx => {
+                                const hasImage = !!item[`image${colIdx-10}`];
+                                return (
+                                    <div key={colIdx} className="flex flex-col gap-2 items-center">
+                                        <div className="relative w-20 h-20 border border-gray-300 rounded-sm overflow-hidden bg-gray-100 flex items-center justify-center group shadow-sm">
+                                            {hasImage ? (
+                                                <a href={getDriveImageUrl(item[`image${colIdx-10}`], false)} target="_blank" rel="noopener noreferrer" className="w-full h-full block">
+                                                    <img src={getDriveImageUrl(item[`image${colIdx-10}`])} className="w-full h-full object-cover group-hover:scale-110 transition-transform cursor-zoom-in" alt="Wire" />
+                                                </a>
+                                            ) : (
+                                                <Icons.Image />
+                                            )}
+                                            {uploadingImageId === `${item.id}-${colIdx}` && <div className="absolute inset-0 bg-black/50 flex items-center justify-center"><Icons.Refresh /></div>}
+                                        </div>
+                                        <label className={`text-[10px] flex items-center justify-center gap-1 border px-2 py-1 rounded-sm cursor-pointer transition w-full text-center font-bold ${hasImage ? 'text-gray-600 border-gray-300 bg-white hover:bg-gray-100' : 'text-blue-600 border-blue-300 bg-blue-50 hover:bg-blue-600 hover:text-white'}`}>
+                                            <Icons.Camera /> {hasImage ? '変更' : '登録'}
+                                            <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, item.id, colIdx, 'Products_Wire')} />
+                                        </label>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </td>
                   </>
                 )}
