@@ -39,7 +39,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   const [voiceText, setVoiceText] = useState('');
   const [isProcessingVoice, setIsProcessingVoice] = useState(false);
 
-  // ★ 画像手動アップロード用のステート
   const [isUploadingMaster, setIsUploadingMaster] = useState<string | null>(null);
 
   const [simConfig, setSimConfig] = useState({
@@ -168,7 +167,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
             const isMixed = result.data.wireType.includes('フレコン') || result.data.wireType.includes('混合');
             const displayName = result.data.isNewFlag || isMixed ? `💡 AI査定: ${result.data.wireType}` : result.data.wireType;
             
-            // ★ カートに安全装置のフラグや画像データを渡す
             setCart(prev => [{
                 id: Date.now().toString(), 
                 product: displayName, 
@@ -216,7 +214,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
     } 
   };
 
-  // ★ カートから手動でマスター画像を登録する関数
   const uploadMasterImageFromCart = async (item: any) => {
       setIsUploadingMaster(item.id);
       try {
@@ -229,7 +226,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
               success = true;
           }
           if (item.pendingImg2) {
-              // 負荷を和らげるためのスリープ
               await new Promise(resolve => setTimeout(resolve, 500));
               await fetch('/api/gas', {
                   method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -239,7 +235,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           }
           if (success) {
               setCart(prev => prev.map(i => i.id === item.id ? { ...i, isImageUploaded: true } : i));
-              showToast('マスター画像登録', 'マスターデータベースに画像が反映されました', 'success');
+              showToast('マスター画像更新', 'マスターデータベースに画像が反映されました', 'success');
           }
       } catch (e) {
           alert("画像の登録に失敗しました。");
@@ -347,9 +343,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         </div>
       )}
 
-      {/* 左パネル: 商品リスト */}
       <div className="w-full lg:w-7/12 flex flex-col bg-white border border-gray-200 rounded-sm shadow-sm overflow-hidden h-[50vh] lg:h-full shrink-0">
-        
         <div className="p-4 bg-gray-50 border-b border-gray-200 flex flex-col md:flex-row gap-3 items-center relative shrink-0">
           {(isListening || isProcessingVoice || voiceText) && (
               <div className="absolute top-full left-0 w-full z-10 bg-blue-900 text-white p-2 text-center text-sm font-bold shadow-md animate-in slide-in-from-top-2">
@@ -404,9 +398,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         </div>
       </div>
 
-      {/* 右パネル: カート＆利益計算 */}
       <div className="w-full lg:w-5/12 bg-white border border-gray-200 rounded-sm flex flex-col shadow-lg relative overflow-hidden min-h-[50vh] lg:h-full shrink-0">
-        
         <div className="flex shrink-0">
           <button onClick={() => setPosMode('INDIVIDUAL')} className={`flex-1 py-3 text-sm font-bold flex items-center justify-center gap-2 transition-all ${posMode === 'INDIVIDUAL' ? 'bg-white text-blue-700 border-t-4 border-t-blue-600' : 'bg-gray-100 text-gray-400 border-t-4 border-t-transparent border-b border-b-gray-200'}`}><Icons.ScaleIndividual /> 個別計量モード</button>
           <button onClick={() => setPosMode('BULK')} className={`flex-1 py-3 text-sm font-bold flex items-center justify-center gap-2 transition-all ${posMode === 'BULK' ? 'bg-white text-blue-700 border-t-4 border-t-blue-600' : 'bg-gray-100 text-gray-400 border-t-4 border-t-transparent border-b border-b-gray-200'}`}><Icons.Box /> フレコン一括モード</button>
@@ -463,8 +455,8 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                   </div>
                   {item.reason && <div className="mt-3 bg-white border border-blue-200 p-3 rounded-sm text-xs lg:text-sm text-gray-700 leading-relaxed shadow-sm"><span className="font-black text-blue-700 block mb-1">💡 AI推論の根拠</span>{item.reason}</div>}
                   
-                  {/* ★ マスター画像未登録時のセーフティアラート＆アップロードボタン */}
-                  {item.isMasterImageEmpty && !item.isImageUploaded && (
+                  {/* ★ マスター画像未登録の場合 */}
+                  {item.isMasterImageEmpty && !item.isImageUploaded && item.pendingImg1 && (
                       <div className="mt-2 bg-yellow-50 border border-yellow-200 p-2 rounded-sm flex flex-col sm:flex-row justify-between items-center gap-2">
                           <span className="text-xs text-yellow-800 font-bold">⚠️ マスター画像が未登録です</span>
                           <button 
@@ -476,9 +468,28 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                           </button>
                       </div>
                   )}
+
+                  {/* ★ 追加：マスター画像が既に登録済みの場合の上書きボタン */}
+                  {!item.isMasterImageEmpty && !item.isImageUploaded && item.pendingImg1 && !item.isNewAi && (
+                      <div className="mt-2 bg-gray-50 border border-gray-200 p-2 rounded-sm flex flex-col sm:flex-row justify-between items-center gap-2">
+                          <span className="text-xs text-gray-500 font-bold">✅ マスター画像は登録済みです</span>
+                          <button 
+                              onClick={() => {
+                                  if(confirm('現在のマスター画像を、今回撮影した写真で上書き更新しますか？')) {
+                                      uploadMasterImageFromCart(item);
+                                  }
+                              }}
+                              disabled={isUploadingMaster === item.id}
+                              className="bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 text-[10px] px-3 py-1.5 rounded-sm font-bold shadow-sm transition disabled:opacity-50 flex items-center gap-1 w-full sm:w-auto justify-center"
+                          >
+                              {isUploadingMaster === item.id ? <><Icons.Refresh /> 登録中...</> : '🔄 今回の写真で上書き'}
+                          </button>
+                      </div>
+                  )}
+
                   {item.isImageUploaded && (
                       <div className="mt-2 bg-green-50 border border-green-200 p-2 rounded-sm text-center sm:text-left">
-                          <span className="text-xs text-green-700 font-bold">✅ マスターに画像を登録しました</span>
+                          <span className="text-xs text-green-700 font-bold">✅ マスター画像を更新しました</span>
                       </div>
                   )}
                 </div>
@@ -522,7 +533,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         </div>
       </div>
 
-      {/* ★ AI モーダル（プレビュー機能追加） */}
       {isAiModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-gray-900 w-full max-w-2xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col">
@@ -566,7 +576,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                     </p>
 
                     <div className="flex flex-col md:flex-row gap-4 mb-6">
-                        {/* ★ 1. 断面画像 (プレビュー機能付き) */}
                         <div className={`flex-1 p-4 border-2 border-dashed rounded-md flex flex-col items-center justify-center transition-all relative overflow-hidden ${imgData1 ? 'border-blue-500 bg-blue-900/20 p-2' : 'border-gray-600 bg-gray-800/50'}`}>
                             {imgData1 ? (
                                 <div className="w-full flex flex-col items-center">
@@ -595,7 +604,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                             )}
                         </div>
 
-                        {/* ★ 2. 表面印字画像 (プレビュー機能付き) */}
                         <div className={`flex-1 p-4 border-2 border-dashed rounded-md flex flex-col items-center justify-center transition-all relative overflow-hidden ${imgData2 ? 'border-blue-500 bg-blue-900/20 p-2' : 'border-gray-600 bg-gray-800/50'}`}>
                             {imgData2 ? (
                                 <div className="w-full flex flex-col items-center">
