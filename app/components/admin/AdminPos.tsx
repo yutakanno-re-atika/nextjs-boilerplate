@@ -12,7 +12,8 @@ const Icons = {
   Box: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>,
   ScaleIndividual: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>,
   Mic: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>,
-  CheckCircle: () => <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+  CheckCircle: () => <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+  UploadCloud: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
 };
 
 export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onClear }: { data: any, editingResId?: string | null, localReservations?: any[], onSuccess: () => void, onClear: () => void }) => {
@@ -30,8 +31,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
 
   const [showSimDetails, setShowSimDetails] = useState(false);
 
-  const fileInputRef1 = useRef<HTMLInputElement>(null);
-  const fileInputRef2 = useRef<HTMLInputElement>(null);
   const [imgData1, setImgData1] = useState<string>('');
   const [imgData2, setImgData2] = useState<string>('');
 
@@ -124,13 +123,15 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       });
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, num: 1 | 2) => {
+  const handleAiImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, num: 1 | 2) => {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
         const compressedBase64 = await compressImage(file);
         if (num === 1) setImgData1(compressedBase64); else setImgData2(compressedBase64);
     } catch (err) { alert("画像の処理に失敗しました。"); }
+    // inputのvalueをクリアして同じ画像を再選択可能にする
+    e.target.value = '';
   };
 
   const runAiAnalysis = async () => {
@@ -319,7 +320,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
             className="w-full md:w-auto bg-gradient-to-r from-blue-700 to-blue-900 hover:from-blue-600 hover:to-blue-800 text-white font-bold py-3 px-5 rounded-sm flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 whitespace-nowrap"
           >
             <Icons.Camera />
-            {/* ★ 名称変更 */}
             <span>AI 線種分析</span>
           </button>
         </div>
@@ -356,7 +356,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         </div>
 
         <div className="p-3 border-b border-gray-200 bg-white shrink-0">
-          {/* ★ 日本語化 */}
           <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">持込業者・顧客</label>
           <select className="w-full border border-gray-300 bg-white p-2 rounded-sm text-sm font-bold text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer shadow-sm" value={selectedClient?.id || ''} onChange={e => { const client = data?.clients?.find((c:any) => c.id === e.target.value); setSelectedClient(client || null); }}>
             <option value="">新規・非会員 (飛込ゲスト)</option>
@@ -443,15 +442,14 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           </div>
 
           <button onClick={handleCheckout} disabled={isProcessing || simulation.totalWeight === 0 || (posMode === 'BULK' && !isPercentageValid)} className="w-full bg-red-600 hover:bg-red-700 text-white font-black py-4 rounded-sm transition shadow-[0_4px_14px_0_rgba(220,38,38,0.39)] disabled:opacity-50 flex justify-center items-center text-lg">{isProcessing ? <Icons.Refresh /> : '受付を確定してカンバンへ'}</button>
-          {/* ★ 日本語化 */}
           <div className="mt-3 text-center"><button onClick={() => {setCart([]); onClear(); setBulkTotalWeight('');}} className="text-[10px] text-gray-500 font-bold border border-gray-700 px-3 py-1 rounded-sm">カートをリセット</button></div>
         </div>
       </div>
 
-      {/* AI モーダル */}
+      {/* ★ AI モーダル（カメラ・フォルダ選択分割版） */}
       {isAiModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-          <div className="bg-gray-900 w-full max-w-xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col">
+          <div className="bg-gray-900 w-full max-w-2xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col">
             <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-black/50">
               <h3 className="font-black text-white flex items-center gap-2"><Icons.Sparkles /> AI 線種分析</h3>
               {aiStatus !== 'ANALYZING' && <button onClick={() => setIsAiModalOpen(false)} className="text-gray-400 hover:text-white"><Icons.Close /></button>}
@@ -491,18 +489,40 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                         スケール（定規）が写った断面写真と、あれば印字の写真をアップロードしてください。<br/>
                     </p>
 
-                    <div className="flex gap-3 mb-6">
-                        <button onClick={() => fileInputRef1.current?.click()} className={`flex-1 py-10 border-2 border-dashed rounded-md flex flex-col items-center justify-center transition-all ${imgData1 ? 'border-blue-500 bg-blue-900/20 text-blue-300' : 'border-gray-600 text-gray-400 hover:border-gray-400 hover:bg-gray-800'}`}>
-                        <Icons.Camera />
-                        <span className="text-sm font-bold mt-3">{imgData1 ? '断面画像 (読込済)' : '1. 断面 + 定規 (必須)'}</span>
-                        </button>
-                        <input type="file" ref={fileInputRef1} onChange={e => handleImageUpload(e, 1)} className="hidden" accept="image/*" />
-                        
-                        <button onClick={() => fileInputRef2.current?.click()} className={`flex-1 py-10 border-2 border-dashed rounded-md flex flex-col items-center justify-center transition-all ${imgData2 ? 'border-blue-500 bg-blue-900/20 text-blue-300' : 'border-gray-600 text-gray-400 hover:border-gray-400 hover:bg-gray-800'}`}>
-                        <Icons.Camera />
-                        <span className="text-sm font-bold mt-3">{imgData2 ? '印字画像 (読込済)' : '2. 表面印字 (任意)'}</span>
-                        </button>
-                        <input type="file" ref={fileInputRef2} onChange={e => handleImageUpload(e, 2)} className="hidden" accept="image/*" />
+                    <div className="flex flex-col md:flex-row gap-4 mb-6">
+                        {/* 1. 断面画像 */}
+                        <div className={`flex-1 p-4 border-2 border-dashed rounded-md flex flex-col items-center justify-center transition-all ${imgData1 ? 'border-blue-500 bg-blue-900/20' : 'border-gray-600 bg-gray-800/50'}`}>
+                            <span className={`text-sm font-bold mb-4 ${imgData1 ? 'text-blue-400' : 'text-gray-300'}`}>
+                                {imgData1 ? '✅ 断面画像 (読込済)' : '1. 断面画像 (必須)'}
+                            </span>
+                            <div className="flex gap-2 w-full">
+                                <label className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-sm text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-sm">
+                                    <Icons.Camera /> カメラ
+                                    <input type="file" onChange={e => handleAiImageUpload(e, 1)} className="hidden" accept="image/*" capture="environment" />
+                                </label>
+                                <label className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-sm text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-sm">
+                                    <Icons.UploadCloud /> フォルダ
+                                    <input type="file" onChange={e => handleAiImageUpload(e, 1)} className="hidden" accept="image/*" />
+                                </label>
+                            </div>
+                        </div>
+
+                        {/* 2. 表面印字画像 */}
+                        <div className={`flex-1 p-4 border-2 border-dashed rounded-md flex flex-col items-center justify-center transition-all ${imgData2 ? 'border-blue-500 bg-blue-900/20' : 'border-gray-600 bg-gray-800/50'}`}>
+                            <span className={`text-sm font-bold mb-4 ${imgData2 ? 'text-blue-400' : 'text-gray-300'}`}>
+                                {imgData2 ? '✅ 印字画像 (読込済)' : '2. 表面印字 (任意)'}
+                            </span>
+                            <div className="flex gap-2 w-full">
+                                <label className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-sm text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-sm">
+                                    <Icons.Camera /> カメラ
+                                    <input type="file" onChange={e => handleAiImageUpload(e, 2)} className="hidden" accept="image/*" capture="environment" />
+                                </label>
+                                <label className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-sm text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-sm">
+                                    <Icons.UploadCloud /> フォルダ
+                                    <input type="file" onChange={e => handleAiImageUpload(e, 2)} className="hidden" accept="image/*" />
+                                </label>
+                            </div>
+                        </div>
                     </div>
 
                     <button onClick={runAiAnalysis} disabled={!imgData1} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-md flex justify-center items-center gap-2 disabled:bg-gray-700 transition shadow-lg text-lg">
