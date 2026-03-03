@@ -29,7 +29,6 @@ export const AdminDatabase = ({ data }: { data: any }) => {
 
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [aiStatus, setAiStatus] = useState<'IDLE' | 'ANALYZING'>('IDLE');
-  // ★追加：プログレスアニメーション用のステート
   const [aiProgressStep, setAiProgressStep] = useState(0); 
   const [imgData1, setImgData1] = useState<string>('');
   const [imgData2, setImgData2] = useState<string>('');
@@ -212,9 +211,8 @@ export const AdminDatabase = ({ data }: { data: any }) => {
 
   const runAiExtraction = async () => {
     if (!imgData1) return alert('最低1枚の画像（断面など）をアップロードしてください');
-    
     setAiStatus('ANALYZING');
-    setAiProgressStep(1); // ★追加：アニメーション開始
+    setAiProgressStep(1); 
 
     const progressInterval = setInterval(() => {
         setAiProgressStep(prev => {
@@ -637,36 +635,62 @@ return (
                     </p>
 
                     <div className="flex flex-col md:flex-row gap-4 mb-6">
-                        <div className={`flex-1 p-4 border-2 border-dashed rounded-md flex flex-col items-center justify-center transition-all ${imgData1 ? 'border-blue-500 bg-blue-900/20' : 'border-gray-600 bg-gray-800/50'}`}>
-                            <span className={`text-sm font-bold mb-4 ${imgData1 ? 'text-blue-400' : 'text-gray-300'}`}>
-                                {imgData1 ? '✅ 断面画像 (読込済)' : '1. 断面画像 (必須)'}
-                            </span>
-                            <div className="flex gap-2 w-full">
-                                <label className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-sm text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-sm">
-                                    <Icons.Camera /> カメラ
-                                    <input type="file" onChange={e => handleAiImageUpload(e, 1)} className="hidden" accept="image/*" capture="environment" />
-                                </label>
-                                <label className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-sm text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-sm">
-                                    <Icons.UploadCloud /> フォルダ
-                                    <input type="file" onChange={e => handleAiImageUpload(e, 1)} className="hidden" accept="image/*" />
-                                </label>
-                            </div>
+                        {/* ★ 1. 断面画像 (プレビュー機能付き) */}
+                        <div className={`flex-1 p-4 border-2 border-dashed rounded-md flex flex-col items-center justify-center transition-all relative overflow-hidden ${imgData1 ? 'border-blue-500 bg-blue-900/20 p-2' : 'border-gray-600 bg-gray-800/50'}`}>
+                            {imgData1 ? (
+                                <div className="w-full flex flex-col items-center">
+                                    <div className="relative w-full h-32 mb-2 rounded-sm overflow-hidden group">
+                                        <img src={`data:image/jpeg;base64,${imgData1}`} alt="断面プレビュー" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                                        <button onClick={() => setImgData1('')} className="absolute top-2 right-2 bg-red-600/90 hover:bg-red-500 text-white p-2 rounded-sm shadow-md transition-colors">
+                                            <Icons.Trash />
+                                        </button>
+                                    </div>
+                                    <span className="text-xs font-bold text-blue-400">✅ 断面画像 (セット完了)</span>
+                                </div>
+                            ) : (
+                                <>
+                                    <span className="text-sm font-bold mb-4 text-gray-300">1. 断面画像 (必須)</span>
+                                    <div className="flex gap-2 w-full">
+                                        <label className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-sm text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-sm">
+                                            <Icons.Camera /> カメラ
+                                            <input type="file" onChange={e => handleAiImageUpload(e, 1)} className="hidden" accept="image/*" capture="environment" />
+                                        </label>
+                                        <label className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-sm text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-sm">
+                                            <Icons.UploadCloud /> フォルダ
+                                            <input type="file" onChange={e => handleAiImageUpload(e, 1)} className="hidden" accept="image/*" />
+                                        </label>
+                                    </div>
+                                </>
+                            )}
                         </div>
 
-                        <div className={`flex-1 p-4 border-2 border-dashed rounded-md flex flex-col items-center justify-center transition-all ${imgData2 ? 'border-blue-500 bg-blue-900/20' : 'border-gray-600 bg-gray-800/50'}`}>
-                            <span className={`text-sm font-bold mb-4 ${imgData2 ? 'text-blue-400' : 'text-gray-300'}`}>
-                                {imgData2 ? '✅ 印字画像 (読込済)' : '2. 表面印字 (任意)'}
-                            </span>
-                            <div className="flex gap-2 w-full">
-                                <label className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-sm text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-sm">
-                                    <Icons.Camera /> カメラ
-                                    <input type="file" onChange={e => handleAiImageUpload(e, 2)} className="hidden" accept="image/*" capture="environment" />
-                                </label>
-                                <label className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-sm text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-sm">
-                                    <Icons.UploadCloud /> フォルダ
-                                    <input type="file" onChange={e => handleAiImageUpload(e, 2)} className="hidden" accept="image/*" />
-                                </label>
-                            </div>
+                        {/* ★ 2. 表面印字画像 (プレビュー機能付き) */}
+                        <div className={`flex-1 p-4 border-2 border-dashed rounded-md flex flex-col items-center justify-center transition-all relative overflow-hidden ${imgData2 ? 'border-blue-500 bg-blue-900/20 p-2' : 'border-gray-600 bg-gray-800/50'}`}>
+                            {imgData2 ? (
+                                <div className="w-full flex flex-col items-center">
+                                    <div className="relative w-full h-32 mb-2 rounded-sm overflow-hidden group">
+                                        <img src={`data:image/jpeg;base64,${imgData2}`} alt="印字プレビュー" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                                        <button onClick={() => setImgData2('')} className="absolute top-2 right-2 bg-red-600/90 hover:bg-red-500 text-white p-2 rounded-sm shadow-md transition-colors">
+                                            <Icons.Trash />
+                                        </button>
+                                    </div>
+                                    <span className="text-xs font-bold text-blue-400">✅ 印字画像 (セット完了)</span>
+                                </div>
+                            ) : (
+                                <>
+                                    <span className="text-sm font-bold mb-4 text-gray-300">2. 表面印字 (任意)</span>
+                                    <div className="flex gap-2 w-full">
+                                        <label className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-sm text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-sm">
+                                            <Icons.Camera /> カメラ
+                                            <input type="file" onChange={e => handleAiImageUpload(e, 2)} className="hidden" accept="image/*" capture="environment" />
+                                        </label>
+                                        <label className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-sm text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-sm">
+                                            <Icons.UploadCloud /> フォルダ
+                                            <input type="file" onChange={e => handleAiImageUpload(e, 2)} className="hidden" accept="image/*" />
+                                        </label>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
 
@@ -674,6 +698,7 @@ return (
                         <Icons.Sparkles />解析してデータを埋める
                     </button>
 
+                    {/* ★ 音声読み上げON/OFFトグル */}
                     <div className="mt-4 flex justify-center">
                         <label className="flex items-center gap-2 text-sm text-gray-400 cursor-pointer hover:text-gray-300 transition-colors">
                             <input 
