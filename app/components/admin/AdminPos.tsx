@@ -167,13 +167,14 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
             const isMixed = result.data.wireType.includes('フレコン') || result.data.wireType.includes('混合');
             const displayName = result.data.isNewFlag || isMixed ? `💡 AI査定: ${result.data.wireType}` : result.data.wireType;
             
+            // ★ 修正: AIの判別結果（既存か新規か）をフラグとして確実に引き継ぐ
             setCart(prev => [{
                 id: Date.now().toString(), 
                 product: displayName, 
                 ratio: result.data.estimatedRatio, 
                 weight: 0, 
                 percentage: 0, 
-                isNewAi: true, 
+                isNewAi: result.data.isNewFlag, // 常にtrueになっていたバグを修正
                 reason: result.data.reason,
                 masterId: result.data.masterId,
                 isMasterImageEmpty: result.data.isMasterImageEmpty,
@@ -343,7 +344,9 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         </div>
       )}
 
+      {/* 左パネル: 商品リスト */}
       <div className="w-full lg:w-7/12 flex flex-col bg-white border border-gray-200 rounded-sm shadow-sm overflow-hidden h-[50vh] lg:h-full shrink-0">
+        
         <div className="p-4 bg-gray-50 border-b border-gray-200 flex flex-col md:flex-row gap-3 items-center relative shrink-0">
           {(isListening || isProcessingVoice || voiceText) && (
               <div className="absolute top-full left-0 w-full z-10 bg-blue-900 text-white p-2 text-center text-sm font-bold shadow-md animate-in slide-in-from-top-2">
@@ -455,8 +458,8 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                   </div>
                   {item.reason && <div className="mt-3 bg-white border border-blue-200 p-3 rounded-sm text-xs lg:text-sm text-gray-700 leading-relaxed shadow-sm"><span className="font-black text-blue-700 block mb-1">💡 AI推論の根拠</span>{item.reason}</div>}
                   
-                  {/* ★ マスター画像未登録の場合 */}
-                  {item.isMasterImageEmpty && !item.isImageUploaded && item.pendingImg1 && (
+                  {/* ★ マスター画像未登録時のアラート＆ボタン (UIの表示条件を修正) */}
+                  {item.isMasterImageEmpty && !item.isImageUploaded && item.pendingImg1 && !item.isNewAi && (
                       <div className="mt-2 bg-yellow-50 border border-yellow-200 p-2 rounded-sm flex flex-col sm:flex-row justify-between items-center gap-2">
                           <span className="text-xs text-yellow-800 font-bold">⚠️ マスター画像が未登録です</span>
                           <button 
@@ -469,7 +472,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                       </div>
                   )}
 
-                  {/* ★ 追加：マスター画像が既に登録済みの場合の上書きボタン */}
                   {!item.isMasterImageEmpty && !item.isImageUploaded && item.pendingImg1 && !item.isNewAi && (
                       <div className="mt-2 bg-gray-50 border border-gray-200 p-2 rounded-sm flex flex-col sm:flex-row justify-between items-center gap-2">
                           <span className="text-xs text-gray-500 font-bold">✅ マスター画像は登録済みです</span>
@@ -636,6 +638,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                     <button onClick={runAiAnalysis} disabled={!imgData1} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-md flex justify-center items-center gap-2 disabled:bg-gray-700 transition shadow-lg text-lg">
                         <Icons.Sparkles />解析してカートに追加する
                     </button>
+
                 </div>
               )}
             </div>
