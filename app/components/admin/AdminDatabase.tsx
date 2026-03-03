@@ -12,7 +12,8 @@ const Icons = {
   Close: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>,
   Refresh: () => <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
   Filter: () => <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>,
-  Camera: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+  Camera: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+  UploadCloud: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
 };
 
 export const AdminDatabase = ({ data }: { data: any }) => {
@@ -30,8 +31,6 @@ export const AdminDatabase = ({ data }: { data: any }) => {
   const [aiStatus, setAiStatus] = useState<'IDLE' | 'ANALYZING'>('IDLE');
   const [imgData1, setImgData1] = useState<string>('');
   const [imgData2, setImgData2] = useState<string>('');
-  const fileInputRef1 = useRef<HTMLInputElement>(null);
-  const fileInputRef2 = useRef<HTMLInputElement>(null);
 
   const [sampleTotal, setSampleTotal] = useState<number | ''>('');
   const [sampleCopper, setSampleCopper] = useState<number | ''>('');
@@ -164,7 +163,6 @@ export const AdminDatabase = ({ data }: { data: any }) => {
         5: item.sampleTotal, 6: item.sampleCopper,
         7: item.core, 8: item.conductor, 9: item.ratio, 10: item.memo 
     };
-    // ★ date削除によるインデックスズレ対応 (1:name, 2:ratio, 3:reason)
     if (tab === 'UNKNOWN') return { 1: item.name, 2: item.ratio, 3: item.reason }; 
     if (tab === 'CASTINGS') return { 1: item.name, 2: item.type, 4: item.ratio };
     if (tab === 'CLIENTS') return { 1: item.name, 2: item.rank, 4: item.phone, 5: item.loginId, 6: item.password, 7: item.points, 8: item.memo, 9: item.address, 10: item.industry };
@@ -203,6 +201,7 @@ export const AdminDatabase = ({ data }: { data: any }) => {
           if (result.status === 'success') { alert('画像をアップロードしました'); window.location.reload(); } else { alert('エラー: ' + result.message); }
       } catch (err) { alert('通信エラーが発生しました'); }
       setUploadingImageId(null);
+      e.target.value = '';
   };
 
   const runAiExtraction = async () => {
@@ -250,6 +249,7 @@ export const AdminDatabase = ({ data }: { data: any }) => {
         const compressedBase64 = await compressImage(file);
         if (num === 1) setImgData1(compressedBase64); else setImgData2(compressedBase64);
     } catch (err) { alert("画像の処理に失敗しました。"); }
+    e.target.value = '';
   };
 
   const renderTable = () => {
@@ -314,7 +314,6 @@ export const AdminDatabase = ({ data }: { data: any }) => {
 
                 {activeTab === 'UNKNOWN' && (
                   <>
-                    {/* ★ 修正: createdAtへ変更 */}
                     <td className="p-3 text-xs text-gray-500 font-mono">{item.createdAt?.split(' ')[0]}</td>
                     <td className="p-3 font-bold text-orange-700 flex items-center gap-1"><Icons.Sparkles /> {item.name}</td>
                     <td className="p-3 font-mono font-black text-orange-600 text-lg">{item.ratio}%</td>
@@ -554,10 +553,10 @@ return (
         </div>
       </div>
 
-      {/* ★ AIアシスト用の画像アップロードモーダル */}
+      {/* ★ AIアシスト用の画像アップロードモーダル (分割ボタン) */}
       {isAiModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-          <div className="bg-gray-900 w-full max-w-xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col">
+          <div className="bg-gray-900 w-full max-w-2xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col">
             <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-black/50">
               <h3 className="font-black text-white flex items-center gap-2">
                 <Icons.Sparkles /> AI マスター登録アシスタント
@@ -566,34 +565,80 @@ return (
             </div>
             
             <div className="p-6">
-              <p className="text-sm text-gray-300 mb-6 leading-relaxed">
-                未知の線種をマスターに登録します。<br/>
-                断面写真や表面の印字（メーカー名等）の写真をアップロードしてください。<br/>
-                <span className="text-blue-400 font-bold">AIが画像を解析し、面倒な仕様入力を自動で代行します。</span>
-              </p>
+              {aiStatus === 'ANALYZING' ? (
+                <div className="py-8 flex flex-col items-center animate-in fade-in zoom-in duration-500">
+                    <div className="relative w-20 h-20 mb-8">
+                        <div className="absolute inset-0 border-4 border-blue-500/20 rounded-full"></div>
+                        <div className="absolute inset-0 border-4 border-blue-500 rounded-full border-t-transparent animate-spin"></div>
+                        <div className="absolute inset-0 flex items-center justify-center text-blue-400"><Icons.Sparkles /></div>
+                    </div>
+                    <div className="space-y-5 w-full max-w-xs font-bold text-sm">
+                        <div className={`flex items-center gap-4 transition-all duration-500 ${aiProgressStep >= 1 ? 'text-blue-400 translate-x-0 opacity-100' : 'text-gray-700 -translate-x-4 opacity-0'}`}>
+                            <span className="w-6 text-center text-xl">{aiProgressStep >= 2 ? '✅' : aiProgressStep === 1 ? '🔄' : '・'}</span>
+                            <span>画像をサーバーへ送信中...</span>
+                        </div>
+                        <div className={`flex items-center gap-4 transition-all duration-500 delay-300 ${aiProgressStep >= 2 ? 'text-blue-400 translate-x-0 opacity-100' : 'text-gray-700 -translate-x-4 opacity-0'}`}>
+                            <span className="w-6 text-center text-xl">{aiProgressStep >= 3 ? '✅' : aiProgressStep === 2 ? '🔄' : '・'}</span>
+                            <span>AIが画像を解析・特徴抽出中...</span>
+                        </div>
+                        <div className={`flex items-center gap-4 transition-all duration-500 delay-300 ${aiProgressStep >= 3 ? 'text-blue-400 translate-x-0 opacity-100' : 'text-gray-700 -translate-x-4 opacity-0'}`}>
+                            <span className="w-6 text-center text-xl">{aiProgressStep >= 4 ? '✅' : aiProgressStep === 3 ? '🔄' : '・'}</span>
+                            <span>マスターデータと照合・推論中...</span>
+                        </div>
+                        <div className={`flex items-center gap-4 transition-all duration-500 delay-300 ${aiProgressStep >= 4 ? 'text-green-400 scale-110 translate-x-0 opacity-100' : 'text-gray-700 -translate-x-4 opacity-0'}`}>
+                            <span className="w-6 text-center text-xl">{aiProgressStep >= 4 ? '✨' : '・'}</span>
+                            <span>解析完了！結果を出力します</span>
+                        </div>
+                    </div>
+                </div>
+              ) : (
+                <div className="animate-in fade-in">
+                    <p className="text-sm text-gray-300 mb-6 leading-relaxed">
+                        未知の線種をマスターに登録します。<br/>
+                        断面写真や表面の印字（メーカー名等）の写真をアップロードしてください。<br/>
+                    </p>
 
-              <div className="flex gap-3 mb-6">
-                <button onClick={() => fileInputRef1.current?.click()} className={`flex-1 py-10 border-2 border-dashed rounded-md flex flex-col items-center justify-center transition-all ${imgData1 ? 'border-blue-500 bg-blue-900/20 text-blue-300' : 'border-gray-600 text-gray-400 hover:border-gray-400 hover:bg-gray-800'}`}>
-                  <Icons.Camera />
-                  <span className="text-sm font-bold mt-3">{imgData1 ? '断面画像 (読込済)' : '1. 断面画像 (必須)'}</span>
-                </button>
-                <input type="file" ref={fileInputRef1} onChange={e => handleAiImageUpload(e, 1)} className="hidden" accept="image/*" />
-                
-                <button onClick={() => fileInputRef2.current?.click()} className={`flex-1 py-10 border-2 border-dashed rounded-md flex flex-col items-center justify-center transition-all ${imgData2 ? 'border-blue-500 bg-blue-900/20 text-blue-300' : 'border-gray-600 text-gray-400 hover:border-gray-400 hover:bg-gray-800'}`}>
-                  <Icons.Camera />
-                  <span className="text-sm font-bold mt-3">{imgData2 ? '印字画像 (読込済)' : '2. 表面印字 (任意)'}</span>
-                </button>
-                <input type="file" ref={fileInputRef2} onChange={e => handleAiImageUpload(e, 2)} className="hidden" accept="image/*" />
-              </div>
+                    <div className="flex flex-col md:flex-row gap-4 mb-6">
+                        {/* 1. 断面画像 */}
+                        <div className={`flex-1 p-4 border-2 border-dashed rounded-md flex flex-col items-center justify-center transition-all ${imgData1 ? 'border-blue-500 bg-blue-900/20' : 'border-gray-600 bg-gray-800/50'}`}>
+                            <span className={`text-sm font-bold mb-4 ${imgData1 ? 'text-blue-400' : 'text-gray-300'}`}>
+                                {imgData1 ? '✅ 断面画像 (読込済)' : '1. 断面画像 (必須)'}
+                            </span>
+                            <div className="flex gap-2 w-full">
+                                <label className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-sm text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-sm">
+                                    <Icons.Camera /> カメラ
+                                    <input type="file" onChange={e => handleAiImageUpload(e, 1)} className="hidden" accept="image/*" capture="environment" />
+                                </label>
+                                <label className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-sm text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-sm">
+                                    <Icons.UploadCloud /> フォルダ
+                                    <input type="file" onChange={e => handleAiImageUpload(e, 1)} className="hidden" accept="image/*" />
+                                </label>
+                            </div>
+                        </div>
 
-              <button 
-                onClick={runAiExtraction} 
-                disabled={!imgData1 || aiStatus === 'ANALYZING'} 
-                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-md flex justify-center items-center gap-2 disabled:bg-gray-700 transition shadow-lg text-lg"
-              >
-                {aiStatus === 'ANALYZING' ? <Icons.Refresh /> : <Icons.Sparkles />}
-                {aiStatus === 'ANALYZING' ? 'AIが仕様を抽出中...' : '画像を解析してフォームを埋める'}
-              </button>
+                        {/* 2. 表面印字画像 */}
+                        <div className={`flex-1 p-4 border-2 border-dashed rounded-md flex flex-col items-center justify-center transition-all ${imgData2 ? 'border-blue-500 bg-blue-900/20' : 'border-gray-600 bg-gray-800/50'}`}>
+                            <span className={`text-sm font-bold mb-4 ${imgData2 ? 'text-blue-400' : 'text-gray-300'}`}>
+                                {imgData2 ? '✅ 印字画像 (読込済)' : '2. 表面印字 (任意)'}
+                            </span>
+                            <div className="flex gap-2 w-full">
+                                <label className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-sm text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-sm">
+                                    <Icons.Camera /> カメラ
+                                    <input type="file" onChange={e => handleAiImageUpload(e, 2)} className="hidden" accept="image/*" capture="environment" />
+                                </label>
+                                <label className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-sm text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-sm">
+                                    <Icons.UploadCloud /> フォルダ
+                                    <input type="file" onChange={e => handleAiImageUpload(e, 2)} className="hidden" accept="image/*" />
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onClick={runAiExtraction} disabled={!imgData1} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-md flex justify-center items-center gap-2 disabled:bg-gray-700 transition shadow-lg text-lg">
+                        <Icons.Sparkles />解析してデータを埋める
+                    </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
