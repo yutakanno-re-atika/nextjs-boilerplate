@@ -59,7 +59,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       if (url.includes('drive.google.com/uc')) {
           const match = url.match(/id=([^&]+)/);
           if (match && match[1]) {
-              // サムネイル表示か、フルサイズ表示かでURLを切り替える
               return asThumbnail 
                   ? `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`
                   : `https://drive.google.com/uc?id=${match[1]}`;
@@ -117,15 +116,17 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   };
 
   const handleSave = async () => {
+    // ★ 修正：手動登録時の重複チェックにも「year(製造年)」を追加
     if (!editingItem.id && activeTab === 'WIRES') {
         const isDuplicate = wires.some((w:any) => 
             (w.maker || '') === (editingItem.maker || '') && 
             (w.name || '') === (editingItem.name || '') && 
             (String(w.sq) || '') === String(editingItem.sq || '') && 
-            (String(w.core) || '') === String(editingItem.core || '')
+            (String(w.core) || '') === String(editingItem.core || '') &&
+            (String(w.year) || '') === String(editingItem.year || '')
         );
         if (isDuplicate) {
-            alert('⚠️ この組み合わせ（メーカー・品名・サイズ・芯数）は既に登録されています。\n重複登録を防ぐため、一覧から既存のデータを編集してください。');
+            alert('⚠️ この組み合わせ（メーカー・品名・サイズ・芯数・製造年）は既に登録されています。\n重複登録を防ぐため、一覧から既存のデータを編集してください。');
             return;
         }
     }
@@ -371,14 +372,12 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                         {[11, 12].map(colIdx => (
                             <div key={colIdx} className="relative w-10 h-10 border border-gray-300 rounded-sm overflow-hidden bg-gray-100 flex items-center justify-center group">
                                 {item[`image${colIdx-10}`] ? (
-                                    // ★ 修正：サムネイル画像クリックで、別タブでフルサイズ表示
                                     <a href={getDriveImageUrl(item[`image${colIdx-10}`], false)} target="_blank" rel="noopener noreferrer" className="w-full h-full block">
                                         <img src={getDriveImageUrl(item[`image${colIdx-10}`])} className="w-full h-full object-cover group-hover:scale-110 transition-transform cursor-zoom-in" alt="Wire" />
                                     </a>
                                 ) : (
                                     <Icons.Image />
                                 )}
-                                {/* アップロードボタンは画像の右上に小さくオーバーレイ配置 */}
                                 <label className="absolute bottom-0 right-0 bg-black/60 text-white p-0.5 rounded-tl-sm cursor-pointer hover:bg-blue-600 transition" title="画像をアップロード/上書き">
                                     <Icons.Edit />
                                     <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, item.id, colIdx, 'Products_Wire')} />
@@ -447,7 +446,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     if (activeTab === 'WIRES' || activeTab === 'UNKNOWN') return (
       <div className="space-y-4">
         
-        {/* ★ 修正: モーダル上部に既存の登録画像を大きくプレビュー表示する機能を追加 */}
         {editingItem.id && (editingItem.image1 || editingItem.image2) && !editingItem._pendingImageData1 && (
             <div className="bg-gray-50 p-4 border border-gray-200 rounded-sm">
                 <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-widest">現在登録されているマスター画像</label>
@@ -704,7 +702,6 @@ return (
                     </p>
 
                     <div className="flex flex-col md:flex-row gap-4 mb-6">
-                        {/* ★ 1. 断面画像 (プレビュー機能付き) */}
                         <div className={`flex-1 p-4 border-2 border-dashed rounded-md flex flex-col items-center justify-center transition-all relative overflow-hidden ${imgData1 ? 'border-blue-500 bg-blue-900/20 p-2' : 'border-gray-600 bg-gray-800/50'}`}>
                             {imgData1 ? (
                                 <div className="w-full flex flex-col items-center">
@@ -733,7 +730,6 @@ return (
                             )}
                         </div>
 
-                        {/* ★ 2. 表面印字画像 (プレビュー機能付き) */}
                         <div className={`flex-1 p-4 border-2 border-dashed rounded-md flex flex-col items-center justify-center transition-all relative overflow-hidden ${imgData2 ? 'border-blue-500 bg-blue-900/20 p-2' : 'border-gray-600 bg-gray-800/50'}`}>
                             {imgData2 ? (
                                 <div className="w-full flex flex-col items-center">
@@ -766,7 +762,6 @@ return (
                     <button onClick={runAiExtraction} disabled={!imgData1} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-md flex justify-center items-center gap-2 disabled:bg-gray-700 transition shadow-lg text-lg">
                         <Icons.Sparkles />解析してデータを埋める
                     </button>
-
                 </div>
               )}
             </div>
