@@ -29,6 +29,8 @@ export const AdminDatabase = ({ data }: { data: any }) => {
 
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [aiStatus, setAiStatus] = useState<'IDLE' | 'ANALYZING'>('IDLE');
+  // ★追加：プログレスアニメーション用のステート
+  const [aiProgressStep, setAiProgressStep] = useState(0); 
   const [imgData1, setImgData1] = useState<string>('');
   const [imgData2, setImgData2] = useState<string>('');
   const fileInputRef1 = useRef<HTMLInputElement>(null);
@@ -210,7 +212,17 @@ export const AdminDatabase = ({ data }: { data: any }) => {
 
   const runAiExtraction = async () => {
     if (!imgData1) return alert('最低1枚の画像（断面など）をアップロードしてください');
+    
     setAiStatus('ANALYZING');
+    setAiProgressStep(1); // ★追加：アニメーション開始
+
+    const progressInterval = setInterval(() => {
+        setAiProgressStep(prev => {
+            if (prev === 1) return 2;
+            if (prev === 2) return 3;
+            return 3; 
+        });
+    }, 2000);
     
     try {
       const res = await fetch('/api/gas', {
@@ -219,43 +231,53 @@ export const AdminDatabase = ({ data }: { data: any }) => {
       });
       const result = await res.json();
       
-      if (result.status === 'success') {
-          // ★ Web Speech API による音声読み上げ処理 (超簡潔化＆スピード1.4)
-          if (isVoiceOutputEnabled && 'speechSynthesis' in window) {
-              window.speechSynthesis.cancel();
-              const makerText = result.data.maker && result.data.maker !== '-' ? result.data.maker : 'メーカー不明';
-              const nameText = result.data.name && result.data.name !== '-' ? result.data.name : '品名不明';
-              const speakText = `解析完了。${makerText}、${nameText}。実測を行ってください。`;
-              const utterance = new SpeechSynthesisUtterance(speakText);
-              utterance.lang = 'ja-JP';
-              utterance.rate = 1.4;
-              window.speechSynthesis.speak(utterance);
-          }
+      clearInterval(progressInterval);
+      setAiProgressStep(4);
 
-          setEditingItem({
-              maker: result.data.maker === '-' ? '' : result.data.maker,
-              name: result.data.name === '-' ? '' : result.data.name,
-              year: result.data.year === '-' ? '' : result.data.year,
-              sq: result.data.size === '-' ? '' : result.data.size,
-              core: result.data.core === '-' ? '' : result.data.core,
-              conductor: result.data.conductor === '-' ? '' : result.data.conductor,
-              ratio: '',
-              memo: '【AIアシスト抽出】\n画像を元に仕様を自動入力しました。実測による歩留まりを入力してください。',
-              _pendingImageData1: imgData1,
-              _pendingImageData2: imgData2
-          });
-          setSampleTotal('');
-          setSampleCopper('');
-          
-          setIsAiModalOpen(false);
-          setIsModalOpen(true);
-      } else {
-          alert('AI抽出エラー: ' + result.message);
-      }
+      setTimeout(() => {
+          if (result.status === 'success') {
+              // ★ Web Speech API による音声読み上げ処理 (超簡潔化＆スピード1.4)
+              if (isVoiceOutputEnabled && 'speechSynthesis' in window) {
+                  window.speechSynthesis.cancel();
+                  const makerText = result.data.maker && result.data.maker !== '-' ? result.data.maker : 'メーカー不明';
+                  const nameText = result.data.name && result.data.name !== '-' ? result.data.name : '品名不明';
+                  const speakText = `抽出完了。メーカー、${makerText}。品名、${nameText}。`;
+                  const utterance = new SpeechSynthesisUtterance(speakText);
+                  utterance.lang = 'ja-JP';
+                  utterance.rate = 1.4;
+                  window.speechSynthesis.speak(utterance);
+              }
+
+              setEditingItem({
+                  maker: result.data.maker === '-' ? '' : result.data.maker,
+                  name: result.data.name === '-' ? '' : result.data.name,
+                  year: result.data.year === '-' ? '' : result.data.year,
+                  sq: result.data.size === '-' ? '' : result.data.size,
+                  core: result.data.core === '-' ? '' : result.data.core,
+                  conductor: result.data.conductor === '-' ? '' : result.data.conductor,
+                  ratio: '',
+                  memo: '【AIアシスト抽出】\n画像を元に仕様を自動入力しました。実測による歩留まりを入力してください。',
+                  _pendingImageData1: imgData1,
+                  _pendingImageData2: imgData2
+              });
+              setSampleTotal('');
+              setSampleCopper('');
+              
+              setIsAiModalOpen(false);
+              setIsModalOpen(true);
+          } else {
+              alert('AI抽出エラー: ' + result.message);
+          }
+          setAiStatus('IDLE');
+          setAiProgressStep(0);
+      }, 800);
+
     } catch(err) {
+      clearInterval(progressInterval);
       alert('通信エラーが発生しました。');
+      setAiStatus('IDLE');
+      setAiProgressStep(0);
     }
-    setAiStatus('IDLE');
   };
 
   const handleAiImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, num: 1 | 2) => {
@@ -569,7 +591,7 @@ return (
         </div>
       </div>
 
-      {/* ★ AIアシスト用の画像アップロードモーダル (分割ボタン) */}
+      {/* ★ AIアシスト用の画像アップロードモーダル */}
       {isAiModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-gray-900 w-full max-w-2xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col">
@@ -615,7 +637,6 @@ return (
                     </p>
 
                     <div className="flex flex-col md:flex-row gap-4 mb-6">
-                        {/* 1. 断面画像 */}
                         <div className={`flex-1 p-4 border-2 border-dashed rounded-md flex flex-col items-center justify-center transition-all ${imgData1 ? 'border-blue-500 bg-blue-900/20' : 'border-gray-600 bg-gray-800/50'}`}>
                             <span className={`text-sm font-bold mb-4 ${imgData1 ? 'text-blue-400' : 'text-gray-300'}`}>
                                 {imgData1 ? '✅ 断面画像 (読込済)' : '1. 断面画像 (必須)'}
@@ -632,7 +653,6 @@ return (
                             </div>
                         </div>
 
-                        {/* 2. 表面印字画像 */}
                         <div className={`flex-1 p-4 border-2 border-dashed rounded-md flex flex-col items-center justify-center transition-all ${imgData2 ? 'border-blue-500 bg-blue-900/20' : 'border-gray-600 bg-gray-800/50'}`}>
                             <span className={`text-sm font-bold mb-4 ${imgData2 ? 'text-blue-400' : 'text-gray-300'}`}>
                                 {imgData2 ? '✅ 印字画像 (読込済)' : '2. 表面印字 (任意)'}
@@ -654,7 +674,6 @@ return (
                         <Icons.Sparkles />解析してデータを埋める
                     </button>
 
-                    {/* ★ 音声読み上げON/OFFトグル */}
                     <div className="mt-4 flex justify-center">
                         <label className="flex items-center gap-2 text-sm text-gray-400 cursor-pointer hover:text-gray-300 transition-colors">
                             <input 
