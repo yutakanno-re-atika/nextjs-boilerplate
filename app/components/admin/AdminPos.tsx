@@ -177,15 +177,15 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                 showToast('既存マスターと一致', `「${result.data.wireType}」として査定しました。`, 'info');
             }
 
-            // ★ Web Speech API による音声読み上げ処理 (スピードを 1.4 に向上)
+            // ★ Web Speech API による音声読み上げ処理 (超簡潔化＆スピード1.4)
             if (isVoiceOutputEnabled && 'speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
                 const speakText = result.data.isNewFlag
-                    ? `AI査定完了。未知の線種として、${result.data.wireType} を仮登録しました。理由は、${result.data.reason} です。`
-                    : `AI査定完了。マスターデータから、${result.data.wireType} と特定しました。理由は、${result.data.reason} です。`;
+                    ? `新規線種です。${result.data.wireType}、推定歩留まり、${result.data.estimatedRatio}パーセント。`
+                    : `判定完了。${result.data.wireType} です。`;
                 const utterance = new SpeechSynthesisUtterance(speakText);
                 utterance.lang = 'ja-JP';
-                utterance.rate = 1.4; // スピードアップ
+                utterance.rate = 1.4;
                 window.speechSynthesis.speak(utterance);
             }
 
@@ -460,7 +460,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         </div>
       </div>
 
-      {/* ★ AI モーダル（カメラ・フォルダ選択分割版） */}
+      {/* ★ AI モーダル */}
       {isAiModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-gray-900 w-full max-w-2xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col">
