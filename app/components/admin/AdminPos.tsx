@@ -74,13 +74,15 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       setTimeout(() => setToastMessage(null), 6000);
   };
 
+  // ★ 修正：手動追加時にも「製造年」を表示して完全一致させる
   const buildProductName = (p: any) => {
     const maker = p.maker && p.maker !== '-' ? `【${p.maker}】` : '';
     const sizeStr = p.size || p.sq;
     const size = sizeStr && sizeStr !== '-' ? ` ${sizeStr}sq` : '';
     const coreStr = p.core || p.cores || p.coreCount;
     const core = coreStr && coreStr !== '-' ? ` ${coreStr}C` : '';
-    return `${maker}${p.name}${size}${core}`.trim();
+    const yearStr = p.year && p.year !== '-' ? ` (製造年: ${p.year})` : '';
+    return `${maker}${p.name}${size}${core}${yearStr}`.trim();
   };
 
   const addToCart = (product: any, overrideWeight?: number) => {
@@ -167,14 +169,13 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
             const isMixed = result.data.wireType.includes('フレコン') || result.data.wireType.includes('混合');
             const displayName = result.data.isNewFlag || isMixed ? `💡 AI査定: ${result.data.wireType}` : result.data.wireType;
             
-            // ★ 修正: AIの判別結果（既存か新規か）をフラグとして確実に引き継ぐ
             setCart(prev => [{
                 id: Date.now().toString(), 
                 product: displayName, 
                 ratio: result.data.estimatedRatio, 
                 weight: 0, 
                 percentage: 0, 
-                isNewAi: result.data.isNewFlag, // 常にtrueになっていたバグを修正
+                isNewAi: result.data.isNewFlag, 
                 reason: result.data.reason,
                 masterId: result.data.masterId,
                 isMasterImageEmpty: result.data.isMasterImageEmpty,
@@ -191,9 +192,11 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
 
             if (isVoiceOutputEnabled && 'speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
+                // ★ 読み上げ時、邪魔にならないようメーカー名を落として品名と年式だけを読む
+                const cleanSpeechText = result.data.wireType.replace(/【.*?】/, '');
                 const speakText = result.data.isNewFlag
-                    ? `新規線種です。${result.data.wireType}、推定歩留まり、${result.data.estimatedRatio}パーセント。`
-                    : `判定完了。${result.data.wireType} です。`;
+                    ? `新規線種です。${cleanSpeechText}、推定歩留まり、${result.data.estimatedRatio}パーセント。`
+                    : `判定完了。${cleanSpeechText} です。`;
                 const utterance = new SpeechSynthesisUtterance(speakText);
                 utterance.lang = 'ja-JP';
                 utterance.rate = 1.4;
@@ -344,9 +347,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         </div>
       )}
 
-      {/* 左パネル: 商品リスト */}
       <div className="w-full lg:w-7/12 flex flex-col bg-white border border-gray-200 rounded-sm shadow-sm overflow-hidden h-[50vh] lg:h-full shrink-0">
-        
         <div className="p-4 bg-gray-50 border-b border-gray-200 flex flex-col md:flex-row gap-3 items-center relative shrink-0">
           {(isListening || isProcessingVoice || voiceText) && (
               <div className="absolute top-full left-0 w-full z-10 bg-blue-900 text-white p-2 text-center text-sm font-bold shadow-md animate-in slide-in-from-top-2">
@@ -387,12 +388,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                 className="bg-white border border-gray-200 p-3 rounded-md shadow-sm hover:shadow-md hover:border-blue-400 text-left transition-all active:scale-95 flex flex-col justify-between min-h-[105px] relative overflow-hidden group"
               >
                 <div>
-                  <div className="font-bold text-gray-800 text-sm leading-tight line-clamp-2">{p.name}</div>
-                  <div className="flex flex-wrap gap-1.5 mt-2">
-                    {p.maker && p.maker !== '-' && <span className="text-xs bg-gray-700 text-white px-2 py-0.5 rounded-sm font-bold shadow-sm">{p.maker}</span>}
-                    {(p.size || p.sq) && (p.size !== '-' && p.sq !== '-') && <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded-sm font-mono font-bold shadow-sm">{(p.size || p.sq)}sq</span>}
-                    {(p.core || p.cores || p.coreCount) && (p.core !== '-' && p.cores !== '-' && p.coreCount !== '-') && <span className="text-xs bg-orange-600 text-white px-2 py-0.5 rounded-sm font-mono font-bold shadow-sm">{(p.core || p.cores || p.coreCount)}C</span>}
-                  </div>
+                  <div className="font-bold text-gray-800 text-sm leading-tight line-clamp-2">{buildProductName(p)}</div>
                 </div>
                 <div className="flex justify-end mt-2"><span className="font-mono font-black text-blue-600 bg-blue-50/50 px-2 py-0.5 rounded-sm text-sm">{p.ratio}%</span></div>
               </button>
@@ -458,7 +454,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                   </div>
                   {item.reason && <div className="mt-3 bg-white border border-blue-200 p-3 rounded-sm text-xs lg:text-sm text-gray-700 leading-relaxed shadow-sm"><span className="font-black text-blue-700 block mb-1">💡 AI推論の根拠</span>{item.reason}</div>}
                   
-                  {/* ★ マスター画像未登録時のアラート＆ボタン (UIの表示条件を修正) */}
                   {item.isMasterImageEmpty && !item.isImageUploaded && item.pendingImg1 && !item.isNewAi && (
                       <div className="mt-2 bg-yellow-50 border border-yellow-200 p-2 rounded-sm flex flex-col sm:flex-row justify-between items-center gap-2">
                           <span className="text-xs text-yellow-800 font-bold">⚠️ マスター画像が未登録です</span>
@@ -535,6 +530,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         </div>
       </div>
 
+      {/* ★ AI モーダル */}
       {isAiModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-gray-900 w-full max-w-2xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col">
@@ -638,7 +634,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                     <button onClick={runAiAnalysis} disabled={!imgData1} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-md flex justify-center items-center gap-2 disabled:bg-gray-700 transition shadow-lg text-lg">
                         <Icons.Sparkles />解析してカートに追加する
                     </button>
-
                 </div>
               )}
             </div>
