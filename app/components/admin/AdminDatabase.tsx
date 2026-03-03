@@ -31,6 +31,10 @@ export const AdminDatabase = ({ data }: { data: any }) => {
   const [aiStatus, setAiStatus] = useState<'IDLE' | 'ANALYZING'>('IDLE');
   const [imgData1, setImgData1] = useState<string>('');
   const [imgData2, setImgData2] = useState<string>('');
+  const fileInputRef1 = useRef<HTMLInputElement>(null);
+  const fileInputRef2 = useRef<HTMLInputElement>(null);
+
+  const [isVoiceOutputEnabled, setIsVoiceOutputEnabled] = useState(true);
 
   const [sampleTotal, setSampleTotal] = useState<number | ''>('');
   const [sampleCopper, setSampleCopper] = useState<number | ''>('');
@@ -216,6 +220,16 @@ export const AdminDatabase = ({ data }: { data: any }) => {
       const result = await res.json();
       
       if (result.status === 'success') {
+          // ★ Web Speech API による音声読み上げ処理
+          if (isVoiceOutputEnabled && 'speechSynthesis' in window) {
+              window.speechSynthesis.cancel();
+              const speakText = `画像の解析が完了しました。メーカーは${result.data.maker === '-' ? '不明' : result.data.maker}、品名は${result.data.name === '-' ? '不明' : result.data.name}です。サンプルを計量して歩留まりを確定させてください。`;
+              const utterance = new SpeechSynthesisUtterance(speakText);
+              utterance.lang = 'ja-JP';
+              utterance.rate = 1.1;
+              window.speechSynthesis.speak(utterance);
+          }
+
           setEditingItem({
               maker: result.data.maker === '-' ? '' : result.data.maker,
               name: result.data.name === '-' ? '' : result.data.name,
@@ -553,7 +567,7 @@ return (
         </div>
       </div>
 
-      {/* ★ AIアシスト用の画像アップロードモーダル (分割ボタン) */}
+      {/* ★ AIアシスト用の画像アップロードモーダル */}
       {isAiModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-gray-900 w-full max-w-2xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col">
@@ -599,7 +613,6 @@ return (
                     </p>
 
                     <div className="flex flex-col md:flex-row gap-4 mb-6">
-                        {/* 1. 断面画像 */}
                         <div className={`flex-1 p-4 border-2 border-dashed rounded-md flex flex-col items-center justify-center transition-all ${imgData1 ? 'border-blue-500 bg-blue-900/20' : 'border-gray-600 bg-gray-800/50'}`}>
                             <span className={`text-sm font-bold mb-4 ${imgData1 ? 'text-blue-400' : 'text-gray-300'}`}>
                                 {imgData1 ? '✅ 断面画像 (読込済)' : '1. 断面画像 (必須)'}
@@ -616,7 +629,6 @@ return (
                             </div>
                         </div>
 
-                        {/* 2. 表面印字画像 */}
                         <div className={`flex-1 p-4 border-2 border-dashed rounded-md flex flex-col items-center justify-center transition-all ${imgData2 ? 'border-blue-500 bg-blue-900/20' : 'border-gray-600 bg-gray-800/50'}`}>
                             <span className={`text-sm font-bold mb-4 ${imgData2 ? 'text-blue-400' : 'text-gray-300'}`}>
                                 {imgData2 ? '✅ 印字画像 (読込済)' : '2. 表面印字 (任意)'}
@@ -637,6 +649,20 @@ return (
                     <button onClick={runAiExtraction} disabled={!imgData1} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-md flex justify-center items-center gap-2 disabled:bg-gray-700 transition shadow-lg text-lg">
                         <Icons.Sparkles />解析してデータを埋める
                     </button>
+
+                    {/* ★ 音声読み上げON/OFFトグル */}
+                    <div className="mt-4 flex justify-center">
+                        <label className="flex items-center gap-2 text-sm text-gray-400 cursor-pointer hover:text-gray-300 transition-colors">
+                            <input 
+                                type="checkbox" 
+                                checked={isVoiceOutputEnabled} 
+                                onChange={e => setIsVoiceOutputEnabled(e.target.checked)}
+                                className="w-4 h-4 accent-blue-500 rounded-sm cursor-pointer"
+                            />
+                            🔊 査定結果と根拠を音声で読み上げる
+                        </label>
+                    </div>
+
                 </div>
               )}
             </div>
