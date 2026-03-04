@@ -19,7 +19,6 @@ const Icons = {
   SortNone: () => <svg className="w-3 h-3 inline-block ml-1 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" /></svg>
 };
 
-// ★ 安全な時間フォーマッタ
 const formatTimeShort = (timeStr: string) => {
   if (!timeStr) return '-';
   const str = String(timeStr);
@@ -303,6 +302,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                   window.speechSynthesis.speak(utterance);
               }
 
+              // ★ 修正箇所：AIが推論した歩留まりを初期値としてセットする
               setEditingItem({
                   maker: result.data.maker === '-' ? '' : result.data.maker,
                   name: result.data.name === '-' ? '' : result.data.name,
@@ -310,8 +310,9 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                   sq: result.data.size === '-' ? '' : result.data.size,
                   core: result.data.core === '-' ? '' : result.data.core,
                   conductor: result.data.conductor === '-' ? '' : result.data.conductor,
-                  ratio: '',
-                  memo: '【AIアシスト抽出】\n画像を元に仕様を自動入力しました。実測による歩留まりを入力してください。',
+                  ratio: result.data.estimatedRatio || '',
+                  aiEstimatedRatio: result.data.estimatedRatio || '',
+                  memo: `【AIアシスト抽出】\nAI推論根拠: ${result.data.reason}\n※実測を行って歩留まりを上書きしてください。`,
                   _pendingImageData1: imgData1,
                   _pendingImageData2: imgData2
               });
@@ -402,7 +403,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     return (
       <div className="h-full overflow-y-auto relative">
         <table className="w-full text-left border-collapse text-sm whitespace-nowrap md:whitespace-normal">
-          {/* ★ 修正：thead に sticky と z-20 を付与してスクロール追従させる */}
           <thead className="bg-gray-100 text-gray-500 uppercase tracking-wider text-xs sticky top-0 z-20 shadow-sm">
             <tr>
               {activeTab === 'WIRES' && (
@@ -445,7 +445,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                       <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('status')}>ステータス <SortIcon columnKey="status" /></th>
                   </>
               )}
-              {/* ★ 修正：登録日・更新日を追加表示 */}
               <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('createdAt')}>登録/更新 <SortIcon columnKey="createdAt" /></th>
               <th className="p-3 text-right">操作</th>
             </tr>
@@ -522,7 +521,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                   </>
                 )}
 
-                {/* ★ 修正：登録日・更新日を改行してスマートに表示 */}
                 <td className="p-3 text-[10px] text-gray-400 font-mono align-top">
                     <div className="flex flex-col gap-1">
                         <span title="登録日">➕ {formatTimeShort(item.createdAt)}</span>
@@ -607,7 +605,13 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                     <input type="number" step="0.001" className="w-full border-none shadow-sm p-3 rounded-sm font-mono text-lg outline-none focus:ring-2 focus:ring-red-500" value={sampleCopper} onChange={e => handleSampleCopperChange(e.target.value)} placeholder="0.000" />
                 </div>
                 <div>
-                    <label className="block text-xs font-bold text-blue-800 mb-1">歩留まり (%)</label>
+                    {/* ★ 修正箇所：AI推定歩留まりのUI表示を追加 */}
+                    <label className="block text-xs font-bold text-blue-800 mb-1 flex items-center justify-between">
+                        <span>歩留まり (%)</span>
+                        {editingItem.aiEstimatedRatio && !sampleTotal && (
+                            <span className="text-[9px] bg-blue-100 text-blue-700 px-1 py-0.5 rounded animate-pulse">AI推定値</span>
+                        )}
+                    </label>
                     <div className="w-full bg-white border border-blue-200 shadow-inner p-3 rounded-sm font-mono text-xl font-black text-blue-600 text-right">
                         {editingItem.ratio || '---'} %
                     </div>
@@ -615,7 +619,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
             </div>
         </div>
 
-        <div><label className="block text-xs font-bold text-gray-500 mb-1">メモ / 特記事項</label><textarea className="w-full border p-2 rounded-sm h-16 text-sm outline-none focus:border-gray-500" value={editingItem.memo || editingItem.reason || ''} onChange={e => setEditingItem({...editingItem, memo: e.target.value, reason: e.target.value})} /></div>
+        <div><label className="block text-xs font-bold text-gray-500 mb-1">メモ / 特記事項</label><textarea className="w-full border p-2 rounded-sm h-24 text-sm outline-none focus:border-gray-500 leading-relaxed" value={editingItem.memo || editingItem.reason || ''} onChange={e => setEditingItem({...editingItem, memo: e.target.value, reason: e.target.value})} /></div>
       </div>
     );
 
