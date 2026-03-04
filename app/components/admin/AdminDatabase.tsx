@@ -6,7 +6,7 @@ const Icons = {
   Edit: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>,
   Trash: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
   Search: () => <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
-  Image: () => <svg className="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
+  Image: () => <svg className="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2-2v12a2 2 0 002 2z" /></svg>,
   Sparkles: () => <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 8.134a1 1 0 010 1.932l-3.354.933-1.179 4.456a1 1 0 01-1.934 0l-1.179-4.456-3.354-.933a1 1 0 010-1.932l3.354-.933 1.179-4.456A1 1 0 0112 2z" clipRule="evenodd" /></svg>,
   ArrowUp: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>,
   Close: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>,
@@ -16,7 +16,9 @@ const Icons = {
   UploadCloud: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>,
   SortAsc: () => <svg className="w-3 h-3 inline-block ml-1 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 15l7-7 7 7" /></svg>,
   SortDesc: () => <svg className="w-3 h-3 inline-block ml-1 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" /></svg>,
-  SortNone: () => <svg className="w-3 h-3 inline-block ml-1 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" /></svg>
+  SortNone: () => <svg className="w-3 h-3 inline-block ml-1 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" /></svg>,
+  Settings: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+  Play: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
 };
 
 const formatTimeShort = (timeStr: string) => {
@@ -35,7 +37,8 @@ const formatTimeShort = (timeStr: string) => {
 };
 
 export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoiceOutputEnabled?: boolean }) => {
-  const [activeTab, setActiveTab] = useState<'WIRES' | 'UNKNOWN' | 'CASTINGS' | 'CLIENTS' | 'STAFF'>('WIRES');
+  // ★ 修正：SETTINGS タブを追加
+  const [activeTab, setActiveTab] = useState<'WIRES' | 'UNKNOWN' | 'CASTINGS' | 'CLIENTS' | 'STAFF' | 'SETTINGS'>('WIRES');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMaker, setFilterMaker] = useState('');
   const [filterType, setFilterType] = useState('');
@@ -52,8 +55,11 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const [aiProgressStep, setAiProgressStep] = useState(0); 
   const [imgData1, setImgData1] = useState<string>('');
   const [imgData2, setImgData2] = useState<string>('');
-  const fileInputRef1 = useRef<HTMLInputElement>(null);
-  const fileInputRef2 = useRef<HTMLInputElement>(null);
+  
+  // ★ システム設定用のステートを追加
+  const [autoMarketSync, setAutoMarketSync] = useState(data?.config?.auto_market_sync !== 'false');
+  const [autoLeadGen, setAutoLeadGen] = useState(data?.config?.auto_lead_gen !== 'false');
+  const [isRunningBatch, setIsRunningBatch] = useState<'NONE' | 'MARKET' | 'LEAD'>('NONE');
 
   const [sampleTotal, setSampleTotal] = useState<number | ''>('');
   const [sampleCopper, setSampleCopper] = useState<number | ''>('');
@@ -135,6 +141,49 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       });
       setIsModalOpen(true);
   };
+
+  // ★ 追加：システム設定（ON/OFF）を保存する処理
+  const handleToggleSetting = async (key: 'auto_market_sync' | 'auto_lead_gen', value: boolean) => {
+      if (key === 'auto_market_sync') setAutoMarketSync(value);
+      if (key === 'auto_lead_gen') setAutoLeadGen(value);
+      
+      try {
+          await fetch('/api/gas', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'UPDATE_CONFIG', key: key, value: value.toString() })
+          });
+      } catch (e) {
+          alert('設定の保存に失敗しました。');
+          // ロールバック
+          if (key === 'auto_market_sync') setAutoMarketSync(!value);
+          if (key === 'auto_lead_gen') setAutoLeadGen(!value);
+      }
+  };
+
+  // ★ 追加：バッチを手動で強制実行する処理
+  const handleRunBatch = async (type: 'MARKET' | 'LEAD') => {
+      if (!confirm(`${type === 'MARKET' ? '市況データ（建値）' : '営業リード'} の抽出バッチを今すぐ実行します。よろしいですか？`)) return;
+      setIsRunningBatch(type);
+      try {
+          const action = type === 'MARKET' ? 'RUN_MARKET_SYNC' : 'RUN_LEAD_GEN';
+          const res = await fetch('/api/gas', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action })
+          });
+          const result = await res.json();
+          if (result.status === 'success') {
+              alert(result.message);
+          } else {
+              alert('エラーが発生しました: ' + result.message);
+          }
+      } catch (e) {
+          alert('通信エラーが発生しました。');
+      }
+      setIsRunningBatch('NONE');
+  };
+
 
   const handleSave = async () => {
     if (!editingItem.id && activeTab === 'WIRES') {
@@ -302,7 +351,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                   window.speechSynthesis.speak(utterance);
               }
 
-              // ★ 修正箇所：AIが推論した歩留まりを初期値としてセットする
               setEditingItem({
                   maker: result.data.maker === '-' ? '' : result.data.maker,
                   name: result.data.name === '-' ? '' : result.data.name,
@@ -360,6 +408,78 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   };
 
   const renderTable = () => {
+    // ★ 設定タブの場合は専用のUIを返す
+    if (activeTab === 'SETTINGS') {
+        return (
+            <div className="p-6 md:p-10 bg-white h-full overflow-y-auto animate-in fade-in">
+                <div className="max-w-3xl mx-auto space-y-10">
+                    <div>
+                        <h3 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-3 mb-6 flex items-center gap-2">
+                            <Icons.Settings /> システム自動実行バッチの制御
+                        </h3>
+                        <p className="text-sm text-gray-600 leading-relaxed mb-6">
+                            GAS（Google Apps Script）で1時間おきに実行されているバックグラウンド処理の稼働状況を制御します。
+                            意図しないAPIコストの発生や、相場急変時の安全確保のために利用してください。
+                        </p>
+                    </div>
+
+                    {/* 相場トラッカー */}
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 shadow-sm">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                            <div>
+                                <h4 className="font-bold text-gray-900 flex items-center gap-2 text-lg">
+                                    <span className={`w-3 h-3 rounded-full ${autoMarketSync ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span>
+                                    市況データ自動スクレイピング
+                                </h4>
+                                <p className="text-xs text-gray-500 mt-1">国内メーカー建値を自動取得し、価格を更新します。</p>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" className="sr-only peer" checked={autoMarketSync} onChange={(e) => handleToggleSetting('auto_market_sync', e.target.checked)} />
+                                <div className="w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-500"></div>
+                            </label>
+                        </div>
+                        <div className="border-t border-gray-200 pt-4 flex justify-end">
+                            <button 
+                                onClick={() => handleRunBatch('MARKET')} 
+                                disabled={isRunningBatch !== 'NONE'}
+                                className="bg-gray-900 hover:bg-black text-white px-4 py-2 rounded-md text-sm font-bold flex items-center gap-2 transition disabled:opacity-50"
+                            >
+                                {isRunningBatch === 'MARKET' ? <><Icons.Refresh /> 実行中...</> : <><Icons.Play /> 今すぐ実行</>}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* AIリードジェネレーター */}
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 shadow-sm">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                            <div>
+                                <h4 className="font-bold text-gray-900 flex items-center gap-2 text-lg">
+                                    <span className={`w-3 h-3 rounded-full ${autoLeadGen ? 'bg-blue-500 animate-pulse' : 'bg-gray-400'}`}></span>
+                                    AIスナイパー 自動リスト抽出
+                                </h4>
+                                <p className="text-xs text-gray-500 mt-1">Gemini APIを利用してウェブ上から営業ターゲットを抽出します。</p>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" className="sr-only peer" checked={autoLeadGen} onChange={(e) => handleToggleSetting('auto_lead_gen', e.target.checked)} />
+                                <div className="w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                        </div>
+                        <div className="border-t border-gray-200 pt-4 flex justify-end">
+                            <button 
+                                onClick={() => handleRunBatch('LEAD')} 
+                                disabled={isRunningBatch !== 'NONE'}
+                                className="bg-gray-900 hover:bg-black text-white px-4 py-2 rounded-md text-sm font-bold flex items-center gap-2 transition disabled:opacity-50"
+                            >
+                                {isRunningBatch === 'LEAD' ? <><Icons.Refresh /> 実行中...</> : <><Icons.Play /> 今すぐ実行</>}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+
     let filteredData = [];
     
     if (activeTab === 'WIRES') {
@@ -605,7 +725,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                     <input type="number" step="0.001" className="w-full border-none shadow-sm p-3 rounded-sm font-mono text-lg outline-none focus:ring-2 focus:ring-red-500" value={sampleCopper} onChange={e => handleSampleCopperChange(e.target.value)} placeholder="0.000" />
                 </div>
                 <div>
-                    {/* ★ 修正箇所：AI推定歩留まりのUI表示を追加 */}
                     <label className="block text-xs font-bold text-blue-800 mb-1 flex items-center justify-between">
                         <span>歩留まり (%)</span>
                         {editingItem.aiEstimatedRatio && !sampleTotal && (
@@ -710,58 +829,60 @@ return (
           <p className="text-xs text-gray-500 mt-1 font-mono">コアデータベース管理 / AI推論監視</p>
         </div>
         <div className="flex bg-gray-100 p-1 rounded-sm overflow-x-auto">
-          {['WIRES', 'UNKNOWN', 'CASTINGS', 'CLIENTS', 'STAFF'].map(tab => (
-            <button key={tab} onClick={() => handleTabChange(tab as any)} className={`px-4 py-2 rounded-sm text-sm font-bold transition-all whitespace-nowrap ${activeTab === tab ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-              {tab === 'WIRES' ? '電線' : tab === 'UNKNOWN' ? '💡 未知線種 (AI)' : tab === 'CASTINGS' ? '非鉄金属' : tab === 'CLIENTS' ? '顧客' : 'スタッフ'}
+          {['WIRES', 'UNKNOWN', 'CASTINGS', 'CLIENTS', 'STAFF', 'SETTINGS'].map(tab => (
+            <button key={tab} onClick={() => handleTabChange(tab as any)} className={`px-4 py-2 rounded-sm text-sm font-bold transition-all whitespace-nowrap flex items-center gap-1 ${activeTab === tab ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+              {tab === 'WIRES' ? '電線' : tab === 'UNKNOWN' ? '💡 未知線種 (AI)' : tab === 'CASTINGS' ? '非鉄金属' : tab === 'CLIENTS' ? '顧客' : tab === 'STAFF' ? 'スタッフ' : <><Icons.Settings /> システム設定</>}
             </button>
           ))}
         </div>
       </header>
 
       <div className="bg-white border border-gray-200 shadow-sm rounded-sm flex-1 flex flex-col overflow-hidden relative">
-        <div className="p-4 border-b border-gray-200 bg-gray-50 flex flex-col md:flex-row gap-4 justify-between z-30">
-          <div className="flex flex-1 gap-2 flex-col md:flex-row">
-              <div className="relative flex-1 max-w-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Icons.Search />
-                </div>
-                <input type="text" placeholder="キーワード検索..." className="w-full border border-gray-300 rounded-sm pl-10 pr-4 py-2 text-sm focus:border-gray-500 outline-none shadow-inner" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+        {activeTab !== 'SETTINGS' && (
+            <div className="p-4 border-b border-gray-200 bg-gray-50 flex flex-col md:flex-row gap-4 justify-between z-30">
+              <div className="flex flex-1 gap-2 flex-col md:flex-row">
+                  <div className="relative flex-1 max-w-sm">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Icons.Search />
+                    </div>
+                    <input type="text" placeholder="キーワード検索..." className="w-full border border-gray-300 rounded-sm pl-10 pr-4 py-2 text-sm focus:border-gray-500 outline-none shadow-inner" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                  </div>
+
+                  {activeTab === 'WIRES' && uniqueMakers.length > 0 && (
+                      <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Icons.Filter /></div>
+                          <select className="w-full md:w-auto border border-gray-300 rounded-sm pl-10 pr-8 py-2 text-sm outline-none focus:border-gray-500 bg-white appearance-none cursor-pointer" value={filterMaker} onChange={e => setFilterMaker(e.target.value)}>
+                              <option value="">すべてのメーカー</option>
+                              {uniqueMakers.map((m: any) => <option key={m} value={m}>{m}</option>)}
+                          </select>
+                      </div>
+                  )}
+
+                  {activeTab === 'CASTINGS' && uniqueTypes.length > 0 && (
+                      <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Icons.Filter /></div>
+                          <select className="w-full md:w-auto border border-gray-300 rounded-sm pl-10 pr-8 py-2 text-sm outline-none focus:border-gray-500 bg-white appearance-none cursor-pointer" value={filterType} onChange={e => setFilterType(e.target.value)}>
+                              <option value="">すべての種別</option>
+                              {uniqueTypes.map((t: any) => <option key={t} value={t}>{t === 'BRASS' ? '真鍮' : t === 'ZINC' ? '亜鉛' : t === 'LEAD' ? '鉛' : t}</option>)}
+                          </select>
+                      </div>
+                  )}
               </div>
 
-              {activeTab === 'WIRES' && uniqueMakers.length > 0 && (
-                  <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Icons.Filter /></div>
-                      <select className="w-full md:w-auto border border-gray-300 rounded-sm pl-10 pr-8 py-2 text-sm outline-none focus:border-gray-500 bg-white appearance-none cursor-pointer" value={filterMaker} onChange={e => setFilterMaker(e.target.value)}>
-                          <option value="">すべてのメーカー</option>
-                          {uniqueMakers.map((m: any) => <option key={m} value={m}>{m}</option>)}
-                      </select>
-                  </div>
-              )}
-
-              {activeTab === 'CASTINGS' && uniqueTypes.length > 0 && (
-                  <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Icons.Filter /></div>
-                      <select className="w-full md:w-auto border border-gray-300 rounded-sm pl-10 pr-8 py-2 text-sm outline-none focus:border-gray-500 bg-white appearance-none cursor-pointer" value={filterType} onChange={e => setFilterType(e.target.value)}>
-                          <option value="">すべての種別</option>
-                          {uniqueTypes.map((t: any) => <option key={t} value={t}>{t === 'BRASS' ? '真鍮' : t === 'ZINC' ? '亜鉛' : t === 'LEAD' ? '鉛' : t}</option>)}
-                      </select>
-                  </div>
-              )}
-          </div>
-
-          {activeTab !== 'UNKNOWN' && (
-              <div className="flex gap-2">
-                {activeTab === 'WIRES' && (
-                    <button onClick={() => setIsAiModalOpen(true)} className="bg-blue-50 text-blue-700 border border-blue-200 px-4 py-2 rounded-sm text-sm font-bold hover:bg-blue-100 transition flex items-center gap-2 whitespace-nowrap shadow-sm">
-                        <Icons.Sparkles /> AIアシストで新規登録
+              {activeTab !== 'UNKNOWN' && (
+                  <div className="flex gap-2">
+                    {activeTab === 'WIRES' && (
+                        <button onClick={() => setIsAiModalOpen(true)} className="bg-blue-50 text-blue-700 border border-blue-200 px-4 py-2 rounded-sm text-sm font-bold hover:bg-blue-100 transition flex items-center gap-2 whitespace-nowrap shadow-sm">
+                            <Icons.Sparkles /> AIアシストで新規登録
+                        </button>
+                    )}
+                    <button onClick={() => handleOpenModal()} className="bg-gray-900 text-white px-6 py-2 rounded-sm text-sm font-bold hover:bg-gray-800 transition flex items-center justify-center gap-2 whitespace-nowrap active:scale-95 shadow-sm">
+                        <Icons.Plus /> 手動で新規登録
                     </button>
-                )}
-                <button onClick={() => handleOpenModal()} className="bg-gray-900 text-white px-6 py-2 rounded-sm text-sm font-bold hover:bg-gray-800 transition flex items-center justify-center gap-2 whitespace-nowrap active:scale-95 shadow-sm">
-                    <Icons.Plus /> 手動で新規登録
-                </button>
-              </div>
-          )}
-        </div>
+                  </div>
+              )}
+            </div>
+        )}
         
         {/* ★ テーブル描画エリア */}
         <div className="flex-1 overflow-hidden relative">
