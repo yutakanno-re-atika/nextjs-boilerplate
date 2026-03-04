@@ -1,12 +1,12 @@
 // @ts-nocheck
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 const Icons = {
   Plus: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>,
   Edit: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>,
   Trash: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
   Search: () => <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
-  Image: () => <svg className="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
+  Image: () => <svg className="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2-2v12a2 2 0 002 2z" /></svg>,
   Sparkles: () => <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 8.134a1 1 0 010 1.932l-3.354.933-1.179 4.456a1 1 0 01-1.934 0l-1.179-4.456-3.354-.933a1 1 0 010-1.932l3.354-.933 1.179-4.456A1 1 0 0112 2z" clipRule="evenodd" /></svg>,
   ArrowUp: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>,
   Close: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>,
@@ -56,9 +56,9 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const [imgData1, setImgData1] = useState<string>('');
   const [imgData2, setImgData2] = useState<string>('');
   
-  // ★ システム設定用のステート（初期値の評価を厳密に）
-  const [autoMarketSync, setAutoMarketSync] = useState(String(data?.config?.auto_market_sync) !== 'false');
-  const [autoLeadGen, setAutoLeadGen] = useState(String(data?.config?.auto_lead_gen) !== 'false');
+  // ★ システム設定用のステート
+  const [autoMarketSync, setAutoMarketSync] = useState(true);
+  const [autoLeadGen, setAutoLeadGen] = useState(true);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [isRunningBatch, setIsRunningBatch] = useState<'NONE' | 'MARKET' | 'LEAD'>('NONE');
 
@@ -70,6 +70,14 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const castings = data?.castings || [];
   const clients = data?.clients || [];
   const staffs = data?.staffs || [];
+
+  // ★ 修正：データが更新されたら、最新の設定値をステートに反映する
+  useEffect(() => {
+    if (data?.config) {
+      setAutoMarketSync(String(data.config.auto_market_sync) !== 'false');
+      setAutoLeadGen(String(data.config.auto_lead_gen) !== 'false');
+    }
+  }, [data?.config]);
 
   const uniqueMakers = Array.from(new Set(wires.map((w:any) => w.maker).filter((m:any) => m && m !== '-')));
   const uniqueTypes = Array.from(new Set(castings.map((c:any) => c.type).filter(Boolean)));
@@ -143,11 +151,10 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       setIsModalOpen(true);
   };
 
-  // ★ 追加：システム設定（ON/OFF）を保存ボタンで一括送信する処理
+  // ★ 修正：システム設定（ON/OFF）を保存ボタンで一括送信し、キャッシュを破棄する
   const handleSaveSettings = async () => {
       setIsSavingSettings(true);
       try {
-          // 2つの設定をGASに送信
           await fetch('/api/gas', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -160,16 +167,17 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
               body: JSON.stringify({ action: 'UPDATE_CONFIG', key: 'auto_lead_gen', value: autoLeadGen.toString(), description: 'AIスナイパー自動実行フラグ' })
           });
           
+          // ★ 修正：ブラウザの古いキャッシュを消して、リロード時に確実に最新のデータを取得させる
+          localStorage.removeItem('factoryOS_masterData');
+          
           alert('✅ 設定を保存しました。');
-          // 最新状態を反映させるためにリロード
           window.location.reload();
       } catch (e) {
           alert('設定の保存に失敗しました。通信環境を確認してください。');
+          setIsSavingSettings(false);
       }
-      setIsSavingSettings(false);
   };
 
-  // バッチ手動実行
   const handleRunBatch = async (type: 'MARKET' | 'LEAD') => {
       if (!confirm(`${type === 'MARKET' ? '市況データ（建値）' : '営業リード'} の抽出バッチを今すぐ実行します。よろしいですか？`)) return;
       setIsRunningBatch(type);
@@ -415,16 +423,15 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   };
 
   const renderTable = () => {
-    // ★ 設定タブの場合は専用のUIを返す
     if (activeTab === 'SETTINGS') {
         return (
             <div className="p-6 md:p-10 bg-white h-full overflow-y-auto animate-in fade-in">
-                <div className="max-w-3xl mx-auto space-y-8">
+                <div className="max-w-3xl mx-auto space-y-10">
                     <div>
-                        <h3 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-3 mb-4 flex items-center gap-2">
+                        <h3 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-3 mb-6 flex items-center gap-2">
                             <Icons.Settings /> システム自動実行バッチの制御
                         </h3>
-                        <p className="text-sm text-gray-600 leading-relaxed">
+                        <p className="text-sm text-gray-600 leading-relaxed mb-6">
                             GAS（Google Apps Script）で1時間おきに実行されているバックグラウンド処理の稼働状況を制御します。
                             意図しないAPIコストの発生や、相場急変時の安全確保のために利用してください。
                         </p>
@@ -484,7 +491,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                         </div>
                     </div>
 
-                    {/* ★ 保存ボタンを追加 */}
                     <div className="flex justify-end pt-6 border-t border-gray-200">
                         <button 
                             onClick={handleSaveSettings} 
