@@ -13,7 +13,8 @@ const Icons = {
   ScaleIndividual: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>,
   Mic: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>,
   CheckCircle: () => <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-  UploadCloud: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+  UploadCloud: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>,
+  ArrowRight: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
 };
 
 export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onClear, isVoiceOutputEnabled }: { data: any, editingResId?: string | null, localReservations?: any[], onSuccess: () => void, onClear: () => void, isVoiceOutputEnabled?: boolean }) => {
@@ -40,6 +41,18 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   const [isProcessingVoice, setIsProcessingVoice] = useState(false);
 
   const [isUploadingMaster, setIsUploadingMaster] = useState<string | null>(null);
+
+  // ★ 追加：AI推論ルート選択用のステート
+  const [aiAnalysisResult, setAiAnalysisResult] = useState<any>(null);
+  const [isAiResultRouteModalOpen, setIsAiResultRouteModalOpen] = useState(false);
+  const [isSavingUnknown, setIsSavingUnknown] = useState(false);
+
+  // ★ 追加：マスター登録フォーム（AdminDatabaseと同等）用のステート
+  const [isMasterRegisterModalOpen, setIsMasterRegisterModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<any>(null);
+  const [sampleTotal, setSampleTotal] = useState<number | ''>('');
+  const [sampleCopper, setSampleCopper] = useState<number | ''>('');
+  const [isSubmittingMaster, setIsSubmittingMaster] = useState(false);
 
   const [simConfig, setSimConfig] = useState({
     disposalCostPerKg: 40,   
@@ -74,7 +87,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       setTimeout(() => setToastMessage(null), 6000);
   };
 
-  // ★ 修正：手動追加時にも「製造年」を表示して完全一致させる
   const buildProductName = (p: any) => {
     const maker = p.maker && p.maker !== '-' ? `【${p.maker}】` : '';
     const sizeStr = p.size || p.sq;
@@ -128,12 +140,15 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       });
   };
 
-  const handleAiImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, num: 1 | 2) => {
+  // ★ 修正: num に 3（剥線画像） を追加
+  const handleAiImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, num: 1 | 2 | 3) => {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
         const compressedBase64 = await compressImage(file);
-        if (num === 1) setImgData1(compressedBase64); else setImgData2(compressedBase64);
+        if (num === 1) setImgData1(compressedBase64); 
+        else if (num === 2) setImgData2(compressedBase64);
+        else setEditingItem({...editingItem, _pendingImageData3: compressedBase64});
     } catch (err) { alert("画像の処理に失敗しました。"); }
     e.target.value = '';
   };
@@ -166,36 +181,11 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
 
       setTimeout(() => {
           if (result.status === 'success') {
-            const isMixed = result.data.wireType.includes('フレコン') || result.data.wireType.includes('混合');
-            const displayName = result.data.isNewFlag || isMixed ? `💡 AI査定: ${result.data.wireType}` : result.data.wireType;
-            
-            setCart(prev => [{
-                id: Date.now().toString(), 
-                product: displayName, 
-                ratio: result.data.estimatedRatio, 
-                weight: 0, 
-                percentage: 0, 
-                isNewAi: result.data.isNewFlag, 
-                reason: result.data.reason,
-                masterId: result.data.masterId,
-                isMasterImageEmpty: result.data.isMasterImageEmpty,
-                pendingImg1: imgData1,
-                pendingImg2: imgData2,
-                isImageUploaded: false
-            }, ...prev]);
-
-            if (result.data.isNewFlag) {
-                showToast('未知線種を仮登録しました', `「${result.data.wireType}」の画像とデータをデータベースに保存しました。`, 'success');
-            } else {
-                showToast('既存マスターと一致', `「${result.data.wireType}」として査定しました。`, 'info');
-            }
-
             if (isVoiceOutputEnabled && 'speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
-                // ★ 読み上げ時、邪魔にならないようメーカー名を落として品名と年式だけを読む
-                const cleanSpeechText = result.data.wireType.replace(/【.*?】/, '');
-                const speakText = result.data.isNewFlag
-                    ? `新規線種です。${cleanSpeechText}、推定歩留まり、${result.data.estimatedRatio}パーセント。`
+                const cleanSpeechText = result.data.wireType.replace(/【.*?】/g, '');
+                const speakText = result.data.isNewFlag 
+                    ? `未知の線種を検出しました。${cleanSpeechText}、推定歩留まり、${result.data.estimatedRatio}パーセント。`
                     : `判定完了。${cleanSpeechText} です。`;
                 const utterance = new SpeechSynthesisUtterance(speakText);
                 utterance.lang = 'ja-JP';
@@ -203,11 +193,39 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                 window.speechSynthesis.speak(utterance);
             }
 
+            // ★ 修正：ここで未知線種の場合は自動でカートに入れず、ルート選択モーダルを開く
+            if (result.data.isNewFlag) {
+                setAiAnalysisResult(result.data);
+                setIsAiResultRouteModalOpen(true);
+            } else {
+                const isMixed = result.data.wireType.includes('フレコン') || result.data.wireType.includes('混合');
+                const displayName = isMixed ? `💡 AI査定: ${result.data.wireType}` : result.data.wireType;
+                
+                setCart(prev => [{
+                    id: Date.now().toString(), 
+                    product: displayName, 
+                    ratio: result.data.estimatedRatio, 
+                    weight: 0, 
+                    percentage: 0, 
+                    isNewAi: false, 
+                    reason: result.data.reason,
+                    masterId: result.data.masterId,
+                    isMasterImageEmpty: result.data.isMasterImageEmpty,
+                    pendingImg1: imgData1,
+                    pendingImg2: imgData2,
+                    isImageUploaded: false
+                }, ...prev]);
+
+                showToast('既存マスターと一致', `「${result.data.wireType}」として査定しました。`, 'info');
+                setImgData1(''); setImgData2('');
+            }
+            
             setIsAiModalOpen(false);
-            setImgData1(''); setImgData2(''); setAiProgressStep(0);
+            setAiStatus('IDLE');
+            setAiProgressStep(0);
           } else { 
             alert('AI解析エラー: ' + result.message); 
-            setIsAiModalOpen(false); setAiProgressStep(0);
+            setIsAiModalOpen(false); setAiProgressStep(0); setAiStatus('IDLE');
           }
       }, 800);
 
@@ -217,6 +235,154 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         setAiStatus('IDLE'); setAiProgressStep(0);
     } 
   };
+
+  // ★ 追加：ルートA（未知として仮査定）の処理
+  const handleRouteUnknown = async () => {
+      setIsSavingUnknown(true);
+      try {
+          const res = await fetch('/api/gas', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                  action: 'REGISTER_UNKNOWN_WIRE', 
+                  wireType: aiAnalysisResult.wireType, 
+                  estimatedRatio: aiAnalysisResult.estimatedRatio, 
+                  reason: aiAnalysisResult.reason, 
+                  imageData: imgData1, 
+                  imageData2: imgData2 
+              })
+          });
+          const result = await res.json();
+          if (result.status === 'success') {
+              setCart(prev => [{
+                  id: Date.now().toString(), 
+                  product: `💡 AI仮査定: ${aiAnalysisResult.wireType}`, 
+                  ratio: aiAnalysisResult.estimatedRatio, 
+                  weight: 0, 
+                  percentage: 0, 
+                  isNewAi: true, 
+                  reason: aiAnalysisResult.reason
+              }, ...prev]);
+              showToast('未知線種として仮登録', `推論値 ${aiAnalysisResult.estimatedRatio}% でカートに追加しました。`, 'success');
+              setIsAiResultRouteModalOpen(false);
+              setImgData1(''); setImgData2(''); setAiAnalysisResult(null);
+          } else {
+              alert('登録エラー: ' + result.message);
+          }
+      } catch(e) {
+          alert('通信エラー');
+      }
+      setIsSavingUnknown(false);
+  };
+
+  // ★ 追加：ルートB（マスター新規登録へ進む）の処理
+  const handleRouteMaster = () => {
+      setIsAiResultRouteModalOpen(false);
+      
+      const cleanSize = String(aiAnalysisResult.size || '').replace(/[^\d.]/g, '');
+      const cleanCore = String(aiAnalysisResult.core || '').replace(/[^\d]/g, '');
+
+      setEditingItem({
+          maker: aiAnalysisResult.maker === '-' ? '' : aiAnalysisResult.maker,
+          name: aiAnalysisResult.name === '-' ? '' : aiAnalysisResult.name,
+          year: aiAnalysisResult.year === '-' ? '' : aiAnalysisResult.year,
+          sq: cleanSize === '-' ? '' : cleanSize,
+          core: cleanCore === '-' ? '' : cleanCore,
+          conductor: aiAnalysisResult.conductor === '-' ? '' : aiAnalysisResult.conductor,
+          ratio: aiAnalysisResult.estimatedRatio || '',
+          aiEstimatedRatio: aiAnalysisResult.estimatedRatio || '',
+          memo: `【AIアシスト抽出】\nAI推論根拠: ${aiAnalysisResult.reason}\n※実測を行って歩留まりを上書きしてください。`,
+          _pendingImageData1: imgData1,
+          _pendingImageData2: imgData2,
+          _pendingImageData3: ''
+      });
+      setSampleTotal('');
+      setSampleCopper('');
+      setIsMasterRegisterModalOpen(true);
+  };
+
+  // ★ 追加：マスター登録フォーム内での歩留まり計算
+  const calculateRatio = (total: number | '', copper: number | '') => {
+      if (total && copper && Number(total) > 0) {
+          const r = (Number(copper) / Number(total)) * 100;
+          return r.toFixed(2);
+      }
+      return '';
+  };
+  const handleSampleTotalChange = (val: string) => {
+      const num = val ? Number(val) : '';
+      setSampleTotal(num);
+      setEditingItem({...editingItem, sampleTotal: num, ratio: calculateRatio(num, sampleCopper)});
+  };
+  const handleSampleCopperChange = (val: string) => {
+      const num = val ? Number(val) : '';
+      setSampleCopper(num);
+      setEditingItem({...editingItem, sampleCopper: num, ratio: calculateRatio(sampleTotal, num)});
+  };
+
+  // ★ 追加：実測値を元にマスターとして登録し、カートに追加する処理
+  const handleSaveMaster = async () => {
+      setIsSubmittingMaster(true);
+      let finalItem = { ...editingItem };
+
+      if (finalItem._pendingImageData1) {
+          try {
+              const res = await fetch('/api/gas', {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ action: 'UPLOAD_IMAGE', data: finalItem._pendingImageData1, mimeType: 'image/jpeg', fileName: `master_sec_${Date.now()}.jpg` })
+              });
+              const r = await res.json();
+              if (r.status === 'success') finalItem.image1 = r.url;
+          } catch(e) { }
+      }
+      if (finalItem._pendingImageData2) {
+          try {
+              const res = await fetch('/api/gas', {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ action: 'UPLOAD_IMAGE', data: finalItem._pendingImageData2, mimeType: 'image/jpeg', fileName: `master_prt_${Date.now()}.jpg` })
+              });
+              const r = await res.json();
+              if (r.status === 'success') finalItem.image2 = r.url;
+          } catch(e) { }
+      }
+      if (finalItem._pendingImageData3) {
+          try {
+              const res = await fetch('/api/gas', {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ action: 'UPLOAD_IMAGE', data: finalItem._pendingImageData3, mimeType: 'image/jpeg', fileName: `master_nak_${Date.now()}.jpg` })
+              });
+              const r = await res.json();
+              if (r.status === 'success') finalItem.image3 = r.url;
+          } catch(e) { }
+      }
+
+      try {
+        const res = await fetch('/api/gas', { 
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify({ action: 'ADD_DB_RECORD', sheetName: 'Products_Wire', data: finalItem }) 
+        });
+        const result = await res.json();
+        if (result.status === 'success') {
+          showToast('マスター登録完了', '新しい線種を確定マスターとして登録し、カートに追加しました。', 'success');
+          
+          setCart(prev => [{
+              id: Date.now().toString(), 
+              product: buildProductName(finalItem), 
+              ratio: finalItem.ratio, 
+              weight: 0, 
+              percentage: 0, 
+              isNewAi: false,
+              masterId: result.newId
+          }, ...prev]);
+
+          setIsMasterRegisterModalOpen(false);
+          setImgData1(''); setImgData2(''); setAiAnalysisResult(null);
+        } else {
+          alert('エラー: ' + result.message);
+        }
+      } catch (e) { alert('通信エラーが発生しました'); }
+      setIsSubmittingMaster(false);
+  };
+
 
   const uploadMasterImageFromCart = async (item: any) => {
       setIsUploadingMaster(item.id);
@@ -530,12 +696,129 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         </div>
       </div>
 
-      {/* ★ AI モーダル */}
+      {/* ★ AI解析結果のルート選択モーダル */}
+      {isAiResultRouteModalOpen && aiAnalysisResult && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
+            <div className="bg-white w-full max-w-lg rounded-md shadow-2xl animate-in zoom-in-95 overflow-hidden flex flex-col">
+                <div className="p-5 border-b border-gray-200 bg-blue-50">
+                    <h3 className="font-black text-blue-900 text-lg flex items-center gap-2">
+                        <Icons.Sparkles /> 未知の線種を検出しました
+                    </h3>
+                </div>
+                <div className="p-6 bg-white space-y-4">
+                    <p className="text-sm text-gray-600">既存のマスターデータに一致する線種が見つかりませんでした。AIによる推論結果は以下の通りです。</p>
+                    <div className="bg-gray-50 border border-gray-200 p-4 rounded-sm">
+                        <p className="font-bold text-gray-900 text-lg mb-1">{aiAnalysisResult.wireType}</p>
+                        <p className="text-sm text-gray-600 mb-3">AI推論歩留まり: <span className="font-bold text-blue-600 text-lg">{aiAnalysisResult.estimatedRatio}%</span></p>
+                        <p className="text-xs text-gray-500 bg-white p-2 border border-gray-100 rounded-sm leading-relaxed">{aiAnalysisResult.reason}</p>
+                    </div>
+                </div>
+                <div className="p-5 bg-gray-50 border-t border-gray-200 flex flex-col gap-3">
+                    <button onClick={handleRouteUnknown} disabled={isSavingUnknown} className="w-full py-3.5 bg-gray-900 hover:bg-black text-white font-bold rounded-sm shadow-md transition disabled:opacity-50">
+                        {isSavingUnknown ? '処理中...' : '一旦、未知線種として仮査定 (カートへ追加)'}
+                    </button>
+                    <div className="relative flex py-2 items-center">
+                        <div className="flex-grow border-t border-gray-300"></div>
+                        <span className="flex-shrink-0 mx-4 text-gray-400 text-xs font-bold">または</span>
+                        <div className="flex-grow border-t border-gray-300"></div>
+                    </div>
+                    <button onClick={handleRouteMaster} className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-sm shadow-md transition flex items-center justify-center gap-2">
+                        実測して確定マスターに新規追加 <Icons.ArrowRight />
+                    </button>
+                </div>
+            </div>
+        </div>
+      )}
+
+      {/* ★ マスター登録（実測値入力）モーダル */}
+      {isMasterRegisterModalOpen && editingItem && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[80] flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-2xl rounded-sm shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="p-5 border-b border-gray-200 flex justify-between items-center bg-blue-50">
+              <h3 className="font-black text-blue-900 text-lg flex items-center gap-2">
+                  <Icons.Sparkles /> AIアシスト: 新規マスター登録
+              </h3>
+              <button onClick={() => setIsMasterRegisterModalOpen(false)} className="text-gray-400 hover:text-gray-900 p-1"><Icons.Close /></button>
+            </div>
+            
+            <div className="p-6 max-h-[75vh] overflow-y-auto space-y-4">
+                <div className="bg-blue-50 border border-blue-200 p-3 rounded-sm text-xs text-blue-800 font-bold flex flex-col gap-1">
+                    <div className="flex items-center gap-2"><Icons.Sparkles /> AIが画像を解析し、仕様を自動入力しました。</div>
+                    <div className="text-gray-600 ml-6 font-normal">※ 以下のフォームで実測値を入力し、「確定してマスターに登録」を押すと、そのままカートに追加されます。</div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                    <div><label className="block text-xs font-bold text-gray-500 mb-1">メーカー</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-blue-500 font-bold" value={editingItem.maker || ''} onChange={e => setEditingItem({...editingItem, maker: e.target.value})} /></div>
+                    <div><label className="block text-xs font-bold text-gray-500 mb-1">品名</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-blue-500 font-bold" value={editingItem.name || ''} onChange={e => setEditingItem({...editingItem, name: e.target.value})} /></div>
+                </div>
+                <div className="grid grid-cols-4 gap-4">
+                    <div><label className="block text-xs font-bold text-gray-500 mb-1">製造年</label><input type="text" placeholder="例: 2024" className="w-full border p-2 rounded-sm outline-none focus:border-blue-500" value={editingItem.year || ''} onChange={e => setEditingItem({...editingItem, year: e.target.value})} /></div>
+                    <div><label className="block text-xs font-bold text-gray-500 mb-1">SQ (サイズ)</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-blue-500" value={editingItem.sq || ''} onChange={e => setEditingItem({...editingItem, sq: e.target.value})} /></div>
+                    <div><label className="block text-xs font-bold text-gray-500 mb-1">芯数 (C)</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-blue-500" value={editingItem.core || ''} onChange={e => setEditingItem({...editingItem, core: e.target.value})} /></div>
+                    <div><label className="block text-xs font-bold text-gray-500 mb-1">導体</label><input type="text" placeholder="単線/7本より線等" className="w-full border p-2 rounded-sm outline-none focus:border-blue-500" value={editingItem.conductor || ''} onChange={e => setEditingItem({...editingItem, conductor: e.target.value})} /></div>
+                </div>
+                
+                <div className="bg-gray-100 p-4 rounded-sm border border-gray-300 mt-4 relative">
+                    <span className="absolute top-0 right-0 bg-gray-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-sm">HUMAN REQUIRED</span>
+                    <label className="block text-sm font-black text-gray-800 mb-3 border-b border-gray-300 pb-2">⚖️ サンプル実測 (人間が入力)</label>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                        <div className="flex flex-col items-center border border-gray-300 p-2 rounded-sm bg-white h-[74px] justify-center relative overflow-hidden group">
+                            {editingItem._pendingImageData3 ? (
+                                <>
+                                    <img src={`data:image/jpeg;base64,${editingItem._pendingImageData3}`} className="absolute inset-0 w-full h-full object-cover opacity-50" />
+                                    <span className="relative z-10 text-xs font-bold text-blue-600">✅ 撮影済</span>
+                                </>
+                            ) : (
+                                <label className="cursor-pointer flex flex-col items-center text-gray-500 hover:text-blue-600 transition">
+                                    <Icons.Camera />
+                                    <span className="text-[10px] font-bold mt-1">剥線写真を追加</span>
+                                    <input type="file" onChange={e => handleAiImageUpload(e, 3)} className="hidden" accept="image/*" capture="environment" />
+                                </label>
+                            )}
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-600 mb-1">被覆込み 総重量 (g)</label>
+                            <input type="number" step="0.001" className="w-full border-none shadow-sm p-3 rounded-sm font-mono text-lg outline-none focus:ring-2 focus:ring-blue-500" value={sampleTotal} onChange={e => handleSampleTotalChange(e.target.value)} placeholder="0.000" />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-[#D32F2F] mb-1">剥線後 銅重量 (g)</label>
+                            <input type="number" step="0.001" className="w-full border-none shadow-sm p-3 rounded-sm font-mono text-lg outline-none focus:ring-2 focus:ring-red-500" value={sampleCopper} onChange={e => handleSampleCopperChange(e.target.value)} placeholder="0.000" />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-blue-800 mb-1 flex items-center justify-between">
+                                <span>歩留まり (%)</span>
+                                {editingItem.aiEstimatedRatio && !sampleTotal && (
+                                    <span className="text-[9px] bg-blue-100 text-blue-700 px-1 py-0.5 rounded animate-pulse">AI推定値</span>
+                                )}
+                            </label>
+                            <div className="w-full bg-white border border-blue-200 shadow-inner p-3 rounded-sm font-mono text-xl font-black text-blue-600 text-right">
+                                {editingItem.ratio || '---'} %
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div><label className="block text-xs font-bold text-gray-500 mb-1">メモ / 特記事項</label><textarea className="w-full border p-2 rounded-sm h-24 text-sm outline-none focus:border-gray-500 leading-relaxed" value={editingItem.memo || editingItem.reason || ''} onChange={e => setEditingItem({...editingItem, memo: e.target.value, reason: e.target.value})} /></div>
+            </div>
+
+            <div className="p-5 border-t border-gray-200 flex justify-end gap-3 bg-gray-50">
+              <button onClick={() => setIsMasterRegisterModalOpen(false)} className="px-5 py-2.5 text-gray-600 font-bold hover:bg-gray-200 rounded-sm transition">キャンセル</button>
+              <button onClick={handleSaveMaster} disabled={isSubmittingMaster} className="px-8 py-2.5 bg-blue-600 text-white font-bold rounded-sm hover:bg-blue-700 transition disabled:opacity-50 flex items-center gap-2 shadow-sm active:scale-95">
+                {isSubmittingMaster ? '保存中...' : '確定してマスターに登録'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ★ 従来の AIアシスト画像のアップロードモーダル */}
       {isAiModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-gray-900 w-full max-w-2xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col">
             <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-black/50">
-              <h3 className="font-black text-white flex items-center gap-2"><Icons.Sparkles /> AI 線種分析</h3>
+              <h3 className="font-black text-white flex items-center gap-2">
+                <Icons.Sparkles /> AI 線種分析
+              </h3>
               {aiStatus !== 'ANALYZING' && <button onClick={() => setIsAiModalOpen(false)} className="text-gray-400 hover:text-white"><Icons.Close /></button>}
             </div>
             
@@ -569,8 +852,8 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
               ) : (
                 <div className="animate-in fade-in">
                     <p className="text-sm text-gray-300 mb-6 leading-relaxed">
-                        判断に迷う特殊な線種をAIに査定させます。<br/>
-                        スケール（定規）が写った断面写真と、あれば印字の写真をアップロードしてください。<br/>
+                        持ち込まれた電線の断面写真や表面の印字の写真をアップロードしてください。<br/>
+                        AIが既存のマスターから該当するものを探すか、未知の線種として歩留まりを推論します。
                     </p>
 
                     <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -640,6 +923,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           </div>
         </div>
       )}
+
     </div>
   );
 };
