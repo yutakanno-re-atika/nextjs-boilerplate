@@ -59,7 +59,6 @@ export default function WireMasterCloud() {
       }
     }
 
-    // 古いキャッシュを一瞬表示するが、必ず裏で最新を取りに行く
     if (cachedData && cachedData !== 'undefined') {
         try {
             setData(JSON.parse(cachedData));
@@ -69,7 +68,6 @@ export default function WireMasterCloud() {
         }
     }
 
-    // ★修正: キャッシュバスターを付与して常に最新のDB情報を取得
     fetch(`/api/gas?t=${new Date().getTime()}`, { cache: 'no-store' })
       .then(res => res.json())
       .then(d => { 
@@ -78,11 +76,13 @@ export default function WireMasterCloud() {
               localStorage.setItem('factoryOS_masterData', JSON.stringify(d));
           } else {
               console.error("APIレスポンスエラー:", d.message);
+              alert("データベースの読み込みに失敗しました。\n詳細: " + d.message);
           }
           setIsLoading(false); 
       })
       .catch(err => {
           console.error("データ取得エラー:", err);
+          alert("通信エラーが発生しました。\nネットワークを確認してください。");
           setIsLoading(false);
       });
   }, []);
