@@ -1,3 +1,4 @@
+// app/page.tsx
 // @ts-nocheck
 "use client";
 
@@ -43,9 +44,6 @@ export default function WireMasterCloud() {
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  // ==========================================
-  // ★ 1. 初期ロード：キャッシュからの自己修復機能付き
-  // ==========================================
   useEffect(() => {
     const savedUser = localStorage.getItem('factoryOS_user');
     const savedView = localStorage.getItem('factoryOS_view');
@@ -61,6 +59,7 @@ export default function WireMasterCloud() {
       }
     }
 
+    // 古いキャッシュを一瞬表示するが、必ず裏で最新を取りに行く
     if (cachedData && cachedData !== 'undefined') {
         try {
             setData(JSON.parse(cachedData));
@@ -70,12 +69,15 @@ export default function WireMasterCloud() {
         }
     }
 
-    fetch('/api/gas')
+    // ★修正: キャッシュバスターを付与して常に最新のDB情報を取得
+    fetch(`/api/gas?t=${new Date().getTime()}`, { cache: 'no-store' })
       .then(res => res.json())
       .then(d => { 
           if(d.status === 'success') {
               setData(d); 
               localStorage.setItem('factoryOS_masterData', JSON.stringify(d));
+          } else {
+              console.error("APIレスポンスエラー:", d.message);
           }
           setIsLoading(false); 
       })
@@ -87,9 +89,6 @@ export default function WireMasterCloud() {
 
   const marketPrice = data?.config?.market_price || 0;
 
-  // ==========================================
-  // ★ 2. ログイン処理：RBAC対応
-  // ==========================================
   const handleLogin = async (e: any) => {
     e.preventDefault();
     setIsLoggingIn(true);
@@ -106,7 +105,6 @@ export default function WireMasterCloud() {
           const userData = result.user;
           setUser(userData);
           
-          // ★ MEMBER（顧客）以外はすべてADMINダッシュボードへ飛ばし、そこで権限を制御する
           const nextView = userData.role === 'MEMBER' ? 'MEMBER' : 'ADMIN';
           setView(nextView);
           
@@ -137,7 +135,6 @@ export default function WireMasterCloud() {
     );
   }
 
-  // ★ ADMINダッシュボードにuserデータを丸ごと渡し、中でガードレールを敷かせる
   if (view === 'ADMIN') return <AdminDashboard user={user} data={data} setView={setView} onLogout={handleLogout} />;
   
   if (view === 'MEMBER') return <MemberDashboard user={user} data={data} setView={setView} onLogout={handleLogout} />;
