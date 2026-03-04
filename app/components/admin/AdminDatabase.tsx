@@ -56,7 +56,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const [imgData1, setImgData1] = useState<string>('');
   const [imgData2, setImgData2] = useState<string>('');
   
-  // ★ システム設定用のステート
+  // ★ 修正：システム設定用のステート（ローカルストレージを最優先して初期化）
   const [autoMarketSync, setAutoMarketSync] = useState(true);
   const [autoLeadGen, setAutoLeadGen] = useState(true);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
@@ -71,11 +71,22 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const clients = data?.clients || [];
   const staffs = data?.staffs || [];
 
-  // ★ 修正：データが更新されたら、最新の設定値をステートに反映する
+  // ★ 修正：コンポーネントマウント時、およびデータ更新時に確実な設定値を反映する
   useEffect(() => {
-    if (data?.config) {
-      setAutoMarketSync(String(data.config.auto_market_sync) !== 'false');
-      setAutoLeadGen(String(data.config.auto_lead_gen) !== 'false');
+    // ユーザーが保存したローカルストレージの値を最優先で評価
+    const localSync = localStorage.getItem('factoryOS_autoMarketSync');
+    const localLead = localStorage.getItem('factoryOS_autoLeadGen');
+
+    if (localSync !== null) {
+        setAutoMarketSync(localSync === 'true');
+    } else if (data?.config) {
+        setAutoMarketSync(String(data.config.auto_market_sync) !== 'false');
+    }
+
+    if (localLead !== null) {
+        setAutoLeadGen(localLead === 'true');
+    } else if (data?.config) {
+        setAutoLeadGen(String(data.config.auto_lead_gen) !== 'false');
     }
   }, [data?.config]);
 
@@ -151,31 +162,39 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       setIsModalOpen(true);
   };
 
-  // ★ 修正：システム設定（ON/OFF）を保存ボタンで一括送信し、キャッシュを破棄する
+  // ★ 修正：非同期通信を直列化し、同時にGASのロックを避ける。ローカルストレージにも保存。
   const handleSaveSettings = async () => {
       setIsSavingSettings(true);
       try {
+          // 1つ目の設定をGASへ送信
           await fetch('/api/gas', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ action: 'UPDATE_CONFIG', key: 'auto_market_sync', value: autoMarketSync.toString(), description: '市況自動取得フラグ' })
           });
           
+          // GAS側の書き込み衝突（排他制御）を避けるため、0.5秒待機
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // 2つ目の設定をGASへ送信
           await fetch('/api/gas', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ action: 'UPDATE_CONFIG', key: 'auto_lead_gen', value: autoLeadGen.toString(), description: 'AIスナイパー自動実行フラグ' })
           });
           
-          // ★ 修正：ブラウザの古いキャッシュを消して、リロード時に確実に最新のデータを取得させる
+          // ローカルストレージに設定を焼き付ける（リロード後、GASのキャッシュより優先させるため）
+          localStorage.setItem('factoryOS_autoMarketSync', autoMarketSync.toString());
+          localStorage.setItem('factoryOS_autoLeadGen', autoLeadGen.toString());
+          
+          // マスターデータ用のキャッシュは破棄する
           localStorage.removeItem('factoryOS_masterData');
           
-          alert('✅ 設定を保存しました。');
-          window.location.reload();
+          alert('✅ 設定を確実に保存しました。');
       } catch (e) {
-          alert('設定の保存に失敗しました。通信環境を確認してください。');
-          setIsSavingSettings(false);
+          alert('通信エラーが発生しました。設定が正常に保存されていない可能性があります。');
       }
+      setIsSavingSettings(false);
   };
 
   const handleRunBatch = async (type: 'MARKET' | 'LEAD') => {
@@ -423,6 +442,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   };
 
   const renderTable = () => {
+    // ★ 設定タブの場合は専用のUIを返す
     if (activeTab === 'SETTINGS') {
         return (
             <div className="p-6 md:p-10 bg-white h-full overflow-y-auto animate-in fade-in">
@@ -504,6 +524,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
             </div>
         );
     }
+
 
     let filteredData = [];
     
