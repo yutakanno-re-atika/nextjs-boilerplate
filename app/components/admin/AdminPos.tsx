@@ -14,8 +14,8 @@ const Icons = {
   Mic: () => <svg className="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>,
   CheckCircle: () => <svg className="w-6 h-6 text-green-500 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   AlertTriangle: () => <svg className="w-4 h-4 inline-block text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
-  UploadCloud: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>,
-  Edit: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+  Edit: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>,
+  ChevronDown: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
 };
 
 export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onClear, isVoiceOutputEnabled }: { data: any, editingResId?: string | null, localReservations?: any[], onSuccess: () => void, onClear: () => void, isVoiceOutputEnabled?: boolean }) => {
@@ -193,14 +193,15 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
             setPosMode('BULK');
             if (result.data.estimatedWeight) setBulkTotalWeight(Number(result.data.estimatedWeight));
 
+            // ★ AIのプロンプト修正に伴い、copperYieldとmixPercentageを優先取得するように変更
             const newCartItems = (result.data.components || []).map((comp: any, idx: number) => ({
                 id: `bulk-${Date.now()}-${idx}`, product: `📦 AI解析: ${comp.name || '不明'}`,
-                ratio: comp.ratio || 0, weight: 0, percentage: comp.percentage || 0,
+                ratio: comp.copperYield || comp.ratio || 0, weight: 0, percentage: comp.mixPercentage || comp.percentage || 0,
                 isNewAi: true, reason: idx === 0 ? result.data.reason : '', material: '純銅' 
             }));
             
             setCart(newCartItems);
-            showToast('フレコン一括解析完了', `構成要素を展開しました。全体の推定歩留まりは ${result.data.overallRatio || '---'}% です。`, 'success');
+            showToast('フレコン一括解析完了', `構成要素を展開しました。全体の推定歩留まりは ${result.data.overallRatio || result.data.overallYield || '---'}% です。`, 'success');
 
             setIsBulkAiModalOpen(false); setBulkImages([]); setAiHint(''); setAiProgressStep(0);
           } else { alert('AI解析エラー: ' + result.message); setIsBulkAiModalOpen(false); setAiProgressStep(0); }
@@ -218,14 +219,9 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       if (!SpeechRecognition) { alert('お使いのブラウザは音声入力に対応していません。'); return; }
       
       const recognition = new SpeechRecognition();
-      recognition.lang = 'ja-JP'; 
-      recognition.continuous = true; 
-      recognition.interimResults = true;
+      recognition.lang = 'ja-JP'; recognition.continuous = true; recognition.interimResults = true;
 
-      recognition.onstart = () => { 
-          setIsListening(true); 
-          setVoiceText('🎤 認識中... (もう一度押すと終了して送信)'); 
-      };
+      recognition.onstart = () => { setIsListening(true); setVoiceText('🎤 認識中... (もう一度押すと終了して送信)'); };
       
       let finalTranscript = '';
       recognition.onresult = (event: any) => {
@@ -238,12 +234,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       };
 
       recognition.onerror = () => { setIsListening(false); setVoiceText('認識エラー'); setTimeout(() => setVoiceText(''), 2000); };
-
-      recognition.onend = () => { 
-          setIsListening(false); 
-          if (finalTranscript) processVoiceCommand(finalTranscript);
-          else setTimeout(() => setVoiceText(''), 2000);
-      };
+      recognition.onend = () => { setIsListening(false); if (finalTranscript) processVoiceCommand(finalTranscript); else setTimeout(() => setVoiceText(''), 2000); };
       
       recognitionRef.current = recognition;
       recognition.start();
@@ -303,19 +294,14 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       recognition.start();
   };
 
-  // ★ 修正：別タブを開かず、トーストを出してDB画面への切り替えを促す
   const handlePrepareMasterRegistration = (item: any) => {
       const pendingData = {
           name: item.product.replace(/💡 AI査定: |📦 AI解析: /, '').trim(),
-          ratio: item.ratio,
-          reason: item.reason,
-          conductor: item.conductor,
-          material: item.material,
-          image1: item.pendingImg1,
-          image2: item.pendingImg2
+          ratio: item.ratio, reason: item.reason, conductor: item.conductor, material: item.material,
+          image1: item.pendingImg1, image2: item.pendingImg2
       };
       localStorage.setItem('factoryOS_pendingAIItem', JSON.stringify(pendingData));
-      showToast('データ転送完了', '左のメニューから「データベース」を開いてください。自動で入力画面が立ち上がります。', 'success');
+      showToast('データ転送完了', '左メニューから「データベース」を開くと、自動で入力画面が立ち上がります。', 'success');
   };
 
   const simulation = useMemo(() => {
@@ -393,13 +379,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Icons.Search /></div>
                 <input type="text" placeholder="品目、メーカー等で検索..." className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-sm text-sm focus:border-blue-500 outline-none shadow-inner" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
               </div>
-              <button 
-                  onClick={toggleVoiceInput}
-                  className={`px-4 py-3 border rounded-sm flex items-center justify-center transition-all ${isListening ? 'bg-red-500 border-red-600 text-white animate-pulse shadow-inner' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-100 hover:text-blue-600'}`}
-                  title="音声で検索/追加"
-              >
-                  <Icons.Mic />
-              </button>
+              <button onClick={toggleVoiceInput} className={`px-4 py-3 border rounded-sm flex items-center justify-center transition-all ${isListening ? 'bg-red-500 border-red-600 text-white animate-pulse shadow-inner' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-100 hover:text-blue-600'}`} title="音声で検索/追加"><Icons.Mic /></button>
           </div>
           <div className="flex gap-2">
               <button onClick={() => setIsAiModalOpen(true)} className="flex-1 bg-gradient-to-r from-blue-700 to-blue-900 hover:from-blue-600 hover:to-blue-800 text-white font-bold py-3 px-3 rounded-sm flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 text-xs sm:text-sm">
@@ -470,23 +450,29 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                 const isItemTin = item.material === '錫メッキ' || item.product?.includes('錫');
                 return (
                   <div key={item.id} className={`border p-4 rounded-sm flex flex-col gap-2 relative shadow-sm ${item.isNewAi ? 'bg-blue-50/30 border-blue-200' : isItemTin ? 'bg-red-50 border-red-400' : 'bg-white border-gray-200'}`}>
+                    
+                    <button onClick={() => removeItem(item.id)} className="absolute top-3 right-3 text-red-400 bg-red-50 hover:bg-red-100 hover:text-red-600 border border-red-100 p-2 rounded-md transition shadow-sm z-10"><Icons.Trash /></button>
+
                     <div className="flex justify-between items-start">
-                      <div className="pr-6">
+                      <div className="pr-12 w-full">
                         <div className="font-bold text-gray-900 text-base leading-tight flex items-center gap-1">
                             {isItemTin && <span className="bg-red-600 text-white px-1.5 py-0.5 rounded-sm text-[10px]">⚠️錫メッキ</span>}
                             {item.product}
                         </div>
-                        <div className="text-xs text-gray-500 mt-1 flex items-center gap-3">
-                            <span>歩留まり: <span className="font-mono font-bold text-blue-600">{item.ratio}%</span></span>
-                            {/* ★ 修正: bulk- で始まらない単一AI査定のものだけボタンを表示する */}
+                        
+                        <div className="flex items-center gap-3 mt-2">
+                            {/* ★ 銅分(歩留)を強調 */}
+                            <span className="bg-gray-100 border border-gray-200 px-2 py-1 rounded text-xs text-gray-600 font-bold flex items-center gap-2">
+                                銅分 (歩留): <span className="font-mono text-blue-600 text-sm">{item.ratio}%</span>
+                            </span>
+
                             {item.isNewAi && !String(item.id).startsWith('bulk-') && (
-                                <button onClick={() => handlePrepareMasterRegistration(item)} className="text-[10px] bg-white border border-blue-300 text-blue-700 px-2 py-0.5 rounded shadow-sm hover:bg-blue-50 transition flex items-center gap-1">
-                                    <Icons.Edit /> マスターへ登録 (DB画面へ)
+                                <button onClick={() => handlePrepareMasterRegistration(item)} className="text-[10px] bg-white border border-blue-300 text-blue-700 px-2 py-1 rounded shadow-sm hover:bg-blue-50 transition flex items-center gap-1">
+                                    <Icons.Edit /> マスターへ登録
                                 </button>
                             )}
                         </div>
                       </div>
-                      <button onClick={() => removeItem(item.id)} className="text-gray-300 hover:text-red-500 absolute top-3 right-3"><Icons.Trash /></button>
                     </div>
                     
                     <div className="flex justify-end items-center mt-2">
@@ -496,16 +482,30 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-bold pointer-events-none">kg</span>
                         </div>
                       ) : (
-                        <div className="w-full flex items-center gap-3">
-                          <input type="range" min="0" max="100" className={`flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer ${isItemTin ? 'accent-red-600' : 'accent-blue-600'}`} value={item.percentage || 0} onChange={e => updatePercentage(item.id, Number(e.target.value))} />
-                          <div className="w-24 relative flex-shrink-0">
-                            <input type="number" className={`w-full border p-2 pr-6 text-right font-mono font-black text-xl rounded-sm outline-none ${isItemTin ? 'bg-white border-red-300 text-red-900' : 'bg-gray-50 border-gray-300'}`} value={item.percentage || ''} onChange={e => updatePercentage(item.id, Number(e.target.value))} placeholder="0" />
-                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold pointer-events-none">%</span>
+                        <div className="w-full flex flex-col gap-1">
+                          <label className="text-[10px] font-bold text-gray-500">フレコン内構成割合</label>
+                          <div className="w-full flex items-center gap-3">
+                            <input type="range" min="0" max="100" className={`flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer ${isItemTin ? 'accent-red-600' : 'accent-blue-600'}`} value={item.percentage || 0} onChange={e => updatePercentage(item.id, Number(e.target.value))} />
+                            <div className="w-24 relative flex-shrink-0">
+                                <input type="number" className={`w-full border p-2 pr-6 text-right font-mono font-black text-xl rounded-sm outline-none ${isItemTin ? 'bg-white border-red-300 text-red-900' : 'bg-gray-50 border-gray-300'}`} value={item.percentage || ''} onChange={e => updatePercentage(item.id, Number(e.target.value))} placeholder="0" />
+                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold pointer-events-none">%</span>
+                            </div>
                           </div>
                         </div>
                       )}
                     </div>
-                    {item.reason && <div className="mt-3 bg-white border border-blue-200 p-3 rounded-sm text-xs lg:text-sm text-gray-700 leading-relaxed shadow-sm whitespace-pre-wrap"><span className="font-black text-blue-700 block mb-1">💡 AI推論の根拠</span>{item.reason}</div>}
+
+                    {/* ★ アコーディオン化してスッキリさせたAI推論根拠 */}
+                    {item.reason && (
+                      <details className="mt-2 group">
+                        <summary className="text-[11px] font-bold text-blue-700 cursor-pointer select-none bg-blue-50/50 p-1.5 rounded-sm hover:bg-blue-100 transition flex items-center gap-1 border border-blue-100 w-max list-none">
+                          <Icons.Sparkles /> AI推論の根拠を見る <Icons.ChevronDown />
+                        </summary>
+                        <div className="mt-2 bg-white border border-blue-200 p-3 rounded-sm text-xs text-gray-700 leading-relaxed shadow-sm whitespace-pre-wrap">
+                          {item.reason}
+                        </div>
+                      </details>
+                    )}
                   </div>
                 );
               })}
@@ -537,8 +537,16 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
               <p className="text-[10px] text-gray-400 font-bold tracking-widest mb-1">単価上限</p>
               <div className="flex items-baseline gap-1"><span className="text-4xl font-black font-mono text-white leading-none">¥{simulation.limitUnitPrice.toLocaleString()}</span><span className="text-sm text-gray-400 font-bold">/kg</span></div>
             </div>
-            <div className="text-right">
-              <p className="text-[10px] text-gray-400 mb-1 font-bold tracking-widest">総重量 {simulation.totalWeight.toFixed(1)}kg</p>
+            <div className="text-right flex flex-col items-end gap-1">
+              <p className="text-[10px] text-gray-400 font-bold tracking-widest">総重量 {simulation.totalWeight.toFixed(1)}kg</p>
+              
+              {/* ★ フレコン全体の平均銅分を明示 */}
+              {posMode === 'BULK' && simulation.totalWeight > 0 && (
+                  <div className="bg-blue-900/50 border border-blue-500/50 px-2 py-0.5 rounded text-[10px] text-blue-200 font-bold flex items-center gap-1 mb-1">
+                      平均銅分: <span className="text-sm font-mono">{simulation.expectedYield.toFixed(1)}%</span>
+                  </div>
+              )}
+              
               <p className="text-xl font-bold font-mono text-white">計 ¥{simulation.limitTotalCost.toLocaleString()}</p>
             </div>
           </div>
