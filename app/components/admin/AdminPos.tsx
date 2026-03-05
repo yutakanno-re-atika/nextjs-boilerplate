@@ -55,7 +55,17 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
 
   const copperPrice = data?.market?.copper?.price || 1400;
 
-  const CATEGORIES = ['すべて', 'IV', 'CV', 'CVT', 'VVF / VA', '通信・弱電', '雑線', 'その他'];
+  const CATEGORIES = ['すべて', 'IV線', 'CV・電力線', 'VVF / VV (ネズミ線)', '制御・通信線', 'キャブタイヤ・雑線', 'その他'];
+  const getCategory = (name: string) => {
+      if (!name) return 'その他';
+      const n = name.toUpperCase();
+      if (n.includes('VVF') || n.includes('VA') || n.includes('EEF/F') || (n.includes('VV') && !n.includes('CVV'))) return 'VVF / VV (ネズミ線)';
+      if (n.includes('IV') || n.includes('IE/F')) return 'IV線';
+      if (n.includes('CVT') || (n.includes('CV') && !n.includes('CVV')) || n.includes('CE/F') || n.includes('EM')) return 'CV・電力線';
+      if (n.includes('CVV') || n.includes('AE') || n.includes('通信') || n.includes('LAN') || n.includes('弱電') || n.includes('光')) return '制御・通信線';
+      if (n.includes('VCT') || n.includes('雑線') || n.includes('家電') || n.includes('ハーネス')) return 'キャブタイヤ・雑線';
+      return 'その他';
+  };
   const uniqueMakers = useMemo(() => Array.from(new Set((data?.wires || []).map((w:any) => w.maker).filter((m:any) => m && m !== '-'))), [data]);
 
   useEffect(() => {
