@@ -4,18 +4,18 @@ import React, { useState, useRef, useMemo, useEffect } from 'react';
 const Icons = {
   Search: () => <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
   Camera: () => <svg className="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
-  Trash: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
-  Sparkles: () => <svg className="w-5 h-5 inline-block" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 8.134a1 1 0 010 1.932l-3.354.933-1.179 4.456a1 1 0 01-1.934 0l-1.179-4.456-3.354-.933a1 1 0 010-1.932l3.354-.933 1.179-4.456A1 1 0 0112 2z" clipRule="evenodd" /></svg>,
+  Trash: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
+  Sparkles: () => <svg className="w-4 h-4 inline-block" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 8.134a1 1 0 010 1.932l-3.354.933-1.179 4.456a1 1 0 01-1.934 0l-1.179-4.456-3.354-.933a1 1 0 010-1.932l3.354-.933 1.179-4.456A1 1 0 0112 2z" clipRule="evenodd" /></svg>,
   Close: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>,
-  Refresh: () => <svg className="w-5 h-5 animate-spin inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
+  Refresh: () => <svg className="w-4 h-4 animate-spin inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
   Settings: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
-  Box: () => <svg className="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>,
-  ScaleIndividual: () => <svg className="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>,
+  Box: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>,
+  ScaleIndividual: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>,
   Mic: () => <svg className="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>,
-  CheckCircle: () => <svg className="w-6 h-6 text-green-500 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-  AlertTriangle: () => <svg className="w-4 h-4 inline-block text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
-  Edit: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>,
-  ChevronDown: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+  CheckCircle: () => <svg className="w-5 h-5 text-green-500 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+  AlertTriangle: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
+  Edit: () => <svg className="w-3 h-3 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>,
+  ChevronDown: () => <svg className="w-3 h-3 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
 };
 
 export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onClear, isVoiceOutputEnabled }: { data: any, editingResId?: string | null, localReservations?: any[], onSuccess: () => void, onClear: () => void, isVoiceOutputEnabled?: boolean }) => {
@@ -79,7 +79,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
 
   const showToast = (title: string, desc: string, type: 'success' | 'info' = 'success') => {
       setToastMessage({ title, desc, type });
-      setTimeout(() => setToastMessage(null), 6000);
+      setTimeout(() => setToastMessage(null), 4000);
   };
 
   const buildProductName = (p: any) => {
@@ -205,7 +205,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
             }));
             
             setCart(newCartItems);
-            showToast('フレコン一括解析完了', `構成要素を展開しました。全体の推定歩留まりは ${result.data.overallRatio || result.data.overallYield || '---'}% です。`, 'success');
+            showToast('フレコン一括解析完了', `全体の推定歩留まりは ${result.data.overallYield || result.data.overallRatio || '---'}% です。`, 'success');
 
             setIsBulkAiModalOpen(false); setBulkImages([]); setAiHint(''); setAiProgressStep(0);
           } else { alert('AI解析エラー: ' + result.message); setIsBulkAiModalOpen(false); setAiProgressStep(0); }
@@ -386,20 +386,20 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-4 h-auto lg:h-full animate-in fade-in duration-300 pb-24 lg:pb-0 relative">
+    <div className="flex flex-col lg:flex-row gap-3 h-auto lg:h-full animate-in fade-in duration-300 pb-24 lg:pb-0 relative">
       
       {toastMessage && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[70] animate-in slide-in-from-top-10 fade-in duration-300 w-[90%] max-w-md">
-            <div className={`bg-white border-l-4 ${toastMessage.type === 'success' ? 'border-green-500' : 'border-blue-500'} p-4 rounded-sm shadow-2xl flex items-start gap-3`}>
+            <div className={`bg-white border-l-4 ${toastMessage.type === 'success' ? 'border-green-500' : 'border-blue-500'} p-3 rounded-sm shadow-2xl flex items-start gap-2`}>
                 <div className="mt-0.5">{toastMessage.type === 'success' ? <Icons.CheckCircle /> : <Icons.Sparkles />}</div>
-                <div><h4 className="font-bold text-gray-900 text-sm">{toastMessage.title}</h4><p className="text-xs text-gray-600 mt-1">{toastMessage.desc}</p></div>
+                <div><h4 className="font-bold text-gray-900 text-sm">{toastMessage.title}</h4><p className="text-xs text-gray-600 mt-0.5">{toastMessage.desc}</p></div>
             </div>
         </div>
       )}
 
       {/* ★ 左側：商品マスター選択エリア */}
-      <div className="w-full lg:w-7/12 flex flex-col bg-white border border-gray-200 rounded-sm shadow-sm overflow-hidden h-[50vh] lg:h-full shrink-0">
-        <div className="p-3 bg-gray-50 border-b border-gray-200 flex flex-col gap-3 relative shrink-0">
+      <div className="w-full lg:w-7/12 flex flex-col bg-white border border-gray-200 rounded-sm shadow-sm overflow-hidden h-[45vh] lg:h-full shrink-0">
+        <div className="p-3 bg-gray-50 border-b border-gray-200 flex flex-col gap-2 relative shrink-0">
           {(isListening || isProcessingVoice || voiceText) && (
               <div className="absolute top-full left-0 w-full z-10 bg-blue-900 text-white p-2 text-center text-sm font-bold shadow-md animate-in slide-in-from-top-2">
                   {isListening ? <span className="animate-pulse">{voiceText}</span> : isProcessingVoice ? <span><Icons.Refresh /> AIが解析中...</span> : <span>{voiceText}</span>}
@@ -408,161 +408,142 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           
           <div className="flex flex-col gap-2">
               <div className="flex w-full gap-2">
-                  {/* ★ 検索バー */}
                   <div className="relative flex-1">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Icons.Search /></div>
-                    <input type="text" placeholder="検索 (例: 1C 8sq)..." className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-sm text-sm focus:border-blue-500 outline-none shadow-inner" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                    <input type="text" placeholder="検索 (例: 1C 8sq)..." className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-sm text-sm focus:border-blue-500 outline-none shadow-inner" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
                   </div>
-                  {/* ★ メーカー絞り込み */}
-                  <select className="border border-gray-300 rounded-sm px-2 py-2 text-sm outline-none focus:border-blue-500 bg-white max-w-[120px] text-gray-700 font-bold shadow-sm" value={selectedMaker} onChange={e => setSelectedMaker(e.target.value)}>
+                  <select className="border border-gray-300 rounded-sm px-2 py-2 text-sm outline-none focus:border-blue-500 bg-white max-w-[110px] text-gray-700 font-bold shadow-sm" value={selectedMaker} onChange={e => setSelectedMaker(e.target.value)}>
                       <option value="">全メーカー</option>
                       {uniqueMakers.map(m => <option key={m as string} value={m as string}>{m as string}</option>)}
                   </select>
                   <button onClick={toggleVoiceInput} className={`px-3 py-2 border rounded-sm flex items-center justify-center transition-all ${isListening ? 'bg-red-500 border-red-600 text-white animate-pulse shadow-inner' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-100 hover:text-blue-600'}`} title="音声で検索/追加"><Icons.Mic /></button>
               </div>
 
-              {/* ★ カテゴリー絞り込みピル */}
-              <div className="flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              <div className="flex gap-1.5 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                   {CATEGORIES.map(cat => (
-                      <button 
-                          key={cat} 
-                          onClick={() => setSelectedCategory(cat)} 
-                          className={`px-3 py-1.5 rounded-full text-[10px] font-bold whitespace-nowrap transition-colors border ${selectedCategory === cat ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white text-gray-500 border-gray-300 hover:bg-gray-100'}`}
-                      >
+                      <button key={cat} onClick={() => setSelectedCategory(cat)} className={`px-3 py-1.5 rounded-full text-[10px] font-bold whitespace-nowrap transition-colors border ${selectedCategory === cat ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white text-gray-500 border-gray-300 hover:bg-gray-100'}`}>
                           {cat}
                       </button>
                   ))}
               </div>
           </div>
 
-          <div className="flex gap-2 mt-1">
-              <button onClick={() => setIsAiModalOpen(true)} className="flex-1 bg-gradient-to-r from-blue-700 to-blue-900 hover:from-blue-600 hover:to-blue-800 text-white font-bold py-2.5 px-3 rounded-sm flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 text-xs sm:text-sm">
-                <Icons.Camera /> 単一線種分析
+          <div className="flex gap-2">
+              <button onClick={() => setIsAiModalOpen(true)} className="flex-1 bg-gradient-to-r from-blue-700 to-blue-900 hover:from-blue-600 hover:to-blue-800 text-white font-bold py-2 px-2 rounded-sm flex items-center justify-center gap-1 shadow-sm transition-all active:scale-95 text-xs">
+                <Icons.Camera /> 単一分析
               </button>
-              <button onClick={() => setIsBulkAiModalOpen(true)} className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-800 hover:from-purple-500 hover:to-indigo-700 text-white font-bold py-2.5 px-3 rounded-sm flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 text-xs sm:text-sm relative overflow-hidden group">
+              <button onClick={() => setIsBulkAiModalOpen(true)} className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-800 hover:from-purple-500 hover:to-indigo-700 text-white font-bold py-2 px-2 rounded-sm flex items-center justify-center gap-1 shadow-sm transition-all active:scale-95 text-xs relative overflow-hidden group">
                 <div className="absolute inset-0 w-full h-full bg-white/20 scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300"></div>
-                <Icons.Sparkles /> フレコン一括査定
+                <Icons.Sparkles /> 一括査定
               </button>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 bg-gray-100/50">
-          <p className="text-xs font-bold text-gray-500 mb-3 tracking-widest">{selectedCategory !== 'すべて' ? `${selectedCategory} の検索結果` : 'マスター線種一覧'}</p>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="flex-1 overflow-y-auto p-3 bg-gray-100/50">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
             {filteredProducts.map((p:any) => {
               const isTin = p.material === '錫メッキ' || p.name?.includes('錫');
               return (
-                  <button key={p.id} onClick={() => addToCart(p)} className={`bg-white border p-3 rounded-md shadow-sm hover:shadow-md hover:border-blue-400 text-left transition-all active:scale-95 flex flex-col justify-between min-h-[105px] relative overflow-hidden group ${isTin ? 'border-red-300 bg-red-50/20' : 'border-gray-200'}`}>
+                  <button key={p.id} onClick={() => addToCart(p)} className={`bg-white border p-2.5 rounded-sm shadow-sm hover:shadow-md hover:border-blue-400 text-left transition-all active:scale-95 flex flex-col justify-between min-h-[75px] relative overflow-hidden group ${isTin ? 'border-red-300 bg-red-50/20' : 'border-gray-200'}`}>
                     <div>
-                      <div className="font-bold text-gray-800 text-sm leading-tight line-clamp-2">{buildProductName(p)}</div>
-                      {isTin && <span className="inline-block mt-1 bg-red-600 text-white text-[9px] px-1.5 py-0.5 rounded-sm font-bold shadow-sm">⚠️錫メッキ</span>}
+                      <div className="font-bold text-gray-800 text-xs leading-tight line-clamp-2">{buildProductName(p)}</div>
+                      {isTin && <span className="inline-block mt-1 bg-red-600 text-white text-[8px] px-1 rounded-sm font-bold">⚠️錫</span>}
                     </div>
-                    <div className="flex justify-end mt-2"><span className="font-mono font-black text-blue-600 bg-blue-50/50 px-2 py-0.5 rounded-sm text-sm">{p.ratio}%</span></div>
+                    <div className="flex justify-end mt-1"><span className="font-mono font-black text-blue-600 bg-blue-50/50 px-1.5 py-0.5 rounded-sm text-xs">{p.ratio}%</span></div>
                   </button>
               );
             })}
             {filteredProducts.length === 0 && (
-                <div className="col-span-full py-10 text-center text-gray-400 font-bold text-sm">該当する線種が見つかりません</div>
+                <div className="col-span-full py-10 text-center text-gray-400 font-bold text-xs">該当する線種が見つかりません</div>
             )}
           </div>
         </div>
       </div>
 
-      {/* 右側：カート・シミュレーター */}
+      {/* ★ 右側：カート・シミュレーター（スマート化） */}
       <div className="w-full lg:w-5/12 bg-white border border-gray-200 rounded-sm flex flex-col shadow-lg relative overflow-hidden min-h-[50vh] lg:h-full shrink-0">
         <div className="flex shrink-0">
-          <button onClick={() => setPosMode('INDIVIDUAL')} className={`flex-1 py-3 text-sm font-bold flex items-center justify-center gap-2 transition-all ${posMode === 'INDIVIDUAL' ? 'bg-white text-blue-700 border-t-4 border-t-blue-600' : 'bg-gray-100 text-gray-400 border-t-4 border-t-transparent border-b border-b-gray-200'}`}><Icons.ScaleIndividual /> 個別計量モード</button>
-          <button onClick={() => setPosMode('BULK')} className={`flex-1 py-3 text-sm font-bold flex items-center justify-center gap-2 transition-all ${posMode === 'BULK' ? 'bg-white text-blue-700 border-t-4 border-t-blue-600' : 'bg-gray-100 text-gray-400 border-t-4 border-t-transparent border-b border-b-gray-200'}`}><Icons.Box /> フレコン一括モード</button>
+          <button onClick={() => setPosMode('INDIVIDUAL')} className={`flex-1 py-2 text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${posMode === 'INDIVIDUAL' ? 'bg-white text-blue-700 border-t-4 border-t-blue-600' : 'bg-gray-100 text-gray-400 border-t-4 border-t-transparent border-b border-b-gray-200'}`}><Icons.ScaleIndividual /> 個別計量</button>
+          <button onClick={() => setPosMode('BULK')} className={`flex-1 py-2 text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${posMode === 'BULK' ? 'bg-white text-blue-700 border-t-4 border-t-blue-600' : 'bg-gray-100 text-gray-400 border-t-4 border-t-transparent border-b border-b-gray-200'}`}><Icons.Box /> フレコン一括</button>
         </div>
 
-        <div className="p-3 border-b border-gray-200 bg-white shrink-0">
-          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">持込業者・顧客</label>
-          <select className="w-full border border-gray-300 bg-white p-2 rounded-sm text-sm font-bold text-gray-800 outline-none cursor-pointer shadow-sm" value={selectedClient?.id || ''} onChange={e => { const client = data?.clients?.find((c:any) => c.id === e.target.value); setSelectedClient(client || null); }}>
+        <div className="p-2 border-b border-gray-200 bg-white shrink-0 flex items-center gap-2">
+          <span className="text-[10px] font-bold text-gray-500 whitespace-nowrap">持込業者:</span>
+          <select className="flex-1 border border-gray-300 bg-white p-1.5 rounded-sm text-xs font-bold text-gray-800 outline-none cursor-pointer shadow-sm" value={selectedClient?.id || ''} onChange={e => { const client = data?.clients?.find((c:any) => c.id === e.target.value); setSelectedClient(client || null); }}>
             <option value="">新規・非会員 (飛込ゲスト)</option>
             {data?.clients?.map((c:any) => <option key={c.id} value={c.id}>{c.name} ({c.rank})</option>)}
           </select>
         </div>
 
         {posMode === 'BULK' && (
-          <div className="p-4 bg-blue-50 border-b border-blue-100 shadow-inner shrink-0">
-            <label className="block text-xs font-bold text-blue-800 mb-2 uppercase tracking-widest">フレコン総重量 (一括計量)</label>
-            <div className="relative">
-              <input type="number" className="w-full p-3 text-right font-mono font-black text-3xl rounded-sm outline-none focus:ring-2 focus:ring-blue-400 border border-blue-200 shadow-sm text-blue-900" value={bulkTotalWeight} onChange={e => setBulkTotalWeight(e.target.value ? Number(e.target.value) : '')} placeholder="0" />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-lg text-blue-400 font-bold pointer-events-none">kg</span>
+          <div className="p-3 bg-blue-50 border-b border-blue-100 shadow-inner shrink-0 flex items-center justify-between">
+            <label className="text-xs font-bold text-blue-800">フレコン総重量</label>
+            <div className="relative w-32">
+              <input type="number" className="w-full p-1.5 text-right font-mono font-black text-lg rounded-sm outline-none focus:ring-2 focus:ring-blue-400 border border-blue-200 text-blue-900 pr-6" value={bulkTotalWeight} onChange={e => setBulkTotalWeight(e.target.value ? Number(e.target.value) : '')} placeholder="0" />
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-blue-400 font-bold pointer-events-none">kg</span>
             </div>
           </div>
         )}
 
         {hasTinPlated && (
-            <div className="bg-red-600 text-white text-xs font-bold p-2 flex items-center justify-center gap-2 shadow-md shrink-0 animate-pulse">
+            <div className="bg-red-600 text-white text-[10px] font-bold p-1.5 flex items-center justify-center gap-1 shadow-md shrink-0 animate-pulse">
                 <Icons.AlertTriangle /> 錫メッキ線が含まれています。純銅とは別管理にしてください。
             </div>
         )}
 
-        <div className="flex-1 overflow-y-auto p-3 bg-gray-50/50 min-h-[200px]">
+        {/* ★ カートリスト（スマートな横並びデザイン） */}
+        <div className="flex-1 overflow-y-auto p-2 bg-gray-50/50 min-h-[200px]">
           {cart.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-gray-300 py-10"><p className="font-bold text-sm">左から商材を選択してください</p></div>
+            <div className="h-full flex flex-col items-center justify-center text-gray-300"><p className="font-bold text-xs">左から商材を選択してください</p></div>
           ) : (
-            <div className="space-y-3 pb-2">
+            <div className="space-y-1.5 pb-2">
               {cart.map(item => {
                 const isItemTin = item.material === '錫メッキ' || item.product?.includes('錫');
                 return (
-                  <div key={item.id} className={`border p-4 rounded-sm flex flex-col gap-2 relative shadow-sm ${item.isNewAi ? 'bg-blue-50/30 border-blue-200' : isItemTin ? 'bg-red-50 border-red-400' : 'bg-white border-gray-200'}`}>
+                  <div key={item.id} className={`border p-2 rounded-sm flex flex-col gap-1 relative shadow-sm ${item.isNewAi ? 'bg-blue-50/30 border-blue-200' : isItemTin ? 'bg-red-50 border-red-300' : 'bg-white border-gray-200'}`}>
                     
-                    {/* ★ ゴミ箱ボタンを目立たせる */}
-                    <button onClick={() => removeItem(item.id)} className="absolute top-3 right-3 text-red-500 bg-red-50 hover:bg-red-100 hover:text-red-700 border border-red-200 p-2 rounded-md transition shadow-sm z-10">
-                        <Icons.Trash />
-                    </button>
-
-                    <div className="flex justify-between items-start">
-                      <div className="pr-12 w-full">
-                        <div className="font-bold text-gray-900 text-base leading-tight flex items-center gap-1">
-                            {isItemTin && <span className="bg-red-600 text-white px-1.5 py-0.5 rounded-sm text-[10px]">⚠️錫メッキ</span>}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex-1 min-w-0 flex flex-col justify-center">
+                        <div className="font-bold text-xs text-gray-900 truncate" title={item.product}>
+                            {isItemTin && <span className="bg-red-600 text-white px-1 py-0.5 rounded-sm text-[8px] mr-1 align-middle">⚠️錫</span>}
                             {item.product}
                         </div>
-                        
-                        <div className="flex flex-wrap items-center gap-2 mt-2">
-                            {/* ★ 銅分(歩留)を強調 */}
-                            <span className="bg-gray-100 border border-gray-200 px-2 py-1 rounded text-xs text-gray-600 font-bold flex items-center gap-2">
-                                銅分 (歩留): <span className="font-mono text-blue-600 text-sm">{item.ratio}%</span>
-                            </span>
-
+                        <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-[10px] text-gray-500 font-mono flex items-center gap-1">歩留:<span className="text-blue-600 font-bold">{item.ratio}%</span></span>
                             {item.isNewAi && !String(item.id).startsWith('bulk-') && (
-                                <button onClick={() => handlePrepareMasterRegistration(item)} className="text-[10px] bg-white border border-blue-300 text-blue-700 px-2 py-1 rounded shadow-sm hover:bg-blue-50 transition flex items-center gap-1">
-                                    <Icons.Edit /> マスターへ登録
+                                <button onClick={() => handlePrepareMasterRegistration(item)} className="text-[9px] text-blue-600 hover:underline flex items-center gap-0.5 px-1 bg-blue-100/50 rounded-sm">
+                                    <Icons.Edit /> 登録
                                 </button>
                             )}
                         </div>
                       </div>
-                    </div>
-                    
-                    <div className="flex justify-end items-center mt-2">
-                      {posMode === 'INDIVIDUAL' ? (
-                        <div className="w-44 relative">
-                          <input type="number" className={`w-full border p-3 text-right font-mono font-black text-2xl rounded-sm outline-none focus:bg-white focus:ring-2 transition-all ${isItemTin ? 'bg-white border-red-300 text-red-900 focus:border-red-500 focus:ring-red-200' : 'bg-gray-50 border-gray-300 text-gray-900 focus:border-blue-500 focus:ring-blue-200'}`} value={item.weight || ''} onChange={e => updateWeight(item.id, Number(e.target.value))} placeholder="0" />
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-bold pointer-events-none">kg</span>
-                        </div>
-                      ) : (
-                        <div className="w-full flex flex-col gap-1">
-                          <label className="text-[10px] font-bold text-gray-500">フレコン内構成割合</label>
-                          <div className="w-full flex items-center gap-3">
-                            <input type="range" min="0" max="100" className={`flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer ${isItemTin ? 'accent-red-600' : 'accent-blue-600'}`} value={item.percentage || 0} onChange={e => updatePercentage(item.id, Number(e.target.value))} />
-                            <div className="w-24 relative flex-shrink-0">
-                                <input type="number" className={`w-full border p-2 pr-6 text-right font-mono font-black text-xl rounded-sm outline-none ${isItemTin ? 'bg-white border-red-300 text-red-900' : 'bg-gray-50 border-gray-300'}`} value={item.percentage || ''} onChange={e => updatePercentage(item.id, Number(e.target.value))} placeholder="0" />
-                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold pointer-events-none">%</span>
+                      
+                      <div className="flex items-center gap-2 shrink-0">
+                        {posMode === 'INDIVIDUAL' ? (
+                          <div className="flex items-center bg-gray-50 border rounded-sm overflow-hidden focus-within:ring-1 focus-within:ring-blue-500">
+                            <input type="number" className="w-16 p-1 text-right font-mono text-sm outline-none bg-transparent" value={item.weight || ''} onChange={e => updateWeight(item.id, Number(e.target.value))} placeholder="0" />
+                            <span className="px-1.5 text-[10px] text-gray-500 bg-gray-100 border-l font-bold">kg</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1">
+                            <input type="range" min="0" max="100" className={`w-14 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer ${isItemTin ? 'accent-red-600' : 'accent-blue-600'}`} value={item.percentage || 0} onChange={e => updatePercentage(item.id, Number(e.target.value))} />
+                            <div className="flex items-center bg-gray-50 border rounded-sm overflow-hidden focus-within:ring-1 focus-within:ring-blue-500">
+                                <input type="number" className="w-10 p-1 text-right font-mono text-sm outline-none bg-transparent" value={item.percentage || ''} onChange={e => updatePercentage(item.id, Number(e.target.value))} placeholder="0" />
+                                <span className="px-1 text-[9px] text-gray-500 bg-gray-100 border-l font-bold">%</span>
                             </div>
                           </div>
-                        </div>
-                      )}
+                        )}
+                        <button onClick={() => removeItem(item.id)} className="text-gray-300 hover:text-white hover:bg-red-500 p-1 rounded-sm transition-colors"><Icons.Trash /></button>
+                      </div>
                     </div>
 
                     {/* ★ アコーディオン化してスッキリさせたAI推論根拠 */}
                     {item.reason && (
-                      <details className="mt-2 group">
-                        <summary className="text-[11px] font-bold text-blue-700 cursor-pointer select-none bg-blue-50/50 p-1.5 rounded-sm hover:bg-blue-100 transition flex items-center gap-1 border border-blue-100 w-max list-none outline-none">
-                          <Icons.Sparkles /> AI推論の根拠を見る <Icons.ChevronDown />
+                      <details className="mt-0.5 group">
+                        <summary className="text-[9px] font-bold text-blue-600 cursor-pointer select-none flex items-center gap-0.5 w-max outline-none opacity-80 hover:opacity-100 list-none">
+                          <Icons.Sparkles /> AI推論の根拠 <Icons.ChevronDown />
                         </summary>
-                        <div className="mt-2 bg-white border border-blue-200 p-3 rounded-sm text-xs text-gray-700 leading-relaxed shadow-sm whitespace-pre-wrap">
+                        <div className="mt-1 bg-white/80 border border-blue-100 p-1.5 rounded-sm text-[10px] text-gray-600 whitespace-pre-wrap leading-relaxed">
                           {item.reason}
                         </div>
                       </details>
@@ -571,51 +552,49 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                 );
               })}
               {posMode === 'BULK' && cart.length > 0 && (
-                <div className={`p-3 rounded-sm text-center text-sm font-bold border transition-colors ${isPercentageValid ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-600 border-red-200 animate-pulse'}`}>
-                  割合合計: {totalPercentage}% {isPercentageValid ? '✨ 完璧です' : '⚠️ 100%に調整してください'}
+                <div className={`p-1.5 rounded-sm text-center text-xs font-bold border transition-colors ${isPercentageValid ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-600 border-red-200 animate-pulse'}`}>
+                  割合合計: {totalPercentage}% {isPercentageValid ? '✨ OK' : '⚠️ 100%に調整してください'}
                 </div>
               )}
             </div>
           )}
         </div>
 
-        <div className={`bg-[#111111] text-white p-5 border-t-4 relative shrink-0 ${hasTinPlated ? 'border-red-500' : 'border-blue-600'}`}>
-          <div className="flex justify-between items-center mb-3">
-            <h3 className="font-black text-sm tracking-widest text-gray-300 flex items-center gap-2">限界買取シミュレーター</h3>
-            <button onClick={() => setShowSimDetails(!showSimDetails)} className="text-gray-400 hover:text-white flex items-center gap-1 text-[10px] uppercase font-bold bg-gray-800 px-2 py-1 rounded-sm transition"><Icons.Settings /> 設定</button>
+        {/* ★ シミュレーター部分（限界を消し、コンパクトに） */}
+        <div className={`bg-[#111111] text-white p-3 border-t-4 relative shrink-0 ${hasTinPlated ? 'border-red-500' : 'border-blue-600'}`}>
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="font-bold text-xs tracking-widest text-gray-300 flex items-center gap-1">買取価格シミュレーション</h3>
+            <button onClick={() => setShowSimDetails(!showSimDetails)} className="text-gray-400 hover:text-white flex items-center gap-1 text-[9px] bg-gray-800 px-1.5 py-0.5 rounded-sm transition"><Icons.Settings /> 設定</button>
           </div>
 
           {showSimDetails && (
-            <div className="grid grid-cols-3 gap-2 mb-4 bg-gray-800 p-3 rounded-sm border border-gray-700">
-              <div><label className="block text-[10px] text-gray-400 mb-1">産廃処分(円)</label><input type="number" className="w-full bg-gray-900 border-gray-600 rounded-sm p-1.5 text-sm text-right" value={simConfig.disposalCostPerKg} onChange={e => setSimConfig({...simConfig, disposalCostPerKg: Number(e.target.value)})} /></div>
-              <div><label className="block text-[10px] text-gray-400 mb-1">工場コスト(円)</label><input type="number" className="w-full bg-gray-900 border-gray-600 rounded-sm p-1.5 text-sm text-right" value={simConfig.laborCostPerHour} onChange={e => setSimConfig({...simConfig, laborCostPerHour: Number(e.target.value)})} /></div>
-              <div><label className="block text-[10px] text-blue-400 mb-1">利益率(%)</label><input type="number" className="w-full bg-blue-900/30 border-blue-500 text-blue-100 font-bold rounded-sm p-1.5 text-sm text-right" value={simConfig.targetMargin} onChange={e => setSimConfig({...simConfig, targetMargin: Number(e.target.value)})} /></div>
+            <div className="grid grid-cols-3 gap-1.5 mb-2 bg-gray-800 p-2 rounded-sm border border-gray-700">
+              <div><label className="block text-[9px] text-gray-400 mb-0.5">産廃処分(円)</label><input type="number" className="w-full bg-gray-900 border-gray-600 rounded-sm p-1 text-xs text-right" value={simConfig.disposalCostPerKg} onChange={e => setSimConfig({...simConfig, disposalCostPerKg: Number(e.target.value)})} /></div>
+              <div><label className="block text-[9px] text-gray-400 mb-0.5">工場コスト(円)</label><input type="number" className="w-full bg-gray-900 border-gray-600 rounded-sm p-1 text-xs text-right" value={simConfig.laborCostPerHour} onChange={e => setSimConfig({...simConfig, laborCostPerHour: Number(e.target.value)})} /></div>
+              <div><label className="block text-[9px] text-blue-400 mb-0.5">利益率(%)</label><input type="number" className="w-full bg-blue-900/30 border-blue-500 text-blue-100 font-bold rounded-sm p-1 text-xs text-right" value={simConfig.targetMargin} onChange={e => setSimConfig({...simConfig, targetMargin: Number(e.target.value)})} /></div>
             </div>
           )}
 
-          <div className="flex justify-between items-end mb-4 bg-gray-800 p-4 rounded-sm border border-gray-700">
+          <div className="flex justify-between items-end mb-3">
             <div>
-              <p className="text-[10px] text-gray-400 font-bold tracking-widest mb-1">単価上限</p>
-              <div className="flex items-baseline gap-1"><span className="text-4xl font-black font-mono text-white leading-none">¥{simulation.limitUnitPrice.toLocaleString()}</span><span className="text-sm text-gray-400 font-bold">/kg</span></div>
+              <p className="text-[9px] text-gray-400 font-bold mb-0.5">参考単価</p>
+              <div className="flex items-baseline gap-0.5"><span className="text-2xl font-black font-mono text-white leading-none">¥{simulation.limitUnitPrice.toLocaleString()}</span><span className="text-[10px] text-gray-400 font-bold">/kg</span></div>
             </div>
-            <div className="text-right flex flex-col items-end gap-1">
-              <p className="text-[10px] text-gray-400 font-bold tracking-widest">総重量 {simulation.totalWeight.toFixed(1)}kg</p>
-              
-              {/* ★ フレコン全体の平均銅分を明示 */}
+            <div className="text-right flex flex-col items-end">
+              <p className="text-[10px] text-gray-400 font-bold">総重量: {simulation.totalWeight.toFixed(1)}kg</p>
               {posMode === 'BULK' && simulation.totalWeight > 0 && (
-                  <div className="bg-blue-900/50 border border-blue-500/50 px-2 py-0.5 rounded text-[10px] text-blue-200 font-bold flex items-center gap-1 mb-1 shadow-inner">
-                      全体の平均銅分: <span className="text-sm font-mono text-white">{simulation.expectedYield.toFixed(1)}%</span>
-                  </div>
+                  <p className="text-[10px] text-blue-300 mt-0.5">平均銅分: <span className="font-mono">{simulation.expectedYield.toFixed(1)}%</span></p>
               )}
-              
-              <p className="text-xl font-bold font-mono text-white">計 ¥{simulation.limitTotalCost.toLocaleString()}</p>
+              <p className="text-lg font-bold font-mono text-white mt-0.5">計 ¥{simulation.limitTotalCost.toLocaleString()}</p>
             </div>
           </div>
 
-          <button onClick={handleCheckout} disabled={isProcessing || simulation.totalWeight === 0 || (posMode === 'BULK' && !isPercentageValid)} className={`w-full text-white font-black py-4 rounded-sm transition shadow-[0_4px_14px_0_rgba(220,38,38,0.39)] disabled:opacity-50 flex justify-center items-center text-lg ${hasTinPlated ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}>
-              {isProcessing ? <Icons.Refresh /> : hasTinPlated ? '⚠️ 確認して受付を確定する' : '受付を確定してカンバンへ'}
-          </button>
-          <div className="mt-3 text-center"><button onClick={() => {setCart([]); onClear(); setBulkTotalWeight('');}} className="text-[10px] text-gray-500 font-bold border border-gray-700 px-3 py-1 rounded-sm hover:bg-gray-800 transition">カートをリセット</button></div>
+          <div className="flex gap-2">
+            <button onClick={handleCheckout} disabled={isProcessing || simulation.totalWeight === 0 || (posMode === 'BULK' && !isPercentageValid)} className={`flex-1 text-white font-bold py-2.5 rounded-sm transition shadow-sm disabled:opacity-50 flex justify-center items-center text-sm ${hasTinPlated ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}>
+                {isProcessing ? <Icons.Refresh /> : hasTinPlated ? '⚠️ 確認して受付確定' : '受付を確定してカンバンへ'}
+            </button>
+            <button onClick={() => {setCart([]); onClear(); setBulkTotalWeight('');}} className="px-3 text-[10px] text-gray-400 bg-gray-800 font-bold border border-gray-700 rounded-sm hover:bg-gray-700 transition">リセット</button>
+          </div>
         </div>
       </div>
 
