@@ -363,6 +363,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     return {};
   };
 
+  // ★ 修正：スマホのカメラからの超高解像度画像を強制的にリサイズ・軽量化する
   const compressImage = (file: File): Promise<string> => {
       return new Promise((resolve, reject) => {
           const reader = new FileReader(); reader.readAsDataURL(file);
@@ -370,11 +371,13 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
               const img = new Image(); img.src = event.target?.result as string;
               img.onload = () => {
                   const canvas = document.createElement('canvas');
-                  const MAX = 1200; let w = img.width; let h = img.height;
+                  // ★ 修正：解像度と画質を極限まで下げて通信エラーを物理的に防ぐ
+                  const MAX = 800; let w = img.width; let h = img.height;
                   if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } } else { if (h > MAX) { w *= MAX / h; h = MAX; } }
                   canvas.width = w; canvas.height = h;
                   const ctx = canvas.getContext('2d'); ctx?.drawImage(img, 0, 0, w, h);
-                  resolve(canvas.toDataURL('image/jpeg', 0.8).split(',')[1]);
+                  // ★ 修正：画質を0.8 -> 0.6へ
+                  resolve(canvas.toDataURL('image/jpeg', 0.6).split(',')[1]);
               };
           };
       });
@@ -580,26 +583,26 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         );
     }
 
-
     let filteredData = [];
     
     if (activeTab === 'WIRES') {
-        filteredData = wires.filter((w:any) => 
-            (w.name.includes(searchTerm) || w.maker?.includes(searchTerm)) &&
-            (filterMaker === '' || w.maker === filterMaker)
-        );
+        filteredData = wires.filter((w:any) => {
+            // ★ 修正：nullやundefinedでクラッシュしないように安全に結合
+            const searchTarget = `${w.name || ''} ${w.maker || ''} ${w.size || w.sq || ''} ${w.core || w.cores || w.coreCount || ''} ${w.year || ''}`.toLowerCase();
+            return searchTarget.includes(searchTerm.toLowerCase()) && (filterMaker === '' || w.maker === filterMaker);
+        });
     }
     if (activeTab === 'UNKNOWN') {
-        filteredData = unknownWires.filter((u:any) => u.name?.includes(searchTerm) || u.reason?.includes(searchTerm));
+        filteredData = unknownWires.filter((u:any) => (u.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || (u.reason || '').toLowerCase().includes(searchTerm.toLowerCase()));
     }
     if (activeTab === 'CASTINGS') {
         filteredData = castings.filter((c:any) => 
-            c.name.includes(searchTerm) &&
+            (c.name || '').toLowerCase().includes(searchTerm.toLowerCase()) &&
             (filterType === '' || c.type === filterType)
         );
     }
-    if (activeTab === 'CLIENTS') filteredData = clients.filter((c:any) => c.name.includes(searchTerm));
-    if (activeTab === 'STAFF') filteredData = staffs.filter((s:any) => s.name.includes(searchTerm));
+    if (activeTab === 'CLIENTS') filteredData = clients.filter((c:any) => (c.name || '').toLowerCase().includes(searchTerm.toLowerCase()));
+    if (activeTab === 'STAFF') filteredData = staffs.filter((s:any) => (s.name || '').toLowerCase().includes(searchTerm.toLowerCase()));
 
     let sortedData = [...filteredData];
     if (sortConfig !== null) {
@@ -678,7 +681,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                     <td className="p-3 font-bold text-gray-700">{item.maker || '-'}</td>
                     <td className="p-3 font-bold text-gray-900">
                         {item.name}
-                        {/* ★ 追加：一覧表示で錫メッキ線に警告バッジを表示 */}
                         {item.conductor?.includes('錫') && (
                             <span className="ml-2 inline-flex items-center gap-0.5 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm whitespace-nowrap shadow-sm">
                                 <Icons.AlertTriangle /> 錫メッキ
@@ -831,7 +833,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                 <label className="block text-xs font-bold text-gray-500 mb-1">品名</label>
                 <div className="flex items-center gap-2">
                     <input type="text" className="w-full border p-2.5 rounded-sm outline-none focus:border-blue-500 font-bold" value={editingItem.name || ''} onChange={e => setEditingItem({...editingItem, name: e.target.value})} />
-                    {/* ★ 警告バッジを編集モーダル内にも表示 */}
                     {editingItem.conductor?.includes('錫') && (
                         <span className="bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded-sm whitespace-nowrap shadow-sm animate-pulse">
                             ⚠️ 錫メッキ
