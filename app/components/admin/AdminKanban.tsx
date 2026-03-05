@@ -21,19 +21,30 @@ export const AdminKanban = ({ localReservations = [], onUpdateStatus, onEditRese
       try { items = typeof res.items === 'string' ? JSON.parse(res.items) : res.items; } catch (e) {}
       
       const totalWeight = items.reduce((sum: number, item: any) => sum + Number(item.weight || 0), 0).toFixed(1);
-      const hasTin = items.some((i: any) => i.material === '錫メッキ' || i.product.includes('錫'));
+      
+      // ★ 旧データのプロパティ不足を補う（フォールバック）
+      const hasTin = items.some((i: any) => i.material === '錫メッキ' || (i.product || i.name || '').includes('錫'));
 
-      const itemsHtml = items.map((item: any) => `
+      const itemsHtml = items.map((item: any) => {
+          // ★ 新旧フォーマットの互換性を確保
+          const itemName = item.product || item.name || '品名未設定';
+          const itemMaterial = item.material || '純銅(旧)';
+          const itemRatio = item.ratio !== undefined ? `${item.ratio}%` : '---';
+          const itemWeight = item.weight !== undefined ? item.weight : '0';
+          const isTinItem = itemMaterial === '錫メッキ' || itemName.includes('錫');
+
+          return `
           <tr>
               <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold; color: #333;">
-                ${item.product}
-                ${(item.material === '錫メッキ' || item.product.includes('錫')) ? '<span style="background: #fee2e2; color: #dc2626; font-size: 10px; padding: 2px 4px; border-radius: 3px; margin-left: 5px;">⚠️錫</span>' : ''}
+                ${itemName}
+                ${isTinItem ? '<span style="background: #fee2e2; color: #dc2626; font-size: 10px; padding: 2px 4px; border-radius: 3px; margin-left: 5px;">⚠️錫</span>' : ''}
               </td>
-              <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: center;">${item.material || '純銅'}</td>
-              <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right; font-family: monospace;">${item.ratio}%</td>
-              <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right; font-family: monospace; font-weight: bold;">${item.weight} kg</td>
+              <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: center;">${itemMaterial}</td>
+              <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right; font-family: monospace;">${itemRatio}</td>
+              <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right; font-family: monospace; font-weight: bold;">${itemWeight} kg</td>
           </tr>
-      `).join('');
+          `;
+      }).join('');
 
       const printWindow = window.open('', '_blank');
       if (!printWindow) return alert('ポップアップブロックを解除してください。');
@@ -136,7 +147,6 @@ export const AdminKanban = ({ localReservations = [], onUpdateStatus, onEditRese
 
       <div className="flex gap-4 overflow-x-auto pb-4 h-full">
         {columns.map(col => {
-          // ★ localReservations が undefined の場合の安全対策
           const safeReservations = localReservations || [];
           const colData = safeReservations.filter(r => r.status === col.id).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
           
@@ -152,7 +162,9 @@ export const AdminKanban = ({ localReservations = [], onUpdateStatus, onEditRese
                   let items = [];
                   try { items = typeof res.items === 'string' ? JSON.parse(res.items) : res.items; } catch(e){}
                   const totalW = items.reduce((sum: number, i: any) => sum + Number(i.weight || 0), 0);
-                  const hasTin = items.some((i: any) => i.material === '錫メッキ' || i.product.includes('錫'));
+                  
+                  // ★ 旧データ対応
+                  const hasTin = items.some((i: any) => i.material === '錫メッキ' || (i.product || i.name || '').includes('錫'));
 
                   return (
                     <div key={res.id} draggable onDragStart={(e) => handleDragStart(e, res.id)} className={`bg-white p-3 rounded-sm shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing hover:shadow-md transition relative group ${hasTin ? 'border-l-4 border-l-red-500' : 'border-l-4 border-l-blue-500'}`}>
@@ -176,12 +188,18 @@ export const AdminKanban = ({ localReservations = [], onUpdateStatus, onEditRese
                       )}
 
                       <div className="bg-gray-50 rounded-sm p-2 text-xs mb-2 border border-gray-100">
-                        {items.slice(0, 3).map((item: any, idx: number) => (
-                            <div key={idx} className="flex justify-between items-center py-0.5 border-b border-gray-200 last:border-0 truncate">
-                                <span className="text-gray-700 truncate mr-2" title={item.product}>{item.product}</span>
-                                <span className="font-mono font-bold text-gray-900 shrink-0">{item.weight}kg</span>
-                            </div>
-                        ))}
+                        {items.slice(0, 3).map((item: any, idx: number) => {
+                            // ★ 旧フォーマット対応（product が無い場合は name を表示）
+                            const displayName = item.product || item.name || '不明な商材';
+                            const displayWeight = item.weight !== undefined ? item.weight : '0';
+                            
+                            return (
+                                <div key={idx} className="flex justify-between items-center py-0.5 border-b border-gray-200 last:border-0 truncate">
+                                    <span className="text-gray-700 truncate mr-2" title={displayName}>{displayName}</span>
+                                    <span className="font-mono font-bold text-gray-900 shrink-0">{displayWeight}kg</span>
+                                </div>
+                            );
+                        })}
                         {items.length > 3 && <div className="text-center text-[10px] text-gray-400 mt-1 pt-1">他 {items.length - 3} 品目...</div>}
                       </div>
 
