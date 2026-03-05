@@ -62,27 +62,31 @@ export default function WireMasterCloud() {
     if (cachedData && cachedData !== 'undefined') {
         try {
             setData(JSON.parse(cachedData));
-            setIsLoading(false);
+            setIsLoading(false); // キャッシュがあればすぐ画面を表示する
         } catch (e) {
             localStorage.removeItem('factoryOS_masterData');
         }
     }
 
+    // ★ 修正: 通信エラー時に alert を出さず、サイレントに処理する
     fetch(`/api/gas?t=${new Date().getTime()}`, { cache: 'no-store' })
-      .then(res => res.json())
+      .then(res => {
+          if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
+          return res.json();
+      })
       .then(d => { 
           if(d.status === 'success') {
               setData(d); 
               localStorage.setItem('factoryOS_masterData', JSON.stringify(d));
           } else {
-              console.error("APIレスポンスエラー:", d.message);
-              alert("データベースの読み込みに失敗しました。\n詳細: " + d.message);
+              console.warn("GAS API レスポンスエラー:", d.message);
+              // アラートは出さない
           }
           setIsLoading(false); 
       })
       .catch(err => {
-          console.error("データ取得エラー:", err);
-          alert("通信エラーが発生しました。\nネットワークを確認してください。");
+          console.warn("データ同期遅延:", err.message, "※キャッシュデータで継続稼働します。");
+          // アラートは出さない（ユーザー操作を妨害しない）
           setIsLoading(false);
       });
   }, []);
