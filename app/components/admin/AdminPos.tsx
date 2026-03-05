@@ -92,7 +92,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         ratio: product.ratio, 
         weight: overrideWeight !== undefined ? overrideWeight : 0,
         percentage: 0,
-        conductor: product.conductor || '' // ★ 修正：カートに conductor 情報を引き継ぐ
+        conductor: product.conductor || '' // ★ 導体情報を引き継ぐ
     }]);
     setSearchTerm('');
   };
@@ -116,11 +116,11 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
               const img = new Image(); img.src = event.target?.result as string;
               img.onload = () => {
                   const canvas = document.createElement('canvas');
-                  const MAX = 1200; let w = img.width; let h = img.height;
+                  const MAX = 800; let w = img.width; let h = img.height;
                   if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } } else { if (h > MAX) { w *= MAX / h; h = MAX; } }
                   canvas.width = w; canvas.height = h;
                   const ctx = canvas.getContext('2d'); ctx?.drawImage(img, 0, 0, w, h);
-                  resolve(canvas.toDataURL('image/jpeg', 0.8).split(',')[1]);
+                  resolve(canvas.toDataURL('image/jpeg', 0.6).split(',')[1]);
               };
               img.onerror = () => reject(new Error('Image loading failed'));
           };
@@ -166,7 +166,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
 
       setTimeout(() => {
           if (result.status === 'success') {
-            // ★ 修正：AIがエラーを起こして wireType 等を返さなかった場合のフォールバック（安全対策）
             const wireTypeStr = result.data.wireType || result.data.name || '不明な線種';
             const isMixed = wireTypeStr.includes('フレコン') || wireTypeStr.includes('混合');
             const displayName = result.data.isNewFlag || isMixed ? `💡 AI査定: ${wireTypeStr}` : wireTypeStr;
@@ -184,7 +183,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                 pendingImg1: imgData1,
                 pendingImg2: imgData2,
                 isImageUploaded: false,
-                conductor: result.data.conductor || '' // ★ 修正：AIの判定結果にも conductor をセット
+                conductor: result.data.conductor || '' // ★ 導体情報をセット
             }, ...prev]);
 
             if (result.data.isNewFlag) {
@@ -311,7 +310,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   const totalPercentage = cart.reduce((sum, item) => sum + (Number(item.percentage) || 0), 0);
   const isPercentageValid = totalPercentage === 100;
 
-  // ★ 追加：カート内に「錫メッキ」が含まれているかを判定
+  // ★ 判定：カート内に「錫」という文字が含まれるアイテムがあるか
   const hasTinPlated = cart.some(item => item.conductor?.includes('錫') || item.product?.includes('錫'));
 
   const handleCheckout = async () => {
@@ -322,9 +321,9 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         if (!isPercentageValid) return alert(`割合の合計を100%にしてください（現在: ${totalPercentage}%）`);
     }
 
-    // ★ 追加：錫メッキ混入時の最終確認アラート
+    // ★ 追加：錫メッキ混入時の警告ダイアログ
     if (hasTinPlated) {
-        const confirmTin = window.confirm("⚠️ 警告 ⚠️\nカート内に「錫メッキ線」が含まれています。\nこのロットを純銅ナゲットライン（WN-800）に投入すると品質低下を招きます。\n\n「別管理（または専用処理）」として受付を確定しますか？");
+        const confirmTin = window.confirm("⚠️ 警告 ⚠️\nカート内に「錫メッキ線」が含まれています。\nこのロットを純銅ナゲットライン（WN-800）に投入すると品質事故につながります。\n\n「別管理（または専用処理）」として受付を確定しますか？");
         if (!confirmTin) return;
     }
 
@@ -342,7 +341,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         items: finalCart, 
         totalEstimate: simulation.limitTotalCost, 
         status: 'RESERVED',
-        memo: autoMemo // メモを追加
+        memo: autoMemo 
     };
 
     try {
@@ -409,7 +408,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           <p className="text-xs font-bold text-gray-500 mb-3 tracking-widest">よく使うマスター線種をタップ</p>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {filteredProducts.map((p:any) => {
-              // ★ 一覧画面でも錫メッキの警告バッジを表示
               const isTin = p.conductor?.includes('錫') || p.name?.includes('錫');
               return (
                   <button 
@@ -454,7 +452,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           </div>
         )}
 
-        {/* ★ 追加：カート全体に錫メッキが混入している場合のアラートバー */}
         {hasTinPlated && (
             <div className="bg-red-600 text-white text-xs font-bold p-2 flex items-center justify-center gap-2 shadow-md shrink-0 animate-pulse">
                 <Icons.AlertTriangle /> 錫メッキ線が含まれています。純銅とは別管理にしてください。
@@ -467,7 +464,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           ) : (
             <div className="space-y-3 pb-2">
               {cart.map(item => {
-                // ★ 個別のカートアイテムの錫メッキ判定
                 const isItemTin = item.conductor?.includes('錫') || item.product?.includes('錫');
                 
                 return (
@@ -576,7 +572,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           <button 
               onClick={handleCheckout} 
               disabled={isProcessing || simulation.totalWeight === 0 || (posMode === 'BULK' && !isPercentageValid)} 
-              className={`w-full text-white font-black py-4 rounded-sm transition shadow-[0_4px_14px_0_rgba(220,38,38,0.39)] disabled:opacity-50 flex justify-center items-center text-lg ${hasTinPlated ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+              className={`w-full text-white font-black py-4 rounded-sm transition shadow-lg disabled:opacity-50 flex justify-center items-center text-lg ${hasTinPlated ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}
           >
               {isProcessing ? <Icons.Refresh /> : hasTinPlated ? '⚠️ 確認して受付を確定する' : '受付を確定してカンバンへ'}
           </button>
