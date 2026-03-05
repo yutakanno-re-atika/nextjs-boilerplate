@@ -13,7 +13,7 @@ const Icons = {
   ScaleIndividual: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>,
   Mic: () => <svg className="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>,
   CheckCircle: () => <svg className="w-5 h-5 text-green-500 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-  AlertTriangle: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
+  AlertTriangle: () => <svg className="w-4 h-4 inline-block text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
   Edit: () => <svg className="w-3 h-3 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>,
   ChevronDown: () => <svg className="w-3 h-3 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
 };
@@ -320,6 +320,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       return 'その他';
   };
 
+  // ★ AND検索対応の高度なフィルタリング
   const filteredProducts = useMemo(() => {
       return (data?.wires || []).filter((w:any) => {
           if (selectedCategory !== 'すべて' && getCategory(w.name) !== selectedCategory) return false;
@@ -332,7 +333,8 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
               const sqFormatted = sqStr && sqStr !== '-' ? `${sqStr}sq ${sqStr}スケ` : '';
               
               const searchTarget = `${w.name} ${w.maker} ${sqFormatted} ${sqStr} ${coreFormatted} ${coreStr} ${w.year}`.toLowerCase();
-              const terms = searchTerm.toLowerCase().split(/\s+/);
+              // 全角スペースを半角に変換し、空白で分割して複数の検索語（AND条件）を生成
+              const terms = searchTerm.toLowerCase().replace(/　/g, ' ').split(' ').filter(Boolean);
               return terms.every(term => searchTarget.includes(term));
           }
           return true;
@@ -410,13 +412,13 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
               <div className="flex w-full gap-2">
                   <div className="relative flex-1">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Icons.Search /></div>
-                    <input type="text" placeholder="検索 (例: 1C 8sq)..." className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-sm text-sm focus:border-blue-500 outline-none shadow-inner" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                    <input type="text" placeholder="検索 (例: 1C VV)..." className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-sm text-sm focus:border-blue-500 outline-none shadow-inner" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
                   </div>
                   <select className="border border-gray-300 rounded-sm px-2 py-2 text-sm outline-none focus:border-blue-500 bg-white max-w-[110px] text-gray-700 font-bold shadow-sm" value={selectedMaker} onChange={e => setSelectedMaker(e.target.value)}>
                       <option value="">全メーカー</option>
                       {uniqueMakers.map(m => <option key={m as string} value={m as string}>{m as string}</option>)}
                   </select>
-                  <button onClick={toggleVoiceInput} className={`px-3 py-2 border rounded-sm flex items-center justify-center transition-all ${isListening ? 'bg-red-500 border-red-600 text-white animate-pulse shadow-inner' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-100 hover:text-blue-600'}`} title="音声で検索/追加"><Icons.Mic /></button>
+                  <button onClick={toggleVoiceInput} className={`px-3 py-2 border rounded-sm flex items-center justify-center transition-all ${isListening ? 'bg-red-500 border-red-600 text-white animate-pulse shadow-inner' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-100 hover:text-blue-600'}`} title="AI音声自動追加"><Icons.Mic /></button>
               </div>
 
               <div className="flex gap-1.5 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -460,7 +462,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         </div>
       </div>
 
-      {/* ★ 右側：カート・シミュレーター（スマート化） */}
+      {/* 右側：カート・シミュレーター */}
       <div className="w-full lg:w-5/12 bg-white border border-gray-200 rounded-sm flex flex-col shadow-lg relative overflow-hidden min-h-[50vh] lg:h-full shrink-0">
         <div className="flex shrink-0">
           <button onClick={() => setPosMode('INDIVIDUAL')} className={`flex-1 py-2 text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${posMode === 'INDIVIDUAL' ? 'bg-white text-blue-700 border-t-4 border-t-blue-600' : 'bg-gray-100 text-gray-400 border-t-4 border-t-transparent border-b border-b-gray-200'}`}><Icons.ScaleIndividual /> 個別計量</button>
@@ -491,7 +493,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
             </div>
         )}
 
-        {/* ★ カートリスト（スマートな横並びデザイン） */}
         <div className="flex-1 overflow-y-auto p-2 bg-gray-50/50 min-h-[200px]">
           {cart.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-gray-300"><p className="font-bold text-xs">左から商材を選択してください</p></div>
@@ -537,7 +538,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                       </div>
                     </div>
 
-                    {/* ★ アコーディオン化してスッキリさせたAI推論根拠 */}
                     {item.reason && (
                       <details className="mt-0.5 group">
                         <summary className="text-[9px] font-bold text-blue-600 cursor-pointer select-none flex items-center gap-0.5 w-max outline-none opacity-80 hover:opacity-100 list-none">
@@ -560,10 +560,9 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           )}
         </div>
 
-        {/* ★ シミュレーター部分（限界を消し、コンパクトに） */}
         <div className={`bg-[#111111] text-white p-3 border-t-4 relative shrink-0 ${hasTinPlated ? 'border-red-500' : 'border-blue-600'}`}>
           <div className="flex justify-between items-center mb-2">
-            <h3 className="font-bold text-xs tracking-widest text-gray-300 flex items-center gap-1">買取価格シミュレーション</h3>
+            <h3 className="font-bold text-xs tracking-widest text-gray-300 flex items-center gap-1">参考買取シミュレーション</h3>
             <button onClick={() => setShowSimDetails(!showSimDetails)} className="text-gray-400 hover:text-white flex items-center gap-1 text-[9px] bg-gray-800 px-1.5 py-0.5 rounded-sm transition"><Icons.Settings /> 設定</button>
           </div>
 
@@ -597,8 +596,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           </div>
         </div>
       </div>
-
-      {/* 単一AIモーダル */}
+      {/* (以下、AIモーダル系は変更なし) */}
       {isAiModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-gray-900 w-full max-w-2xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col">
@@ -639,7 +637,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         </div>
       )}
 
-      {/* フレコン一括AIモーダル */}
       {isBulkAiModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-gray-900 w-full max-w-4xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col max-h-[90vh]">
