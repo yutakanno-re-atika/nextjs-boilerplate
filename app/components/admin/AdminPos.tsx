@@ -18,13 +18,6 @@ const Icons = {
   Edit: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
 };
 
-const getDriveImageUrl = (url: string) => {
-    if (!url) return '';
-    const match = url.match(/id=([^&]+)/) || url.match(/file\/d\/([^\/]+)/);
-    if (match && match[1]) return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1000`;
-    return url;
-};
-
 export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onClear, isVoiceOutputEnabled }: { data: any, editingResId?: string | null, localReservations?: any[], onSuccess: () => void, onClear: () => void, isVoiceOutputEnabled?: boolean }) => {
   const [cart, setCart] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -46,17 +39,14 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   const [isBulkAiModalOpen, setIsBulkAiModalOpen] = useState(false);
   const [bulkImages, setBulkImages] = useState<string[]>([]);
 
-  // 音声入力管理（トグル化対応）
+  // 音声入力管理（制限なしトグル）
   const [isListening, setIsListening] = useState(false);
   const [voiceText, setVoiceText] = useState('');
   const [isProcessingVoice, setIsProcessingVoice] = useState(false);
   const recognitionRef = useRef<any>(null);
-  const timeoutRef = useRef<any>(null);
 
-  // ヒント用音声入力
   const [isListeningHint, setIsListeningHint] = useState(false);
   const hintRecognitionRef = useRef<any>(null);
-  const hintTimeoutRef = useRef<any>(null);
 
   const [isUploadingMaster, setIsUploadingMaster] = useState<string | null>(null);
 
@@ -130,9 +120,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                   const ctx = canvas.getContext('2d'); ctx?.drawImage(img, 0, 0, w, h);
                   resolve(canvas.toDataURL('image/jpeg', 0.8).split(',')[1]);
               };
-              img.onerror = () => reject(new Error('Image loading failed'));
           };
-          reader.onerror = () => reject(new Error('File reading failed'));
       });
   };
 
@@ -224,7 +212,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
     } catch(err: any) { clearInterval(progressInterval); alert(`通信エラー: ${err.message}`); setAiStatus('IDLE'); setAiProgressStep(0); } 
   };
 
-  // ★ 検索用音声入力（トグル式＋タイムアウト制限）
+  // ★ 検索用音声入力（制限なしトグル式）
   const toggleVoiceInput = () => {
       if (isListening) {
           if (recognitionRef.current) recognitionRef.current.stop();
@@ -240,8 +228,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
 
       recognition.onstart = () => { 
           setIsListening(true); 
-          setVoiceText('🎤 認識中... (もう一度押すと送信 / 最大60秒)'); 
-          timeoutRef.current = setTimeout(() => { if (recognitionRef.current) recognitionRef.current.stop(); }, 60000);
+          setVoiceText('🎤 認識中... (もう一度押すと終了して送信)'); 
       };
       
       let finalTranscript = '';
@@ -258,7 +245,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
 
       recognition.onend = () => { 
           setIsListening(false); 
-          if (timeoutRef.current) clearTimeout(timeoutRef.current);
           if (finalTranscript) processVoiceCommand(finalTranscript);
           else setTimeout(() => setVoiceText(''), 2000);
       };
@@ -289,7 +275,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       setIsProcessingVoice(false); setTimeout(() => setVoiceText(''), 3000);
   };
 
-  // ★ ヒント用音声入力（トグル式）
+  // ★ ヒント用音声入力（制限なしトグル式）
   const toggleHintVoiceInput = () => {
       if (isListeningHint) {
           if (hintRecognitionRef.current) hintRecognitionRef.current.stop();
@@ -304,7 +290,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       
       recognition.onstart = () => {
           setIsListeningHint(true);
-          hintTimeoutRef.current = setTimeout(() => { if (hintRecognitionRef.current) hintRecognitionRef.current.stop(); }, 60000);
       };
       
       let finalStr = '';
@@ -319,14 +304,12 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       
       recognition.onend = () => {
           setIsListeningHint(false);
-          if (hintTimeoutRef.current) clearTimeout(hintTimeoutRef.current);
           setAiHint(currentHint + (currentHint ? ' ' : '') + finalStr);
       };
       hintRecognitionRef.current = recognition;
       recognition.start();
   };
 
-  // ★ 別タブでマスター登録画面を開く処理
   const handleOpenMasterRegistration = (item: any) => {
       const pendingData = {
           name: item.product.replace(/💡 AI査定: |📦 AI解析: /, '').trim(),
@@ -501,7 +484,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                         </div>
                         <div className="text-xs text-gray-500 mt-1 flex items-center gap-3">
                             <span>歩留まり: <span className="font-mono font-bold text-blue-600">{item.ratio}%</span></span>
-                            {/* ★ 別タブでマスター登録画面を開くボタン */}
                             {item.isNewAi && (
                                 <button onClick={() => handleOpenMasterRegistration(item)} className="text-[10px] bg-white border border-blue-300 text-blue-700 px-2 py-0.5 rounded shadow-sm hover:bg-blue-50 transition flex items-center gap-1">
                                     <Icons.Edit /> マスターへ登録 (別タブ)
