@@ -20,7 +20,8 @@ const Icons = {
   Settings: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
   Play: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   Save: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>,
-  Ruler: () => <svg className="w-4 h-4 inline-block text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M3 14h18m-9-4v8m-4-8v8m8-8v8M4 6h16a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2z" /></svg>
+  Ruler: () => <svg className="w-4 h-4 inline-block text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M3 14h18m-9-4v8m-4-8v8m8-8v8M4 6h16a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2z" /></svg>,
+  AlertTriangle: () => <svg className="w-4 h-4 inline-block text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
 };
 
 const formatTimeShort = (timeStr: string) => {
@@ -36,6 +37,34 @@ const formatTimeShort = (timeStr: string) => {
     return `${YY}/${MM}/${DD} ${HH}:${mm}`;
   }
   return str.substring(0, 16);
+};
+
+// ★ 追加：表示用にSQと芯数に単位を自動付与する関数
+const formatSqDisplay = (sq: any) => {
+    if (!sq || sq === '-') return '-';
+    const s = String(sq).toLowerCase();
+    if (s.includes('sq') || s.includes('mm')) return sq;
+    return `${sq} sq`;
+};
+const formatCoreDisplay = (core: any) => {
+    if (!core || core === '-') return '-';
+    const c = String(core).toUpperCase();
+    if (c.includes('C') || c.includes('芯')) return core;
+    return `${core}C`;
+};
+
+// 入力値から数値と単位を分離する関数
+const parseSqForInput = (sq: string) => {
+    if (!sq || sq === '-') return { val: '', unit: 'sq' };
+    const str = String(sq).toLowerCase();
+    const match = str.match(/^([\d.]+)\s*(sq|mm)?$/);
+    if (match) return { val: match[1], unit: match[2] || 'sq' };
+    return { val: str, unit: 'sq' };
+};
+const parseCoreForInput = (core: string) => {
+    if (!core || core === '-') return '';
+    const match = String(core).match(/(\d+)/);
+    return match ? match[1] : String(core);
 };
 
 export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoiceOutputEnabled?: boolean }) => {
@@ -115,7 +144,16 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   };
 
   const handleOpenModal = (item: any = null) => {
-    setEditingItem(item || {});
+    const sqData = parseSqForInput(item?.sq);
+    const coreData = parseCoreForInput(item?.core);
+
+    setEditingItem({
+        ...item,
+        _sqValue: sqData.val,
+        _sqUnit: sqData.unit,
+        _coreValue: coreData
+    });
+    
     setSampleTotal(item?.sampleTotal || '');
     setSampleCopper(item?.sampleCopper || '');
     
@@ -162,8 +200,9 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
           name: unknownItem.name.replace(/【.*?】/g, ''), 
           maker: '', 
           year: '', 
-          sq: '', 
-          core: '', 
+          _sqValue: '',
+          _sqUnit: 'sq',
+          _coreValue: '', 
           ratio: unknownItem.ratio,
           memo: `【AI推論からの昇格】\n推論日時: ${unknownItem.createdAt}\nAIの根拠: ${unknownItem.reason}`
       });
@@ -179,7 +218,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       const isSolid = editingItem.conductor && (editingItem.conductor.includes('単線') || editingItem.conductor === 'Solid');
       
       if (isSolid) {
-          setEditingItem({ ...editingItem, sq: `${d}mm` });
+          setEditingItem({ ...editingItem, _sqValue: String(d), _sqUnit: 'mm' });
           alert(`単線として「${d}mm」を適用しました。`);
       } else {
           const r = d / 2;
@@ -187,8 +226,8 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
           const jisSqs = [1.25, 2, 3.5, 5.5, 8, 14, 22, 38, 60, 100, 150, 200, 250, 325];
           const closestSq = jisSqs.reduce((prev, curr) => Math.abs(curr - approxSq) < Math.abs(prev - approxSq) ? curr : prev);
           
-          if (window.confirm(`【より線のSQ概算結果】\n直径: ${d}mm\n概算断面積: 約${approxSq.toFixed(1)}sq\n\nJIS規格の「${closestSq}sq」を適用しますか？`)) {
-              setEditingItem({ ...editingItem, sq: String(closestSq) });
+          if (window.confirm(`【より線のSQ概算結果】\n直径: ${d}mm\n概算断面積: 約${approxSq.toFixed(1)}sq\n\nJIS規格の「${closestSq} sq」を適用しますか？`)) {
+              setEditingItem({ ...editingItem, _sqValue: String(closestSq), _sqUnit: 'sq' });
           }
       }
   };
@@ -246,6 +285,10 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
   const handleSave = async () => {
     let finalItem = { ...editingItem };
+
+    // ★ 修正：分離していたUI用変数を結合して本来のDBプロパティに戻す
+    finalItem.sq = finalItem._sqValue ? `${finalItem._sqValue}${finalItem._sqUnit === 'mm' ? 'mm' : ''}` : ''; 
+    finalItem.core = finalItem._coreValue ? `${finalItem._coreValue}` : '';
 
     if (activeTab === 'WIRES' || activeTab === 'UNKNOWN') {
         if (isTinPlated) {
@@ -461,8 +504,9 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                   maker: result.data.maker === '-' ? '' : result.data.maker,
                   name: result.data.name === '-' ? '' : result.data.name,
                   year: result.data.year === '-' ? '' : result.data.year,
-                  sq: cleanSize === '-' ? '' : cleanSize,
-                  core: cleanCore === '-' ? '' : cleanCore,
+                  _sqValue: cleanSize === '-' ? '' : cleanSize,
+                  _sqUnit: 'sq',
+                  _coreValue: cleanCore === '-' ? '' : cleanCore,
                   conductor: result.data.conductor === '-' ? '' : result.data.conductor,
                   ratio: result.data.estimatedRatio || '',
                   aiEstimatedRatio: result.data.estimatedRatio || '',
@@ -532,7 +576,68 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     if (activeTab === 'SETTINGS') {
         return (
             <div className="p-6 md:p-10 bg-white h-full overflow-y-auto animate-in fade-in">
-                {/* 既存の設定画面の内容 */}
+                {/* 設定画面の中身は変更なし */}
+                <div className="max-w-3xl mx-auto space-y-10">
+                    <div>
+                        <h3 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-3 mb-6 flex items-center gap-2">
+                            <Icons.Settings /> システム自動実行バッチの制御
+                        </h3>
+                        <p className="text-sm text-gray-600 leading-relaxed mb-6">
+                            GAS（Google Apps Script）で1時間おきに実行されているバックグラウンド処理の稼働状況を制御します。
+                            意図しないAPIコストの発生や、相場急変時の安全確保のために利用してください。
+                        </p>
+                    </div>
+
+                    <div className="space-y-6">
+                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 shadow-sm">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                                <div>
+                                    <h4 className="font-bold text-gray-900 flex items-center gap-2 text-lg">
+                                        <span className={`w-3 h-3 rounded-full ${autoMarketSync ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span>
+                                        市況データ自動スクレイピング
+                                    </h4>
+                                    <p className="text-xs text-gray-500 mt-1">国内メーカー建値を自動取得し、価格を更新します。</p>
+                                </div>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" className="sr-only peer" checked={autoMarketSync} onChange={(e) => setAutoMarketSync(e.target.checked)} />
+                                    <div className="w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-500"></div>
+                                </label>
+                            </div>
+                            <div className="border-t border-gray-200 pt-4 flex justify-end">
+                                <button onClick={() => handleRunBatch('MARKET')} disabled={isRunningBatch !== 'NONE'} className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-bold flex items-center gap-2 hover:bg-gray-50 transition disabled:opacity-50">
+                                    {isRunningBatch === 'MARKET' ? <><Icons.Refresh /> 実行中...</> : <><Icons.Play /> 今すぐ実行</>}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 shadow-sm">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                                <div>
+                                    <h4 className="font-bold text-gray-900 flex items-center gap-2 text-lg">
+                                        <span className={`w-3 h-3 rounded-full ${autoLeadGen ? 'bg-blue-500 animate-pulse' : 'bg-gray-400'}`}></span>
+                                        AIスナイパー 自動リスト抽出
+                                    </h4>
+                                    <p className="text-xs text-gray-500 mt-1">Gemini APIを利用してウェブ上から営業ターゲットを抽出します。</p>
+                                </div>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" className="sr-only peer" checked={autoLeadGen} onChange={(e) => setAutoLeadGen(e.target.checked)} />
+                                    <div className="w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                            <div className="border-t border-gray-200 pt-4 flex justify-end">
+                                <button onClick={() => handleRunBatch('LEAD')} disabled={isRunningBatch !== 'NONE'} className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-bold flex items-center gap-2 hover:bg-gray-50 transition disabled:opacity-50">
+                                    {isRunningBatch === 'LEAD' ? <><Icons.Refresh /> 実行中...</> : <><Icons.Play /> 今すぐ実行</>}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end pt-6 border-t border-gray-200">
+                        <button onClick={handleSaveSettings} disabled={isSavingSettings} className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-md font-bold shadow-md disabled:opacity-50 flex items-center gap-2 transition active:scale-95 text-lg">
+                            {isSavingSettings ? <><Icons.Refresh /> 保存中...</> : <><Icons.Save /> 設定を保存する</>}
+                        </button>
+                    </div>
+                </div>
             </div>
         );
     }
@@ -557,14 +662,12 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     if (activeTab === 'CLIENTS') filteredData = clients.filter((c:any) => c.name.includes(searchTerm));
     if (activeTab === 'STAFF') filteredData = staffs.filter((s:any) => s.name.includes(searchTerm));
 
-    // ★ 修正：ソートロジックの改善（文字列としての日付比較を排除し、デフォルトを更新日の降順に）
     let sortedData = [...filteredData];
     if (sortConfig !== null) {
       sortedData.sort((a, b) => {
         let aValue = a[sortConfig.key];
         let bValue = b[sortConfig.key];
 
-        // 日付文字列（YYYY/MM/DD HH:mm）の判定
         const isDate = (val: any) => typeof val === 'string' && val.match(/^\d{4}[-\/]\d{2}[-\/]\d{2}/);
 
         if (isDate(aValue) || isDate(bValue)) {
@@ -588,7 +691,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         return 0;
       });
     } else {
-        // ★ 追加：デフォルトは「更新日（updatedAt）」の降順（新しいものが一番上）
         sortedData.sort((a, b) => {
             const dateA = a.updatedAt ? new Date(a.updatedAt).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
             const dateB = b.updatedAt ? new Date(b.updatedAt).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
@@ -641,7 +743,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                       <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('status')}>ステータス <SortIcon columnKey="status" /></th>
                   </>
               )}
-              {/* ★ 修正：ヘッダーのクリックを updatedAt に変更 */}
               {activeTab !== 'UNKNOWN' && (
                 <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('updatedAt')}>登録/更新 <SortIcon columnKey="updatedAt" /></th>
               )}
@@ -666,7 +767,8 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                         )}
                     </td>
                     <td className="p-3 text-gray-600">{item.year || '-'}</td>
-                    <td className="p-3 text-gray-600">{item.sq || '-'} / {item.core || '-'}</td>
+                    {/* ★ 修正：単位を自動付与して美しく表示 */}
+                    <td className="p-3 text-gray-600 font-mono text-xs">{formatSqDisplay(item.sq)} / {formatCoreDisplay(item.core)}</td>
                     <td className="p-3 font-mono font-bold text-blue-600 text-base">{item.ratio}%</td>
                     <td className="p-3">
                         <div className="flex gap-2 justify-center">
@@ -838,17 +940,31 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div><label className="block text-xs font-bold text-gray-500 mb-1">製造年</label><input type="text" placeholder="例: 2024" className="w-full border p-2.5 rounded-sm outline-none focus:border-blue-500" value={editingItem.year || ''} onChange={e => setEditingItem({...editingItem, year: e.target.value})} /></div>
             
+            {/* ★ 修正：単位を分けて入力・選択できるUIに変更 */}
             <div>
                 <label className="block text-xs font-bold text-gray-500 mb-1 flex items-center justify-between">
-                    <span>SQ/サイズ</span>
+                    <span>サイズ</span>
                     <button onClick={handleCaliperInput} className="text-blue-600 hover:text-blue-800 flex items-center gap-0.5 bg-blue-50 px-1.5 py-0.5 rounded-sm border border-blue-200 transition shadow-sm">
                         <Icons.Ruler /> <span className="text-[9px]">ノギス</span>
                     </button>
                 </label>
-                <input type="text" className="w-full border p-2.5 rounded-sm outline-none focus:border-blue-500" value={editingItem.sq || ''} onChange={e => setEditingItem({...editingItem, sq: e.target.value})} />
+                <div className="flex rounded-sm shadow-sm relative">
+                    <input type="number" step="0.01" className="w-full border-y border-l border-gray-300 p-2.5 rounded-l-sm outline-none focus:border-blue-500 font-mono text-right" value={editingItem._sqValue || ''} onChange={e => setEditingItem({...editingItem, _sqValue: e.target.value})} placeholder="2.0" />
+                    <select className="border border-gray-300 bg-gray-50 px-2 rounded-r-sm text-xs font-bold text-gray-600 outline-none focus:border-blue-500" value={editingItem._sqUnit || 'sq'} onChange={e => setEditingItem({...editingItem, _sqUnit: e.target.value})}>
+                        <option value="sq">sq</option>
+                        <option value="mm">mm</option>
+                    </select>
+                </div>
             </div>
 
-            <div><label className="block text-xs font-bold text-gray-500 mb-1">芯数 (C)</label><input type="text" className="w-full border p-2.5 rounded-sm outline-none focus:border-blue-500" value={editingItem.core || ''} onChange={e => setEditingItem({...editingItem, core: e.target.value})} /></div>
+            {/* ★ 修正：芯数は数字だけ打たせて、UI上にCを固定表示 */}
+            <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1">芯数</label>
+                <div className="relative">
+                    <input type="number" className="w-full border p-2.5 rounded-sm outline-none focus:border-blue-500 font-mono pr-8 text-right" value={editingItem._coreValue || ''} onChange={e => setEditingItem({...editingItem, _coreValue: e.target.value.replace(/[^\d]/g, '')})} placeholder="3" />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold pointer-events-none">C</span>
+                </div>
+            </div>
             
             <div>
                 <label className="block text-xs font-bold text-gray-500 mb-1">導体</label>
