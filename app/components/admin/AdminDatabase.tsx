@@ -19,7 +19,8 @@ const Icons = {
   SortNone: () => <svg className="w-3 h-3 inline-block ml-1 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" /></svg>,
   Settings: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
   Play: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-  Save: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
+  Save: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>,
+  Ruler: () => <svg className="w-4 h-4 inline-block text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M3 14h18m-9-4v8m-4-8v8m8-8v8M4 6h16a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2z" /></svg>
 };
 
 const formatTimeShort = (timeStr: string) => {
@@ -113,7 +114,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
   const handleOpenModal = (item: any = null) => {
     setEditingItem(item || {});
-    // ★ 修正：プロパティ名を修正し、実測値が確実に読み込まれるように変更
     setSampleTotal(item?.sampleTotal || '');
     setSampleCopper(item?.sampleCopper || '');
     setIsModalOpen(true);
@@ -160,6 +160,34 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       setIsModalOpen(true);
   };
 
+  // ★ 追加：ノギスでの入力と自動SQ算出ロジック
+  const handleCaliperInput = () => {
+      const val = window.prompt("📐 ノギスで実測した「直径(mm)」を入力してください\n例: 2.0 または 3.5");
+      if (!val) return;
+      const d = parseFloat(val);
+      if (isNaN(d) || d <= 0) return alert("正しい数値を入力してください。");
+
+      const isSolid = editingItem.conductor && (editingItem.conductor.includes('単線') || editingItem.conductor === 'Solid');
+      
+      if (isSolid) {
+          // 単線の場合は直径をそのままmm表記でセット
+          setEditingItem({ ...editingItem, sq: `${d}mm` });
+          alert(`単線として「${d}mm」を適用しました。`);
+      } else {
+          // より線の場合、断面積（r^2 * π）から隙間係数(約0.75)をかけて概算SQを出す
+          const r = d / 2;
+          const approxSq = (r * r * Math.PI) * 0.75;
+          
+          // JIS規格の代表的なSQ値にスナップさせる
+          const jisSqs = [1.25, 2, 3.5, 5.5, 8, 14, 22, 38, 60, 100, 150, 200, 250, 325];
+          const closestSq = jisSqs.reduce((prev, curr) => Math.abs(curr - approxSq) < Math.abs(prev - approxSq) ? curr : prev);
+          
+          if (window.confirm(`【より線のSQ概算結果】\n直径: ${d}mm\n概算断面積: 約${approxSq.toFixed(1)}sq\n\nJIS規格の「${closestSq}sq」を適用しますか？`)) {
+              setEditingItem({ ...editingItem, sq: String(closestSq) });
+          }
+      }
+  };
+
   const handleSaveSettings = async () => {
       setIsSavingSettings(true);
       try {
@@ -182,6 +210,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
           localStorage.removeItem('factoryOS_masterData');
           
           alert('✅ 設定を確実に保存しました。');
+          window.location.reload();
       } catch (e) {
           alert('通信エラーが発生しました。設定が正常に保存されていない可能性があります。');
       }
@@ -235,6 +264,23 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
     let finalItem = { ...editingItem };
 
+    // ★ 追加：AI推論値と最終確定値の差分チェック（Human Feedbackの自動生成）
+    if (finalItem._aiInitialState) {
+        const ai = finalItem._aiInitialState;
+        const isMakerChanged = String(ai.maker || '') !== String(finalItem.maker || '');
+        const isNameChanged = String(ai.name || '') !== String(finalItem.name || '');
+        const isRatioChanged = String(ai.ratio || '') !== String(finalItem.ratio || '');
+
+        if (isMakerChanged || isNameChanged || isRatioChanged) {
+            const feedbackText = `\n\n【🤖➡️🧑‍🔧 Human Feedback (実測/訂正)】\n` +
+                                 `AI推論 : [メーカー: ${ai.maker || '不明'}, 品名: ${ai.name || '不明'}, 歩留: ${ai.ratio || '---'}%]\n` +
+                                 `人間確定: [メーカー: ${finalItem.maker || '不明'}, 品名: ${finalItem.name || '不明'}, 歩留: ${finalItem.ratio || '---'}%]\n` +
+                                 `※作業者による現物確認・ノギス測定・実測計量によりAI推論を修正し、マスターとして確定。`;
+            finalItem.memo = (finalItem.memo || '') + feedbackText;
+            finalItem.reason = (finalItem.reason || '') + feedbackText; // Unknownシートからの昇格時用
+        }
+    }
+
     if (finalItem._pendingImageData1) {
         try {
             const res = await fetch('/api/gas', {
@@ -255,7 +301,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
             if (r.status === 'success') finalItem.image2 = r.url;
         } catch(e) { console.error("画像2の保存に失敗"); }
     }
-    // ★ 修正：image3 (剥線画像) の保存処理を追加
     if (finalItem._pendingImageData3) {
         try {
             const res = await fetch('/api/gas', {
@@ -305,11 +350,17 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   };
 
   const getUpdatesMap = (item: any, tab: string) => {
-    if (tab === 'WIRES') return { 
-        1: item.maker, 2: item.name, 3: item.year, 4: item.sq, 
-        5: item.sampleTotal, 6: item.sampleCopper,
-        7: item.core, 8: item.conductor, 9: item.ratio, 10: item.memo 
-    };
+    if (tab === 'WIRES') {
+        const updates: any = { 
+            1: item.maker, 2: item.name, 3: item.year, 4: item.sq, 
+            5: item.sampleTotal, 6: item.sampleCopper,
+            7: item.core, 8: item.conductor, 9: item.ratio, 10: item.memo 
+        };
+        if (item.image1 !== undefined) updates[11] = item.image1;
+        if (item.image2 !== undefined) updates[12] = item.image2;
+        if (item.image3 !== undefined) updates[13] = item.image3;
+        return updates;
+    }
     if (tab === 'UNKNOWN') return { 1: item.name, 2: item.ratio, 3: item.reason }; 
     if (tab === 'CASTINGS') return { 1: item.name, 2: item.type, 4: item.ratio };
     if (tab === 'CLIENTS') return { 1: item.name, 2: item.rank, 4: item.phone, 5: item.loginId, 6: item.password, 7: item.points, 8: item.memo, 9: item.address, 10: item.industry };
@@ -387,22 +438,27 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                   window.speechSynthesis.speak(utterance);
               }
 
-              // ★ 修正：AIから返ってきたサイズや芯数に含まれる可能性のある単位文字を強制的に除去
               const cleanSize = String(result.data.size || '').replace(/[^\d.]/g, '');
               const cleanCore = String(result.data.core || '').replace(/[^\d]/g, '');
 
+              // ★ 追加：AIの初期推論値を _aiInitialState として保持する
               setEditingItem({
                   maker: result.data.maker === '-' ? '' : result.data.maker,
                   name: result.data.name === '-' ? '' : result.data.name,
                   year: result.data.year === '-' ? '' : result.data.year,
                   sq: cleanSize === '-' ? '' : cleanSize,
                   core: cleanCore === '-' ? '' : cleanCore,
-                  conductor: result.data.conductor === '-' ? '' : result.data.conductor, // ★ 導体情報をセット
+                  conductor: result.data.conductor === '-' ? '' : result.data.conductor,
                   ratio: result.data.estimatedRatio || '',
                   aiEstimatedRatio: result.data.estimatedRatio || '',
                   memo: `【AIアシスト抽出】\nAI推論根拠: ${result.data.reason}\n※実測を行って歩留まりを上書きしてください。`,
                   _pendingImageData1: imgData1,
-                  _pendingImageData2: imgData2
+                  _pendingImageData2: imgData2,
+                  _aiInitialState: { // 差分チェック用
+                      maker: result.data.maker === '-' ? '' : result.data.maker,
+                      name: result.data.name === '-' ? '' : result.data.name,
+                      ratio: result.data.estimatedRatio || ''
+                  }
               });
               setSampleTotal('');
               setSampleCopper('');
@@ -431,7 +487,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         const compressedBase64 = await compressImage(file);
         if (num === 1) setImgData1(compressedBase64); 
         else if (num === 2) setImgData2(compressedBase64);
-        else setEditingItem({...editingItem, _pendingImageData3: compressedBase64}); // ★ 追加：剥線画像のプレビュー用
+        else setEditingItem({...editingItem, _pendingImageData3: compressedBase64});
     } catch (err) { alert("画像の処理に失敗しました。"); }
     e.target.value = '';
   };
@@ -582,8 +638,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                       <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('year')}>製造年 <SortIcon columnKey="year" /></th>
                       <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('sq')}>SQ/芯数 <SortIcon columnKey="sq" /></th>
                       <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('ratio')}>歩留まり <SortIcon columnKey="ratio" /></th>
-                      {/* ★ 修正：画像ヘッダーの変更 */}
-                      <th className="p-3">画像 (1:断面 2:印字 3:剥線)</th>
+                      <th className="p-3 text-center">画像 (1:断面 2:印字 3:剥線)</th>
                   </>
               )}
               {activeTab === 'UNKNOWN' && (
@@ -631,13 +686,12 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                     <td className="p-3 text-gray-600">{item.sq || '-'} / {item.core || '-'}</td>
                     <td className="p-3 font-mono font-bold text-blue-600 text-base">{item.ratio}%</td>
                     <td className="p-3">
-                        <div className="flex gap-2">
-                            {/* ★ 修正：image3 (colIdx 13) を追加 */}
+                        <div className="flex gap-2 justify-center">
                             {[11, 12, 13].map(colIdx => {
                                 const hasImage = !!item[`image${colIdx-10}`];
                                 return (
-                                    <div key={colIdx} className="flex flex-col gap-1 items-center w-16">
-                                        <div className="relative w-full h-16 border border-gray-300 rounded-sm overflow-hidden bg-gray-100 flex items-center justify-center group shadow-sm">
+                                    <div key={colIdx} className="flex flex-col gap-1 items-center w-14">
+                                        <div className="relative w-full h-12 border border-gray-300 rounded-sm overflow-hidden bg-gray-100 flex items-center justify-center group shadow-sm">
                                             {hasImage ? (
                                                 <a href={getDriveImageUrl(item[`image${colIdx-10}`], false)} target="_blank" rel="noopener noreferrer" className="w-full h-full block">
                                                     <img src={getDriveImageUrl(item[`image${colIdx-10}`])} className="w-full h-full object-cover group-hover:scale-110 transition-transform cursor-zoom-in" alt="Wire" />
@@ -647,10 +701,16 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                                             )}
                                             {uploadingImageId === `${item.id}-${colIdx}` && <div className="absolute inset-0 bg-black/50 flex items-center justify-center"><Icons.Refresh /></div>}
                                         </div>
-                                        <label className={`text-[9px] flex items-center justify-center gap-1 border px-1 py-1 rounded-sm cursor-pointer transition w-full text-center font-bold ${hasImage ? 'text-gray-600 border-gray-300 bg-white hover:bg-gray-100' : 'text-blue-600 border-blue-300 bg-blue-50 hover:bg-blue-600 hover:text-white'}`}>
-                                            <Icons.Camera /> {hasImage ? '変更' : '登録'}
-                                            <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, item.id, colIdx, 'Products_Wire')} />
-                                        </label>
+                                        <div className="flex gap-1 w-full">
+                                            <label className={`flex-1 flex justify-center items-center py-1 rounded-sm cursor-pointer transition ${hasImage ? 'bg-gray-100 hover:bg-gray-200 text-gray-600' : 'bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200'}`} title="カメラで撮影">
+                                                <Icons.Camera />
+                                                <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => handleImageUpload(e, item.id, colIdx, 'Products_Wire')} />
+                                            </label>
+                                            <label className={`flex-1 flex justify-center items-center py-1 rounded-sm cursor-pointer transition ${hasImage ? 'bg-gray-100 hover:bg-gray-200 text-gray-600' : 'bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200'}`} title="フォルダから選択">
+                                                <Icons.UploadCloud />
+                                                <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, item.id, colIdx, 'Products_Wire')} />
+                                            </label>
+                                        </div>
                                     </div>
                                 );
                             })}
@@ -723,7 +783,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     if (activeTab === 'WIRES' || activeTab === 'UNKNOWN') return (
       <div className="space-y-4">
         
-        {/* ★ 修正：画像プレビューエリアに image3 を追加 */}
         {editingItem.id && (editingItem.image1 || editingItem.image2 || editingItem.image3) && !editingItem._pendingImageData1 && (
             <div className="bg-gray-50 p-4 border border-gray-200 rounded-sm">
                 <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-widest">現在登録されているマスター画像</label>
@@ -769,29 +828,48 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         </div>
         <div className="grid grid-cols-4 gap-4">
             <div><label className="block text-xs font-bold text-gray-500 mb-1">製造年</label><input type="text" placeholder="例: 2024" className="w-full border p-2 rounded-sm outline-none focus:border-blue-500" value={editingItem.year || ''} onChange={e => setEditingItem({...editingItem, year: e.target.value})} /></div>
-            <div><label className="block text-xs font-bold text-gray-500 mb-1">SQ (サイズ)</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-blue-500" value={editingItem.sq || ''} onChange={e => setEditingItem({...editingItem, sq: e.target.value})} /></div>
+            
+            {/* ★ 追加：ノギスボタン付きのSQ入力欄 */}
+            <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1 flex items-center justify-between">
+                    SQ (サイズ)
+                    <button onClick={handleCaliperInput} className="text-blue-600 hover:text-blue-800 flex items-center gap-0.5 bg-blue-50 px-1 rounded-sm border border-blue-200 transition">
+                        <Icons.Ruler /> <span className="text-[9px]">ノギス</span>
+                    </button>
+                </label>
+                <input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-blue-500" value={editingItem.sq || ''} onChange={e => setEditingItem({...editingItem, sq: e.target.value})} />
+            </div>
+
             <div><label className="block text-xs font-bold text-gray-500 mb-1">芯数</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-blue-500" value={editingItem.core || ''} onChange={e => setEditingItem({...editingItem, core: e.target.value})} /></div>
-            {/* ★ 修正：導体の入力フィールドを追加 */}
-            <div><label className="block text-xs font-bold text-gray-500 mb-1">導体</label><input type="text" placeholder="単線/7本より線等" className="w-full border p-2 rounded-sm outline-none focus:border-blue-500" value={editingItem.conductor || ''} onChange={e => setEditingItem({...editingItem, conductor: e.target.value})} /></div>
+            <div><label className="block text-xs font-bold text-gray-500 mb-1">導体</label><input type="text" placeholder="単線/より線等" className="w-full border p-2 rounded-sm outline-none focus:border-blue-500" value={editingItem.conductor || ''} onChange={e => setEditingItem({...editingItem, conductor: e.target.value})} /></div>
         </div>
         
         <div className="bg-gray-100 p-4 rounded-sm border border-gray-300 mt-4 relative">
             <span className="absolute top-0 right-0 bg-gray-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-sm">HUMAN REQUIRED</span>
             <label className="block text-sm font-black text-gray-800 mb-3 border-b border-gray-300 pb-2">⚖️ サンプル実測 (人間が入力)</label>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                {/* ★ 追加：剥線時の写真をアップロードできるボタン */}
-                <div className="flex flex-col items-center border border-gray-300 p-2 rounded-sm bg-white h-[74px] justify-center relative overflow-hidden group">
+                <div className="flex flex-col items-center border border-gray-300 p-1.5 rounded-sm bg-white h-[74px] justify-center relative overflow-hidden group">
                     {editingItem._pendingImageData3 ? (
                         <>
                             <img src={`data:image/jpeg;base64,${editingItem._pendingImageData3}`} className="absolute inset-0 w-full h-full object-cover opacity-50" />
                             <span className="relative z-10 text-xs font-bold text-blue-600">✅ 撮影済</span>
+                            <button onClick={() => setEditingItem({...editingItem, _pendingImageData3: null})} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm shadow-md z-20">
+                                <Icons.Trash />
+                            </button>
                         </>
                     ) : (
-                        <label className="cursor-pointer flex flex-col items-center text-gray-500 hover:text-blue-600 transition">
-                            <Icons.Camera />
-                            <span className="text-[10px] font-bold mt-1">剥線写真を追加</span>
-                            <input type="file" onChange={e => handleAiImageUpload(e, 3)} className="hidden" accept="image/*" capture="environment" />
-                        </label>
+                        <div className="flex gap-1 w-full h-full">
+                            <label className="flex-1 cursor-pointer flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-500 hover:text-blue-600 transition border border-gray-200 rounded-sm" title="カメラ">
+                                <Icons.Camera />
+                                <span className="text-[8px] font-bold mt-1">剥線(カメラ)</span>
+                                <input type="file" onChange={e => handleAiImageUpload(e, 3)} className="hidden" accept="image/*" capture="environment" />
+                            </label>
+                            <label className="flex-1 cursor-pointer flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-500 hover:text-blue-600 transition border border-gray-200 rounded-sm" title="フォルダ">
+                                <Icons.UploadCloud />
+                                <span className="text-[8px] font-bold mt-1">剥線(フォルダ)</span>
+                                <input type="file" onChange={e => handleAiImageUpload(e, 3)} className="hidden" accept="image/*" />
+                            </label>
+                        </div>
                     )}
                 </div>
                 <div>
