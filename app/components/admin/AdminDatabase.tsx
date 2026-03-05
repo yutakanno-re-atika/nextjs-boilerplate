@@ -18,10 +18,8 @@ const Icons = {
   SortDesc: () => <svg className="w-3 h-3 inline-block ml-1 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" /></svg>,
   SortNone: () => <svg className="w-3 h-3 inline-block ml-1 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" /></svg>,
   Settings: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
-  Play: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-  Save: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>,
-  Ruler: () => <svg className="w-4 h-4 inline-block text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M3 14h18m-9-4v8m-4-8v8m8-8v8M4 6h16a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2z" /></svg>,
-  AlertTriangle: () => <svg className="w-4 h-4 inline-block text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+  AlertTriangle: () => <svg className="w-4 h-4 inline-block text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
+  Ruler: () => <svg className="w-4 h-4 inline-block text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M3 14h18m-9-4v8m-4-8v8m8-8v8M4 6h16a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2z" /></svg>
 };
 
 const formatTimeShort = (timeStr: string) => {
@@ -39,7 +37,6 @@ const formatTimeShort = (timeStr: string) => {
   return str.substring(0, 16);
 };
 
-// ★ 追加：表示用にSQと芯数に単位を自動付与する関数
 const formatSqDisplay = (sq: any) => {
     if (!sq || sq === '-') return '-';
     const s = String(sq).toLowerCase();
@@ -53,7 +50,6 @@ const formatCoreDisplay = (core: any) => {
     return `${core}C`;
 };
 
-// 入力値から数値と単位を分離する関数
 const parseSqForInput = (sq: string) => {
     if (!sq || sq === '-') return { val: '', unit: 'sq' };
     const str = String(sq).toLowerCase();
@@ -80,8 +76,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadingImageId, setUploadingImageId] = useState<string | null>(null);
 
-  const [isTinPlated, setIsTinPlated] = useState(false);
-
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [aiStatus, setAiStatus] = useState<'IDLE' | 'ANALYZING'>('IDLE');
   const [aiProgressStep, setAiProgressStep] = useState(0); 
@@ -95,6 +89,8 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
   const [sampleTotal, setSampleTotal] = useState<number | ''>('');
   const [sampleCopper, setSampleCopper] = useState<number | ''>('');
+  // ★ 追加：被覆重量（Cover）のステート
+  const [sampleCover, setSampleCover] = useState<number | ''>('');
 
   const wires = data?.wires || [];
   const unknownWires = data?.unknownWires || []; 
@@ -151,14 +147,14 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         ...item,
         _sqValue: sqData.val,
         _sqUnit: sqData.unit,
-        _coreValue: coreData
+        _coreValue: coreData,
+        material: item?.material || '純銅'
     });
     
     setSampleTotal(item?.sampleTotal || '');
     setSampleCopper(item?.sampleCopper || '');
-    
-    const isTin = (item?.conductor && item.conductor.includes('錫')) || (item?.name && item.name.includes('錫'));
-    setIsTinPlated(!!isTin);
+    // ★ 既存の sampleCover があればセット
+    setSampleCover(item?.sampleCover || ''); 
 
     setIsModalOpen(true);
   };
@@ -167,10 +163,11 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     setEditingItem(null);
     setSampleTotal('');
     setSampleCopper('');
-    setIsTinPlated(false);
+    setSampleCover('');
     setIsModalOpen(false);
   };
 
+  // ★ 歩留まりは実測値からの自動計算に固定
   const calculateRatio = (total: number | '', copper: number | '') => {
       if (total && copper && Number(total) > 0) {
           const r = (Number(copper) / Number(total)) * 100;
@@ -191,10 +188,26 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       setEditingItem({...editingItem, sampleCopper: num, ratio: calculateRatio(sampleTotal, num)});
   };
 
+  const handleSampleCoverChange = (val: string) => {
+      const num = val ? Number(val) : '';
+      setSampleCover(num);
+      setEditingItem({...editingItem, sampleCover: num});
+  };
+
+  // ★ ジュート（ダスト）重量の自動計算
+  const getJuteWeight = () => {
+      if (sampleTotal && (sampleCopper || sampleCover)) {
+          const t = Number(sampleTotal) || 0;
+          const c = Number(sampleCopper) || 0;
+          const p = Number(sampleCover) || 0;
+          const jute = t - c - p;
+          return jute > 0 ? jute.toFixed(3) : '0.000';
+      }
+      return '---';
+  };
+
   const handlePromoteToWire = (unknownItem: any) => {
       setActiveTab('WIRES');
-      const isTin = (unknownItem.conductor && unknownItem.conductor.includes('錫')) || (unknownItem.name && unknownItem.name.includes('錫'));
-      setIsTinPlated(!!isTin);
       
       setEditingItem({
           name: unknownItem.name.replace(/【.*?】/g, ''), 
@@ -203,7 +216,11 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
           _sqValue: '',
           _sqUnit: 'sq',
           _coreValue: '', 
-          ratio: unknownItem.ratio,
+          conductor: '',
+          material: unknownItem.material || '純銅',
+          ratio: '', // 実測させるためクリア
+          image1: unknownItem.image1, 
+          image2: unknownItem.image2, 
           memo: `【AI推論からの昇格】\n推論日時: ${unknownItem.createdAt}\nAIの根拠: ${unknownItem.reason}`
       });
       setIsModalOpen(true);
@@ -286,20 +303,8 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const handleSave = async () => {
     let finalItem = { ...editingItem };
 
-    // ★ 修正：分離していたUI用変数を結合して本来のDBプロパティに戻す
     finalItem.sq = finalItem._sqValue ? `${finalItem._sqValue}${finalItem._sqUnit === 'mm' ? 'mm' : ''}` : ''; 
     finalItem.core = finalItem._coreValue ? `${finalItem._coreValue}` : '';
-
-    if (activeTab === 'WIRES' || activeTab === 'UNKNOWN') {
-        if (isTinPlated) {
-            if (!finalItem.conductor?.includes('錫')) {
-                finalItem.conductor = `錫メッキ ${finalItem.conductor || ''}`.trim();
-            }
-            if (!finalItem.name?.includes('錫')) {
-                finalItem.name = `${finalItem.name || ''} (錫メッキ)`.trim();
-            }
-        }
-    }
 
     if (!finalItem.id && activeTab === 'WIRES') {
         const isDuplicate = wires.some((w:any) => 
@@ -307,10 +312,11 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
             (w.name || '') === (finalItem.name || '') && 
             (String(w.sq) || '') === String(finalItem.sq || '') && 
             (String(w.core) || '') === String(finalItem.core || '') &&
-            (String(w.year) || '') === String(finalItem.year || '')
+            (String(w.year) || '') === String(finalItem.year || '') &&
+            (String(w.material) || '純銅') === String(finalItem.material || '純銅')
         );
         if (isDuplicate) {
-            alert('⚠️ この組み合わせ（メーカー・品名・サイズ・芯数・製造年）は既に登録されています。\n重複登録を防ぐため、一覧から既存のデータを編集してください。');
+            alert('⚠️ この組み合わせ（メーカー・品名・サイズ・芯数・製造年・材質）は既に登録されています。\n重複登録を防ぐため、一覧から既存のデータを編集してください。');
             return;
         }
     }
@@ -329,11 +335,12 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         const isNameChanged = String(ai.name || '') !== String(finalItem.name || '');
         const isRatioChanged = String(ai.ratio || '') !== String(finalItem.ratio || '');
         const isConductorChanged = String(ai.conductor || '') !== String(finalItem.conductor || '');
+        const isMaterialChanged = String(ai.material || '') !== String(finalItem.material || '');
 
-        if (isMakerChanged || isNameChanged || isRatioChanged || isConductorChanged) {
+        if (isMakerChanged || isNameChanged || isRatioChanged || isConductorChanged || isMaterialChanged) {
             const feedbackText = `\n\n【🤖➡️🧑‍🔧 Human Feedback (実測/訂正)】\n` +
-                                 `AI推論 : [メーカー: ${ai.maker || '不明'}, 品名: ${ai.name || '不明'}, 導体: ${ai.conductor || '不明'}, 歩留: ${ai.ratio || '---'}%]\n` +
-                                 `人間確定: [メーカー: ${finalItem.maker || '不明'}, 品名: ${finalItem.name || '不明'}, 導体: ${finalItem.conductor || '不明'}, 歩留: ${finalItem.ratio || '---'}%]\n` +
+                                 `AI推論 : [メーカー: ${ai.maker || '不明'}, 品名: ${ai.name || '不明'}, 構造: ${ai.conductor || '不明'}, 材質: ${ai.material || '不明'}, 歩留: ${ai.ratio || '---'}%]\n` +
+                                 `人間確定: [メーカー: ${finalItem.maker || '不明'}, 品名: ${finalItem.name || '不明'}, 構造: ${finalItem.conductor || '不明'}, 材質: ${finalItem.material || '不明'}, 歩留: ${finalItem.ratio || '---'}%]\n` +
                                  `※作業者による現物確認・ノギス測定・実測計量によりAI推論を修正し、マスターとして確定。`;
             finalItem.memo = (finalItem.memo || '') + feedbackText;
             finalItem.reason = (finalItem.reason || '') + feedbackText; 
@@ -413,14 +420,18 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         const updates: any = { 
             1: item.maker, 2: item.name, 3: item.year, 4: item.sq, 
             5: item.sampleTotal, 6: item.sampleCopper,
-            7: item.core, 8: item.conductor, 9: item.ratio, 10: item.memo 
+            7: item.core, 8: item.conductor, 9: item.ratio, 10: item.memo,
+            16: item.material,
+            17: item.sampleCover // ★ 追加：被覆重量（18番目の列）
         };
         if (item.image1 !== undefined) updates[11] = item.image1;
         if (item.image2 !== undefined) updates[12] = item.image2;
         if (item.image3 !== undefined) updates[13] = item.image3;
         return updates;
     }
-    if (tab === 'UNKNOWN') return { 1: item.name, 2: item.ratio, 3: item.reason }; 
+    if (tab === 'UNKNOWN') {
+        return { 1: item.name, 2: item.ratio, 3: item.reason, 9: item.material }; 
+    }
     if (tab === 'CASTINGS') return { 1: item.name, 2: item.type, 4: item.ratio };
     if (tab === 'CLIENTS') return { 1: item.name, 2: item.rank, 4: item.phone, 5: item.loginId, 6: item.password, 7: item.points, 8: item.memo, 9: item.address, 10: item.industry };
     if (tab === 'STAFF') return { 1: item.name, 2: item.role, 3: item.rate, 4: item.status, 5: item.loginId, 6: item.password };
@@ -508,7 +519,8 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                   _sqUnit: 'sq',
                   _coreValue: cleanCore === '-' ? '' : cleanCore,
                   conductor: result.data.conductor === '-' ? '' : result.data.conductor,
-                  ratio: result.data.estimatedRatio || '',
+                  material: result.data.material === '-' ? '純銅' : result.data.material,
+                  ratio: result.data.estimatedRatio || '', // 実測前はAI推定値を入れておく
                   aiEstimatedRatio: result.data.estimatedRatio || '',
                   memo: `【AIアシスト抽出】\nAI推論根拠: ${result.data.reason}\n※実測を行って歩留まりを上書きしてください。`,
                   _pendingImageData1: imgData1,
@@ -517,18 +529,14 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                       maker: result.data.maker === '-' ? '' : result.data.maker,
                       name: result.data.name === '-' ? '' : result.data.name,
                       conductor: result.data.conductor === '-' ? '' : result.data.conductor,
+                      material: result.data.material === '-' ? '純銅' : result.data.material,
                       ratio: result.data.estimatedRatio || ''
                   }
               });
-              
-              if (result.data.conductor?.includes('錫') || result.data.name?.includes('錫') || result.data.wireType?.includes('錫')) {
-                  setIsTinPlated(true);
-              } else {
-                  setIsTinPlated(false);
-              }
 
               setSampleTotal('');
               setSampleCopper('');
+              setSampleCover('');
               
               setIsAiModalOpen(false);
               setIsModalOpen(true);
@@ -760,14 +768,18 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                     <td className="p-3 font-bold text-gray-700">{item.maker || '-'}</td>
                     <td className="p-3 font-bold text-gray-900">
                         {item.name}
-                        {item.conductor?.includes('錫') && (
+                        {item.material === '錫メッキ' && (
                             <span className="ml-2 inline-flex items-center gap-0.5 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm whitespace-nowrap shadow-sm">
                                 <Icons.AlertTriangle /> 錫メッキ
                             </span>
                         )}
+                        {item.material === 'アルミ' && (
+                            <span className="ml-2 inline-flex items-center gap-0.5 bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm whitespace-nowrap shadow-sm">
+                                アルミ
+                            </span>
+                        )}
                     </td>
                     <td className="p-3 text-gray-600">{item.year || '-'}</td>
-                    {/* ★ 修正：単位を自動付与して美しく表示 */}
                     <td className="p-3 text-gray-600 font-mono text-xs">{formatSqDisplay(item.sq)} / {formatCoreDisplay(item.core)}</td>
                     <td className="p-3 font-mono font-bold text-blue-600 text-base">{item.ratio}%</td>
                     <td className="p-3">
@@ -902,25 +914,10 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
         {editingItem._pendingImageData1 && (
             <div className="bg-blue-50 border border-blue-200 p-3 rounded-sm text-xs text-blue-800 font-bold flex flex-col gap-1">
-                <div className="flex items-center gap-2"><Icons.Sparkles /> 画像からAIが仕様を自動入力しました。</div>
+                <div className="flex items-center gap-2"><Icons.Sparkles /> 画像からAIが推論結果を自動入力しました。</div>
                 <div className="text-gray-600 ml-6 font-normal">※ 下の「確定してマスターに登録」を押すと、アップロードした画像も同時に保存されます。</div>
             </div>
         )}
-        
-        <div className="bg-white p-4 border-2 border-dashed border-gray-300 rounded-sm shadow-sm">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h4 className="text-sm font-black text-gray-900 flex items-center gap-2">
-                        {isTinPlated ? <span className="bg-red-600 text-white px-2 py-0.5 rounded-sm text-xs animate-pulse">⚠️ 錫メッキ導体</span> : <span className="text-gray-500">標準的な銅（メッキなし）</span>}
-                    </h4>
-                    <p className="text-xs text-gray-500 mt-1">実測時に導体が銀色（錫メッキ）だった場合は必ずONにしてください。</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" className="sr-only peer" checked={isTinPlated} onChange={(e) => setIsTinPlated(e.target.checked)} />
-                    <div className="w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-red-600"></div>
-                </label>
-            </div>
-        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
             <div><label className="block text-xs font-bold text-gray-500 mb-1">メーカー</label><input type="text" className="w-full border p-2.5 rounded-sm outline-none focus:border-blue-500 font-bold" value={editingItem.maker || ''} onChange={e => setEditingItem({...editingItem, maker: e.target.value})} /></div>
@@ -928,11 +925,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                 <label className="block text-xs font-bold text-gray-500 mb-1">品名</label>
                 <div className="flex items-center gap-2">
                     <input type="text" className="w-full border p-2.5 rounded-sm outline-none focus:border-blue-500 font-bold" value={editingItem.name || ''} onChange={e => setEditingItem({...editingItem, name: e.target.value})} />
-                    {editingItem.conductor?.includes('錫') && (
-                        <span className="bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded-sm whitespace-nowrap shadow-sm animate-pulse">
-                            ⚠️ 錫メッキ
-                        </span>
-                    )}
                 </div>
             </div>
         </div>
@@ -940,7 +932,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div><label className="block text-xs font-bold text-gray-500 mb-1">製造年</label><input type="text" placeholder="例: 2024" className="w-full border p-2.5 rounded-sm outline-none focus:border-blue-500" value={editingItem.year || ''} onChange={e => setEditingItem({...editingItem, year: e.target.value})} /></div>
             
-            {/* ★ 修正：単位を分けて入力・選択できるUIに変更 */}
             <div>
                 <label className="block text-xs font-bold text-gray-500 mb-1 flex items-center justify-between">
                     <span>サイズ</span>
@@ -957,7 +948,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                 </div>
             </div>
 
-            {/* ★ 修正：芯数は数字だけ打たせて、UI上にCを固定表示 */}
             <div>
                 <label className="block text-xs font-bold text-gray-500 mb-1">芯数</label>
                 <div className="relative">
@@ -967,8 +957,8 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
             </div>
             
             <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1">導体</label>
-                <input type="text" placeholder="単線/より線等" className={`w-full border p-2.5 rounded-sm outline-none transition-colors ${isTinPlated ? 'bg-red-50 border-red-300 focus:border-red-500 text-red-900 font-bold' : 'focus:border-blue-500'}`} value={editingItem.conductor || ''} onChange={e => setEditingItem({...editingItem, conductor: e.target.value})} />
+                <label className="block text-xs font-bold text-gray-500 mb-1">導体構成 (構造)</label>
+                <input type="text" placeholder="単線/7本より線等" className="w-full border p-2.5 rounded-sm outline-none focus:border-blue-500" value={editingItem.conductor || ''} onChange={e => setEditingItem({...editingItem, conductor: e.target.value})} />
                 <div className="flex gap-1 mt-1">
                     <button onClick={() => setEditingItem({...editingItem, conductor: '単線'})} className="flex-1 bg-gray-100 hover:bg-gray-200 text-[10px] py-1 rounded-sm text-gray-600 font-bold border border-gray-200">単線</button>
                     <button onClick={() => setEditingItem({...editingItem, conductor: 'より線'})} className="flex-1 bg-gray-100 hover:bg-gray-200 text-[10px] py-1 rounded-sm text-gray-600 font-bold border border-gray-200">より線</button>
@@ -977,16 +967,36 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
             </div>
         </div>
         
+        {/* ★ 実測エリア・材質・被覆重量入力の追加 */}
         <div className="bg-gray-100 p-4 md:p-6 rounded-sm border border-gray-300 mt-6 relative shadow-inner">
             <span className="absolute top-0 right-0 bg-gray-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-sm">HUMAN REQUIRED</span>
-            <label className="block text-sm font-black text-gray-800 mb-4 border-b border-gray-300 pb-2">⚖️ サンプル実測 (人間が入力)</label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 items-end">
-                <div className="flex flex-col items-center border border-gray-300 p-2 rounded-sm bg-white h-20 justify-center relative overflow-hidden group shadow-sm w-full">
+            <label className="block text-sm font-black text-gray-800 mb-4 border-b border-gray-300 pb-2">⚖️ サンプル実測 (人間による確定)</label>
+            
+            <div className="mb-6 bg-white p-3 rounded-sm border border-gray-300 shadow-sm">
+                <label className="block text-xs font-bold text-gray-700 mb-2">成分要素 (材質)</label>
+                <div className="grid grid-cols-3 gap-2">
+                    <button 
+                        onClick={() => setEditingItem({...editingItem, material: '純銅'})} 
+                        className={`py-2 rounded-sm text-sm font-bold border transition ${editingItem.material === '純銅' ? 'bg-orange-50 border-orange-400 text-orange-800' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'}`}
+                    >純銅</button>
+                    <button 
+                        onClick={() => setEditingItem({...editingItem, material: '錫メッキ'})} 
+                        className={`py-2 rounded-sm text-sm font-bold border transition ${editingItem.material === '錫メッキ' ? 'bg-red-50 border-red-500 text-red-700 animate-pulse' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'}`}
+                    >⚠️ 錫メッキ</button>
+                    <button 
+                        onClick={() => setEditingItem({...editingItem, material: 'アルミ'})} 
+                        className={`py-2 rounded-sm text-sm font-bold border transition ${editingItem.material === 'アルミ' ? 'bg-blue-50 border-blue-400 text-blue-800' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'}`}
+                    >アルミ</button>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 items-end">
+                <div className="flex flex-col items-center border border-gray-300 p-2 rounded-sm bg-white h-[66px] justify-center relative overflow-hidden group shadow-sm w-full">
                     {editingItem._pendingImageData3 ? (
                         <>
                             <img src={`data:image/jpeg;base64,${editingItem._pendingImageData3}`} className="absolute inset-0 w-full h-full object-cover opacity-60" />
                             <span className="relative z-10 text-xs font-bold text-blue-700 bg-white/80 px-2 py-0.5 rounded-sm backdrop-blur-sm">✅ 撮影済</span>
-                            <button onClick={() => setEditingItem({...editingItem, _pendingImageData3: null})} className="absolute top-1 right-1 bg-red-600 text-white p-1.5 rounded-sm shadow-md z-20 hover:bg-red-700">
+                            <button onClick={() => setEditingItem({...editingItem, _pendingImageData3: null})} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm shadow-md z-20 hover:bg-red-700">
                                 <Icons.Trash />
                             </button>
                         </>
@@ -994,34 +1004,36 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                         <div className="flex gap-1 w-full h-full">
                             <label className="flex-1 cursor-pointer flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-500 hover:text-blue-600 transition border border-gray-200 rounded-sm" title="カメラ">
                                 <Icons.Camera />
-                                <span className="text-[9px] font-bold mt-1">剥線(カメラ)</span>
+                                <span className="text-[8px] font-bold mt-1">剥線画像</span>
                                 <input type="file" onChange={e => handleAiImageUpload(e, 3)} className="hidden" accept="image/*" capture="environment" />
-                            </label>
-                            <label className="flex-1 cursor-pointer flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-500 hover:text-blue-600 transition border border-gray-200 rounded-sm" title="フォルダ">
-                                <Icons.UploadCloud />
-                                <span className="text-[9px] font-bold mt-1">剥線(フォルダ)</span>
-                                <input type="file" onChange={e => handleAiImageUpload(e, 3)} className="hidden" accept="image/*" />
                             </label>
                         </div>
                     )}
                 </div>
                 <div className="w-full">
-                    <label className="block text-xs font-bold text-gray-600 mb-1.5">被覆込み 総重量 (g)</label>
-                    <input type="number" step="0.001" className="w-full border-none shadow-sm p-3 rounded-sm font-mono text-lg outline-none focus:ring-2 focus:ring-blue-500" value={sampleTotal} onChange={e => handleSampleTotalChange(e.target.value)} placeholder="0.000" />
+                    <label className="block text-[10px] font-bold text-gray-600 mb-1">全体重量(g)</label>
+                    <input type="number" step="0.001" className="w-full border-none shadow-sm p-2 rounded-sm font-mono text-lg outline-none focus:ring-2 focus:ring-blue-500" value={sampleTotal} onChange={e => handleSampleTotalChange(e.target.value)} placeholder="0.000" />
                 </div>
                 <div className="w-full">
-                    <label className="block text-xs font-bold text-[#D32F2F] mb-1.5">剥線後 銅重量 (g)</label>
-                    <input type="number" step="0.001" className="w-full border-none shadow-sm p-3 rounded-sm font-mono text-lg outline-none focus:ring-2 focus:ring-red-500" value={sampleCopper} onChange={e => handleSampleCopperChange(e.target.value)} placeholder="0.000" />
+                    <label className="block text-[10px] font-bold text-[#D32F2F] mb-1">純銅重量(g)</label>
+                    <input type="number" step="0.001" className="w-full border-none shadow-sm p-2 rounded-sm font-mono text-lg outline-none focus:ring-2 focus:ring-red-500" value={sampleCopper} onChange={e => handleSampleCopperChange(e.target.value)} placeholder="0.000" />
                 </div>
+                {/* ★ 追加：被覆重量入力欄 */}
                 <div className="w-full">
-                    <label className="block text-xs font-bold text-blue-800 mb-1.5 flex items-center justify-between">
-                        <span>歩留まり (%)</span>
-                        {editingItem.aiEstimatedRatio && !sampleTotal && (
-                            <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded animate-pulse shadow-sm">AI推定値</span>
-                        )}
-                    </label>
-                    <div className="w-full bg-white border border-blue-200 shadow-inner p-3 rounded-sm font-mono text-xl font-black text-blue-600 text-right">
-                        {editingItem.ratio || '---'} %
+                    <label className="block text-[10px] font-bold text-gray-600 mb-1">被覆重量(g)</label>
+                    <input type="number" step="0.001" className="w-full border-none shadow-sm p-2 rounded-sm font-mono text-lg outline-none focus:ring-2 focus:ring-gray-500" value={sampleCover} onChange={e => handleSampleCoverChange(e.target.value)} placeholder="0.000" />
+                </div>
+                <div className="w-full flex flex-col gap-2">
+                    {/* ★ 追加：ジュート（ダスト）重量の自動算出表示 */}
+                    <div className="bg-white border border-gray-300 shadow-inner p-1.5 rounded-sm flex justify-between items-center">
+                        <span className="text-[9px] font-bold text-gray-500">ダスト(Jute)</span>
+                        <span className="font-mono text-sm font-bold text-gray-700">{getJuteWeight()}g</span>
+                    </div>
+                    {/* 歩留まり表示（手入力不可） */}
+                    <div className="bg-blue-50 border border-blue-200 shadow-inner p-1.5 rounded-sm flex justify-between items-center relative">
+                        <span className="text-[9px] font-bold text-blue-800">歩留まり</span>
+                        {editingItem.aiEstimatedRatio && !sampleTotal && <span className="absolute -top-2 -right-2 text-[8px] bg-blue-500 text-white px-1 py-0.5 rounded shadow animate-pulse">AI</span>}
+                        <span className="font-mono text-base font-black text-blue-700">{editingItem.ratio || '---'}%</span>
                     </div>
                 </div>
             </div>
