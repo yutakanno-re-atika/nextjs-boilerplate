@@ -21,6 +21,8 @@ const Icons = {
 export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onClear, isVoiceOutputEnabled }: { data: any, editingResId?: string | null, localReservations?: any[], onSuccess: () => void, onClear: () => void, isVoiceOutputEnabled?: boolean }) => {
   const [cart, setCart] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('すべて');
+  const [selectedMaker, setSelectedMaker] = useState('');
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [toastMessage, setToastMessage] = useState<{title: string, desc: string, type: 'success' | 'info'} | null>(null);
@@ -52,6 +54,9 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   });
 
   const copperPrice = data?.market?.copper?.price || 1400;
+
+  const CATEGORIES = ['すべて', 'IV', 'CV', 'CVT', 'VVF / VA', '通信・弱電', '雑線', 'その他'];
+  const uniqueMakers = useMemo(() => Array.from(new Set((data?.wires || []).map((w:any) => w.maker).filter((m:any) => m && m !== '-'))), [data]);
 
   useEffect(() => {
     if (editingResId && localReservations) {
@@ -193,7 +198,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
             setPosMode('BULK');
             if (result.data.estimatedWeight) setBulkTotalWeight(Number(result.data.estimatedWeight));
 
-            // ★ AIのプロンプト修正に伴い、copperYieldとmixPercentageを優先取得するように変更
             const newCartItems = (result.data.components || []).map((comp: any, idx: number) => ({
                 id: `bulk-${Date.now()}-${idx}`, product: `📦 AI解析: ${comp.name || '不明'}`,
                 ratio: comp.copperYield || comp.ratio || 0, weight: 0, percentage: comp.mixPercentage || comp.percentage || 0,
@@ -304,6 +308,37 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       showToast('データ転送完了', '左メニューから「データベース」を開くと、自動で入力画面が立ち上がります。', 'success');
   };
 
+  const getCategory = (name: string) => {
+      if (!name) return 'その他';
+      const n = name.toUpperCase();
+      if (n.includes('IV')) return 'IV';
+      if (n.includes('CVT')) return 'CVT';
+      if (n.includes('CV')) return 'CV';
+      if (n.includes('VVF') || n.includes('VA')) return 'VVF / VA';
+      if (n.includes('通信') || n.includes('LAN') || n.includes('弱電') || n.includes('光')) return '通信・弱電';
+      if (n.includes('雑線') || n.includes('家電') || n.includes('ハーネス')) return '雑線';
+      return 'その他';
+  };
+
+  const filteredProducts = useMemo(() => {
+      return (data?.wires || []).filter((w:any) => {
+          if (selectedCategory !== 'すべて' && getCategory(w.name) !== selectedCategory) return false;
+          if (selectedMaker && w.maker !== selectedMaker) return false;
+
+          if (searchTerm) {
+              const coreStr = String(w.core || w.cores || w.coreCount || '');
+              const coreFormatted = coreStr && coreStr !== '-' ? `${coreStr}c ${coreStr}芯` : '';
+              const sqStr = String(w.size || w.sq || '');
+              const sqFormatted = sqStr && sqStr !== '-' ? `${sqStr}sq ${sqStr}スケ` : '';
+              
+              const searchTarget = `${w.name} ${w.maker} ${sqFormatted} ${sqStr} ${coreFormatted} ${coreStr} ${w.year}`.toLowerCase();
+              const terms = searchTerm.toLowerCase().split(/\s+/);
+              return terms.every(term => searchTarget.includes(term));
+          }
+          return true;
+      });
+  }, [data, selectedCategory, selectedMaker, searchTerm]);
+
   const simulation = useMemo(() => {
     let totalWeight = 0; let cuWeight = 0;
     cart.forEach(item => {
@@ -350,11 +385,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
     setIsProcessing(false);
   };
 
-  const filteredProducts = (data?.wires || []).filter((w:any) => {
-      const searchTarget = `${w.name} ${w.maker} ${w.size || w.sq} ${w.core || w.cores || w.coreCount} ${w.year}`.toLowerCase();
-      return searchTarget.includes(searchTerm.toLowerCase());
-  });
-
   return (
     <div className="flex flex-col lg:flex-row gap-4 h-auto lg:h-full animate-in fade-in duration-300 pb-24 lg:pb-0 relative">
       
@@ -367,33 +397,57 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         </div>
       )}
 
+      {/* ★ 左側：商品マスター選択エリア */}
       <div className="w-full lg:w-7/12 flex flex-col bg-white border border-gray-200 rounded-sm shadow-sm overflow-hidden h-[50vh] lg:h-full shrink-0">
-        <div className="p-4 bg-gray-50 border-b border-gray-200 flex flex-col gap-3 relative shrink-0">
+        <div className="p-3 bg-gray-50 border-b border-gray-200 flex flex-col gap-3 relative shrink-0">
           {(isListening || isProcessingVoice || voiceText) && (
               <div className="absolute top-full left-0 w-full z-10 bg-blue-900 text-white p-2 text-center text-sm font-bold shadow-md animate-in slide-in-from-top-2">
                   {isListening ? <span className="animate-pulse">{voiceText}</span> : isProcessingVoice ? <span><Icons.Refresh /> AIが解析中...</span> : <span>{voiceText}</span>}
               </div>
           )}
-          <div className="flex w-full gap-2">
-              <div className="relative flex-1">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Icons.Search /></div>
-                <input type="text" placeholder="品目、メーカー等で検索..." className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-sm text-sm focus:border-blue-500 outline-none shadow-inner" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+          
+          <div className="flex flex-col gap-2">
+              <div className="flex w-full gap-2">
+                  {/* ★ 検索バー */}
+                  <div className="relative flex-1">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Icons.Search /></div>
+                    <input type="text" placeholder="検索 (例: 1C 8sq)..." className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-sm text-sm focus:border-blue-500 outline-none shadow-inner" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                  </div>
+                  {/* ★ メーカー絞り込み */}
+                  <select className="border border-gray-300 rounded-sm px-2 py-2 text-sm outline-none focus:border-blue-500 bg-white max-w-[120px] text-gray-700 font-bold shadow-sm" value={selectedMaker} onChange={e => setSelectedMaker(e.target.value)}>
+                      <option value="">全メーカー</option>
+                      {uniqueMakers.map(m => <option key={m as string} value={m as string}>{m as string}</option>)}
+                  </select>
+                  <button onClick={toggleVoiceInput} className={`px-3 py-2 border rounded-sm flex items-center justify-center transition-all ${isListening ? 'bg-red-500 border-red-600 text-white animate-pulse shadow-inner' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-100 hover:text-blue-600'}`} title="音声で検索/追加"><Icons.Mic /></button>
               </div>
-              <button onClick={toggleVoiceInput} className={`px-4 py-3 border rounded-sm flex items-center justify-center transition-all ${isListening ? 'bg-red-500 border-red-600 text-white animate-pulse shadow-inner' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-100 hover:text-blue-600'}`} title="音声で検索/追加"><Icons.Mic /></button>
+
+              {/* ★ カテゴリー絞り込みピル */}
+              <div className="flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                  {CATEGORIES.map(cat => (
+                      <button 
+                          key={cat} 
+                          onClick={() => setSelectedCategory(cat)} 
+                          className={`px-3 py-1.5 rounded-full text-[10px] font-bold whitespace-nowrap transition-colors border ${selectedCategory === cat ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white text-gray-500 border-gray-300 hover:bg-gray-100'}`}
+                      >
+                          {cat}
+                      </button>
+                  ))}
+              </div>
           </div>
-          <div className="flex gap-2">
-              <button onClick={() => setIsAiModalOpen(true)} className="flex-1 bg-gradient-to-r from-blue-700 to-blue-900 hover:from-blue-600 hover:to-blue-800 text-white font-bold py-3 px-3 rounded-sm flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 text-xs sm:text-sm">
+
+          <div className="flex gap-2 mt-1">
+              <button onClick={() => setIsAiModalOpen(true)} className="flex-1 bg-gradient-to-r from-blue-700 to-blue-900 hover:from-blue-600 hover:to-blue-800 text-white font-bold py-2.5 px-3 rounded-sm flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 text-xs sm:text-sm">
                 <Icons.Camera /> 単一線種分析
               </button>
-              <button onClick={() => setIsBulkAiModalOpen(true)} className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-800 hover:from-purple-500 hover:to-indigo-700 text-white font-bold py-3 px-3 rounded-sm flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 text-xs sm:text-sm relative overflow-hidden group">
+              <button onClick={() => setIsBulkAiModalOpen(true)} className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-800 hover:from-purple-500 hover:to-indigo-700 text-white font-bold py-2.5 px-3 rounded-sm flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 text-xs sm:text-sm relative overflow-hidden group">
                 <div className="absolute inset-0 w-full h-full bg-white/20 scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300"></div>
-                <Icons.Sparkles /> フレコン一括査定 <span className="bg-purple-900 text-[9px] px-1 py-0.5 rounded shadow-inner tracking-widest uppercase">BETA</span>
+                <Icons.Sparkles /> フレコン一括査定
               </button>
           </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 bg-gray-100/50">
-          <p className="text-xs font-bold text-gray-500 mb-3 tracking-widest">よく使うマスター線種をタップ</p>
+          <p className="text-xs font-bold text-gray-500 mb-3 tracking-widest">{selectedCategory !== 'すべて' ? `${selectedCategory} の検索結果` : 'マスター線種一覧'}</p>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {filteredProducts.map((p:any) => {
               const isTin = p.material === '錫メッキ' || p.name?.includes('錫');
@@ -407,10 +461,14 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                   </button>
               );
             })}
+            {filteredProducts.length === 0 && (
+                <div className="col-span-full py-10 text-center text-gray-400 font-bold text-sm">該当する線種が見つかりません</div>
+            )}
           </div>
         </div>
       </div>
 
+      {/* 右側：カート・シミュレーター */}
       <div className="w-full lg:w-5/12 bg-white border border-gray-200 rounded-sm flex flex-col shadow-lg relative overflow-hidden min-h-[50vh] lg:h-full shrink-0">
         <div className="flex shrink-0">
           <button onClick={() => setPosMode('INDIVIDUAL')} className={`flex-1 py-3 text-sm font-bold flex items-center justify-center gap-2 transition-all ${posMode === 'INDIVIDUAL' ? 'bg-white text-blue-700 border-t-4 border-t-blue-600' : 'bg-gray-100 text-gray-400 border-t-4 border-t-transparent border-b border-b-gray-200'}`}><Icons.ScaleIndividual /> 個別計量モード</button>
@@ -451,7 +509,10 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                 return (
                   <div key={item.id} className={`border p-4 rounded-sm flex flex-col gap-2 relative shadow-sm ${item.isNewAi ? 'bg-blue-50/30 border-blue-200' : isItemTin ? 'bg-red-50 border-red-400' : 'bg-white border-gray-200'}`}>
                     
-                    <button onClick={() => removeItem(item.id)} className="absolute top-3 right-3 text-red-400 bg-red-50 hover:bg-red-100 hover:text-red-600 border border-red-100 p-2 rounded-md transition shadow-sm z-10"><Icons.Trash /></button>
+                    {/* ★ ゴミ箱ボタンを目立たせる */}
+                    <button onClick={() => removeItem(item.id)} className="absolute top-3 right-3 text-red-500 bg-red-50 hover:bg-red-100 hover:text-red-700 border border-red-200 p-2 rounded-md transition shadow-sm z-10">
+                        <Icons.Trash />
+                    </button>
 
                     <div className="flex justify-between items-start">
                       <div className="pr-12 w-full">
@@ -460,7 +521,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                             {item.product}
                         </div>
                         
-                        <div className="flex items-center gap-3 mt-2">
+                        <div className="flex flex-wrap items-center gap-2 mt-2">
                             {/* ★ 銅分(歩留)を強調 */}
                             <span className="bg-gray-100 border border-gray-200 px-2 py-1 rounded text-xs text-gray-600 font-bold flex items-center gap-2">
                                 銅分 (歩留): <span className="font-mono text-blue-600 text-sm">{item.ratio}%</span>
@@ -498,7 +559,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                     {/* ★ アコーディオン化してスッキリさせたAI推論根拠 */}
                     {item.reason && (
                       <details className="mt-2 group">
-                        <summary className="text-[11px] font-bold text-blue-700 cursor-pointer select-none bg-blue-50/50 p-1.5 rounded-sm hover:bg-blue-100 transition flex items-center gap-1 border border-blue-100 w-max list-none">
+                        <summary className="text-[11px] font-bold text-blue-700 cursor-pointer select-none bg-blue-50/50 p-1.5 rounded-sm hover:bg-blue-100 transition flex items-center gap-1 border border-blue-100 w-max list-none outline-none">
                           <Icons.Sparkles /> AI推論の根拠を見る <Icons.ChevronDown />
                         </summary>
                         <div className="mt-2 bg-white border border-blue-200 p-3 rounded-sm text-xs text-gray-700 leading-relaxed shadow-sm whitespace-pre-wrap">
@@ -542,8 +603,8 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
               
               {/* ★ フレコン全体の平均銅分を明示 */}
               {posMode === 'BULK' && simulation.totalWeight > 0 && (
-                  <div className="bg-blue-900/50 border border-blue-500/50 px-2 py-0.5 rounded text-[10px] text-blue-200 font-bold flex items-center gap-1 mb-1">
-                      平均銅分: <span className="text-sm font-mono">{simulation.expectedYield.toFixed(1)}%</span>
+                  <div className="bg-blue-900/50 border border-blue-500/50 px-2 py-0.5 rounded text-[10px] text-blue-200 font-bold flex items-center gap-1 mb-1 shadow-inner">
+                      全体の平均銅分: <span className="text-sm font-mono text-white">{simulation.expectedYield.toFixed(1)}%</span>
                   </div>
               )}
               
@@ -554,7 +615,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           <button onClick={handleCheckout} disabled={isProcessing || simulation.totalWeight === 0 || (posMode === 'BULK' && !isPercentageValid)} className={`w-full text-white font-black py-4 rounded-sm transition shadow-[0_4px_14px_0_rgba(220,38,38,0.39)] disabled:opacity-50 flex justify-center items-center text-lg ${hasTinPlated ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}>
               {isProcessing ? <Icons.Refresh /> : hasTinPlated ? '⚠️ 確認して受付を確定する' : '受付を確定してカンバンへ'}
           </button>
-          <div className="mt-3 text-center"><button onClick={() => {setCart([]); onClear(); setBulkTotalWeight('');}} className="text-[10px] text-gray-500 font-bold border border-gray-700 px-3 py-1 rounded-sm">カートをリセット</button></div>
+          <div className="mt-3 text-center"><button onClick={() => {setCart([]); onClear(); setBulkTotalWeight('');}} className="text-[10px] text-gray-500 font-bold border border-gray-700 px-3 py-1 rounded-sm hover:bg-gray-800 transition">カートをリセット</button></div>
         </div>
       </div>
 
@@ -576,23 +637,22 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                 <div className="animate-in fade-in">
                     <div className="flex flex-col md:flex-row gap-4 mb-4">
                         <div className="flex-1 p-4 border-2 border-dashed border-gray-600 bg-gray-800/50 rounded-md">
-                            {imgData1 ? ( <div className="relative h-24"><img src={`data:image/jpeg;base64,${imgData1}`} className="w-full h-full object-cover" /><button onClick={()=>setImgData1('')} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded"><Icons.Trash/></button></div> ) : ( <><p className="text-sm font-bold text-gray-300 mb-2">1. 断面画像</p><input type="file" onChange={e=>handleAiImageUpload(e,1)} className="w-full text-white text-xs"/></> )}
+                            {imgData1 ? ( <div className="relative h-24"><img src={`data:image/jpeg;base64,${imgData1}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData1('')} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm"><Icons.Trash/></button></div> ) : ( <><p className="text-sm font-bold text-gray-300 mb-2">1. 断面画像</p><input type="file" onChange={e=>handleAiImageUpload(e,1)} className="w-full text-white text-xs"/></> )}
                         </div>
                         <div className="flex-1 p-4 border-2 border-dashed border-gray-600 bg-gray-800/50 rounded-md">
-                            {imgData2 ? ( <div className="relative h-24"><img src={`data:image/jpeg;base64,${imgData2}`} className="w-full h-full object-cover" /><button onClick={()=>setImgData2('')} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded"><Icons.Trash/></button></div> ) : ( <><p className="text-sm font-bold text-gray-300 mb-2">2. 印字画像</p><input type="file" onChange={e=>handleAiImageUpload(e,2)} className="w-full text-white text-xs"/></> )}
+                            {imgData2 ? ( <div className="relative h-24"><img src={`data:image/jpeg;base64,${imgData2}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData2('')} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm"><Icons.Trash/></button></div> ) : ( <><p className="text-sm font-bold text-gray-300 mb-2">2. 印字画像</p><input type="file" onChange={e=>handleAiImageUpload(e,2)} className="w-full text-white text-xs"/></> )}
                         </div>
                     </div>
-                    {/* ヒント入力欄 */}
                     <div className="mb-6 bg-gray-800/50 border border-gray-700 p-3 rounded-md relative">
                         <label className="block text-xs font-bold text-gray-400 mb-2 flex items-center justify-between">
                             <span>🗣️ AIへのヒント・補足（任意）</span>
-                            <button onClick={toggleHintVoiceInput} className={`p-1.5 rounded transition ${isListeningHint ? 'bg-red-500 text-white animate-pulse' : 'bg-gray-700 text-gray-300 hover:bg-blue-600'}`}>
+                            <button onClick={toggleHintVoiceInput} className={`p-1.5 rounded transition ${isListeningHint ? 'bg-red-500 text-white animate-pulse shadow-inner' : 'bg-gray-700 text-gray-300 hover:bg-blue-600'}`}>
                                 <Icons.Mic />
                             </button>
                         </label>
-                        <textarea className="w-full bg-gray-900 border border-gray-600 rounded text-sm text-white p-2 outline-none focus:border-blue-500 min-h-[60px]" placeholder="例: 中身は細線の束、かなり重い、雑線は入っていない等..." value={aiHint} onChange={e => setAiHint(e.target.value)} />
+                        <textarea className="w-full bg-gray-900 border border-gray-600 rounded-sm text-sm text-white p-2 outline-none focus:border-blue-500 min-h-[60px]" placeholder="例: 中身は細線の束、かなり重い、雑線は入っていない等..." value={aiHint} onChange={e => setAiHint(e.target.value)} />
                     </div>
-                    <button onClick={runAiAnalysis} disabled={!imgData1 && !aiHint} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-md flex justify-center items-center gap-2 disabled:bg-gray-700">解析してカートに追加</button>
+                    <button onClick={runAiAnalysis} disabled={!imgData1 && !aiHint} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-sm flex justify-center items-center gap-2 disabled:bg-gray-700">解析してカートに追加</button>
                 </div>
               )}
             </div>
@@ -612,25 +672,24 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
               {aiStatus === 'ANALYZING' ? (
                 <div className="py-12 flex flex-col items-center animate-in fade-in zoom-in duration-500">
                     <div className="relative w-24 h-24 mb-8"><div className="absolute inset-0 border-4 border-purple-500/20 rounded-full"></div><div className="absolute inset-0 border-4 border-purple-500 rounded-full border-t-transparent animate-spin"></div><div className="absolute inset-0 flex items-center justify-center text-purple-400 text-2xl"><Icons.Box /></div></div>
-                    <div className="space-y-5 w-full max-w-md font-bold text-sm text-center text-purple-400">一括推論中...</div>
+                    <div className="space-y-5 w-full max-w-md font-bold text-sm text-center text-purple-400">空間・質量を一括推論中...</div>
                 </div>
               ) : (
                 <div className="animate-in fade-in">
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-4">
                         {bulkImages.map((b64, idx) => (
-                            <div key={idx} className="relative aspect-square rounded-sm overflow-hidden border border-gray-600 group shadow-md"><img src={`data:image/jpeg;base64,${b64}`} className="w-full h-full object-cover" /><div className="absolute top-1 left-1 bg-black/70 text-white text-[10px] px-1.5 rounded">{idx + 1}</div><button onClick={() => removeBulkImage(idx)} className="absolute top-1 right-1 bg-red-600/90 text-white p-1.5 rounded-sm opacity-0 group-hover:opacity-100"><Icons.Trash /></button></div>
+                            <div key={idx} className="relative aspect-square rounded-sm overflow-hidden border border-gray-600 group shadow-md"><img src={`data:image/jpeg;base64,${b64}`} className="w-full h-full object-cover" /><div className="absolute top-1 left-1 bg-black/70 text-white text-[10px] px-1.5 rounded">{idx + 1}</div><button onClick={() => removeBulkImage(idx)} className="absolute top-1 right-1 bg-red-600/90 hover:bg-red-500 text-white p-1.5 rounded-sm opacity-0 group-hover:opacity-100"><Icons.Trash /></button></div>
                         ))}
                         <label className="aspect-square rounded-sm border-2 border-dashed border-gray-600 bg-gray-800/50 hover:bg-gray-700/50 hover:border-purple-500 transition-all flex flex-col items-center justify-center cursor-pointer text-gray-400"><Icons.Camera /><span className="text-xs font-bold mt-2">写真を追加</span><input type="file" multiple accept="image/*" onChange={handleBulkImageUpload} className="hidden" /></label>
                     </div>
-                    {/* ヒント入力欄 */}
                     <div className="mb-6 bg-purple-900/20 border border-purple-500/30 p-3 rounded-md relative">
                         <label className="block text-xs font-bold text-purple-300 mb-2 flex items-center justify-between">
                             <span>🗣️ AIへのヒント・補足（任意）</span>
-                            <button onClick={toggleHintVoiceInput} className={`p-1.5 rounded transition ${isListeningHint ? 'bg-red-500 text-white animate-pulse' : 'bg-purple-900 text-purple-200 hover:bg-purple-700'}`}>
+                            <button onClick={toggleHintVoiceInput} className={`p-1.5 rounded transition ${isListeningHint ? 'bg-red-500 text-white animate-pulse shadow-inner' : 'bg-purple-900 text-purple-200 hover:bg-purple-700'}`}>
                                 <Icons.Mic />
                             </button>
                         </label>
-                        <textarea className="w-full bg-gray-900/80 border border-purple-800/50 rounded text-sm text-white p-2 outline-none focus:border-purple-400 min-h-[60px]" placeholder="例: 表面の通信線の下は全部太いCV線、重量は袋込みで520kg..." value={aiHint} onChange={e => setAiHint(e.target.value)} />
+                        <textarea className="w-full bg-gray-900/80 border border-purple-800/50 rounded-sm text-sm text-white p-2 outline-none focus:border-purple-400 min-h-[60px]" placeholder="例: 表面の通信線の下は全部太いCV線、重量は袋込みで520kg..." value={aiHint} onChange={e => setAiHint(e.target.value)} />
                     </div>
                     <button onClick={runBulkAiAnalysis} disabled={bulkImages.length === 0 && !aiHint} className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 text-white font-black py-4 rounded-sm flex justify-center items-center gap-2 disabled:opacity-50">
                         <Icons.Sparkles /> 画像 {bulkImages.length} 枚で一括査定を実行
