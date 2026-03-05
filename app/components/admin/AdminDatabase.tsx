@@ -18,8 +18,10 @@ const Icons = {
   SortDesc: () => <svg className="w-3 h-3 inline-block ml-1 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" /></svg>,
   SortNone: () => <svg className="w-3 h-3 inline-block ml-1 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" /></svg>,
   Settings: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
-  AlertTriangle: () => <svg className="w-4 h-4 inline-block text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
-  Ruler: () => <svg className="w-4 h-4 inline-block text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M3 14h18m-9-4v8m-4-8v8m8-8v8M4 6h16a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2z" /></svg>
+  Play: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+  Save: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>,
+  Ruler: () => <svg className="w-4 h-4 inline-block text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M3 14h18m-9-4v8m-4-8v8m8-8v8M4 6h16a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2z" /></svg>,
+  AlertTriangle: () => <svg className="w-4 h-4 inline-block text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
 };
 
 const formatTimeShort = (timeStr: string) => {
@@ -63,6 +65,19 @@ const parseCoreForInput = (core: string) => {
     return match ? match[1] : String(core);
 };
 
+// ★ 修正：Google Driveの画像表示を安定させるため、参照エラーを回避するロジックに変更
+const getDriveImageUrl = (url: string) => {
+    if (!url) return '';
+    if (url.includes('drive.google.com/uc')) {
+        const match = url.match(/id=([^&]+)/);
+        if (match && match[1]) {
+            // thumbnailはブロックされやすいため、export=viewの形式を使用
+            return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+        }
+    }
+    return url;
+};
+
 export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoiceOutputEnabled?: boolean }) => {
   const [activeTab, setActiveTab] = useState<'WIRES' | 'UNKNOWN' | 'CASTINGS' | 'CLIENTS' | 'STAFF' | 'SETTINGS'>('WIRES');
   const [searchTerm, setSearchTerm] = useState('');
@@ -75,6 +90,8 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const [editingItem, setEditingItem] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadingImageId, setUploadingImageId] = useState<string | null>(null);
+
+  const [isTinPlated, setIsTinPlated] = useState(false);
 
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [aiStatus, setAiStatus] = useState<'IDLE' | 'ANALYZING'>('IDLE');
@@ -89,7 +106,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
   const [sampleTotal, setSampleTotal] = useState<number | ''>('');
   const [sampleCopper, setSampleCopper] = useState<number | ''>('');
-  // ★ 追加：被覆重量（Cover）のステート
   const [sampleCover, setSampleCover] = useState<number | ''>('');
 
   const wires = data?.wires || [];
@@ -126,19 +142,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     setSortConfig(null); 
   };
 
-  const getDriveImageUrl = (url: string, asThumbnail: boolean = true) => {
-      if (!url) return '';
-      if (url.includes('drive.google.com/uc')) {
-          const match = url.match(/id=([^&]+)/);
-          if (match && match[1]) {
-              return asThumbnail 
-                  ? `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`
-                  : `https://drive.google.com/uc?id=${match[1]}`;
-          }
-      }
-      return url;
-  };
-
   const handleOpenModal = (item: any = null) => {
     const sqData = parseSqForInput(item?.sq);
     const coreData = parseCoreForInput(item?.core);
@@ -153,7 +156,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     
     setSampleTotal(item?.sampleTotal || '');
     setSampleCopper(item?.sampleCopper || '');
-    // ★ 既存の sampleCover があればセット
     setSampleCover(item?.sampleCover || ''); 
 
     setIsModalOpen(true);
@@ -167,7 +169,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     setIsModalOpen(false);
   };
 
-  // ★ 歩留まりは実測値からの自動計算に固定
   const calculateRatio = (total: number | '', copper: number | '') => {
       if (total && copper && Number(total) > 0) {
           const r = (Number(copper) / Number(total)) * 100;
@@ -194,7 +195,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       setEditingItem({...editingItem, sampleCover: num});
   };
 
-  // ★ ジュート（ダスト）重量の自動計算
   const getJuteWeight = () => {
       if (sampleTotal && (sampleCopper || sampleCover)) {
           const t = Number(sampleTotal) || 0;
@@ -218,7 +218,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
           _coreValue: '', 
           conductor: '',
           material: unknownItem.material || '純銅',
-          ratio: '', // 実測させるためクリア
+          ratio: '', 
           image1: unknownItem.image1, 
           image2: unknownItem.image2, 
           memo: `【AI推論からの昇格】\n推論日時: ${unknownItem.createdAt}\nAIの根拠: ${unknownItem.reason}`
@@ -422,7 +422,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
             5: item.sampleTotal, 6: item.sampleCopper,
             7: item.core, 8: item.conductor, 9: item.ratio, 10: item.memo,
             16: item.material,
-            17: item.sampleCover // ★ 追加：被覆重量（18番目の列）
+            17: item.sampleCover 
         };
         if (item.image1 !== undefined) updates[11] = item.image1;
         if (item.image2 !== undefined) updates[12] = item.image2;
@@ -520,7 +520,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                   _coreValue: cleanCore === '-' ? '' : cleanCore,
                   conductor: result.data.conductor === '-' ? '' : result.data.conductor,
                   material: result.data.material === '-' ? '純銅' : result.data.material,
-                  ratio: result.data.estimatedRatio || '', // 実測前はAI推定値を入れておく
+                  ratio: result.data.estimatedRatio || '',
                   aiEstimatedRatio: result.data.estimatedRatio || '',
                   memo: `【AIアシスト抽出】\nAI推論根拠: ${result.data.reason}\n※実測を行って歩留まりを上書きしてください。`,
                   _pendingImageData1: imgData1,
@@ -584,7 +584,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     if (activeTab === 'SETTINGS') {
         return (
             <div className="p-6 md:p-10 bg-white h-full overflow-y-auto animate-in fade-in">
-                {/* 設定画面の中身は変更なし */}
                 <div className="max-w-3xl mx-auto space-y-10">
                     <div>
                         <h3 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-3 mb-6 flex items-center gap-2">
@@ -791,7 +790,8 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                                         <div className="relative w-full h-12 border border-gray-300 rounded-sm overflow-hidden bg-gray-100 flex items-center justify-center group shadow-sm">
                                             {hasImage ? (
                                                 <a href={getDriveImageUrl(item[`image${colIdx-10}`], false)} target="_blank" rel="noopener noreferrer" className="w-full h-full block">
-                                                    <img src={getDriveImageUrl(item[`image${colIdx-10}`])} className="w-full h-full object-cover group-hover:scale-110 transition-transform cursor-zoom-in" alt="Wire" />
+                                                    {/* ★ 修正：referrerPolicyを追加して403エラーを回避 */}
+                                                    <img src={getDriveImageUrl(item[`image${colIdx-10}`])} referrerPolicy="no-referrer" className="w-full h-full object-cover group-hover:scale-110 transition-transform cursor-zoom-in" alt="Wire" />
                                                 </a>
                                             ) : (
                                                 <Icons.Image />
@@ -888,7 +888,8 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                         <div>
                             <p className="text-[10px] text-gray-400 mb-1">1. 断面</p>
                             <a href={getDriveImageUrl(editingItem.image1, false)} target="_blank" rel="noopener noreferrer">
-                                <img src={getDriveImageUrl(editingItem.image1, false)} alt="master img 1" className="w-full h-32 md:h-40 object-cover rounded-sm border border-gray-300 shadow-sm hover:opacity-80 transition cursor-zoom-in" />
+                                {/* ★ 修正：referrerPolicyを追加 */}
+                                <img src={getDriveImageUrl(editingItem.image1, false)} referrerPolicy="no-referrer" alt="master img 1" className="w-full h-32 md:h-40 object-cover rounded-sm border border-gray-300 shadow-sm hover:opacity-80 transition cursor-zoom-in" />
                             </a>
                         </div>
                     )}
@@ -896,7 +897,8 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                         <div>
                             <p className="text-[10px] text-gray-400 mb-1">2. 印字</p>
                             <a href={getDriveImageUrl(editingItem.image2, false)} target="_blank" rel="noopener noreferrer">
-                                <img src={getDriveImageUrl(editingItem.image2, false)} alt="master img 2" className="w-full h-32 md:h-40 object-cover rounded-sm border border-gray-300 shadow-sm hover:opacity-80 transition cursor-zoom-in" />
+                                {/* ★ 修正：referrerPolicyを追加 */}
+                                <img src={getDriveImageUrl(editingItem.image2, false)} referrerPolicy="no-referrer" alt="master img 2" className="w-full h-32 md:h-40 object-cover rounded-sm border border-gray-300 shadow-sm hover:opacity-80 transition cursor-zoom-in" />
                             </a>
                         </div>
                     )}
@@ -904,7 +906,8 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                         <div>
                             <p className="text-[10px] text-gray-400 mb-1">3. 剥線後 (実測時)</p>
                             <a href={getDriveImageUrl(editingItem.image3, false)} target="_blank" rel="noopener noreferrer">
-                                <img src={getDriveImageUrl(editingItem.image3, false)} alt="master img 3" className="w-full h-32 md:h-40 object-cover rounded-sm border border-gray-300 shadow-sm hover:opacity-80 transition cursor-zoom-in" />
+                                {/* ★ 修正：referrerPolicyを追加 */}
+                                <img src={getDriveImageUrl(editingItem.image3, false)} referrerPolicy="no-referrer" alt="master img 3" className="w-full h-32 md:h-40 object-cover rounded-sm border border-gray-300 shadow-sm hover:opacity-80 transition cursor-zoom-in" />
                             </a>
                         </div>
                     )}
@@ -967,7 +970,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
             </div>
         </div>
         
-        {/* ★ 実測エリア・材質・被覆重量入力の追加 */}
         <div className="bg-gray-100 p-4 md:p-6 rounded-sm border border-gray-300 mt-6 relative shadow-inner">
             <span className="absolute top-0 right-0 bg-gray-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-sm">HUMAN REQUIRED</span>
             <label className="block text-sm font-black text-gray-800 mb-4 border-b border-gray-300 pb-2">⚖️ サンプル実測 (人間による確定)</label>
@@ -1018,18 +1020,15 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                     <label className="block text-[10px] font-bold text-[#D32F2F] mb-1">純銅重量(g)</label>
                     <input type="number" step="0.001" className="w-full border-none shadow-sm p-2 rounded-sm font-mono text-lg outline-none focus:ring-2 focus:ring-red-500" value={sampleCopper} onChange={e => handleSampleCopperChange(e.target.value)} placeholder="0.000" />
                 </div>
-                {/* ★ 追加：被覆重量入力欄 */}
                 <div className="w-full">
                     <label className="block text-[10px] font-bold text-gray-600 mb-1">被覆重量(g)</label>
                     <input type="number" step="0.001" className="w-full border-none shadow-sm p-2 rounded-sm font-mono text-lg outline-none focus:ring-2 focus:ring-gray-500" value={sampleCover} onChange={e => handleSampleCoverChange(e.target.value)} placeholder="0.000" />
                 </div>
                 <div className="w-full flex flex-col gap-2">
-                    {/* ★ 追加：ジュート（ダスト）重量の自動算出表示 */}
                     <div className="bg-white border border-gray-300 shadow-inner p-1.5 rounded-sm flex justify-between items-center">
                         <span className="text-[9px] font-bold text-gray-500">ダスト(Jute)</span>
                         <span className="font-mono text-sm font-bold text-gray-700">{getJuteWeight()}g</span>
                     </div>
-                    {/* 歩留まり表示（手入力不可） */}
                     <div className="bg-blue-50 border border-blue-200 shadow-inner p-1.5 rounded-sm flex justify-between items-center relative">
                         <span className="text-[9px] font-bold text-blue-800">歩留まり</span>
                         {editingItem.aiEstimatedRatio && !sampleTotal && <span className="absolute -top-2 -right-2 text-[8px] bg-blue-500 text-white px-1 py-0.5 rounded shadow animate-pulse">AI</span>}
