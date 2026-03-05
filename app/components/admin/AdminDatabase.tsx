@@ -84,11 +84,32 @@ const getDriveViewUrl = (url: string) => {
     return url;
 };
 
+const CATEGORIES = ['すべて', 'IV', 'CV', 'CVT', 'VVF / VA', '通信・弱電', '雑線', 'その他'];
+const getCategory = (name: string) => {
+    if (!name) return 'その他';
+    const n = name.toUpperCase();
+    if (n.includes('IV')) return 'IV';
+    if (n.includes('CVT')) return 'CVT';
+    if (n.includes('CV')) return 'CV';
+    if (n.includes('VVF') || n.includes('VA')) return 'VVF / VA';
+    if (n.includes('通信') || n.includes('LAN') || n.includes('弱電') || n.includes('光')) return '通信・弱電';
+    if (n.includes('雑線') || n.includes('家電') || n.includes('ハーネス')) return '雑線';
+    return 'その他';
+};
+
 export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoiceOutputEnabled?: boolean }) => {
   const [activeTab, setActiveTab] = useState<'WIRES' | 'UNKNOWN' | 'CASTINGS' | 'CLIENTS' | 'STAFF' | 'SETTINGS'>('WIRES');
+  
+  // 検索・絞り込み用 state
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('すべて');
   const [filterMaker, setFilterMaker] = useState('');
   const [filterType, setFilterType] = useState('');
+
+  // 音声検索用 state
+  const [isListening, setIsListening] = useState(false);
+  const [voiceText, setVoiceText] = useState('');
+  const recognitionRef = useRef<any>(null);
 
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
 
@@ -97,21 +118,23 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadingImageId, setUploadingImageId] = useState<string | null>(null);
 
+  // AI関連 state
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [aiStatus, setAiStatus] = useState<'IDLE' | 'ANALYZING'>('IDLE');
   const [aiProgressStep, setAiProgressStep] = useState(0); 
   const [imgData1, setImgData1] = useState<string>('');
   const [imgData2, setImgData2] = useState<string>('');
   const [aiHint, setAiHint] = useState<string>('');
-
   const [isListeningHint, setIsListeningHint] = useState(false);
   const hintRecognitionRef = useRef<any>(null);
   
+  // 設定関連 state
   const [autoMarketSync, setAutoMarketSync] = useState(true);
   const [autoLeadGen, setAutoLeadGen] = useState(true);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [isRunningBatch, setIsRunningBatch] = useState<'NONE' | 'MARKET' | 'LEAD' | 'BACKUP'>('NONE');
 
+  // サンプル実測用 state
   const [sampleTotal, setSampleTotal] = useState<number | ''>('');
   const [sampleCopper, setSampleCopper] = useState<number | ''>('');
   const [sampleCover, setSampleCover] = useState<number | ''>('');
@@ -122,15 +145,17 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const clients = data?.clients || [];
   const staffs = data?.staffs || [];
 
-  // ★ POSからの引継ぎデータの受け取り処理
+  const uniqueMakers = Array.from(new Set(wires.map((w:any) => w.maker).filter((m:any) => m && m !== '-')));
+  const uniqueTypes = Array.from(new Set(castings.map((c:any) => c.type).filter(Boolean)));
+
   useEffect(() => {
     const pendingItemStr = localStorage.getItem('factoryOS_pendingAIItem');
     if (pendingItemStr) {
       try {
         const pendingData = JSON.parse(pendingItemStr);
-        localStorage.removeItem('factoryOS_pendingAIItem'); // 読み取ったら消す
+        localStorage.removeItem('factoryOS_pendingAIItem'); 
 
-        setActiveTab('WIRES'); // 電線タブへ
+        setActiveTab('WIRES'); 
         setEditingItem({
             maker: '',
             name: pendingData.name || '',
@@ -146,17 +171,12 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
             _pendingImageData1: pendingData.image1 || null,
             _pendingImageData2: pendingData.image2 || null,
             _aiInitialState: {
-                maker: '',
-                name: pendingData.name || '',
-                conductor: pendingData.conductor || '',
-                material: pendingData.material || '純銅',
-                ratio: pendingData.ratio || ''
+                maker: '', name: pendingData.name || '', conductor: pendingData.conductor || '',
+                material: pendingData.material || '純銅', ratio: pendingData.ratio || ''
             }
         });
-        setSampleTotal('');
-        setSampleCopper('');
-        setSampleCover('');
-        setIsModalOpen(true); // 自動でモーダルを開く
+        setSampleTotal(''); setSampleCopper(''); setSampleCover('');
+        setIsModalOpen(true); 
       } catch (e) {
         console.error("Pending item parse error", e);
       }
@@ -166,26 +186,16 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   useEffect(() => {
     const localSync = localStorage.getItem('factoryOS_autoMarketSync');
     const localLead = localStorage.getItem('factoryOS_autoLeadGen');
-
-    if (localSync !== null) {
-        setAutoMarketSync(localSync === 'true');
-    } else if (data?.config) {
-        setAutoMarketSync(String(data.config.auto_market_sync) !== 'false');
-    }
-
-    if (localLead !== null) {
-        setAutoLeadGen(localLead === 'true');
-    } else if (data?.config) {
-        setAutoLeadGen(String(data.config.auto_lead_gen) !== 'false');
-    }
+    if (localSync !== null) setAutoMarketSync(localSync === 'true');
+    else if (data?.config) setAutoMarketSync(String(data.config.auto_market_sync) !== 'false');
+    if (localLead !== null) setAutoLeadGen(localLead === 'true');
+    else if (data?.config) setAutoLeadGen(String(data.config.auto_lead_gen) !== 'false');
   }, [data?.config]);
-
-  const uniqueMakers = Array.from(new Set(wires.map((w:any) => w.maker).filter((m:any) => m && m !== '-')));
-  const uniqueTypes = Array.from(new Set(castings.map((c:any) => c.type).filter(Boolean)));
 
   const handleTabChange = (tab: any) => {
     setActiveTab(tab);
     setSearchTerm('');
+    setSelectedCategory('すべて');
     setFilterMaker('');
     setFilterType('');
     setSortConfig(null); 
@@ -197,24 +207,15 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
     setEditingItem({
         ...item,
-        _sqValue: sqData.val,
-        _sqUnit: sqData.unit,
-        _coreValue: coreData,
+        _sqValue: sqData.val, _sqUnit: sqData.unit, _coreValue: coreData,
         material: item?.material || '純銅'
     });
-    
-    setSampleTotal(item?.sampleTotal || '');
-    setSampleCopper(item?.sampleCopper || '');
-    setSampleCover(item?.sampleCover || ''); 
-
+    setSampleTotal(item?.sampleTotal || ''); setSampleCopper(item?.sampleCopper || ''); setSampleCover(item?.sampleCover || ''); 
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
-    setEditingItem(null);
-    setSampleTotal('');
-    setSampleCopper('');
-    setSampleCover('');
+    setEditingItem(null); setSampleTotal(''); setSampleCopper(''); setSampleCover('');
     setIsModalOpen(false);
   };
 
@@ -228,27 +229,22 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
   const handleSampleTotalChange = (val: string) => {
       const num = val ? Number(val) : '';
-      setSampleTotal(num);
-      setEditingItem({...editingItem, sampleTotal: num, ratio: calculateRatio(num, sampleCopper)});
+      setSampleTotal(num); setEditingItem({...editingItem, sampleTotal: num, ratio: calculateRatio(num, sampleCopper)});
   };
 
   const handleSampleCopperChange = (val: string) => {
       const num = val ? Number(val) : '';
-      setSampleCopper(num);
-      setEditingItem({...editingItem, sampleCopper: num, ratio: calculateRatio(sampleTotal, num)});
+      setSampleCopper(num); setEditingItem({...editingItem, sampleCopper: num, ratio: calculateRatio(sampleTotal, num)});
   };
 
   const handleSampleCoverChange = (val: string) => {
       const num = val ? Number(val) : '';
-      setSampleCover(num);
-      setEditingItem({...editingItem, sampleCover: num});
+      setSampleCover(num); setEditingItem({...editingItem, sampleCover: num});
   };
 
   const getJuteWeight = () => {
       if (sampleTotal && (sampleCopper || sampleCover)) {
-          const t = Number(sampleTotal) || 0;
-          const c = Number(sampleCopper) || 0;
-          const p = Number(sampleCover) || 0;
+          const t = Number(sampleTotal) || 0; const c = Number(sampleCopper) || 0; const p = Number(sampleCover) || 0;
           const jute = t - c - p;
           return jute > 0 ? jute.toFixed(3) : '0.000';
       }
@@ -257,19 +253,10 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
   const handlePromoteToWire = (unknownItem: any) => {
       setActiveTab('WIRES');
-      
       setEditingItem({
-          name: unknownItem.name.replace(/【.*?】/g, ''), 
-          maker: '', 
-          year: '', 
-          _sqValue: '',
-          _sqUnit: 'sq',
-          _coreValue: '', 
-          conductor: '',
-          material: unknownItem.material || '純銅',
-          ratio: '', 
-          image1: unknownItem.image1, 
-          image2: unknownItem.image2, 
+          name: unknownItem.name.replace(/【.*?】/g, ''), maker: '', year: '', 
+          _sqValue: '', _sqUnit: 'sq', _coreValue: '', conductor: '', material: unknownItem.material || '純銅',
+          ratio: '', image1: unknownItem.image1, image2: unknownItem.image2, 
           memo: `【AI推論からの昇格】\n推論日時: ${unknownItem.createdAt}\nAIの根拠: ${unknownItem.reason}`
       });
       setIsModalOpen(true);
@@ -287,8 +274,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
           setEditingItem({ ...editingItem, _sqValue: String(d), _sqUnit: 'mm' });
           alert(`単線として「${d}mm」を適用しました。`);
       } else {
-          const r = d / 2;
-          const approxSq = (r * r * Math.PI) * 0.75;
+          const r = d / 2; const approxSq = (r * r * Math.PI) * 0.75;
           const jisSqs = [1.25, 2, 3.5, 5.5, 8, 14, 22, 38, 60, 100, 150, 200, 250, 325];
           const closestSq = jisSqs.reduce((prev, curr) => Math.abs(curr - approxSq) < Math.abs(prev - approxSq) ? curr : prev);
           
@@ -301,29 +287,16 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const handleSaveSettings = async () => {
       setIsSavingSettings(true);
       try {
-          await fetch('/api/gas', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ action: 'UPDATE_CONFIG', key: 'auto_market_sync', value: autoMarketSync.toString(), description: '市況自動取得フラグ' })
-          });
-          
+          await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'UPDATE_CONFIG', key: 'auto_market_sync', value: autoMarketSync.toString(), description: '市況自動取得フラグ' }) });
           await new Promise(resolve => setTimeout(resolve, 500));
-          
-          await fetch('/api/gas', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ action: 'UPDATE_CONFIG', key: 'auto_lead_gen', value: autoLeadGen.toString(), description: 'AIスナイパー自動実行フラグ' })
-          });
+          await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'UPDATE_CONFIG', key: 'auto_lead_gen', value: autoLeadGen.toString(), description: 'AIスナイパー自動実行フラグ' }) });
           
           localStorage.setItem('factoryOS_autoMarketSync', autoMarketSync.toString());
           localStorage.setItem('factoryOS_autoLeadGen', autoLeadGen.toString());
           localStorage.removeItem('factoryOS_masterData');
           
-          alert('✅ 設定を確実に保存しました。');
-          window.location.reload();
-      } catch (e) {
-          alert('通信エラーが発生しました。設定が正常に保存されていない可能性があります。');
-      }
+          alert('✅ 設定を確実に保存しました。'); window.location.reload();
+      } catch (e) { alert('通信エラーが発生しました。'); }
       setIsSavingSettings(false);
   };
 
@@ -333,40 +306,26 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       setIsRunningBatch(type);
       try {
           const action = type === 'MARKET' ? 'RUN_MARKET_SYNC' : type === 'LEAD' ? 'RUN_LEAD_GEN' : 'CREATE_BACKUP';
-          const res = await fetch('/api/gas', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ action })
-          });
+          const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }) });
           const result = await res.json();
           if (result.status === 'success') {
               alert('✅ ' + result.message);
-              if (result.url) {
-                  window.open(result.url, '_blank'); 
-              }
-          } else {
-              alert('エラーが発生しました: ' + result.message);
-          }
-      } catch (e) {
-          alert('通信エラーが発生しました。');
-      }
+              if (result.url) window.open(result.url, '_blank'); 
+          } else { alert('エラーが発生しました: ' + result.message); }
+      } catch (e) { alert('通信エラーが発生しました。'); }
       setIsRunningBatch('NONE');
   };
 
   const handleSave = async () => {
     let finalItem = { ...editingItem };
-
     finalItem.sq = finalItem._sqValue ? `${finalItem._sqValue}${finalItem._sqUnit === 'mm' ? 'mm' : ''}` : ''; 
     finalItem.core = finalItem._coreValue ? `${finalItem._coreValue}` : '';
 
     if (!finalItem.id && activeTab === 'WIRES') {
         const isDuplicate = wires.some((w:any) => 
-            (w.maker || '') === (finalItem.maker || '') && 
-            (w.name || '') === (finalItem.name || '') && 
-            (String(w.sq) || '') === String(finalItem.sq || '') && 
-            (String(w.core) || '') === String(finalItem.core || '') &&
-            (String(w.year) || '') === String(finalItem.year || '') &&
-            (String(w.material) || '純銅') === String(finalItem.material || '純銅')
+            (w.maker || '') === (finalItem.maker || '') && (w.name || '') === (finalItem.name || '') && 
+            (String(w.sq) || '') === String(finalItem.sq || '') && (String(w.core) || '') === String(finalItem.core || '') &&
+            (String(w.year) || '') === String(finalItem.year || '') && (String(w.material) || '純銅') === String(finalItem.material || '純銅')
         );
         if (isDuplicate) {
             alert('⚠️ この組み合わせ（メーカー・品名・サイズ・芯数・製造年・材質）は既に登録されています。\n重複登録を防ぐため、一覧から既存のデータを編集してください。');
@@ -402,32 +361,20 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
     if (finalItem._pendingImageData1) {
         try {
-            const res = await fetch('/api/gas', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'UPLOAD_IMAGE', data: finalItem._pendingImageData1, mimeType: 'image/jpeg', fileName: `master_sec_${Date.now()}.jpg` })
-            });
-            const r = await res.json();
-            if (r.status === 'success') finalItem.image1 = r.url;
+            const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'UPLOAD_IMAGE', data: finalItem._pendingImageData1, mimeType: 'image/jpeg', fileName: `master_sec_${Date.now()}.jpg` }) });
+            const r = await res.json(); if (r.status === 'success') finalItem.image1 = r.url;
         } catch(e) {}
     }
     if (finalItem._pendingImageData2) {
         try {
-            const res = await fetch('/api/gas', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'UPLOAD_IMAGE', data: finalItem._pendingImageData2, mimeType: 'image/jpeg', fileName: `master_prt_${Date.now()}.jpg` })
-            });
-            const r = await res.json();
-            if (r.status === 'success') finalItem.image2 = r.url;
+            const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'UPLOAD_IMAGE', data: finalItem._pendingImageData2, mimeType: 'image/jpeg', fileName: `master_prt_${Date.now()}.jpg` }) });
+            const r = await res.json(); if (r.status === 'success') finalItem.image2 = r.url;
         } catch(e) {}
     }
     if (finalItem._pendingImageData3) {
         try {
-            const res = await fetch('/api/gas', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'UPLOAD_IMAGE', data: finalItem._pendingImageData3, mimeType: 'image/jpeg', fileName: `master_nak_${Date.now()}.jpg` })
-            });
-            const r = await res.json();
-            if (r.status === 'success') finalItem.image3 = r.url;
+            const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'UPLOAD_IMAGE', data: finalItem._pendingImageData3, mimeType: 'image/jpeg', fileName: `master_nak_${Date.now()}.jpg` }) });
+            const r = await res.json(); if (r.status === 'success') finalItem.image3 = r.url;
         } catch(e) {}
     }
 
@@ -439,12 +386,8 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     try {
       const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const result = await res.json();
-      if (result.status === 'success') {
-        alert('マスターに登録しました');
-        window.location.reload();
-      } else {
-        alert('エラー: ' + result.message);
-      }
+      if (result.status === 'success') { alert('マスターに登録しました'); window.location.reload(); } 
+      else { alert('エラー: ' + result.message); }
     } catch (e) { alert('通信エラーが発生しました'); }
     setIsSubmitting(false);
   };
@@ -461,30 +404,19 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     try {
       const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'DELETE_DB_RECORD', sheetName, recordId: id }) });
       const result = await res.json();
-      if (result.status === 'success') {
-        alert('削除しました');
-        window.location.reload();
-      }
+      if (result.status === 'success') { alert('削除しました'); window.location.reload(); }
     } catch (e) { alert('通信エラー'); }
   };
 
   const getUpdatesMap = (item: any, tab: string) => {
     if (tab === 'WIRES') {
-        const updates: any = { 
-            1: item.maker, 2: item.name, 3: item.year, 4: item.sq, 
-            5: item.sampleTotal, 6: item.sampleCopper,
-            7: item.core, 8: item.conductor, 9: item.ratio, 10: item.memo,
-            16: item.material,
-            17: item.sampleCover 
-        };
+        const updates: any = { 1: item.maker, 2: item.name, 3: item.year, 4: item.sq, 5: item.sampleTotal, 6: item.sampleCopper, 7: item.core, 8: item.conductor, 9: item.ratio, 10: item.memo, 16: item.material, 17: item.sampleCover };
         if (item.image1 !== undefined) updates[11] = item.image1;
         if (item.image2 !== undefined) updates[12] = item.image2;
         if (item.image3 !== undefined) updates[13] = item.image3;
         return updates;
     }
-    if (tab === 'UNKNOWN') {
-        return { 1: item.name, 2: item.ratio, 3: item.reason, 9: item.material }; 
-    }
+    if (tab === 'UNKNOWN') return { 1: item.name, 2: item.ratio, 3: item.reason, 9: item.material }; 
     if (tab === 'CASTINGS') return { 1: item.name, 2: item.type, 4: item.ratio };
     if (tab === 'CLIENTS') return { 1: item.name, 2: item.rank, 4: item.phone, 5: item.loginId, 6: item.password, 7: item.points, 8: item.memo, 9: item.address, 10: item.industry };
     if (tab === 'STAFF') return { 1: item.name, 2: item.role, 3: item.rate, 4: item.status, 5: item.loginId, 6: item.password };
@@ -509,44 +441,27 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, recordId: string, colIndex: number, sheetName: string) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
+      const file = e.target.files?.[0]; if (!file) return;
       setUploadingImageId(`${recordId}-${colIndex}`);
       try {
           const base64Data = await compressImage(file);
-          const res = await fetch('/api/gas', {
-              method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ action: 'UPLOAD_IMAGE', sheetName: sheetName, recordId: recordId, colIndex: colIndex, data: base64Data, mimeType: 'image/jpeg', fileName: `img_${recordId}_${Date.now()}.jpg` })
-          });
+          const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'UPLOAD_IMAGE', sheetName: sheetName, recordId: recordId, colIndex: colIndex, data: base64Data, mimeType: 'image/jpeg', fileName: `img_${recordId}_${Date.now()}.jpg` }) });
           const result = await res.json();
           if (result.status === 'success') { alert('画像をアップロードしました'); window.location.reload(); } else { alert('エラー: ' + result.message); }
       } catch (err) { alert('通信エラーが発生しました'); }
-      setUploadingImageId(null);
-      e.target.value = '';
+      setUploadingImageId(null); e.target.value = '';
   };
 
   const runAiExtraction = async () => {
     if (!imgData1) return alert('最低1枚の画像（断面など）をアップロードしてください');
-    setAiStatus('ANALYZING');
-    setAiProgressStep(1); 
-
-    const progressInterval = setInterval(() => {
-        setAiProgressStep(prev => {
-            if (prev === 1) return 2;
-            if (prev === 2) return 3;
-            return 3; 
-        });
-    }, 2000);
+    setAiStatus('ANALYZING'); setAiProgressStep(1); 
+    const progressInterval = setInterval(() => { setAiProgressStep(prev => { if (prev === 1) return 2; if (prev === 2) return 3; return 3; }); }, 2000);
     
     try {
-      const res = await fetch('/api/gas', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'VISION_AI_REGISTER', imageData: imgData1, imageData2: imgData2, hint: aiHint })
-      });
+      const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'VISION_AI_REGISTER', imageData: imgData1, imageData2: imgData2, hint: aiHint }) });
       const result = await res.json();
       
-      clearInterval(progressInterval);
-      setAiProgressStep(4);
+      clearInterval(progressInterval); setAiProgressStep(4);
 
       setTimeout(() => {
           if (result.status === 'success') {
@@ -554,63 +469,34 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                   window.speechSynthesis.cancel();
                   const makerText = result.data.maker && result.data.maker !== '-' ? result.data.maker : 'メーカー不明';
                   const nameText = result.data.name && result.data.name !== '-' ? result.data.name : '品名不明';
-                  const speakText = `抽出完了。メーカー、${makerText}。品名、${nameText}。`;
-                  const utterance = new SpeechSynthesisUtterance(speakText);
-                  utterance.lang = 'ja-JP';
-                  utterance.rate = 1.4;
-                  window.speechSynthesis.speak(utterance);
+                  const utterance = new SpeechSynthesisUtterance(`抽出完了。メーカー、${makerText}。品名、${nameText}。`);
+                  utterance.lang = 'ja-JP'; utterance.rate = 1.4; window.speechSynthesis.speak(utterance);
               }
 
               const cleanSize = String(result.data.size || '').replace(/[^\d.]/g, '');
               const cleanCore = String(result.data.core || '').replace(/[^\d]/g, '');
 
               setEditingItem({
-                  maker: result.data.maker === '-' ? '' : result.data.maker,
-                  name: result.data.name === '-' ? '' : result.data.name,
-                  year: result.data.year === '-' ? '' : result.data.year,
-                  _sqValue: cleanSize === '-' ? '' : cleanSize,
-                  _sqUnit: 'sq',
-                  _coreValue: cleanCore === '-' ? '' : cleanCore,
-                  conductor: result.data.conductor === '-' ? '' : result.data.conductor,
-                  material: result.data.material === '-' ? '純銅' : result.data.material,
-                  ratio: result.data.estimatedRatio || '',
-                  aiEstimatedRatio: result.data.estimatedRatio || '',
+                  maker: result.data.maker === '-' ? '' : result.data.maker, name: result.data.name === '-' ? '' : result.data.name, year: result.data.year === '-' ? '' : result.data.year,
+                  _sqValue: cleanSize === '-' ? '' : cleanSize, _sqUnit: 'sq', _coreValue: cleanCore === '-' ? '' : cleanCore,
+                  conductor: result.data.conductor === '-' ? '' : result.data.conductor, material: result.data.material === '-' ? '純銅' : result.data.material,
+                  ratio: result.data.estimatedRatio || '', aiEstimatedRatio: result.data.estimatedRatio || '',
                   memo: `【AIアシスト抽出】\nAI推論根拠: ${result.data.reason}\n※実測を行って歩留まりを上書きしてください。`,
-                  _pendingImageData1: imgData1,
-                  _pendingImageData2: imgData2,
-                  _aiInitialState: { 
-                      maker: result.data.maker === '-' ? '' : result.data.maker,
-                      name: result.data.name === '-' ? '' : result.data.name,
-                      conductor: result.data.conductor === '-' ? '' : result.data.conductor,
-                      material: result.data.material === '-' ? '純銅' : result.data.material,
-                      ratio: result.data.estimatedRatio || ''
-                  }
+                  _pendingImageData1: imgData1, _pendingImageData2: imgData2,
+                  _aiInitialState: { maker: result.data.maker === '-' ? '' : result.data.maker, name: result.data.name === '-' ? '' : result.data.name, conductor: result.data.conductor === '-' ? '' : result.data.conductor, material: result.data.material === '-' ? '純銅' : result.data.material, ratio: result.data.estimatedRatio || '' }
               });
 
-              setSampleTotal('');
-              setSampleCopper('');
-              setSampleCover('');
-              
-              setIsAiModalOpen(false);
-              setIsModalOpen(true);
-          } else {
-              alert('AI抽出エラー: ' + result.message);
-          }
-          setAiStatus('IDLE');
-          setAiProgressStep(0);
+              setSampleTotal(''); setSampleCopper(''); setSampleCover('');
+              setIsAiModalOpen(false); setIsModalOpen(true);
+          } else { alert('AI抽出エラー: ' + result.message); }
+          setAiStatus('IDLE'); setAiProgressStep(0);
       }, 800);
 
-    } catch(err) {
-      clearInterval(progressInterval);
-      alert('通信エラーが発生しました。');
-      setAiStatus('IDLE');
-      setAiProgressStep(0);
-    }
+    } catch(err) { clearInterval(progressInterval); alert('通信エラーが発生しました。'); setAiStatus('IDLE'); setAiProgressStep(0); }
   };
 
   const handleAiImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, num: 1 | 2 | 3) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const file = e.target.files?.[0]; if (!file) return;
     try {
         const compressedBase64 = await compressImage(file);
         if (num === 1) setImgData1(compressedBase64); 
@@ -620,7 +506,44 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     e.target.value = '';
   };
 
-  // ★ ヒント用音声入力（制限なしトグル式）
+  // ★ 音声検索（トグル式）
+  const toggleVoiceInput = () => {
+      if (isListening) {
+          if (recognitionRef.current) recognitionRef.current.stop();
+          return;
+      }
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) { alert('お使いのブラウザは音声入力に対応していません。'); return; }
+      
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'ja-JP'; recognition.continuous = true; recognition.interimResults = true;
+
+      recognition.onstart = () => { setIsListening(true); setVoiceText('🎤 認識中... (もう一度押すと終了)'); };
+      
+      let finalTranscript = '';
+      recognition.onresult = (event: any) => {
+          let interimTranscript = '';
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+              if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript;
+              else interimTranscript += event.results[i][0].transcript;
+          }
+          setVoiceText(finalTranscript + interimTranscript);
+      };
+
+      recognition.onerror = () => { setIsListening(false); setVoiceText('認識エラー'); setTimeout(() => setVoiceText(''), 2000); };
+      recognition.onend = () => { 
+          setIsListening(false); 
+          if (finalTranscript) {
+              // 検索窓にそのまま入れる（半角スペースで繋ぐ）
+              setSearchTerm(prev => prev + (prev ? ' ' : '') + finalTranscript);
+          }
+          setTimeout(() => setVoiceText(''), 2000); 
+      };
+      
+      recognitionRef.current = recognition;
+      recognition.start();
+  };
+
   const toggleHintVoiceInput = () => {
       if (isListeningHint) {
           if (hintRecognitionRef.current) hintRecognitionRef.current.stop();
@@ -633,9 +556,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       recognition.lang = 'ja-JP'; recognition.continuous = true; recognition.interimResults = true;
       let currentHint = aiHint;
       
-      recognition.onstart = () => {
-          setIsListeningHint(true);
-      };
+      recognition.onstart = () => { setIsListeningHint(true); };
       
       let finalStr = '';
       recognition.onresult = (event: any) => {
@@ -647,19 +568,14 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
           setAiHint(currentHint + (currentHint ? ' ' : '') + finalStr + interim);
       };
       
-      recognition.onend = () => {
-          setIsListeningHint(false);
-          setAiHint(currentHint + (currentHint ? ' ' : '') + finalStr);
-      };
+      recognition.onend = () => { setIsListeningHint(false); setAiHint(currentHint + (currentHint ? ' ' : '') + finalStr); };
       hintRecognitionRef.current = recognition;
       recognition.start();
   };
 
   const handleSort = (key: string) => {
     let direction: 'asc' | 'desc' = 'asc';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') direction = 'desc';
     setSortConfig({ key, direction });
   };
 
@@ -695,11 +611,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                                 </div>
                             </div>
                             <div className="border-t border-gray-200 pt-4 flex justify-end">
-                                <button 
-                                    onClick={() => handleRunBatch('BACKUP')} 
-                                    disabled={isRunningBatch !== 'NONE'}
-                                    className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-bold flex items-center gap-2 hover:bg-gray-50 transition disabled:opacity-50"
-                                >
+                                <button onClick={() => handleRunBatch('BACKUP')} disabled={isRunningBatch !== 'NONE'} className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-bold flex items-center gap-2 hover:bg-gray-50 transition disabled:opacity-50">
                                     {isRunningBatch === 'BACKUP' ? <><Icons.Refresh /> 作成中...</> : <><Icons.Save /> 今すぐバックアップ作成</>}
                                 </button>
                             </div>
@@ -760,23 +672,66 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
     let filteredData = [];
     
+    // ★ データベース側も「AND検索」対応
     if (activeTab === 'WIRES') {
-        filteredData = wires.filter((w:any) => 
-            (w.name.includes(searchTerm) || w.maker?.includes(searchTerm)) &&
-            (filterMaker === '' || w.maker === filterMaker)
-        );
+        filteredData = wires.filter((w:any) => {
+            if (selectedCategory !== 'すべて' && getCategory(w.name) !== selectedCategory) return false;
+            if (filterMaker && w.maker !== filterMaker) return false;
+
+            if (searchTerm) {
+                const coreStr = String(w.core || w.cores || w.coreCount || '');
+                const coreFormatted = coreStr && coreStr !== '-' ? `${coreStr}c ${coreStr}芯` : '';
+                const sqStr = String(w.size || w.sq || '');
+                const sqFormatted = sqStr && sqStr !== '-' ? `${sqStr}sq ${sqStr}スケ` : '';
+                
+                const searchTarget = `${w.name} ${w.maker} ${sqFormatted} ${sqStr} ${coreFormatted} ${coreStr} ${w.year}`.toLowerCase();
+                const terms = searchTerm.toLowerCase().replace(/　/g, ' ').split(' ').filter(Boolean);
+                return terms.every(term => searchTarget.includes(term));
+            }
+            return true;
+        });
     }
     if (activeTab === 'UNKNOWN') {
-        filteredData = unknownWires.filter((u:any) => u.name?.includes(searchTerm) || u.reason?.includes(searchTerm));
+        filteredData = unknownWires.filter((u:any) => {
+            if (searchTerm) {
+                const searchTarget = `${u.name} ${u.reason}`.toLowerCase();
+                const terms = searchTerm.toLowerCase().replace(/　/g, ' ').split(' ').filter(Boolean);
+                return terms.every(term => searchTarget.includes(term));
+            }
+            return true;
+        });
     }
     if (activeTab === 'CASTINGS') {
-        filteredData = castings.filter((c:any) => 
-            c.name.includes(searchTerm) &&
-            (filterType === '' || c.type === filterType)
-        );
+        filteredData = castings.filter((c:any) => {
+            if (filterType && c.type !== filterType) return false;
+            if (searchTerm) {
+                const searchTarget = `${c.name} ${c.type}`.toLowerCase();
+                const terms = searchTerm.toLowerCase().replace(/　/g, ' ').split(' ').filter(Boolean);
+                return terms.every(term => searchTarget.includes(term));
+            }
+            return true;
+        });
     }
-    if (activeTab === 'CLIENTS') filteredData = clients.filter((c:any) => c.name.includes(searchTerm));
-    if (activeTab === 'STAFF') filteredData = staffs.filter((s:any) => s.name.includes(searchTerm));
+    if (activeTab === 'CLIENTS') {
+        filteredData = clients.filter((c:any) => {
+            if (searchTerm) {
+                const searchTarget = `${c.name} ${c.phone} ${c.rank} ${c.industry}`.toLowerCase();
+                const terms = searchTerm.toLowerCase().replace(/　/g, ' ').split(' ').filter(Boolean);
+                return terms.every(term => searchTarget.includes(term));
+            }
+            return true;
+        });
+    }
+    if (activeTab === 'STAFF') {
+        filteredData = staffs.filter((s:any) => {
+            if (searchTerm) {
+                const searchTarget = `${s.name} ${s.role}`.toLowerCase();
+                const terms = searchTerm.toLowerCase().replace(/　/g, ' ').split(' ').filter(Boolean);
+                return terms.every(term => searchTarget.includes(term));
+            }
+            return true;
+        });
+    }
 
     let sortedData = [...filteredData];
     if (sortConfig !== null) {
@@ -1244,58 +1199,85 @@ return (
 
       <div className="bg-white border border-gray-200 shadow-sm rounded-sm flex-1 flex flex-col overflow-hidden relative">
         {activeTab !== 'SETTINGS' && (
-            <div className="p-4 border-b border-gray-200 bg-gray-50 flex flex-col md:flex-row gap-4 justify-between z-30">
-              <div className="flex flex-1 gap-2 flex-col md:flex-row">
-                  <div className="relative flex-1 max-w-sm">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Icons.Search />
-                    </div>
-                    <input type="text" placeholder="キーワード検索..." className="w-full border border-gray-300 rounded-sm pl-10 pr-4 py-2 text-sm focus:border-gray-500 outline-none shadow-inner" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+            <div className="p-4 border-b border-gray-200 bg-gray-50 flex flex-col gap-3 z-30 relative">
+              
+              {/* ★ 音声認識中のオーバーレイ表示 */}
+              {(isListening || voiceText) && (
+                  <div className="absolute top-full left-0 w-full z-40 bg-blue-900 text-white p-2 text-center text-sm font-bold shadow-md animate-in slide-in-from-top-2">
+                      {isListening ? <span className="animate-pulse">{voiceText}</span> : <span>{voiceText}</span>}
                   </div>
+              )}
+              
+              <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center">
+                  <div className="flex flex-1 gap-2 w-full flex-wrap">
+                      {/* 検索バー */}
+                      <div className="relative flex-1 min-w-[200px]">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Icons.Search />
+                        </div>
+                        <input type="text" placeholder="キーワード検索 (例: 1C VV)..." className="w-full border border-gray-300 rounded-sm pl-10 pr-4 py-2 text-sm focus:border-blue-500 outline-none shadow-inner" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                      </div>
 
-                  {activeTab === 'WIRES' && uniqueMakers.length > 0 && (
-                      <div className="relative">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Icons.Filter /></div>
-                          <select className="w-full md:w-auto border border-gray-300 rounded-sm pl-10 pr-8 py-2 text-sm outline-none focus:border-gray-500 bg-white appearance-none cursor-pointer" value={filterMaker} onChange={e => setFilterMaker(e.target.value)}>
-                              <option value="">すべてのメーカー</option>
+                      {/* メーカー絞り込み */}
+                      {activeTab === 'WIRES' && uniqueMakers.length > 0 && (
+                          <select className="border border-gray-300 rounded-sm px-3 py-2 text-sm outline-none focus:border-blue-500 bg-white cursor-pointer font-bold text-gray-700 shadow-sm max-w-[140px]" value={filterMaker} onChange={e => setFilterMaker(e.target.value)}>
+                              <option value="">全メーカー</option>
                               {uniqueMakers.map((m: any) => <option key={m} value={m}>{m}</option>)}
                           </select>
-                      </div>
-                  )}
+                      )}
 
-                  {activeTab === 'CASTINGS' && uniqueTypes.length > 0 && (
-                      <div className="relative">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Icons.Filter /></div>
-                          <select className="w-full md:w-auto border border-gray-300 rounded-sm pl-10 pr-8 py-2 text-sm outline-none focus:border-gray-500 bg-white appearance-none cursor-pointer" value={filterType} onChange={e => setFilterType(e.target.value)}>
+                      {/* 非鉄金属の種別絞り込み */}
+                      {activeTab === 'CASTINGS' && uniqueTypes.length > 0 && (
+                          <select className="border border-gray-300 rounded-sm px-3 py-2 text-sm outline-none focus:border-blue-500 bg-white cursor-pointer font-bold text-gray-700 shadow-sm max-w-[140px]" value={filterType} onChange={e => setFilterType(e.target.value)}>
                               <option value="">すべての種別</option>
                               {uniqueTypes.map((t: any) => <option key={t} value={t}>{t === 'BRASS' ? '真鍮' : t === 'ZINC' ? '亜鉛' : t === 'LEAD' ? '鉛' : t}</option>)}
                           </select>
+                      )}
+
+                      {/* 音声入力ボタン */}
+                      <button onClick={toggleVoiceInput} className={`px-3 py-2 border rounded-sm flex items-center justify-center transition-all shadow-sm ${isListening ? 'bg-red-500 border-red-600 text-white animate-pulse' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-100 hover:text-blue-600'}`} title="音声で検索キーワード入力">
+                          <Icons.Mic />
+                      </button>
+                  </div>
+
+                  {/* 新規登録ボタン */}
+                  {activeTab !== 'UNKNOWN' && (
+                      <div className="flex gap-2 w-full lg:w-auto shrink-0 mt-2 lg:mt-0">
+                        {activeTab === 'WIRES' && (
+                            <button onClick={() => setIsAiModalOpen(true)} className="flex-1 lg:flex-none bg-blue-50 text-blue-700 border border-blue-200 px-4 py-2 rounded-sm text-sm font-bold hover:bg-blue-100 transition flex items-center justify-center gap-2 whitespace-nowrap shadow-sm">
+                                <Icons.Sparkles /> AIアシスト登録
+                            </button>
+                        )}
+                        <button onClick={() => handleOpenModal()} className="flex-1 lg:flex-none bg-gray-900 text-white px-5 py-2 rounded-sm text-sm font-bold hover:bg-gray-800 transition flex items-center justify-center gap-2 whitespace-nowrap active:scale-95 shadow-sm">
+                            <Icons.Plus /> 手動登録
+                        </button>
                       </div>
                   )}
               </div>
 
-              {activeTab !== 'UNKNOWN' && (
-                  <div className="flex gap-2">
-                    {activeTab === 'WIRES' && (
-                        <button onClick={() => setIsAiModalOpen(true)} className="bg-blue-50 text-blue-700 border border-blue-200 px-4 py-2 rounded-sm text-sm font-bold hover:bg-blue-100 transition flex items-center gap-2 whitespace-nowrap shadow-sm">
-                            <Icons.Sparkles /> AIアシストで新規登録
-                        </button>
-                    )}
-                    <button onClick={() => handleOpenModal()} className="bg-gray-900 text-white px-6 py-2 rounded-sm text-sm font-bold hover:bg-gray-800 transition flex items-center justify-center gap-2 whitespace-nowrap active:scale-95 shadow-sm">
-                        <Icons.Plus /> 手動で新規登録
-                    </button>
+              {/* ★ カテゴリーピル (WIRESタブのみ) */}
+              {activeTab === 'WIRES' && (
+                  <div className="flex gap-1.5 overflow-x-auto pb-1 mt-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                      {CATEGORIES.map(cat => (
+                          <button 
+                              key={cat} 
+                              onClick={() => setSelectedCategory(cat)} 
+                              className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors border shadow-sm ${selectedCategory === cat ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-500 border-gray-300 hover:bg-gray-100'}`}
+                          >
+                              {cat}
+                          </button>
+                      ))}
                   </div>
               )}
             </div>
         )}
         
-        {/* ★ テーブル描画エリア */}
         <div className="flex-1 overflow-hidden relative">
             {renderTable()}
         </div>
       </div>
 
-      {/* ★ AIアシスト用の画像アップロードモーダル */}
+      {/* AIアシストモーダル */}
       {isAiModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-gray-900 w-full max-w-2xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col">
@@ -1398,7 +1380,6 @@ return (
                         </div>
                     </div>
 
-                    {/* ★ ヒント入力欄（マスター登録側） */}
                     <div className="mb-6 bg-gray-800/50 border border-gray-700 p-3 rounded-md relative">
                         <label className="block text-xs font-bold text-gray-400 mb-2 flex items-center justify-between">
                             <span>🗣️ AIへのヒント・補足（任意）</span>
