@@ -14,9 +14,8 @@ const formatTime = (timeStr: string) => {
   return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 };
 
-export const AdminKanban = ({ localReservations, onUpdateStatus, onEditReservation }: { localReservations: any[], onUpdateStatus: (id: string, status: string) => void, onEditReservation: (id: string) => void }) => {
+export const AdminKanban = ({ localReservations = [], onUpdateStatus, onEditReservation }: { localReservations: any[], onUpdateStatus: (id: string, status: string) => void, onEditReservation: (id: string) => void }) => {
   
-  // ★ 現場提出用の「検収報告書」をPDF/印刷出力する機能
   const handlePrint = (res: any) => {
       let items = [];
       try { items = typeof res.items === 'string' ? JSON.parse(res.items) : res.items; } catch (e) {}
@@ -137,7 +136,9 @@ export const AdminKanban = ({ localReservations, onUpdateStatus, onEditReservati
 
       <div className="flex gap-4 overflow-x-auto pb-4 h-full">
         {columns.map(col => {
-          const colData = localReservations.filter(r => r.status === col.id).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          // ★ localReservations が undefined の場合の安全対策
+          const safeReservations = localReservations || [];
+          const colData = safeReservations.filter(r => r.status === col.id).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
           
           return (
             <div key={col.id} className="flex-1 min-w-[300px] flex flex-col bg-gray-100/50 rounded-md border border-gray-200 overflow-hidden" onDrop={(e) => handleDrop(e, col.id)} onDragOver={handleDragOver}>
@@ -159,7 +160,6 @@ export const AdminKanban = ({ localReservations, onUpdateStatus, onEditReservati
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex items-center gap-1.5 text-xs text-gray-500 font-mono"><Icons.Clock /> {formatTime(res.createdAt)}</div>
                         
-                        {/* ★ PDF出力/印刷ボタン */}
                         <button onClick={() => handlePrint(res)} className="text-[10px] bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded shadow-sm flex items-center gap-1 transition opacity-0 group-hover:opacity-100">
                             <Icons.Printer /> 帳票出力
                         </button>
