@@ -14,7 +14,15 @@ const Icons = {
   Mic: () => <svg className="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>,
   CheckCircle: () => <svg className="w-6 h-6 text-green-500 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   AlertTriangle: () => <svg className="w-4 h-4 inline-block text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
-  UploadCloud: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+  UploadCloud: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>,
+  Edit: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+};
+
+const getDriveImageUrl = (url: string) => {
+    if (!url) return '';
+    const match = url.match(/id=([^&]+)/) || url.match(/file\/d\/([^\/]+)/);
+    if (match && match[1]) return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1000`;
+    return url;
 };
 
 export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onClear, isVoiceOutputEnabled }: { data: any, editingResId?: string | null, localReservations?: any[], onSuccess: () => void, onClear: () => void, isVoiceOutputEnabled?: boolean }) => {
@@ -28,27 +36,32 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   const [bulkTotalWeight, setBulkTotalWeight] = useState<number | ''>('');
   const [showSimDetails, setShowSimDetails] = useState(false);
 
-  // 単一AI査定用
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [aiStatus, setAiStatus] = useState<'IDLE' | 'ANALYZING'>('IDLE');
   const [aiProgressStep, setAiProgressStep] = useState(0);
   const [imgData1, setImgData1] = useState<string>('');
   const [imgData2, setImgData2] = useState<string>('');
+  const [aiHint, setAiHint] = useState<string>('');
 
-  // ★ フレコン一括AI査定用
   const [isBulkAiModalOpen, setIsBulkAiModalOpen] = useState(false);
   const [bulkImages, setBulkImages] = useState<string[]>([]);
 
+  // 音声入力管理（トグル化対応）
   const [isListening, setIsListening] = useState(false);
   const [voiceText, setVoiceText] = useState('');
   const [isProcessingVoice, setIsProcessingVoice] = useState(false);
+  const recognitionRef = useRef<any>(null);
+  const timeoutRef = useRef<any>(null);
+
+  // ヒント用音声入力
+  const [isListeningHint, setIsListeningHint] = useState(false);
+  const hintRecognitionRef = useRef<any>(null);
+  const hintTimeoutRef = useRef<any>(null);
+
   const [isUploadingMaster, setIsUploadingMaster] = useState<string | null>(null);
 
   const [simConfig, setSimConfig] = useState({
-    disposalCostPerKg: 40,   
-    laborCostPerHour: 3000,  
-    capacityPerHour: 150,    
-    targetMargin: 15         
+    disposalCostPerKg: 40, laborCostPerHour: 3000, capacityPerHour: 150, targetMargin: 15         
   });
 
   const copperPrice = data?.market?.copper?.price || 1400;
@@ -68,7 +81,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         }
       }
     } else {
-      setCart([]); setSelectedClient(null); setImgData1(''); setImgData2(''); setBulkTotalWeight('');
+      setCart([]); setSelectedClient(null); setImgData1(''); setImgData2(''); setBulkTotalWeight(''); setAiHint('');
     }
   }, [editingResId, localReservations, data]);
 
@@ -90,27 +103,18 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   const addToCart = (product: any, overrideWeight?: number) => {
     const newItemId = Date.now().toString() + Math.random().toString(36).substring(7);
     setCart(prev => [...prev, { 
-        id: newItemId, 
-        product: buildProductName(product),
-        ratio: product.ratio, 
-        weight: overrideWeight !== undefined ? overrideWeight : 0,
-        percentage: 0,
-        conductor: product.conductor || '',
-        material: product.material || '純銅'
+        id: newItemId, product: buildProductName(product), ratio: product.ratio, 
+        weight: overrideWeight !== undefined ? overrideWeight : 0, percentage: 0,
+        conductor: product.conductor || '', material: product.material || '純銅'
     }]);
     setSearchTerm('');
   };
 
-  const updateWeight = (id: string, weight: number) => {
-    setCart(prev => prev.map(item => item.id === id ? { ...item, weight } : item));
-  };
-
+  const updateWeight = (id: string, weight: number) => setCart(prev => prev.map(item => item.id === id ? { ...item, weight } : item));
   const updatePercentage = (id: string, percentage: number) => {
-    if (percentage < 0) percentage = 0;
-    if (percentage > 100) percentage = 100;
+    if (percentage < 0) percentage = 0; if (percentage > 100) percentage = 100;
     setCart(prev => prev.map(item => item.id === id ? { ...item, percentage } : item));
   };
-
   const removeItem = (id: string) => { setCart(prev => prev.filter(item => item.id !== id)); };
 
   const compressImage = (file: File): Promise<string> => {
@@ -132,39 +136,20 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       });
   };
 
-  // 単一AI査定用
   const handleAiImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, num: 1 | 2) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-        const compressedBase64 = await compressImage(file);
-        if (num === 1) setImgData1(compressedBase64); else setImgData2(compressedBase64);
-    } catch (err) { alert("画像の処理に失敗しました。"); }
+    const file = e.target.files?.[0]; if (!file) return;
+    try { const compressed = await compressImage(file); if (num === 1) setImgData1(compressed); else setImgData2(compressed); } catch (err) {}
     e.target.value = '';
   };
 
-  // ★ フレコン一括AI査定用（複数ファイル対応）
   const handleBulkImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-    
-    // 一時的なローディング表示などは省略しますが、ファイルを順次圧縮してstateに追加
+    const files = e.target.files; if (!files || files.length === 0) return;
     const newImages: string[] = [];
-    for (let i = 0; i < files.length; i++) {
-        try {
-            const compressed = await compressImage(files[i]);
-            newImages.push(compressed);
-        } catch(err) {}
-    }
-    setBulkImages(prev => [...prev, ...newImages]);
-    e.target.value = '';
+    for (let i = 0; i < files.length; i++) { try { newImages.push(await compressImage(files[i])); } catch(err) {} }
+    setBulkImages(prev => [...prev, ...newImages]); e.target.value = '';
   };
+  const removeBulkImage = (index: number) => setBulkImages(prev => prev.filter((_, i) => i !== index));
 
-  const removeBulkImage = (index: number) => {
-      setBulkImages(prev => prev.filter((_, i) => i !== index));
-  };
-
-  // 従来の単一AI解析
   const runAiAnalysis = async () => {
     if (!imgData1) return alert('最低1枚の画像をアップロードしてください');
     setAiStatus('ANALYZING'); setAiProgressStep(1); 
@@ -173,7 +158,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
     try {
       const res = await fetch('/api/gas', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'VISION_AI_ASSESS', imageData: imgData1, imageData2: imgData2 })
+        body: JSON.stringify({ action: 'VISION_AI_ASSESS', imageData: imgData1, imageData2: imgData2, hint: aiHint })
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const result = await res.json();
@@ -196,23 +181,22 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
 
             showToast(result.data.isNewFlag ? '未知線種を仮登録しました' : '既存マスターと一致', `「${wireTypeStr}」として査定しました。`, result.data.isNewFlag ? 'success' : 'info');
 
-            setIsAiModalOpen(false); setImgData1(''); setImgData2(''); setAiProgressStep(0);
+            setIsAiModalOpen(false); setImgData1(''); setImgData2(''); setAiHint(''); setAiProgressStep(0);
           } else { alert('AI解析エラー: ' + result.message); setIsAiModalOpen(false); setAiProgressStep(0); }
           setAiStatus('IDLE');
       }, 800);
     } catch(err: any) { clearInterval(progressInterval); alert(`通信エラー: ${err.message}`); setAiStatus('IDLE'); setAiProgressStep(0); } 
   };
 
-  // ★ 新設：フレコン一括AI解析
   const runBulkAiAnalysis = async () => {
     if (bulkImages.length === 0) return alert('画像をアップロードしてください。');
     setAiStatus('ANALYZING'); setAiProgressStep(1); 
-    const progressInterval = setInterval(() => { setAiProgressStep(prev => prev < 3 ? prev + 1 : 3); }, 3000); // 複数枚で重いので遅め
+    const progressInterval = setInterval(() => { setAiProgressStep(prev => prev < 3 ? prev + 1 : 3); }, 3000); 
 
     try {
       const res = await fetch('/api/gas', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'VISION_AI_BULK_ASSESS', images: bulkImages })
+        body: JSON.stringify({ action: 'VISION_AI_BULK_ASSESS', images: bulkImages, hint: aiHint })
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const result = await res.json();
@@ -221,70 +205,69 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
 
       setTimeout(() => {
           if (result.status === 'success' && result.data) {
-            // モードをフレコン一括モードに切り替え
             setPosMode('BULK');
-            
-            // 重量が読み取れていればセット
-            if (result.data.estimatedWeight) {
-                setBulkTotalWeight(Number(result.data.estimatedWeight));
-            }
+            if (result.data.estimatedWeight) setBulkTotalWeight(Number(result.data.estimatedWeight));
 
-            // カートを一旦クリアして、AIの構成データを展開
             const newCartItems = (result.data.components || []).map((comp: any, idx: number) => ({
-                id: `bulk-${Date.now()}-${idx}`,
-                product: `📦 AI解析: ${comp.name || '不明'}`,
-                ratio: comp.ratio || 0,
-                weight: 0,
-                percentage: comp.percentage || 0,
-                isNewAi: true,
-                reason: idx === 0 ? result.data.reason : '', // 理由はいったん最初の要素にだけ付ける
-                material: '純銅' // デフォルト
+                id: `bulk-${Date.now()}-${idx}`, product: `📦 AI解析: ${comp.name || '不明'}`,
+                ratio: comp.ratio || 0, weight: 0, percentage: comp.percentage || 0,
+                isNewAi: true, reason: idx === 0 ? result.data.reason : '', material: '純銅' 
             }));
             
             setCart(newCartItems);
-
             showToast('フレコン一括解析完了', `構成要素を展開しました。全体の推定歩留まりは ${result.data.overallRatio || '---'}% です。`, 'success');
 
-            setIsBulkAiModalOpen(false); setBulkImages([]); setAiProgressStep(0);
+            setIsBulkAiModalOpen(false); setBulkImages([]); setAiHint(''); setAiProgressStep(0);
           } else { alert('AI解析エラー: ' + result.message); setIsBulkAiModalOpen(false); setAiProgressStep(0); }
           setAiStatus('IDLE');
       }, 800);
     } catch(err: any) { clearInterval(progressInterval); alert(`通信エラー: ${err.message}`); setAiStatus('IDLE'); setAiProgressStep(0); } 
   };
 
-
-  const uploadMasterImageFromCart = async (item: any) => {
-      setIsUploadingMaster(item.id);
-      try {
-          let success = false;
-          if (item.pendingImg1) {
-              await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'UPLOAD_IMAGE', sheetName: 'Products_Wire', recordId: item.masterId, colIndex: 11, data: item.pendingImg1, mimeType: 'image/jpeg', fileName: `img_${item.masterId}_1.jpg` }) });
-              success = true;
-          }
-          if (item.pendingImg2) {
-              await new Promise(resolve => setTimeout(resolve, 500));
-              await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'UPLOAD_IMAGE', sheetName: 'Products_Wire', recordId: item.masterId, colIndex: 12, data: item.pendingImg2, mimeType: 'image/jpeg', fileName: `img_${item.masterId}_2.jpg` }) });
-              success = true;
-          }
-          if (success) { setCart(prev => prev.map(i => i.id === item.id ? { ...i, isImageUploaded: true } : i)); showToast('マスター画像更新', 'マスターデータベースに画像が反映されました', 'success'); }
-      } catch (e) { alert("画像の登録に失敗しました。"); }
-      setIsUploadingMaster(null);
-  };
-
-  const startVoiceInput = () => {
+  // ★ 検索用音声入力（トグル式＋タイムアウト制限）
+  const toggleVoiceInput = () => {
+      if (isListening) {
+          if (recognitionRef.current) recognitionRef.current.stop();
+          return;
+      }
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) { alert('お使いのブラウザは音声入力に対応していません。'); return; }
+      
       const recognition = new SpeechRecognition();
-      recognition.lang = 'ja-JP'; recognition.interimResults = false; recognition.maxAlternatives = 1;
-      recognition.onstart = () => { setIsListening(true); setVoiceText('🎤 途切れないように一気に喋ってください...'); };
-      recognition.onresult = async (event) => { const text = event.results[0][0].transcript; setVoiceText(text); setIsListening(false); await processVoiceCommand(text); };
-      recognition.onerror = (event) => { setIsListening(false); setVoiceText('音声が認識できませんでした'); setTimeout(() => setVoiceText(''), 2000); };
-      recognition.onend = () => { setIsListening(false); };
+      recognition.lang = 'ja-JP'; 
+      recognition.continuous = true; 
+      recognition.interimResults = true;
+
+      recognition.onstart = () => { 
+          setIsListening(true); 
+          setVoiceText('🎤 認識中... (もう一度押すと送信 / 最大60秒)'); 
+          timeoutRef.current = setTimeout(() => { if (recognitionRef.current) recognitionRef.current.stop(); }, 60000);
+      };
+      
+      let finalTranscript = '';
+      recognition.onresult = (event: any) => {
+          let interimTranscript = '';
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+              if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript;
+              else interimTranscript += event.results[i][0].transcript;
+          }
+          setVoiceText(finalTranscript + interimTranscript);
+      };
+
+      recognition.onerror = () => { setIsListening(false); setVoiceText('認識エラー'); setTimeout(() => setVoiceText(''), 2000); };
+
+      recognition.onend = () => { 
+          setIsListening(false); 
+          if (timeoutRef.current) clearTimeout(timeoutRef.current);
+          if (finalTranscript) processVoiceCommand(finalTranscript);
+          else setTimeout(() => setVoiceText(''), 2000);
+      };
+      
+      recognitionRef.current = recognition;
       recognition.start();
   };
 
   const processVoiceCommand = async (text: string) => {
-      if (!text) return;
       setIsProcessingVoice(true);
       try {
           const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'PARSE_VOICE_COMMAND', text: text }) });
@@ -299,11 +282,63 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                   const isSqMatch = p.sq ? mSq === String(p.sq) : true; const isCoreMatch = p.core ? mCore === String(p.core) : true;
                   return (isNameMatch || isMakerMatch) && isSqMatch && isCoreMatch;
               });
-              if (matchedWire) { addToCart(matchedWire, p.weight || 0); setVoiceText(`追加完了: ${buildProductName(matchedWire)} ${p.weight ? p.weight+'kg' : ''}`); } 
-              else { setVoiceText('該当するマスターが見つかりませんでした。'); }
-          } else { setVoiceText('聞き取れませんでした。もう一度お試しください。'); }
-      } catch (e) { setVoiceText('通信エラーが発生しました。'); }
+              if (matchedWire) { addToCart(matchedWire, p.weight || 0); setVoiceText(`追加: ${buildProductName(matchedWire)}`); } 
+              else { setVoiceText('マスターが見つかりませんでした。'); }
+          } else { setVoiceText('解析できませんでした。'); }
+      } catch (e) { setVoiceText('通信エラー'); }
       setIsProcessingVoice(false); setTimeout(() => setVoiceText(''), 3000);
+  };
+
+  // ★ ヒント用音声入力（トグル式）
+  const toggleHintVoiceInput = () => {
+      if (isListeningHint) {
+          if (hintRecognitionRef.current) hintRecognitionRef.current.stop();
+          return;
+      }
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) return alert('非対応');
+      
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'ja-JP'; recognition.continuous = true; recognition.interimResults = true;
+      let currentHint = aiHint;
+      
+      recognition.onstart = () => {
+          setIsListeningHint(true);
+          hintTimeoutRef.current = setTimeout(() => { if (hintRecognitionRef.current) hintRecognitionRef.current.stop(); }, 60000);
+      };
+      
+      let finalStr = '';
+      recognition.onresult = (event: any) => {
+          let interim = ''; finalStr = '';
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+              if (event.results[i].isFinal) finalStr += event.results[i][0].transcript;
+              else interim += event.results[i][0].transcript;
+          }
+          setAiHint(currentHint + (currentHint ? ' ' : '') + finalStr + interim);
+      };
+      
+      recognition.onend = () => {
+          setIsListeningHint(false);
+          if (hintTimeoutRef.current) clearTimeout(hintTimeoutRef.current);
+          setAiHint(currentHint + (currentHint ? ' ' : '') + finalStr);
+      };
+      hintRecognitionRef.current = recognition;
+      recognition.start();
+  };
+
+  // ★ 別タブでマスター登録画面を開く処理
+  const handleOpenMasterRegistration = (item: any) => {
+      const pendingData = {
+          name: item.product.replace(/💡 AI査定: |📦 AI解析: /, '').trim(),
+          ratio: item.ratio,
+          reason: item.reason,
+          conductor: item.conductor,
+          material: item.material,
+          image1: item.pendingImg1,
+          image2: item.pendingImg2
+      };
+      localStorage.setItem('factoryOS_pendingAIItem', JSON.stringify(pendingData));
+      window.open(window.location.href, '_blank');
   };
 
   const simulation = useMemo(() => {
@@ -324,7 +359,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
 
   const totalPercentage = cart.reduce((sum, item) => sum + (Number(item.percentage) || 0), 0);
   const isPercentageValid = totalPercentage === 100;
-
   const hasTinPlated = cart.some(item => item.material === '錫メッキ' || item.product?.includes('錫'));
 
   const handleCheckout = async () => {
@@ -334,33 +368,22 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         if (!bulkTotalWeight || Number(bulkTotalWeight) <= 0) return alert('フレコンの総重量を入力してください');
         if (!isPercentageValid) return alert(`割合の合計を100%にしてください（現在: ${totalPercentage}%）`);
     }
-
     if (hasTinPlated) {
-        const confirmTin = window.confirm("⚠️ 警告 ⚠️\nカート内に「錫メッキ線」が含まれています。\nこのロットを純銅ナゲットライン（WN-800）に投入すると品質低下を招きます。\n\n「別管理（または専用処理）」として受付を確定しますか？");
-        if (!confirmTin) return;
+        if (!window.confirm("⚠️ 警告 ⚠️\nカート内に「錫メッキ線」が含まれています。\n「別管理（または専用処理）」として受付を確定しますか？")) return;
     }
-
     setIsProcessing(true);
     const finalCart = cart.map(item => ({ ...item, weight: posMode === 'BULK' ? ((Number(bulkTotalWeight) || 0) * ((Number(item.percentage) || 0) / 100)).toFixed(1) : item.weight }));
-    
-    const autoMemo = hasTinPlated ? '【要確認】錫メッキ線が含まれています。別ラインでの処理・保管を徹底してください。' : '';
-
     const payload = { 
         action: editingResId ? 'UPDATE_RESERVATION' : 'REGISTER_RESERVATION', 
-        reservationId: editingResId, 
-        memberId: selectedClient?.id || 'GUEST', 
-        memberName: selectedClient?.name || '新規・非会員 (飛込)', 
-        items: finalCart, 
-        totalEstimate: simulation.limitTotalCost, 
-        status: 'RESERVED',
-        memo: autoMemo 
+        reservationId: editingResId, memberId: selectedClient?.id || 'GUEST', memberName: selectedClient?.name || '新規・非会員 (飛込)', 
+        items: finalCart, totalEstimate: simulation.limitTotalCost, status: 'RESERVED',
+        memo: hasTinPlated ? '【要確認】錫メッキ線が含まれています。別ラインでの処理・保管を徹底してください。' : '' 
     };
-
     try {
       const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const result = await res.json();
       if (result.status === 'success') onSuccess(); else alert('エラー: ' + result.message);
-    } catch(err: any) { alert('通信エラー: ' + err.message); }
+    } catch(err: any) { alert('通信エラー'); }
     setIsProcessing(false);
   };
 
@@ -376,10 +399,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[70] animate-in slide-in-from-top-10 fade-in duration-300 w-[90%] max-w-md">
             <div className={`bg-white border-l-4 ${toastMessage.type === 'success' ? 'border-green-500' : 'border-blue-500'} p-4 rounded-sm shadow-2xl flex items-start gap-3`}>
                 <div className="mt-0.5">{toastMessage.type === 'success' ? <Icons.CheckCircle /> : <Icons.Sparkles />}</div>
-                <div>
-                    <h4 className="font-bold text-gray-900 text-sm">{toastMessage.title}</h4>
-                    <p className="text-xs text-gray-600 mt-1">{toastMessage.desc}</p>
-                </div>
+                <div><h4 className="font-bold text-gray-900 text-sm">{toastMessage.title}</h4><p className="text-xs text-gray-600 mt-1">{toastMessage.desc}</p></div>
             </div>
         </div>
       )}
@@ -388,37 +408,27 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         <div className="p-4 bg-gray-50 border-b border-gray-200 flex flex-col gap-3 relative shrink-0">
           {(isListening || isProcessingVoice || voiceText) && (
               <div className="absolute top-full left-0 w-full z-10 bg-blue-900 text-white p-2 text-center text-sm font-bold shadow-md animate-in slide-in-from-top-2">
-                  {isListening ? <span className="animate-pulse">{voiceText}</span> :
-                   isProcessingVoice ? <span><Icons.Refresh /> AIが解析中...</span> :
-                   <span>{voiceText}</span>}
+                  {isListening ? <span className="animate-pulse">{voiceText}</span> : isProcessingVoice ? <span><Icons.Refresh /> AIが解析中...</span> : <span>{voiceText}</span>}
               </div>
           )}
           <div className="flex w-full gap-2">
               <div className="relative flex-1">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Icons.Search /></div>
-                <input type="text" placeholder="品目、メーカー等で検索..." className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-sm text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none shadow-inner" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                <input type="text" placeholder="品目、メーカー等で検索..." className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-sm text-sm focus:border-blue-500 outline-none shadow-inner" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
               </div>
               <button 
-                  onClick={startVoiceInput}
-                  disabled={isListening || isProcessingVoice}
-                  className={`px-4 py-3 border rounded-sm flex items-center justify-center transition-all ${isListening ? 'bg-red-500 border-red-600 text-white animate-pulse' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-100 hover:text-blue-600'}`}
-                  title="音声で追加"
+                  onClick={toggleVoiceInput}
+                  className={`px-4 py-3 border rounded-sm flex items-center justify-center transition-all ${isListening ? 'bg-red-500 border-red-600 text-white animate-pulse shadow-inner' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-100 hover:text-blue-600'}`}
+                  title="音声で検索/追加"
               >
                   <Icons.Mic />
               </button>
           </div>
           <div className="flex gap-2">
-              <button 
-                onClick={() => setIsAiModalOpen(true)}
-                className="flex-1 bg-gradient-to-r from-blue-700 to-blue-900 hover:from-blue-600 hover:to-blue-800 text-white font-bold py-3 px-3 rounded-sm flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 text-xs sm:text-sm"
-              >
+              <button onClick={() => setIsAiModalOpen(true)} className="flex-1 bg-gradient-to-r from-blue-700 to-blue-900 hover:from-blue-600 hover:to-blue-800 text-white font-bold py-3 px-3 rounded-sm flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 text-xs sm:text-sm">
                 <Icons.Camera /> 単一線種分析
               </button>
-              {/* ★ 追加：フレコン一括査定ボタン */}
-              <button 
-                onClick={() => setIsBulkAiModalOpen(true)}
-                className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-800 hover:from-purple-500 hover:to-indigo-700 text-white font-bold py-3 px-3 rounded-sm flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 text-xs sm:text-sm relative overflow-hidden group"
-              >
+              <button onClick={() => setIsBulkAiModalOpen(true)} className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-800 hover:from-purple-500 hover:to-indigo-700 text-white font-bold py-3 px-3 rounded-sm flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 text-xs sm:text-sm relative overflow-hidden group">
                 <div className="absolute inset-0 w-full h-full bg-white/20 scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300"></div>
                 <Icons.Sparkles /> フレコン一括査定 <span className="bg-purple-900 text-[9px] px-1 py-0.5 rounded shadow-inner tracking-widest uppercase">BETA</span>
               </button>
@@ -431,14 +441,9 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
             {filteredProducts.map((p:any) => {
               const isTin = p.material === '錫メッキ' || p.name?.includes('錫');
               return (
-                  <button 
-                    key={p.id} onClick={() => addToCart(p)} 
-                    className={`bg-white border p-3 rounded-md shadow-sm hover:shadow-md hover:border-blue-400 text-left transition-all active:scale-95 flex flex-col justify-between min-h-[105px] relative overflow-hidden group ${isTin ? 'border-red-300 bg-red-50/20' : 'border-gray-200'}`}
-                  >
+                  <button key={p.id} onClick={() => addToCart(p)} className={`bg-white border p-3 rounded-md shadow-sm hover:shadow-md hover:border-blue-400 text-left transition-all active:scale-95 flex flex-col justify-between min-h-[105px] relative overflow-hidden group ${isTin ? 'border-red-300 bg-red-50/20' : 'border-gray-200'}`}>
                     <div>
-                      <div className="font-bold text-gray-800 text-sm leading-tight line-clamp-2">
-                          {buildProductName(p)}
-                      </div>
+                      <div className="font-bold text-gray-800 text-sm leading-tight line-clamp-2">{buildProductName(p)}</div>
                       {isTin && <span className="inline-block mt-1 bg-red-600 text-white text-[9px] px-1.5 py-0.5 rounded-sm font-bold shadow-sm">⚠️錫メッキ</span>}
                     </div>
                     <div className="flex justify-end mt-2"><span className="font-mono font-black text-blue-600 bg-blue-50/50 px-2 py-0.5 rounded-sm text-sm">{p.ratio}%</span></div>
@@ -457,7 +462,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
 
         <div className="p-3 border-b border-gray-200 bg-white shrink-0">
           <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">持込業者・顧客</label>
-          <select className="w-full border border-gray-300 bg-white p-2 rounded-sm text-sm font-bold text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer shadow-sm" value={selectedClient?.id || ''} onChange={e => { const client = data?.clients?.find((c:any) => c.id === e.target.value); setSelectedClient(client || null); }}>
+          <select className="w-full border border-gray-300 bg-white p-2 rounded-sm text-sm font-bold text-gray-800 outline-none cursor-pointer shadow-sm" value={selectedClient?.id || ''} onChange={e => { const client = data?.clients?.find((c:any) => c.id === e.target.value); setSelectedClient(client || null); }}>
             <option value="">新規・非会員 (飛込ゲスト)</option>
             {data?.clients?.map((c:any) => <option key={c.id} value={c.id}>{c.name} ({c.rank})</option>)}
           </select>
@@ -486,7 +491,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
             <div className="space-y-3 pb-2">
               {cart.map(item => {
                 const isItemTin = item.material === '錫メッキ' || item.product?.includes('錫');
-                
                 return (
                   <div key={item.id} className={`border p-4 rounded-sm flex flex-col gap-2 relative shadow-sm ${item.isNewAi ? 'bg-blue-50/30 border-blue-200' : isItemTin ? 'bg-red-50 border-red-400' : 'bg-white border-gray-200'}`}>
                     <div className="flex justify-between items-start">
@@ -495,7 +499,15 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                             {isItemTin && <span className="bg-red-600 text-white px-1.5 py-0.5 rounded-sm text-[10px]">⚠️錫メッキ</span>}
                             {item.product}
                         </div>
-                        <div className="text-xs text-gray-500 mt-1">歩留まり: <span className="font-mono font-bold text-blue-600">{item.ratio}%</span></div>
+                        <div className="text-xs text-gray-500 mt-1 flex items-center gap-3">
+                            <span>歩留まり: <span className="font-mono font-bold text-blue-600">{item.ratio}%</span></span>
+                            {/* ★ 別タブでマスター登録画面を開くボタン */}
+                            {item.isNewAi && (
+                                <button onClick={() => handleOpenMasterRegistration(item)} className="text-[10px] bg-white border border-blue-300 text-blue-700 px-2 py-0.5 rounded shadow-sm hover:bg-blue-50 transition flex items-center gap-1">
+                                    <Icons.Edit /> マスターへ登録 (別タブ)
+                                </button>
+                            )}
+                        </div>
                       </div>
                       <button onClick={() => removeItem(item.id)} className="text-gray-300 hover:text-red-500 absolute top-3 right-3"><Icons.Trash /></button>
                     </div>
@@ -517,19 +529,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                       )}
                     </div>
                     {item.reason && <div className="mt-3 bg-white border border-blue-200 p-3 rounded-sm text-xs lg:text-sm text-gray-700 leading-relaxed shadow-sm whitespace-pre-wrap"><span className="font-black text-blue-700 block mb-1">💡 AI推論の根拠</span>{item.reason}</div>}
-                    
-                    {item.isMasterImageEmpty && !item.isImageUploaded && item.pendingImg1 && !item.isNewAi && (
-                        <div className="mt-2 bg-yellow-50 border border-yellow-200 p-2 rounded-sm flex flex-col sm:flex-row justify-between items-center gap-2">
-                            <span className="text-xs text-yellow-800 font-bold">⚠️ マスター画像が未登録です</span>
-                            <button 
-                                onClick={() => uploadMasterImageFromCart(item)} 
-                                disabled={isUploadingMaster === item.id}
-                                className="bg-yellow-600 hover:bg-yellow-700 text-white text-[10px] px-3 py-1.5 rounded-sm font-bold shadow-sm transition disabled:opacity-50 flex items-center gap-1 w-full sm:w-auto justify-center"
-                            >
-                                {isUploadingMaster === item.id ? <><Icons.Refresh /> 登録中...</> : 'この写真をマスターに登録'}
-                            </button>
-                        </div>
-                    )}
                   </div>
                 );
               })}
@@ -567,18 +566,14 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
             </div>
           </div>
 
-          <button 
-              onClick={handleCheckout} 
-              disabled={isProcessing || simulation.totalWeight === 0 || (posMode === 'BULK' && !isPercentageValid)} 
-              className={`w-full text-white font-black py-4 rounded-sm transition shadow-[0_4px_14px_0_rgba(220,38,38,0.39)] disabled:opacity-50 flex justify-center items-center text-lg ${hasTinPlated ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}
-          >
+          <button onClick={handleCheckout} disabled={isProcessing || simulation.totalWeight === 0 || (posMode === 'BULK' && !isPercentageValid)} className={`w-full text-white font-black py-4 rounded-sm transition shadow-[0_4px_14px_0_rgba(220,38,38,0.39)] disabled:opacity-50 flex justify-center items-center text-lg ${hasTinPlated ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}>
               {isProcessing ? <Icons.Refresh /> : hasTinPlated ? '⚠️ 確認して受付を確定する' : '受付を確定してカンバンへ'}
           </button>
           <div className="mt-3 text-center"><button onClick={() => {setCart([]); onClear(); setBulkTotalWeight('');}} className="text-[10px] text-gray-500 font-bold border border-gray-700 px-3 py-1 rounded-sm">カートをリセット</button></div>
         </div>
       </div>
 
-      {/* 従来の単一AIモーダル（省略せずに維持） */}
+      {/* 単一AIモーダル（ヒント入力対応） */}
       {isAiModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-gray-900 w-full max-w-2xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col">
@@ -594,16 +589,25 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                 </div>
               ) : (
                 <div className="animate-in fade-in">
-                    <p className="text-sm text-gray-300 mb-6">断面写真や表面の印字（メーカー名等）の写真をアップロードしてください。</p>
-                    <div className="flex flex-col md:flex-row gap-4 mb-6">
+                    <div className="flex flex-col md:flex-row gap-4 mb-4">
                         <div className="flex-1 p-4 border-2 border-dashed border-gray-600 bg-gray-800/50 rounded-md">
-                            {imgData1 ? ( <div className="relative h-32"><img src={`data:image/jpeg;base64,${imgData1}`} className="w-full h-full object-cover" /><button onClick={()=>setImgData1('')} className="absolute top-2 right-2 bg-red-600 text-white p-1 rounded"><Icons.Trash/></button></div> ) : ( <><p className="text-sm font-bold text-gray-300 mb-2">1. 断面画像</p><input type="file" onChange={e=>handleAiImageUpload(e,1)} className="w-full text-white text-xs"/></> )}
+                            {imgData1 ? ( <div className="relative h-24"><img src={`data:image/jpeg;base64,${imgData1}`} className="w-full h-full object-cover" /><button onClick={()=>setImgData1('')} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded"><Icons.Trash/></button></div> ) : ( <><p className="text-sm font-bold text-gray-300 mb-2">1. 断面画像</p><input type="file" onChange={e=>handleAiImageUpload(e,1)} className="w-full text-white text-xs"/></> )}
                         </div>
                         <div className="flex-1 p-4 border-2 border-dashed border-gray-600 bg-gray-800/50 rounded-md">
-                            {imgData2 ? ( <div className="relative h-32"><img src={`data:image/jpeg;base64,${imgData2}`} className="w-full h-full object-cover" /><button onClick={()=>setImgData2('')} className="absolute top-2 right-2 bg-red-600 text-white p-1 rounded"><Icons.Trash/></button></div> ) : ( <><p className="text-sm font-bold text-gray-300 mb-2">2. 印字画像</p><input type="file" onChange={e=>handleAiImageUpload(e,2)} className="w-full text-white text-xs"/></> )}
+                            {imgData2 ? ( <div className="relative h-24"><img src={`data:image/jpeg;base64,${imgData2}`} className="w-full h-full object-cover" /><button onClick={()=>setImgData2('')} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded"><Icons.Trash/></button></div> ) : ( <><p className="text-sm font-bold text-gray-300 mb-2">2. 印字画像</p><input type="file" onChange={e=>handleAiImageUpload(e,2)} className="w-full text-white text-xs"/></> )}
                         </div>
                     </div>
-                    <button onClick={runAiAnalysis} disabled={!imgData1} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-md flex justify-center items-center gap-2 disabled:bg-gray-700">解析してカートに追加</button>
+                    {/* ★ ヒント入力欄 */}
+                    <div className="mb-6 bg-gray-800/50 border border-gray-700 p-3 rounded-md relative">
+                        <label className="block text-xs font-bold text-gray-400 mb-2 flex items-center justify-between">
+                            <span>🗣️ AIへのヒント・補足（任意）</span>
+                            <button onClick={toggleHintVoiceInput} className={`p-1.5 rounded transition ${isListeningHint ? 'bg-red-500 text-white animate-pulse' : 'bg-gray-700 text-gray-300 hover:bg-blue-600'}`}>
+                                <Icons.Mic />
+                            </button>
+                        </label>
+                        <textarea className="w-full bg-gray-900 border border-gray-600 rounded text-sm text-white p-2 outline-none focus:border-blue-500 min-h-[60px]" placeholder="例: 中身は細線の束、かなり重い、雑線は入っていない等..." value={aiHint} onChange={e => setAiHint(e.target.value)} />
+                    </div>
+                    <button onClick={runAiAnalysis} disabled={!imgData1 && !aiHint} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-md flex justify-center items-center gap-2 disabled:bg-gray-700">解析してカートに追加</button>
                 </div>
               )}
             </div>
@@ -611,7 +615,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         </div>
       )}
 
-      {/* ★ 新設：フレコン一括AIモーダル */}
+      {/* フレコン一括AIモーダル（ヒント入力対応） */}
       {isBulkAiModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-gray-900 w-full max-w-4xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col max-h-[90vh]">
@@ -619,51 +623,31 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
               <h3 className="font-black text-white flex items-center gap-2"><Icons.Sparkles /> AI フレコン一括査定 (PROTOTYPE)</h3>
               {aiStatus !== 'ANALYZING' && <button onClick={() => {setIsBulkAiModalOpen(false); setBulkImages([]);}} className="text-gray-400 hover:text-white"><Icons.Close /></button>}
             </div>
-            
             <div className="p-6 overflow-y-auto">
               {aiStatus === 'ANALYZING' ? (
                 <div className="py-12 flex flex-col items-center animate-in fade-in zoom-in duration-500">
-                    <div className="relative w-24 h-24 mb-8">
-                        <div className="absolute inset-0 border-4 border-purple-500/20 rounded-full"></div>
-                        <div className="absolute inset-0 border-4 border-purple-500 rounded-full border-t-transparent animate-spin"></div>
-                        <div className="absolute inset-0 flex items-center justify-center text-purple-400 text-2xl"><Icons.Box /></div>
-                    </div>
-                    <div className="space-y-5 w-full max-w-md font-bold text-sm">
-                        <div className={`flex items-center gap-4 transition-all duration-500 ${aiProgressStep >= 1 ? 'text-purple-400 translate-x-0 opacity-100' : 'text-gray-700 -translate-x-4 opacity-0'}`}><span className="w-6 text-center text-xl">🚀</span><span>全画像のパケットをGoogle Cloudへ転送中...</span></div>
-                        <div className={`flex items-center gap-4 transition-all duration-500 delay-300 ${aiProgressStep >= 2 ? 'text-purple-400 translate-x-0 opacity-100' : 'text-gray-700 -translate-x-4 opacity-0'}`}><span className="w-6 text-center text-xl">🧠</span><span>Gemini 2.5 Proによる空間・質量の一括推論...</span></div>
-                        <div className={`flex items-center gap-4 transition-all duration-500 delay-300 ${aiProgressStep >= 3 ? 'text-purple-400 translate-x-0 opacity-100' : 'text-gray-700 -translate-x-4 opacity-0'}`}><span className="w-6 text-center text-xl">⚖️</span><span>電線ごとの構成比率と推定歩留まりを演算中...</span></div>
-                    </div>
+                    <div className="relative w-24 h-24 mb-8"><div className="absolute inset-0 border-4 border-purple-500/20 rounded-full"></div><div className="absolute inset-0 border-4 border-purple-500 rounded-full border-t-transparent animate-spin"></div><div className="absolute inset-0 flex items-center justify-center text-purple-400 text-2xl"><Icons.Box /></div></div>
+                    <div className="space-y-5 w-full max-w-md font-bold text-sm text-center text-purple-400">一括推論中...</div>
                 </div>
               ) : (
                 <div className="animate-in fade-in">
-                    <div className="bg-purple-900/20 border border-purple-500/30 p-4 rounded-sm mb-6 text-purple-100 text-sm leading-relaxed">
-                        <strong>フレコンの中身をAIが丸ごと査定します。</strong><br/>
-                        全体像、寄り（断面や被覆の印字）、計量器の重量表示など、判断材料になる写真を何枚でもアップロードしてください。
-                    </div>
-
-                    {/* 画像プレビューグリッド */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-4">
                         {bulkImages.map((b64, idx) => (
-                            <div key={idx} className="relative aspect-square rounded-sm overflow-hidden border border-gray-600 group shadow-md">
-                                <img src={`data:image/jpeg;base64,${b64}`} className="w-full h-full object-cover" alt={`bulk-${idx}`} />
-                                <div className="absolute top-1 left-1 bg-black/70 text-white text-[10px] px-1.5 rounded font-mono">{idx + 1}</div>
-                                <button onClick={() => removeBulkImage(idx)} className="absolute top-1 right-1 bg-red-600/90 text-white p-1.5 rounded-sm opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"><Icons.Trash /></button>
-                            </div>
+                            <div key={idx} className="relative aspect-square rounded-sm overflow-hidden border border-gray-600 group shadow-md"><img src={`data:image/jpeg;base64,${b64}`} className="w-full h-full object-cover" /><div className="absolute top-1 left-1 bg-black/70 text-white text-[10px] px-1.5 rounded">{idx + 1}</div><button onClick={() => removeBulkImage(idx)} className="absolute top-1 right-1 bg-red-600/90 text-white p-1.5 rounded-sm opacity-0 group-hover:opacity-100"><Icons.Trash /></button></div>
                         ))}
-                        
-                        {/* 追加ボタン（常に最後尾に表示） */}
-                        <label className="aspect-square rounded-sm border-2 border-dashed border-gray-600 bg-gray-800/50 hover:bg-gray-700/50 hover:border-purple-500 transition-all flex flex-col items-center justify-center cursor-pointer text-gray-400 hover:text-purple-400 shadow-inner">
-                            <Icons.Camera />
-                            <span className="text-xs font-bold mt-2">写真を追加</span>
-                            <input type="file" multiple accept="image/*" onChange={handleBulkImageUpload} className="hidden" />
-                        </label>
+                        <label className="aspect-square rounded-sm border-2 border-dashed border-gray-600 bg-gray-800/50 hover:bg-gray-700/50 hover:border-purple-500 transition-all flex flex-col items-center justify-center cursor-pointer text-gray-400"><Icons.Camera /><span className="text-xs font-bold mt-2">写真を追加</span><input type="file" multiple accept="image/*" onChange={handleBulkImageUpload} className="hidden" /></label>
                     </div>
-
-                    <button 
-                        onClick={runBulkAiAnalysis} 
-                        disabled={bulkImages.length === 0} 
-                        className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black py-4 rounded-sm flex justify-center items-center gap-2 disabled:opacity-50 disabled:grayscale transition shadow-lg text-lg"
-                    >
+                    {/* ★ ヒント入力欄 */}
+                    <div className="mb-6 bg-purple-900/20 border border-purple-500/30 p-3 rounded-md relative">
+                        <label className="block text-xs font-bold text-purple-300 mb-2 flex items-center justify-between">
+                            <span>🗣️ AIへのヒント・補足（任意）</span>
+                            <button onClick={toggleHintVoiceInput} className={`p-1.5 rounded transition ${isListeningHint ? 'bg-red-500 text-white animate-pulse' : 'bg-purple-900 text-purple-200 hover:bg-purple-700'}`}>
+                                <Icons.Mic />
+                            </button>
+                        </label>
+                        <textarea className="w-full bg-gray-900/80 border border-purple-800/50 rounded text-sm text-white p-2 outline-none focus:border-purple-400 min-h-[60px]" placeholder="例: 表面の通信線の下は全部太いCV線、重量は袋込みで520kg..." value={aiHint} onChange={e => setAiHint(e.target.value)} />
+                    </div>
+                    <button onClick={runBulkAiAnalysis} disabled={bulkImages.length === 0 && !aiHint} className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 text-white font-black py-4 rounded-sm flex justify-center items-center gap-2 disabled:opacity-50">
                         <Icons.Sparkles /> 画像 {bulkImages.length} 枚で一括査定を実行
                     </button>
                 </div>
