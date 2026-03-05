@@ -85,7 +85,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   };
 
   const addToCart = (product: any, overrideWeight?: number) => {
-    // ★ 修正：カートに conductor 情報を引き継ぐ
     const newItemId = Date.now().toString();
     setCart(prev => [...prev, { 
         id: newItemId, 
@@ -93,7 +92,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         ratio: product.ratio, 
         weight: overrideWeight !== undefined ? overrideWeight : 0,
         percentage: 0,
-        conductor: product.conductor || ''
+        conductor: product.conductor || '' // ★ 修正：カートに conductor 情報を引き継ぐ
     }]);
     setSearchTerm('');
   };
@@ -167,35 +166,36 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
 
       setTimeout(() => {
           if (result.status === 'success') {
-            const isMixed = result.data.wireType.includes('フレコン') || result.data.wireType.includes('混合');
-            const displayName = result.data.isNewFlag || isMixed ? `💡 AI査定: ${result.data.wireType}` : result.data.wireType;
+            // ★ 修正：AIがエラーを起こして wireType 等を返さなかった場合のフォールバック（安全対策）
+            const wireTypeStr = result.data.wireType || result.data.name || '不明な線種';
+            const isMixed = wireTypeStr.includes('フレコン') || wireTypeStr.includes('混合');
+            const displayName = result.data.isNewFlag || isMixed ? `💡 AI査定: ${wireTypeStr}` : wireTypeStr;
             
-            // ★ 修正：AIの判定結果にも conductor をセット
             setCart(prev => [{
                 id: Date.now().toString(), 
                 product: displayName, 
-                ratio: result.data.estimatedRatio, 
+                ratio: result.data.estimatedRatio || 0, 
                 weight: 0, 
                 percentage: 0, 
                 isNewAi: result.data.isNewFlag, 
-                reason: result.data.reason,
+                reason: result.data.reason || '',
                 masterId: result.data.masterId,
                 isMasterImageEmpty: result.data.isMasterImageEmpty,
                 pendingImg1: imgData1,
                 pendingImg2: imgData2,
                 isImageUploaded: false,
-                conductor: result.data.conductor || ''
+                conductor: result.data.conductor || '' // ★ 修正：AIの判定結果にも conductor をセット
             }, ...prev]);
 
             if (result.data.isNewFlag) {
-                showToast('未知線種を仮登録しました', `「${result.data.wireType}」の画像とデータをデータベースに保存しました。`, 'success');
+                showToast('未知線種を仮登録しました', `「${wireTypeStr}」の画像とデータをデータベースに保存しました。`, 'success');
             } else {
-                showToast('既存マスターと一致', `「${result.data.wireType}」として査定しました。`, 'info');
+                showToast('既存マスターと一致', `「${wireTypeStr}」として査定しました。`, 'info');
             }
 
             if (isVoiceOutputEnabled && 'speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
-                const cleanSpeechText = result.data.wireType.replace(/【.*?】/, '');
+                const cleanSpeechText = wireTypeStr.replace(/【.*?】/, '');
                 const speakText = result.data.isNewFlag
                     ? `新規線種です。${cleanSpeechText}、推定歩留まり、${result.data.estimatedRatio}パーセント。`
                     : `判定完了。${cleanSpeechText} です。`;
@@ -576,7 +576,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           <button 
               onClick={handleCheckout} 
               disabled={isProcessing || simulation.totalWeight === 0 || (posMode === 'BULK' && !isPercentageValid)} 
-              className={`w-full text-white font-black py-4 rounded-sm transition shadow-lg disabled:opacity-50 flex justify-center items-center text-lg ${hasTinPlated ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+              className={`w-full text-white font-black py-4 rounded-sm transition shadow-[0_4px_14px_0_rgba(220,38,38,0.39)] disabled:opacity-50 flex justify-center items-center text-lg ${hasTinPlated ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}
           >
               {isProcessing ? <Icons.Refresh /> : hasTinPlated ? '⚠️ 確認して受付を確定する' : '受付を確定してカンバンへ'}
           </button>
