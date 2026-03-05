@@ -55,7 +55,9 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
 
   const copperPrice = data?.market?.copper?.price || 1400;
 
+  // ★ 現場の呼び方に合わせたカテゴリ再定義
   const CATEGORIES = ['すべて', 'IV線', 'CV・電力線', 'VVF / VV (ネズミ線)', '制御・通信線', 'キャブタイヤ・雑線', 'その他'];
+  
   const getCategory = (name: string) => {
       if (!name) return 'その他';
       const n = name.toUpperCase();
@@ -66,6 +68,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       if (n.includes('VCT') || n.includes('雑線') || n.includes('家電') || n.includes('ハーネス')) return 'キャブタイヤ・雑線';
       return 'その他';
   };
+
   const uniqueMakers = useMemo(() => Array.from(new Set((data?.wires || []).map((w:any) => w.maker).filter((m:any) => m && m !== '-'))), [data]);
 
   useEffect(() => {
@@ -318,18 +321,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       showToast('データ転送完了', '左メニューから「データベース」を開くと、自動で入力画面が立ち上がります。', 'success');
   };
 
-  const getCategory = (name: string) => {
-      if (!name) return 'その他';
-      const n = name.toUpperCase();
-      if (n.includes('IV')) return 'IV';
-      if (n.includes('CVT')) return 'CVT';
-      if (n.includes('CV')) return 'CV';
-      if (n.includes('VVF') || n.includes('VA')) return 'VVF / VA';
-      if (n.includes('通信') || n.includes('LAN') || n.includes('弱電') || n.includes('光')) return '通信・弱電';
-      if (n.includes('雑線') || n.includes('家電') || n.includes('ハーネス')) return '雑線';
-      return 'その他';
-  };
-
   // ★ AND検索対応の高度なフィルタリング
   const filteredProducts = useMemo(() => {
       return (data?.wires || []).filter((w:any) => {
@@ -422,13 +413,13 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
               <div className="flex w-full gap-2">
                   <div className="relative flex-1">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Icons.Search /></div>
-                    <input type="text" placeholder="検索 (例: 1C VV)..." className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-sm text-sm focus:border-blue-500 outline-none shadow-inner" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                    <input type="text" placeholder="AND検索 (例: 1C VV)..." className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-sm text-sm focus:border-blue-500 outline-none shadow-inner" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
                   </div>
                   <select className="border border-gray-300 rounded-sm px-2 py-2 text-sm outline-none focus:border-blue-500 bg-white max-w-[110px] text-gray-700 font-bold shadow-sm" value={selectedMaker} onChange={e => setSelectedMaker(e.target.value)}>
                       <option value="">全メーカー</option>
                       {uniqueMakers.map(m => <option key={m as string} value={m as string}>{m as string}</option>)}
                   </select>
-                  <button onClick={toggleVoiceInput} className={`px-3 py-2 border rounded-sm flex items-center justify-center transition-all ${isListening ? 'bg-red-500 border-red-600 text-white animate-pulse shadow-inner' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-100 hover:text-blue-600'}`} title="AI音声自動追加"><Icons.Mic /></button>
+                  <button onClick={toggleVoiceInput} className={`px-3 py-2 border rounded-sm flex items-center justify-center transition-all ${isListening ? 'bg-red-500 border-red-600 text-white animate-pulse shadow-inner' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-100 hover:text-blue-600'}`} title="音声で検索キーワード入力"><Icons.Mic /></button>
               </div>
 
               <div className="flex gap-1.5 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -606,7 +597,8 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           </div>
         </div>
       </div>
-      {/* (以下、AIモーダル系は変更なし) */}
+
+      {/* 単一AIモーダル */}
       {isAiModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-gray-900 w-full max-w-2xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col">
@@ -647,6 +639,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         </div>
       )}
 
+      {/* フレコン一括AIモーダル */}
       {isBulkAiModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-gray-900 w-full max-w-4xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col max-h-[90vh]">
