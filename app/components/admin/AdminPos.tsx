@@ -3,17 +3,29 @@ import React, { useState, useRef, useMemo, useEffect } from 'react';
 
 const Icons = {
   Search: () => <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
-  Camera: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
-  Trash: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
-  Sparkles: () => <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 8.134a1 1 0 010 1.932l-3.354.933-1.179 4.456a1 1 0 01-1.934 0l-1.179-4.456-3.354-.933a1 1 0 010-1.932l3.354-.933 1.179-4.456A1 1 0 0112 2z" clipRule="evenodd" /></svg>,
+  Camera: () => <svg className="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+  Trash: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
+  Sparkles: () => <svg className="w-5 h-5 inline-block" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 8.134a1 1 0 010 1.932l-3.354.933-1.179 4.456a1 1 0 01-1.934 0l-1.179-4.456-3.354-.933a1 1 0 010-1.932l3.354-.933 1.179-4.456A1 1 0 0112 2z" clipRule="evenodd" /></svg>,
   Close: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>,
-  Refresh: () => <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
-  Settings: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
-  Box: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>,
-  ScaleIndividual: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>,
-  Mic: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>,
-  CheckCircle: () => <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-  AlertTriangle: () => <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+  Refresh: () => <svg className="w-5 h-5 animate-spin inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
+  Settings: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+  Box: () => <svg className="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>,
+  ScaleIndividual: () => <svg className="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>,
+  Mic: () => <svg className="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>,
+  CheckCircle: () => <svg className="w-6 h-6 text-green-500 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+  AlertTriangle: () => <svg className="w-4 h-4 inline-block text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
+  // ★ 修正：このアイコンが欠損していたためクラッシュしていました
+  UploadCloud: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+};
+
+// ★ 修正：最も安定する公式サムネイルエンドポイント（高解像度指定）
+const getDriveImageUrl = (url: string) => {
+    if (!url) return '';
+    const match = url.match(/id=([^&]+)/) || url.match(/file\/d\/([^\/]+)/);
+    if (match && match[1]) {
+        return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1000`;
+    }
+    return url;
 };
 
 export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onClear, isVoiceOutputEnabled }: { data: any, editingResId?: string | null, localReservations?: any[], onSuccess: () => void, onClear: () => void, isVoiceOutputEnabled?: boolean }) => {
@@ -77,9 +89,9 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   const buildProductName = (p: any) => {
     const maker = p.maker && p.maker !== '-' ? `【${p.maker}】` : '';
     const sizeStr = p.size || p.sq;
-    const size = sizeStr && sizeStr !== '-' ? ` ${sizeStr}sq` : '';
+    const size = sizeStr && sizeStr !== '-' ? ` ${sizeStr}${String(sizeStr).match(/[a-zA-Z]/) ? '' : 'sq'}` : '';
     const coreStr = p.core || p.cores || p.coreCount;
-    const core = coreStr && coreStr !== '-' ? ` ${coreStr}C` : '';
+    const core = coreStr && coreStr !== '-' ? ` ${coreStr}${String(coreStr).match(/[a-zA-Z]/) ? '' : 'C'}` : '';
     const yearStr = p.year && p.year !== '-' ? ` (製造年: ${p.year})` : '';
     return `${maker}${p.name}${size}${core}${yearStr}`.trim();
   };
@@ -92,7 +104,8 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         ratio: product.ratio, 
         weight: overrideWeight !== undefined ? overrideWeight : 0,
         percentage: 0,
-        conductor: product.conductor || '' // ★ 導体情報を引き継ぐ
+        conductor: product.conductor || '',
+        material: product.material || '純銅'
     }]);
     setSearchTerm('');
   };
@@ -116,11 +129,11 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
               const img = new Image(); img.src = event.target?.result as string;
               img.onload = () => {
                   const canvas = document.createElement('canvas');
-                  const MAX = 800; let w = img.width; let h = img.height;
+                  const MAX = 1200; let w = img.width; let h = img.height;
                   if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } } else { if (h > MAX) { w *= MAX / h; h = MAX; } }
                   canvas.width = w; canvas.height = h;
                   const ctx = canvas.getContext('2d'); ctx?.drawImage(img, 0, 0, w, h);
-                  resolve(canvas.toDataURL('image/jpeg', 0.6).split(',')[1]);
+                  resolve(canvas.toDataURL('image/jpeg', 0.8).split(',')[1]);
               };
               img.onerror = () => reject(new Error('Image loading failed'));
           };
@@ -183,7 +196,8 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                 pendingImg1: imgData1,
                 pendingImg2: imgData2,
                 isImageUploaded: false,
-                conductor: result.data.conductor || '' // ★ 導体情報をセット
+                conductor: result.data.conductor || '',
+                material: result.data.material || '純銅' 
             }, ...prev]);
 
             if (result.data.isNewFlag) {
@@ -310,8 +324,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   const totalPercentage = cart.reduce((sum, item) => sum + (Number(item.percentage) || 0), 0);
   const isPercentageValid = totalPercentage === 100;
 
-  // ★ 判定：カート内に「錫」という文字が含まれるアイテムがあるか
-  const hasTinPlated = cart.some(item => item.conductor?.includes('錫') || item.product?.includes('錫'));
+  const hasTinPlated = cart.some(item => item.material === '錫メッキ' || item.product?.includes('錫'));
 
   const handleCheckout = async () => {
     if (cart.length === 0) return alert('カートが空です');
@@ -321,16 +334,14 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         if (!isPercentageValid) return alert(`割合の合計を100%にしてください（現在: ${totalPercentage}%）`);
     }
 
-    // ★ 追加：錫メッキ混入時の警告ダイアログ
     if (hasTinPlated) {
-        const confirmTin = window.confirm("⚠️ 警告 ⚠️\nカート内に「錫メッキ線」が含まれています。\nこのロットを純銅ナゲットライン（WN-800）に投入すると品質事故につながります。\n\n「別管理（または専用処理）」として受付を確定しますか？");
+        const confirmTin = window.confirm("⚠️ 警告 ⚠️\nカート内に「錫メッキ線」が含まれています。\nこのロットを純銅ナゲットライン（WN-800）に投入すると品質低下を招きます。\n\n「別管理（または専用処理）」として受付を確定しますか？");
         if (!confirmTin) return;
     }
 
     setIsProcessing(true);
     const finalCart = cart.map(item => ({ ...item, weight: posMode === 'BULK' ? ((Number(bulkTotalWeight) || 0) * ((Number(item.percentage) || 0) / 100)).toFixed(1) : item.weight }));
     
-    // ★ 修正：錫メッキを含む場合はメモに警告を自動追記する
     const autoMemo = hasTinPlated ? '【要確認】錫メッキ線が含まれています。別ラインでの処理・保管を徹底してください。' : '';
 
     const payload = { 
@@ -377,7 +388,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           {(isListening || isProcessingVoice || voiceText) && (
               <div className="absolute top-full left-0 w-full z-10 bg-blue-900 text-white p-2 text-center text-sm font-bold shadow-md animate-in slide-in-from-top-2">
                   {isListening ? <span className="animate-pulse">{voiceText}</span> :
-                   isProcessingVoice ? <span><Icons.Refresh className="inline mr-2 animate-spin"/> AIが解析中...</span> :
+                   isProcessingVoice ? <span><Icons.Refresh /> AIが解析中...</span> :
                    <span>{voiceText}</span>}
               </div>
           )}
@@ -408,7 +419,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           <p className="text-xs font-bold text-gray-500 mb-3 tracking-widest">よく使うマスター線種をタップ</p>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {filteredProducts.map((p:any) => {
-              const isTin = p.conductor?.includes('錫') || p.name?.includes('錫');
+              const isTin = p.material === '錫メッキ' || p.name?.includes('錫');
               return (
                   <button 
                     key={p.id} onClick={() => addToCart(p)} 
@@ -464,7 +475,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           ) : (
             <div className="space-y-3 pb-2">
               {cart.map(item => {
-                const isItemTin = item.conductor?.includes('錫') || item.product?.includes('錫');
+                const isItemTin = item.material === '錫メッキ' || item.product?.includes('錫');
                 
                 return (
                   <div key={item.id} className={`border p-4 rounded-sm flex flex-col gap-2 relative shadow-sm ${item.isNewAi ? 'bg-blue-50/30 border-blue-200' : isItemTin ? 'bg-red-50 border-red-400' : 'bg-white border-gray-200'}`}>
@@ -572,7 +583,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           <button 
               onClick={handleCheckout} 
               disabled={isProcessing || simulation.totalWeight === 0 || (posMode === 'BULK' && !isPercentageValid)} 
-              className={`w-full text-white font-black py-4 rounded-sm transition shadow-lg disabled:opacity-50 flex justify-center items-center text-lg ${hasTinPlated ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+              className={`w-full text-white font-black py-4 rounded-sm transition shadow-[0_4px_14px_0_rgba(220,38,38,0.39)] disabled:opacity-50 flex justify-center items-center text-lg ${hasTinPlated ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}
           >
               {isProcessing ? <Icons.Refresh /> : hasTinPlated ? '⚠️ 確認して受付を確定する' : '受付を確定してカンバンへ'}
           </button>
