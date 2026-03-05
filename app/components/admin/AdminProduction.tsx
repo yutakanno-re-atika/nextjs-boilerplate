@@ -15,20 +15,16 @@ const Icons = {
   Print: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>,
   Refresh: () => <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
   Brain: () => <svg className="w-5 h-5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>,
-  ShieldCheck: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+  AlertTriangle: () => <svg className="w-4 h-4 inline-block text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
 };
 
 const ProvenanceBadge = ({ type }: { type: 'HUMAN' | 'AI_AUTO' | 'CO_OP' }) => {
     const baseStyle = "inline-block px-1.5 py-0.5 text-[9px] font-mono font-bold tracking-widest rounded-sm text-white cursor-default shadow-sm";
     switch (type) {
-        case 'HUMAN':
-            return <span className={`${baseStyle} bg-gray-900`} title="実測・確定データ">HUMAN</span>;
-        case 'CO_OP':
-            return <span className={`${baseStyle} bg-gray-600`} title="AI＋人間 協調データ">CO-P</span>;
-        case 'AI_AUTO':
-            return <span className={`${baseStyle} bg-gray-400`} title="AI予測・推論データ">AI</span>;
-        default:
-            return null;
+        case 'HUMAN': return <span className={`${baseStyle} bg-gray-900`} title="実測・確定データ">HUMAN</span>;
+        case 'CO_OP': return <span className={`${baseStyle} bg-gray-600`} title="AI＋人間 協調データ">CO-P</span>;
+        case 'AI_AUTO': return <span className={`${baseStyle} bg-gray-400`} title="AI予測・推論データ">AI</span>;
+        default: return null;
     }
 };
 
@@ -109,7 +105,8 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                           lotId, reservationId: res.id, memberName: res.memberName || '名称未設定',
                           date: res.createdAt ? String(res.createdAt).substring(5, 16) : '不明', 
                           product: product, remainingWeight: remainingWeight, expectedRatio: productMaster ? productMaster.ratio : 0,
-                          isSorted: false
+                          isSorted: false,
+                          isTin: product.includes('錫') // ★ 錫メッキの簡易フラグ
                       });
                   }
               }
@@ -142,7 +139,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
     const newSortedLots = [...localSortedLots];
     newSortedLots.push({
         lotId: `${lot.lotId}-S-SKIP`, reservationId: lot.reservationId, memberName: lot.memberName,
-        date: lot.date, product: lot.product, remainingWeight: lot.remainingWeight, expectedRatio: lot.expectedRatio, isSorted: true
+        date: lot.date, product: lot.product, remainingWeight: lot.remainingWeight, expectedRatio: lot.expectedRatio, isSorted: true, isTin: lot.isTin
     });
     const newConsumedIds = [...localConsumedIds, lot.lotId];
     setLocalSortedLots(newSortedLots); setLocalConsumedIds(newConsumedIds);
@@ -158,7 +155,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
             const productMaster = wiresMaster.find((w: any) => getDisplayName(w) === out.product || w.name === out.product);
             newSortedLots.push({
                 lotId: `${sortingLot.lotId}-S${idx}`, reservationId: sortingLot.reservationId, memberName: `${sortingLot.memberName} (選別済)`,
-                date: sortingLot.date, product: out.product, remainingWeight: Number(out.weight), expectedRatio: productMaster ? productMaster.ratio : 0, isSorted: true
+                date: sortingLot.date, product: out.product, remainingWeight: Number(out.weight), expectedRatio: productMaster ? productMaster.ratio : 0, isSorted: true, isTin: out.product.includes('錫')
             });
         }
     });
@@ -171,6 +168,15 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
   const openBlendModal = () => {
     const selected = readyLots.filter(l => checkedLotIds.includes(l.lotId));
     if (selected.length === 0) return alert('加工するロットを選択してください');
+
+    // ★ 追加：錫メッキ混入の強制ブロック
+    const hasTin = selected.some(l => l.isTin);
+    const hasCopper = selected.some(l => !l.isTin);
+
+    if (hasTin && hasCopper) {
+        return alert('🛑【重大な警告】🛑\n\n錫メッキ線と純銅線が混在して選択されています！\nこれらを一緒にナゲット加工すると、ロット全体が「メッキ混入」となり品質事故（全量不良）になります。\n\n選択を解除し、必ず別々に加工してください。');
+    }
+
     setBlendingLots(selected);
     const totalWeight = selected.reduce((sum, l) => sum + l.remainingWeight, 0);
     setProcessInputWeight(String(totalWeight)); setProcessOutputCopper(''); setProcessWorker('未選択'); setProcessMemo('');
@@ -308,7 +314,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                       ) : (
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                               {toSortLots.map(lot => (
-                                  <div key={lot.lotId} className="bg-white border border-gray-200 rounded-sm p-5 shadow-sm hover:border-blue-400 transition flex flex-col">
+                                  <div key={lot.lotId} className={`bg-white border ${lot.isTin ? 'border-red-300' : 'border-gray-200'} rounded-sm p-5 shadow-sm hover:border-blue-400 transition flex flex-col`}>
                                       <div className="flex justify-between items-start mb-3">
                                           <div className="flex gap-2">
                                               <span className="text-[10px] font-mono font-bold bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-sm">未選別</span>
@@ -316,7 +322,10 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                                           </div>
                                           <span className="text-[10px] text-gray-400 font-mono">{lot.date} 入庫</span>
                                       </div>
-                                      <h4 className="font-black text-gray-900 text-lg mb-1">{lot.product}</h4>
+                                      <h4 className="font-black text-gray-900 text-lg mb-1 flex items-center gap-1">
+                                          {lot.isTin && <span className="bg-red-600 text-white text-[9px] px-1.5 py-0.5 rounded-sm">⚠️錫メッキ</span>}
+                                          {lot.product}
+                                      </h4>
                                       <p className="text-sm text-gray-500 flex items-center mb-5"><Icons.User /> {lot.memberName}</p>
                                       <div className="mt-auto border-t border-gray-100 pt-4 flex justify-between items-center">
                                           <p className="text-3xl font-black font-mono text-gray-900 tracking-tighter">{lot.remainingWeight.toFixed(1)}<span className="text-xs font-bold text-gray-500 ml-1">kg</span></p>
@@ -361,7 +370,12 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                                                   <span className="text-xs text-gray-400 font-mono">{lot.date}</span>
                                               </div>
                                           </td>
-                                          <td className="p-3 font-bold text-base text-gray-900">{lot.product}</td>
+                                          <td className="p-3 font-bold text-base text-gray-900">
+                                              <div className="flex items-center gap-1">
+                                                  {lot.isTin && <span className="bg-red-600 text-white text-[9px] px-1.5 py-0.5 rounded-sm shadow-sm animate-pulse">⚠️錫</span>}
+                                                  {lot.product}
+                                              </div>
+                                          </td>
                                           <td className="p-3 text-sm text-gray-600">{lot.memberName}</td>
                                           <td className="p-3 text-right font-black font-mono text-xl text-gray-900 tracking-tighter">{lot.remainingWeight.toFixed(1)}<span className="text-xs text-gray-500 font-normal ml-1">kg</span></td>
                                       </tr>
@@ -538,7 +552,13 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                               <h3 className="text-lg font-black text-gray-900 flex items-center gap-2"><Icons.Blend /> ブレンド加工の登録 <ProvenanceBadge type="HUMAN" /></h3>
                               <div className="text-xs text-gray-500 mt-2 space-y-1 bg-white p-2 border border-gray-200 rounded-sm max-h-24 overflow-y-auto font-mono">
                                   {blendingLots.map(l => (
-                                      <div key={l.lotId} className="flex justify-between"><span>{l.product} ({l.memberName})</span><span>{l.remainingWeight.toFixed(1)}kg</span></div>
+                                      <div key={l.lotId} className="flex justify-between">
+                                        <span className="flex items-center gap-1">
+                                            {l.isTin && <span className="bg-red-600 text-white text-[9px] px-1 py-0.5 rounded-sm">錫</span>}
+                                            {l.product} ({l.memberName})
+                                        </span>
+                                        <span>{l.remainingWeight.toFixed(1)}kg</span>
+                                      </div>
                                   ))}
                               </div>
                           </div>
@@ -652,7 +672,6 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                               <li key={i} className="py-2 flex justify-between items-center text-xs">
                                   <div>
                                       <p className="font-bold">{p.materialName}</p>
-                                      {/* ★ 修正: createdAtへ変更 */}
                                       <p className="text-[10px] text-gray-500">{p.createdAt ? String(p.createdAt).substring(5,16) : '不明'}</p>
                                   </div>
                                   <div className="text-right">
