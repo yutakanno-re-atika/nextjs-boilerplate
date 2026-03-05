@@ -65,16 +65,23 @@ const parseCoreForInput = (core: string) => {
     return match ? match[1] : String(core);
 };
 
-// ★ 修正：画像URLを安定表示の thumbnail 方式に戻す
-const getDriveImageUrl = (url: string, asThumbnail: boolean = true) => {
+// ★ 修正：Google DriveのCORSブロックを回避する「lh3」エンドポイントを使用
+const getDriveImageUrl = (url: string) => {
     if (!url) return '';
-    if (url.includes('drive.google.com/uc')) {
-        const match = url.match(/id=([^&]+)/);
-        if (match && match[1]) {
-            return asThumbnail 
-                ? `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`
-                : `https://drive.google.com/uc?id=${match[1]}`;
-        }
+    const match = url.match(/id=([^&]+)/) || url.match(/file\/d\/([^\/]+)/);
+    if (match && match[1]) {
+        // 認証なしで画像を返してくれるGoogle内部のキャッシュサーバーを叩く
+        return `https://lh3.googleusercontent.com/d/${match[1]}`;
+    }
+    return url;
+};
+
+// ★ 追加：クリック時に別タブで開くための公式プレビューURL
+const getDriveViewUrl = (url: string) => {
+    if (!url) return '';
+    const match = url.match(/id=([^&]+)/) || url.match(/file\/d\/([^\/]+)/);
+    if (match && match[1]) {
+        return `https://drive.google.com/file/d/${match[1]}/view`;
     }
     return url;
 };
@@ -585,7 +592,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     if (activeTab === 'SETTINGS') {
         return (
             <div className="p-6 md:p-10 bg-white h-full overflow-y-auto animate-in fade-in">
-                {/* 既存の設定画面の内容 */}
                 <div className="max-w-3xl mx-auto space-y-10">
                     <div>
                         <h3 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-3 mb-6 flex items-center gap-2">
@@ -791,8 +797,8 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                                     <div key={colIdx} className="flex flex-col gap-1 items-center w-14">
                                         <div className="relative w-full h-12 border border-gray-300 rounded-sm overflow-hidden bg-gray-100 flex items-center justify-center group shadow-sm">
                                             {hasImage ? (
-                                                <a href={getDriveImageUrl(item[`image${colIdx-10}`], false)} target="_blank" rel="noopener noreferrer" className="w-full h-full block">
-                                                    {/* ★ 修正：referrerPolicyを追加してGoogle Driveの403エラーを回避 */}
+                                                <a href={getDriveViewUrl(item[`image${colIdx-10}`])} target="_blank" rel="noopener noreferrer" className="w-full h-full block">
+                                                    {/* ★ 修正：lh3キャッシュサーバーを経由して画像を表示 */}
                                                     <img src={getDriveImageUrl(item[`image${colIdx-10}`])} referrerPolicy="no-referrer" className="w-full h-full object-cover group-hover:scale-110 transition-transform cursor-zoom-in" alt="Wire" />
                                                 </a>
                                             ) : (
@@ -889,27 +895,24 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                     {editingItem.image1 && (
                         <div>
                             <p className="text-[10px] text-gray-400 mb-1">1. 断面</p>
-                            <a href={getDriveImageUrl(editingItem.image1, false)} target="_blank" rel="noopener noreferrer">
-                                {/* ★ 修正：referrerPolicyを追加 */}
-                                <img src={getDriveImageUrl(editingItem.image1, false)} referrerPolicy="no-referrer" alt="master img 1" className="w-full h-32 md:h-40 object-cover rounded-sm border border-gray-300 shadow-sm hover:opacity-80 transition cursor-zoom-in" />
+                            <a href={getDriveViewUrl(editingItem.image1)} target="_blank" rel="noopener noreferrer">
+                                <img src={getDriveImageUrl(editingItem.image1)} referrerPolicy="no-referrer" alt="master img 1" className="w-full h-32 md:h-40 object-cover rounded-sm border border-gray-300 shadow-sm hover:opacity-80 transition cursor-zoom-in" />
                             </a>
                         </div>
                     )}
                     {editingItem.image2 && (
                         <div>
                             <p className="text-[10px] text-gray-400 mb-1">2. 印字</p>
-                            <a href={getDriveImageUrl(editingItem.image2, false)} target="_blank" rel="noopener noreferrer">
-                                {/* ★ 修正：referrerPolicyを追加 */}
-                                <img src={getDriveImageUrl(editingItem.image2, false)} referrerPolicy="no-referrer" alt="master img 2" className="w-full h-32 md:h-40 object-cover rounded-sm border border-gray-300 shadow-sm hover:opacity-80 transition cursor-zoom-in" />
+                            <a href={getDriveViewUrl(editingItem.image2)} target="_blank" rel="noopener noreferrer">
+                                <img src={getDriveImageUrl(editingItem.image2)} referrerPolicy="no-referrer" alt="master img 2" className="w-full h-32 md:h-40 object-cover rounded-sm border border-gray-300 shadow-sm hover:opacity-80 transition cursor-zoom-in" />
                             </a>
                         </div>
                     )}
                     {editingItem.image3 && (
                         <div>
                             <p className="text-[10px] text-gray-400 mb-1">3. 剥線後 (実測時)</p>
-                            <a href={getDriveImageUrl(editingItem.image3, false)} target="_blank" rel="noopener noreferrer">
-                                {/* ★ 修正：referrerPolicyを追加 */}
-                                <img src={getDriveImageUrl(editingItem.image3, false)} referrerPolicy="no-referrer" alt="master img 3" className="w-full h-32 md:h-40 object-cover rounded-sm border border-gray-300 shadow-sm hover:opacity-80 transition cursor-zoom-in" />
+                            <a href={getDriveViewUrl(editingItem.image3)} target="_blank" rel="noopener noreferrer">
+                                <img src={getDriveImageUrl(editingItem.image3)} referrerPolicy="no-referrer" alt="master img 3" className="w-full h-32 md:h-40 object-cover rounded-sm border border-gray-300 shadow-sm hover:opacity-80 transition cursor-zoom-in" />
                             </a>
                         </div>
                     )}
