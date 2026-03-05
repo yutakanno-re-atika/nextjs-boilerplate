@@ -20,7 +20,8 @@ const Icons = {
   Settings: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
   Play: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   Save: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>,
-  Ruler: () => <svg className="w-4 h-4 inline-block text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M3 14h18m-9-4v8m-4-8v8m8-8v8M4 6h16a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2z" /></svg>
+  Ruler: () => <svg className="w-4 h-4 inline-block text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M3 14h18m-9-4v8m-4-8v8m8-8v8M4 6h16a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2z" /></svg>,
+  AlertTriangle: () => <svg className="w-4 h-4 inline-block text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
 };
 
 const formatTimeShort = (timeStr: string) => {
@@ -160,7 +161,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       setIsModalOpen(true);
   };
 
-  // ★ 追加：ノギスでの入力と自動SQ算出ロジック
   const handleCaliperInput = () => {
       const val = window.prompt("📐 ノギスで実測した「直径(mm)」を入力してください\n例: 2.0 または 3.5");
       if (!val) return;
@@ -170,15 +170,11 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       const isSolid = editingItem.conductor && (editingItem.conductor.includes('単線') || editingItem.conductor === 'Solid');
       
       if (isSolid) {
-          // 単線の場合は直径をそのままmm表記でセット
           setEditingItem({ ...editingItem, sq: `${d}mm` });
           alert(`単線として「${d}mm」を適用しました。`);
       } else {
-          // より線の場合、断面積（r^2 * π）から隙間係数(約0.75)をかけて概算SQを出す
           const r = d / 2;
           const approxSq = (r * r * Math.PI) * 0.75;
-          
-          // JIS規格の代表的なSQ値にスナップさせる
           const jisSqs = [1.25, 2, 3.5, 5.5, 8, 14, 22, 38, 60, 100, 150, 200, 250, 325];
           const closestSq = jisSqs.reduce((prev, curr) => Math.abs(curr - approxSq) < Math.abs(prev - approxSq) ? curr : prev);
           
@@ -264,7 +260,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
     let finalItem = { ...editingItem };
 
-    // ★ 追加：AI推論値と最終確定値の差分チェック（Human Feedbackの自動生成）
     if (finalItem._aiInitialState) {
         const ai = finalItem._aiInitialState;
         const isMakerChanged = String(ai.maker || '') !== String(finalItem.maker || '');
@@ -277,7 +272,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                                  `人間確定: [メーカー: ${finalItem.maker || '不明'}, 品名: ${finalItem.name || '不明'}, 歩留: ${finalItem.ratio || '---'}%]\n` +
                                  `※作業者による現物確認・ノギス測定・実測計量によりAI推論を修正し、マスターとして確定。`;
             finalItem.memo = (finalItem.memo || '') + feedbackText;
-            finalItem.reason = (finalItem.reason || '') + feedbackText; // Unknownシートからの昇格時用
+            finalItem.reason = (finalItem.reason || '') + feedbackText; 
         }
     }
 
@@ -289,7 +284,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
             });
             const r = await res.json();
             if (r.status === 'success') finalItem.image1 = r.url;
-        } catch(e) { console.error("画像1の保存に失敗"); }
+        } catch(e) {}
     }
     if (finalItem._pendingImageData2) {
         try {
@@ -299,7 +294,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
             });
             const r = await res.json();
             if (r.status === 'success') finalItem.image2 = r.url;
-        } catch(e) { console.error("画像2の保存に失敗"); }
+        } catch(e) {}
     }
     if (finalItem._pendingImageData3) {
         try {
@@ -309,7 +304,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
             });
             const r = await res.json();
             if (r.status === 'success') finalItem.image3 = r.url;
-        } catch(e) { console.error("画像3の保存に失敗"); }
+        } catch(e) {}
     }
 
     const action = finalItem.id ? 'UPDATE_DB_RECORD' : 'ADD_DB_RECORD';
@@ -441,7 +436,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
               const cleanSize = String(result.data.size || '').replace(/[^\d.]/g, '');
               const cleanCore = String(result.data.core || '').replace(/[^\d]/g, '');
 
-              // ★ 追加：AIの初期推論値を _aiInitialState として保持する
               setEditingItem({
                   maker: result.data.maker === '-' ? '' : result.data.maker,
                   name: result.data.name === '-' ? '' : result.data.name,
@@ -454,7 +448,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                   memo: `【AIアシスト抽出】\nAI推論根拠: ${result.data.reason}\n※実測を行って歩留まりを上書きしてください。`,
                   _pendingImageData1: imgData1,
                   _pendingImageData2: imgData2,
-                  _aiInitialState: { // 差分チェック用
+                  _aiInitialState: { 
                       maker: result.data.maker === '-' ? '' : result.data.maker,
                       name: result.data.name === '-' ? '' : result.data.name,
                       ratio: result.data.estimatedRatio || ''
@@ -586,6 +580,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         );
     }
 
+
     let filteredData = [];
     
     if (activeTab === 'WIRES') {
@@ -681,7 +676,15 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                 {activeTab === 'WIRES' && (
                   <>
                     <td className="p-3 font-bold text-gray-700">{item.maker || '-'}</td>
-                    <td className="p-3 font-bold text-gray-900">{item.name}</td>
+                    <td className="p-3 font-bold text-gray-900">
+                        {item.name}
+                        {/* ★ 追加：一覧表示で錫メッキ線に警告バッジを表示 */}
+                        {item.conductor?.includes('錫') && (
+                            <span className="ml-2 inline-flex items-center gap-0.5 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm whitespace-nowrap shadow-sm">
+                                <Icons.AlertTriangle /> 錫メッキ
+                            </span>
+                        )}
+                    </td>
                     <td className="p-3 text-gray-600">{item.year || '-'}</td>
                     <td className="p-3 text-gray-600">{item.sq || '-'} / {item.core || '-'}</td>
                     <td className="p-3 font-mono font-bold text-blue-600 text-base">{item.ratio}%</td>
@@ -786,12 +789,12 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         {editingItem.id && (editingItem.image1 || editingItem.image2 || editingItem.image3) && !editingItem._pendingImageData1 && (
             <div className="bg-gray-50 p-4 border border-gray-200 rounded-sm">
                 <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-widest">現在登録されているマスター画像</label>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {editingItem.image1 && (
                         <div>
                             <p className="text-[10px] text-gray-400 mb-1">1. 断面</p>
                             <a href={getDriveImageUrl(editingItem.image1, false)} target="_blank" rel="noopener noreferrer">
-                                <img src={getDriveImageUrl(editingItem.image1, false)} alt="master img 1" className="w-full h-24 md:h-32 object-cover rounded-sm border border-gray-300 shadow-sm hover:opacity-80 transition cursor-zoom-in" />
+                                <img src={getDriveImageUrl(editingItem.image1, false)} alt="master img 1" className="w-full h-32 md:h-40 object-cover rounded-sm border border-gray-300 shadow-sm hover:opacity-80 transition cursor-zoom-in" />
                             </a>
                         </div>
                     )}
@@ -799,7 +802,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                         <div>
                             <p className="text-[10px] text-gray-400 mb-1">2. 印字</p>
                             <a href={getDriveImageUrl(editingItem.image2, false)} target="_blank" rel="noopener noreferrer">
-                                <img src={getDriveImageUrl(editingItem.image2, false)} alt="master img 2" className="w-full h-24 md:h-32 object-cover rounded-sm border border-gray-300 shadow-sm hover:opacity-80 transition cursor-zoom-in" />
+                                <img src={getDriveImageUrl(editingItem.image2, false)} alt="master img 2" className="w-full h-32 md:h-40 object-cover rounded-sm border border-gray-300 shadow-sm hover:opacity-80 transition cursor-zoom-in" />
                             </a>
                         </div>
                     )}
@@ -807,7 +810,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                         <div>
                             <p className="text-[10px] text-gray-400 mb-1">3. 剥線後 (実測時)</p>
                             <a href={getDriveImageUrl(editingItem.image3, false)} target="_blank" rel="noopener noreferrer">
-                                <img src={getDriveImageUrl(editingItem.image3, false)} alt="master img 3" className="w-full h-24 md:h-32 object-cover rounded-sm border border-gray-300 shadow-sm hover:opacity-80 transition cursor-zoom-in" />
+                                <img src={getDriveImageUrl(editingItem.image3, false)} alt="master img 3" className="w-full h-32 md:h-40 object-cover rounded-sm border border-gray-300 shadow-sm hover:opacity-80 transition cursor-zoom-in" />
                             </a>
                         </div>
                     )}
@@ -822,38 +825,51 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
             </div>
         )}
         
-        <div className="grid grid-cols-2 gap-4">
-            <div><label className="block text-xs font-bold text-gray-500 mb-1">メーカー</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-blue-500 font-bold" value={editingItem.maker || ''} onChange={e => setEditingItem({...editingItem, maker: e.target.value})} /></div>
-            <div><label className="block text-xs font-bold text-gray-500 mb-1">品名</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-blue-500 font-bold" value={editingItem.name || ''} onChange={e => setEditingItem({...editingItem, name: e.target.value})} /></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div><label className="block text-xs font-bold text-gray-500 mb-1">メーカー</label><input type="text" className="w-full border p-2.5 rounded-sm outline-none focus:border-blue-500 font-bold" value={editingItem.maker || ''} onChange={e => setEditingItem({...editingItem, maker: e.target.value})} /></div>
+            <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1">品名</label>
+                <div className="flex items-center gap-2">
+                    <input type="text" className="w-full border p-2.5 rounded-sm outline-none focus:border-blue-500 font-bold" value={editingItem.name || ''} onChange={e => setEditingItem({...editingItem, name: e.target.value})} />
+                    {/* ★ 警告バッジを編集モーダル内にも表示 */}
+                    {editingItem.conductor?.includes('錫') && (
+                        <span className="bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded-sm whitespace-nowrap shadow-sm animate-pulse">
+                            ⚠️ 錫メッキ
+                        </span>
+                    )}
+                </div>
+            </div>
         </div>
-        <div className="grid grid-cols-4 gap-4">
-            <div><label className="block text-xs font-bold text-gray-500 mb-1">製造年</label><input type="text" placeholder="例: 2024" className="w-full border p-2 rounded-sm outline-none focus:border-blue-500" value={editingItem.year || ''} onChange={e => setEditingItem({...editingItem, year: e.target.value})} /></div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div><label className="block text-xs font-bold text-gray-500 mb-1">製造年</label><input type="text" placeholder="例: 2024" className="w-full border p-2.5 rounded-sm outline-none focus:border-blue-500" value={editingItem.year || ''} onChange={e => setEditingItem({...editingItem, year: e.target.value})} /></div>
             
-            {/* ★ 追加：ノギスボタン付きのSQ入力欄 */}
             <div>
                 <label className="block text-xs font-bold text-gray-500 mb-1 flex items-center justify-between">
-                    SQ (サイズ)
-                    <button onClick={handleCaliperInput} className="text-blue-600 hover:text-blue-800 flex items-center gap-0.5 bg-blue-50 px-1 rounded-sm border border-blue-200 transition">
+                    <span>SQ/サイズ</span>
+                    <button onClick={handleCaliperInput} className="text-blue-600 hover:text-blue-800 flex items-center gap-0.5 bg-blue-50 px-1.5 py-0.5 rounded-sm border border-blue-200 transition shadow-sm">
                         <Icons.Ruler /> <span className="text-[9px]">ノギス</span>
                     </button>
                 </label>
-                <input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-blue-500" value={editingItem.sq || ''} onChange={e => setEditingItem({...editingItem, sq: e.target.value})} />
+                <input type="text" className="w-full border p-2.5 rounded-sm outline-none focus:border-blue-500" value={editingItem.sq || ''} onChange={e => setEditingItem({...editingItem, sq: e.target.value})} />
             </div>
 
-            <div><label className="block text-xs font-bold text-gray-500 mb-1">芯数</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-blue-500" value={editingItem.core || ''} onChange={e => setEditingItem({...editingItem, core: e.target.value})} /></div>
-            <div><label className="block text-xs font-bold text-gray-500 mb-1">導体</label><input type="text" placeholder="単線/より線等" className="w-full border p-2 rounded-sm outline-none focus:border-blue-500" value={editingItem.conductor || ''} onChange={e => setEditingItem({...editingItem, conductor: e.target.value})} /></div>
+            <div><label className="block text-xs font-bold text-gray-500 mb-1">芯数 (C)</label><input type="text" className="w-full border p-2.5 rounded-sm outline-none focus:border-blue-500" value={editingItem.core || ''} onChange={e => setEditingItem({...editingItem, core: e.target.value})} /></div>
+            <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1">導体</label>
+                <input type="text" placeholder="単線/錫メッキより線等" className={`w-full border p-2.5 rounded-sm outline-none transition-colors ${editingItem.conductor?.includes('錫') ? 'bg-red-50 border-red-300 focus:border-red-500 text-red-900 font-bold' : 'focus:border-blue-500'}`} value={editingItem.conductor || ''} onChange={e => setEditingItem({...editingItem, conductor: e.target.value})} />
+            </div>
         </div>
         
-        <div className="bg-gray-100 p-4 rounded-sm border border-gray-300 mt-4 relative">
+        <div className="bg-gray-100 p-4 md:p-6 rounded-sm border border-gray-300 mt-6 relative shadow-inner">
             <span className="absolute top-0 right-0 bg-gray-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-sm">HUMAN REQUIRED</span>
-            <label className="block text-sm font-black text-gray-800 mb-3 border-b border-gray-300 pb-2">⚖️ サンプル実測 (人間が入力)</label>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                <div className="flex flex-col items-center border border-gray-300 p-1.5 rounded-sm bg-white h-[74px] justify-center relative overflow-hidden group">
+            <label className="block text-sm font-black text-gray-800 mb-4 border-b border-gray-300 pb-2">⚖️ サンプル実測 (人間が入力)</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 items-end">
+                <div className="flex flex-col items-center border border-gray-300 p-2 rounded-sm bg-white h-20 justify-center relative overflow-hidden group shadow-sm w-full">
                     {editingItem._pendingImageData3 ? (
                         <>
-                            <img src={`data:image/jpeg;base64,${editingItem._pendingImageData3}`} className="absolute inset-0 w-full h-full object-cover opacity-50" />
-                            <span className="relative z-10 text-xs font-bold text-blue-600">✅ 撮影済</span>
-                            <button onClick={() => setEditingItem({...editingItem, _pendingImageData3: null})} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm shadow-md z-20">
+                            <img src={`data:image/jpeg;base64,${editingItem._pendingImageData3}`} className="absolute inset-0 w-full h-full object-cover opacity-60" />
+                            <span className="relative z-10 text-xs font-bold text-blue-700 bg-white/80 px-2 py-0.5 rounded-sm backdrop-blur-sm">✅ 撮影済</span>
+                            <button onClick={() => setEditingItem({...editingItem, _pendingImageData3: null})} className="absolute top-1 right-1 bg-red-600 text-white p-1.5 rounded-sm shadow-md z-20 hover:bg-red-700">
                                 <Icons.Trash />
                             </button>
                         </>
@@ -861,30 +877,30 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                         <div className="flex gap-1 w-full h-full">
                             <label className="flex-1 cursor-pointer flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-500 hover:text-blue-600 transition border border-gray-200 rounded-sm" title="カメラ">
                                 <Icons.Camera />
-                                <span className="text-[8px] font-bold mt-1">剥線(カメラ)</span>
+                                <span className="text-[9px] font-bold mt-1">剥線(カメラ)</span>
                                 <input type="file" onChange={e => handleAiImageUpload(e, 3)} className="hidden" accept="image/*" capture="environment" />
                             </label>
                             <label className="flex-1 cursor-pointer flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-500 hover:text-blue-600 transition border border-gray-200 rounded-sm" title="フォルダ">
                                 <Icons.UploadCloud />
-                                <span className="text-[8px] font-bold mt-1">剥線(フォルダ)</span>
+                                <span className="text-[9px] font-bold mt-1">剥線(フォルダ)</span>
                                 <input type="file" onChange={e => handleAiImageUpload(e, 3)} className="hidden" accept="image/*" />
                             </label>
                         </div>
                     )}
                 </div>
-                <div>
-                    <label className="block text-xs font-bold text-gray-600 mb-1">被覆込み 総重量 (g)</label>
+                <div className="w-full">
+                    <label className="block text-xs font-bold text-gray-600 mb-1.5">被覆込み 総重量 (g)</label>
                     <input type="number" step="0.001" className="w-full border-none shadow-sm p-3 rounded-sm font-mono text-lg outline-none focus:ring-2 focus:ring-blue-500" value={sampleTotal} onChange={e => handleSampleTotalChange(e.target.value)} placeholder="0.000" />
                 </div>
-                <div>
-                    <label className="block text-xs font-bold text-[#D32F2F] mb-1">剥線後 銅重量 (g)</label>
+                <div className="w-full">
+                    <label className="block text-xs font-bold text-[#D32F2F] mb-1.5">剥線後 銅重量 (g)</label>
                     <input type="number" step="0.001" className="w-full border-none shadow-sm p-3 rounded-sm font-mono text-lg outline-none focus:ring-2 focus:ring-red-500" value={sampleCopper} onChange={e => handleSampleCopperChange(e.target.value)} placeholder="0.000" />
                 </div>
-                <div>
-                    <label className="block text-xs font-bold text-blue-800 mb-1 flex items-center justify-between">
+                <div className="w-full">
+                    <label className="block text-xs font-bold text-blue-800 mb-1.5 flex items-center justify-between">
                         <span>歩留まり (%)</span>
                         {editingItem.aiEstimatedRatio && !sampleTotal && (
-                            <span className="text-[9px] bg-blue-100 text-blue-700 px-1 py-0.5 rounded animate-pulse">AI推定値</span>
+                            <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded animate-pulse shadow-sm">AI推定値</span>
                         )}
                     </label>
                     <div className="w-full bg-white border border-blue-200 shadow-inner p-3 rounded-sm font-mono text-xl font-black text-blue-600 text-right">
@@ -894,7 +910,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
             </div>
         </div>
 
-        <div><label className="block text-xs font-bold text-gray-500 mb-1">メモ / 特記事項</label><textarea className="w-full border p-2 rounded-sm h-24 text-sm outline-none focus:border-gray-500 leading-relaxed" value={editingItem.memo || editingItem.reason || ''} onChange={e => setEditingItem({...editingItem, memo: e.target.value, reason: e.target.value})} /></div>
+        <div className="mt-4"><label className="block text-xs font-bold text-gray-500 mb-1">メモ / 特記事項 (AIの推論根拠など)</label><textarea className="w-full border p-3 rounded-sm h-28 text-sm outline-none focus:border-gray-500 leading-relaxed shadow-sm bg-gray-50" value={editingItem.memo || editingItem.reason || ''} onChange={e => setEditingItem({...editingItem, memo: e.target.value, reason: e.target.value})} /></div>
       </div>
     );
 
@@ -1162,7 +1178,7 @@ return (
       {/* 編集・新規登録モーダル */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4 md:p-0">
-          <div className="bg-white w-full max-w-2xl rounded-sm shadow-2xl animate-in zoom-in-95 duration-200">
+          <div className="bg-white w-full max-w-3xl rounded-sm shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="p-5 border-b border-gray-200 flex justify-between items-center bg-gray-50">
               <h3 className="font-black text-gray-900 text-lg flex items-center gap-2">
                   {editingItem?.id ? <Icons.Edit /> : <Icons.Plus />}
@@ -1170,12 +1186,11 @@ return (
               </h3>
               <button onClick={handleCloseModal} className="text-gray-400 hover:text-gray-900 p-1"><Icons.Close /></button>
             </div>
-            <div className="p-6 max-h-[75vh] overflow-y-auto">
+            <div className="p-4 md:p-6 max-h-[75vh] overflow-y-auto">
               {renderModalContent()}
             </div>
             <div className="p-5 border-t border-gray-200 flex justify-end gap-3 bg-gray-50">
               <button onClick={handleCloseModal} className="px-5 py-2.5 text-gray-600 font-bold hover:bg-gray-200 rounded-sm transition">キャンセル</button>
-              {/* ★ 修正：実測値がなくても保存できるように disabled 条件を緩和 */}
               <button onClick={handleSave} disabled={isSubmitting} className="px-8 py-2.5 bg-blue-600 text-white font-bold rounded-sm hover:bg-blue-700 transition disabled:opacity-50 flex items-center gap-2 shadow-sm active:scale-95">
                 {isSubmitting ? '保存中...' : '確定してマスターに登録'}
               </button>
