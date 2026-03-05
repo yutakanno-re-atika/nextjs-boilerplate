@@ -65,14 +65,15 @@ const parseCoreForInput = (core: string) => {
     return match ? match[1] : String(core);
 };
 
-// ★ 修正：Google Driveの画像表示を安定させるため、参照エラーを回避するロジックに変更
-const getDriveImageUrl = (url: string) => {
+// ★ 修正：画像URLを安定表示の thumbnail 方式に戻す
+const getDriveImageUrl = (url: string, asThumbnail: boolean = true) => {
     if (!url) return '';
     if (url.includes('drive.google.com/uc')) {
         const match = url.match(/id=([^&]+)/);
         if (match && match[1]) {
-            // thumbnailはブロックされやすいため、export=viewの形式を使用
-            return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+            return asThumbnail 
+                ? `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`
+                : `https://drive.google.com/uc?id=${match[1]}`;
         }
     }
     return url;
@@ -584,6 +585,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     if (activeTab === 'SETTINGS') {
         return (
             <div className="p-6 md:p-10 bg-white h-full overflow-y-auto animate-in fade-in">
+                {/* 既存の設定画面の内容 */}
                 <div className="max-w-3xl mx-auto space-y-10">
                     <div>
                         <h3 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-3 mb-6 flex items-center gap-2">
@@ -790,7 +792,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                                         <div className="relative w-full h-12 border border-gray-300 rounded-sm overflow-hidden bg-gray-100 flex items-center justify-center group shadow-sm">
                                             {hasImage ? (
                                                 <a href={getDriveImageUrl(item[`image${colIdx-10}`], false)} target="_blank" rel="noopener noreferrer" className="w-full h-full block">
-                                                    {/* ★ 修正：referrerPolicyを追加して403エラーを回避 */}
+                                                    {/* ★ 修正：referrerPolicyを追加してGoogle Driveの403エラーを回避 */}
                                                     <img src={getDriveImageUrl(item[`image${colIdx-10}`])} referrerPolicy="no-referrer" className="w-full h-full object-cover group-hover:scale-110 transition-transform cursor-zoom-in" alt="Wire" />
                                                 </a>
                                             ) : (
