@@ -14,18 +14,7 @@ const Icons = {
   Mic: () => <svg className="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>,
   CheckCircle: () => <svg className="w-6 h-6 text-green-500 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   AlertTriangle: () => <svg className="w-4 h-4 inline-block text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
-  // ★ 修正：このアイコンが欠損していたためクラッシュしていました
   UploadCloud: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
-};
-
-// ★ 修正：最も安定する公式サムネイルエンドポイント（高解像度指定）
-const getDriveImageUrl = (url: string) => {
-    if (!url) return '';
-    const match = url.match(/id=([^&]+)/) || url.match(/file\/d\/([^\/]+)/);
-    if (match && match[1]) {
-        return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1000`;
-    }
-    return url;
 };
 
 export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onClear, isVoiceOutputEnabled }: { data: any, editingResId?: string | null, localReservations?: any[], onSuccess: () => void, onClear: () => void, isVoiceOutputEnabled?: boolean }) => {
@@ -33,24 +22,26 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
-  const [aiStatus, setAiStatus] = useState<'IDLE' | 'ANALYZING'>('IDLE');
-  const [aiProgressStep, setAiProgressStep] = useState(0);
   const [toastMessage, setToastMessage] = useState<{title: string, desc: string, type: 'success' | 'info'} | null>(null);
 
   const [posMode, setPosMode] = useState<'INDIVIDUAL' | 'BULK'>('INDIVIDUAL');
   const [bulkTotalWeight, setBulkTotalWeight] = useState<number | ''>('');
   const [showSimDetails, setShowSimDetails] = useState(false);
 
-  const fileInputRef1 = useRef<HTMLInputElement>(null);
-  const fileInputRef2 = useRef<HTMLInputElement>(null);
+  // 単一AI査定用
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [aiStatus, setAiStatus] = useState<'IDLE' | 'ANALYZING'>('IDLE');
+  const [aiProgressStep, setAiProgressStep] = useState(0);
   const [imgData1, setImgData1] = useState<string>('');
   const [imgData2, setImgData2] = useState<string>('');
+
+  // ★ フレコン一括AI査定用
+  const [isBulkAiModalOpen, setIsBulkAiModalOpen] = useState(false);
+  const [bulkImages, setBulkImages] = useState<string[]>([]);
 
   const [isListening, setIsListening] = useState(false);
   const [voiceText, setVoiceText] = useState('');
   const [isProcessingVoice, setIsProcessingVoice] = useState(false);
-
   const [isUploadingMaster, setIsUploadingMaster] = useState<string | null>(null);
 
   const [simConfig, setSimConfig] = useState({
@@ -97,7 +88,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   };
 
   const addToCart = (product: any, overrideWeight?: number) => {
-    const newItemId = Date.now().toString();
+    const newItemId = Date.now().toString() + Math.random().toString(36).substring(7);
     setCart(prev => [...prev, { 
         id: newItemId, 
         product: buildProductName(product),
@@ -141,6 +132,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       });
   };
 
+  // 単一AI査定用
   const handleAiImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, num: 1 | 2) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -151,31 +143,42 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
     e.target.value = '';
   };
 
+  // ★ フレコン一括AI査定用（複数ファイル対応）
+  const handleBulkImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    
+    // 一時的なローディング表示などは省略しますが、ファイルを順次圧縮してstateに追加
+    const newImages: string[] = [];
+    for (let i = 0; i < files.length; i++) {
+        try {
+            const compressed = await compressImage(files[i]);
+            newImages.push(compressed);
+        } catch(err) {}
+    }
+    setBulkImages(prev => [...prev, ...newImages]);
+    e.target.value = '';
+  };
+
+  const removeBulkImage = (index: number) => {
+      setBulkImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // 従来の単一AI解析
   const runAiAnalysis = async () => {
     if (!imgData1) return alert('最低1枚の画像をアップロードしてください');
-    
-    setAiStatus('ANALYZING');
-    setAiProgressStep(1); 
-
-    const progressInterval = setInterval(() => {
-        setAiProgressStep(prev => {
-            if (prev === 1) return 2;
-            if (prev === 2) return 3;
-            return 3; 
-        });
-    }, 2000);
+    setAiStatus('ANALYZING'); setAiProgressStep(1); 
+    const progressInterval = setInterval(() => { setAiProgressStep(prev => prev < 3 ? prev + 1 : 3); }, 2000);
 
     try {
       const res = await fetch('/api/gas', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'VISION_AI_ASSESS', imageData: imgData1, imageData2: imgData2 })
       });
-      
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const result = await res.json();
       
-      clearInterval(progressInterval);
-      setAiProgressStep(4); 
+      clearInterval(progressInterval); setAiProgressStep(4); 
 
       setTimeout(() => {
           if (result.status === 'success') {
@@ -184,97 +187,97 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
             const displayName = result.data.isNewFlag || isMixed ? `💡 AI査定: ${wireTypeStr}` : wireTypeStr;
             
             setCart(prev => [{
-                id: Date.now().toString(), 
-                product: displayName, 
-                ratio: result.data.estimatedRatio || 0, 
-                weight: 0, 
-                percentage: 0, 
-                isNewAi: result.data.isNewFlag, 
-                reason: result.data.reason || '',
-                masterId: result.data.masterId,
-                isMasterImageEmpty: result.data.isMasterImageEmpty,
-                pendingImg1: imgData1,
-                pendingImg2: imgData2,
-                isImageUploaded: false,
-                conductor: result.data.conductor || '',
-                material: result.data.material || '純銅' 
+                id: Date.now().toString(), product: displayName, ratio: result.data.estimatedRatio || 0, 
+                weight: 0, percentage: 0, isNewAi: result.data.isNewFlag, reason: result.data.reason || '',
+                masterId: result.data.masterId, isMasterImageEmpty: result.data.isMasterImageEmpty,
+                pendingImg1: imgData1, pendingImg2: imgData2, isImageUploaded: false,
+                conductor: result.data.conductor || '', material: result.data.material || '純銅' 
             }, ...prev]);
 
-            if (result.data.isNewFlag) {
-                showToast('未知線種を仮登録しました', `「${wireTypeStr}」の画像とデータをデータベースに保存しました。`, 'success');
-            } else {
-                showToast('既存マスターと一致', `「${wireTypeStr}」として査定しました。`, 'info');
-            }
+            showToast(result.data.isNewFlag ? '未知線種を仮登録しました' : '既存マスターと一致', `「${wireTypeStr}」として査定しました。`, result.data.isNewFlag ? 'success' : 'info');
 
-            if (isVoiceOutputEnabled && 'speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const cleanSpeechText = wireTypeStr.replace(/【.*?】/, '');
-                const speakText = result.data.isNewFlag
-                    ? `新規線種です。${cleanSpeechText}、推定歩留まり、${result.data.estimatedRatio}パーセント。`
-                    : `判定完了。${cleanSpeechText} です。`;
-                const utterance = new SpeechSynthesisUtterance(speakText);
-                utterance.lang = 'ja-JP';
-                utterance.rate = 1.4;
-                window.speechSynthesis.speak(utterance);
-            }
-
-            setIsAiModalOpen(false);
-            setImgData1(''); setImgData2(''); setAiProgressStep(0);
-          } else { 
-            alert('AI解析エラー: ' + result.message); 
-            setIsAiModalOpen(false); setAiProgressStep(0);
-          }
+            setIsAiModalOpen(false); setImgData1(''); setImgData2(''); setAiProgressStep(0);
+          } else { alert('AI解析エラー: ' + result.message); setIsAiModalOpen(false); setAiProgressStep(0); }
+          setAiStatus('IDLE');
       }, 800);
-
-    } catch(err: any) { 
-        clearInterval(progressInterval);
-        alert(`通信エラー: ${err.message}`); 
-        setAiStatus('IDLE'); setAiProgressStep(0);
-    } 
+    } catch(err: any) { clearInterval(progressInterval); alert(`通信エラー: ${err.message}`); setAiStatus('IDLE'); setAiProgressStep(0); } 
   };
+
+  // ★ 新設：フレコン一括AI解析
+  const runBulkAiAnalysis = async () => {
+    if (bulkImages.length === 0) return alert('画像をアップロードしてください。');
+    setAiStatus('ANALYZING'); setAiProgressStep(1); 
+    const progressInterval = setInterval(() => { setAiProgressStep(prev => prev < 3 ? prev + 1 : 3); }, 3000); // 複数枚で重いので遅め
+
+    try {
+      const res = await fetch('/api/gas', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'VISION_AI_BULK_ASSESS', images: bulkImages })
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const result = await res.json();
+      
+      clearInterval(progressInterval); setAiProgressStep(4); 
+
+      setTimeout(() => {
+          if (result.status === 'success' && result.data) {
+            // モードをフレコン一括モードに切り替え
+            setPosMode('BULK');
+            
+            // 重量が読み取れていればセット
+            if (result.data.estimatedWeight) {
+                setBulkTotalWeight(Number(result.data.estimatedWeight));
+            }
+
+            // カートを一旦クリアして、AIの構成データを展開
+            const newCartItems = (result.data.components || []).map((comp: any, idx: number) => ({
+                id: `bulk-${Date.now()}-${idx}`,
+                product: `📦 AI解析: ${comp.name || '不明'}`,
+                ratio: comp.ratio || 0,
+                weight: 0,
+                percentage: comp.percentage || 0,
+                isNewAi: true,
+                reason: idx === 0 ? result.data.reason : '', // 理由はいったん最初の要素にだけ付ける
+                material: '純銅' // デフォルト
+            }));
+            
+            setCart(newCartItems);
+
+            showToast('フレコン一括解析完了', `構成要素を展開しました。全体の推定歩留まりは ${result.data.overallRatio || '---'}% です。`, 'success');
+
+            setIsBulkAiModalOpen(false); setBulkImages([]); setAiProgressStep(0);
+          } else { alert('AI解析エラー: ' + result.message); setIsBulkAiModalOpen(false); setAiProgressStep(0); }
+          setAiStatus('IDLE');
+      }, 800);
+    } catch(err: any) { clearInterval(progressInterval); alert(`通信エラー: ${err.message}`); setAiStatus('IDLE'); setAiProgressStep(0); } 
+  };
+
 
   const uploadMasterImageFromCart = async (item: any) => {
       setIsUploadingMaster(item.id);
       try {
           let success = false;
           if (item.pendingImg1) {
-              await fetch('/api/gas', {
-                  method: 'POST', headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ action: 'UPLOAD_IMAGE', sheetName: 'Products_Wire', recordId: item.masterId, colIndex: 11, data: item.pendingImg1, mimeType: 'image/jpeg', fileName: `img_${item.masterId}_1.jpg` })
-              });
+              await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'UPLOAD_IMAGE', sheetName: 'Products_Wire', recordId: item.masterId, colIndex: 11, data: item.pendingImg1, mimeType: 'image/jpeg', fileName: `img_${item.masterId}_1.jpg` }) });
               success = true;
           }
           if (item.pendingImg2) {
               await new Promise(resolve => setTimeout(resolve, 500));
-              await fetch('/api/gas', {
-                  method: 'POST', headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ action: 'UPLOAD_IMAGE', sheetName: 'Products_Wire', recordId: item.masterId, colIndex: 12, data: item.pendingImg2, mimeType: 'image/jpeg', fileName: `img_${item.masterId}_2.jpg` })
-              });
+              await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'UPLOAD_IMAGE', sheetName: 'Products_Wire', recordId: item.masterId, colIndex: 12, data: item.pendingImg2, mimeType: 'image/jpeg', fileName: `img_${item.masterId}_2.jpg` }) });
               success = true;
           }
-          if (success) {
-              setCart(prev => prev.map(i => i.id === item.id ? { ...i, isImageUploaded: true } : i));
-              showToast('マスター画像更新', 'マスターデータベースに画像が反映されました', 'success');
-          }
-      } catch (e) {
-          alert("画像の登録に失敗しました。");
-      }
+          if (success) { setCart(prev => prev.map(i => i.id === item.id ? { ...i, isImageUploaded: true } : i)); showToast('マスター画像更新', 'マスターデータベースに画像が反映されました', 'success'); }
+      } catch (e) { alert("画像の登録に失敗しました。"); }
       setIsUploadingMaster(null);
   };
 
   const startVoiceInput = () => {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) { alert('お使いのブラウザは音声入力に対応していません。'); return; }
-      
       const recognition = new SpeechRecognition();
       recognition.lang = 'ja-JP'; recognition.interimResults = false; recognition.maxAlternatives = 1;
-
       recognition.onstart = () => { setIsListening(true); setVoiceText('🎤 途切れないように一気に喋ってください...'); };
-      recognition.onresult = async (event) => {
-          const text = event.results[0][0].transcript;
-          setVoiceText(text); setIsListening(false);
-          await processVoiceCommand(text);
-      };
+      recognition.onresult = async (event) => { const text = event.results[0][0].transcript; setVoiceText(text); setIsListening(false); await processVoiceCommand(text); };
       recognition.onerror = (event) => { setIsListening(false); setVoiceText('音声が認識できませんでした'); setTimeout(() => setVoiceText(''), 2000); };
       recognition.onend = () => { setIsListening(false); };
       recognition.start();
@@ -284,9 +287,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       if (!text) return;
       setIsProcessingVoice(true);
       try {
-          const res = await fetch('/api/gas', {
-              method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'PARSE_VOICE_COMMAND', text: text })
-          });
+          const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'PARSE_VOICE_COMMAND', text: text }) });
           const result = await res.json();
           if (result.status === 'success' && result.parsed) {
               const p = result.parsed;
@@ -384,7 +385,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       )}
 
       <div className="w-full lg:w-7/12 flex flex-col bg-white border border-gray-200 rounded-sm shadow-sm overflow-hidden h-[50vh] lg:h-full shrink-0">
-        <div className="p-4 bg-gray-50 border-b border-gray-200 flex flex-col md:flex-row gap-3 items-center relative shrink-0">
+        <div className="p-4 bg-gray-50 border-b border-gray-200 flex flex-col gap-3 relative shrink-0">
           {(isListening || isProcessingVoice || voiceText) && (
               <div className="absolute top-full left-0 w-full z-10 bg-blue-900 text-white p-2 text-center text-sm font-bold shadow-md animate-in slide-in-from-top-2">
                   {isListening ? <span className="animate-pulse">{voiceText}</span> :
@@ -406,13 +407,22 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                   <Icons.Mic />
               </button>
           </div>
-          <button 
-            onClick={() => setIsAiModalOpen(true)}
-            className="w-full md:w-auto bg-gradient-to-r from-blue-700 to-blue-900 hover:from-blue-600 hover:to-blue-800 text-white font-bold py-3 px-5 rounded-sm flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 whitespace-nowrap"
-          >
-            <Icons.Camera />
-            <span>AI 線種分析</span>
-          </button>
+          <div className="flex gap-2">
+              <button 
+                onClick={() => setIsAiModalOpen(true)}
+                className="flex-1 bg-gradient-to-r from-blue-700 to-blue-900 hover:from-blue-600 hover:to-blue-800 text-white font-bold py-3 px-3 rounded-sm flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 text-xs sm:text-sm"
+              >
+                <Icons.Camera /> 単一線種分析
+              </button>
+              {/* ★ 追加：フレコン一括査定ボタン */}
+              <button 
+                onClick={() => setIsBulkAiModalOpen(true)}
+                className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-800 hover:from-purple-500 hover:to-indigo-700 text-white font-bold py-3 px-3 rounded-sm flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 text-xs sm:text-sm relative overflow-hidden group"
+              >
+                <div className="absolute inset-0 w-full h-full bg-white/20 scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300"></div>
+                <Icons.Sparkles /> フレコン一括査定 <span className="bg-purple-900 text-[9px] px-1 py-0.5 rounded shadow-inner tracking-widest uppercase">BETA</span>
+              </button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 bg-gray-100/50">
@@ -506,7 +516,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                         </div>
                       )}
                     </div>
-                    {item.reason && <div className="mt-3 bg-white border border-blue-200 p-3 rounded-sm text-xs lg:text-sm text-gray-700 leading-relaxed shadow-sm"><span className="font-black text-blue-700 block mb-1">💡 AI推論の根拠</span>{item.reason}</div>}
+                    {item.reason && <div className="mt-3 bg-white border border-blue-200 p-3 rounded-sm text-xs lg:text-sm text-gray-700 leading-relaxed shadow-sm whitespace-pre-wrap"><span className="font-black text-blue-700 block mb-1">💡 AI推論の根拠</span>{item.reason}</div>}
                     
                     {item.isMasterImageEmpty && !item.isImageUploaded && item.pendingImg1 && !item.isNewAi && (
                         <div className="mt-2 bg-yellow-50 border border-yellow-200 p-2 rounded-sm flex flex-col sm:flex-row justify-between items-center gap-2">
@@ -518,29 +528,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                             >
                                 {isUploadingMaster === item.id ? <><Icons.Refresh /> 登録中...</> : 'この写真をマスターに登録'}
                             </button>
-                        </div>
-                    )}
-
-                    {!item.isMasterImageEmpty && !item.isImageUploaded && item.pendingImg1 && !item.isNewAi && (
-                        <div className="mt-2 bg-gray-50 border border-gray-200 p-2 rounded-sm flex flex-col sm:flex-row justify-between items-center gap-2">
-                            <span className="text-xs text-gray-500 font-bold">✅ マスター画像は登録済みです</span>
-                            <button 
-                                onClick={() => {
-                                    if(confirm('現在のマスター画像を、今回撮影した写真で上書き更新しますか？')) {
-                                        uploadMasterImageFromCart(item);
-                                    }
-                                }}
-                                disabled={isUploadingMaster === item.id}
-                                className="bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 text-[10px] px-3 py-1.5 rounded-sm font-bold shadow-sm transition disabled:opacity-50 flex items-center gap-1 w-full sm:w-auto justify-center"
-                            >
-                                {isUploadingMaster === item.id ? <><Icons.Refresh /> 登録中...</> : '🔄 今回の写真で上書き'}
-                            </button>
-                        </div>
-                    )}
-
-                    {item.isImageUploaded && (
-                        <div className="mt-2 bg-green-50 border border-green-200 p-2 rounded-sm text-center sm:text-left">
-                            <span className="text-xs text-green-700 font-bold">✅ マスター画像を更新しました</span>
                         </div>
                     )}
                   </div>
@@ -591,109 +578,93 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         </div>
       </div>
 
-      {/* ★ AI モーダル */}
+      {/* 従来の単一AIモーダル（省略せずに維持） */}
       {isAiModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-gray-900 w-full max-w-2xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col">
             <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-black/50">
-              <h3 className="font-black text-white flex items-center gap-2"><Icons.Sparkles /> AI 線種分析</h3>
+              <h3 className="font-black text-white flex items-center gap-2"><Icons.Sparkles /> AI 線種分析 (単一)</h3>
               {aiStatus !== 'ANALYZING' && <button onClick={() => setIsAiModalOpen(false)} className="text-gray-400 hover:text-white"><Icons.Close /></button>}
             </div>
-            
             <div className="p-6">
               {aiStatus === 'ANALYZING' ? (
                 <div className="py-8 flex flex-col items-center animate-in fade-in zoom-in duration-500">
-                    <div className="relative w-20 h-20 mb-8">
-                        <div className="absolute inset-0 border-4 border-blue-500/20 rounded-full"></div>
-                        <div className="absolute inset-0 border-4 border-blue-500 rounded-full border-t-transparent animate-spin"></div>
-                        <div className="absolute inset-0 flex items-center justify-center text-blue-400"><Icons.Sparkles /></div>
+                    <div className="relative w-20 h-20 mb-8"><div className="absolute inset-0 border-4 border-blue-500/20 rounded-full"></div><div className="absolute inset-0 border-4 border-blue-500 rounded-full border-t-transparent animate-spin"></div><div className="absolute inset-0 flex items-center justify-center text-blue-400"><Icons.Sparkles /></div></div>
+                    <div className="space-y-5 w-full max-w-xs font-bold text-sm text-center text-blue-400">解析中...</div>
+                </div>
+              ) : (
+                <div className="animate-in fade-in">
+                    <p className="text-sm text-gray-300 mb-6">断面写真や表面の印字（メーカー名等）の写真をアップロードしてください。</p>
+                    <div className="flex flex-col md:flex-row gap-4 mb-6">
+                        <div className="flex-1 p-4 border-2 border-dashed border-gray-600 bg-gray-800/50 rounded-md">
+                            {imgData1 ? ( <div className="relative h-32"><img src={`data:image/jpeg;base64,${imgData1}`} className="w-full h-full object-cover" /><button onClick={()=>setImgData1('')} className="absolute top-2 right-2 bg-red-600 text-white p-1 rounded"><Icons.Trash/></button></div> ) : ( <><p className="text-sm font-bold text-gray-300 mb-2">1. 断面画像</p><input type="file" onChange={e=>handleAiImageUpload(e,1)} className="w-full text-white text-xs"/></> )}
+                        </div>
+                        <div className="flex-1 p-4 border-2 border-dashed border-gray-600 bg-gray-800/50 rounded-md">
+                            {imgData2 ? ( <div className="relative h-32"><img src={`data:image/jpeg;base64,${imgData2}`} className="w-full h-full object-cover" /><button onClick={()=>setImgData2('')} className="absolute top-2 right-2 bg-red-600 text-white p-1 rounded"><Icons.Trash/></button></div> ) : ( <><p className="text-sm font-bold text-gray-300 mb-2">2. 印字画像</p><input type="file" onChange={e=>handleAiImageUpload(e,2)} className="w-full text-white text-xs"/></> )}
+                        </div>
                     </div>
-                    <div className="space-y-5 w-full max-w-xs font-bold text-sm">
-                        <div className={`flex items-center gap-4 transition-all duration-500 ${aiProgressStep >= 1 ? 'text-blue-400 translate-x-0 opacity-100' : 'text-gray-700 -translate-x-4 opacity-0'}`}>
-                            <span className="w-6 text-center text-xl">{aiProgressStep >= 2 ? '✅' : aiProgressStep === 1 ? '🔄' : '・'}</span>
-                            <span>画像をサーバーへ送信中...</span>
-                        </div>
-                        <div className={`flex items-center gap-4 transition-all duration-500 delay-300 ${aiProgressStep >= 2 ? 'text-blue-400 translate-x-0 opacity-100' : 'text-gray-700 -translate-x-4 opacity-0'}`}>
-                            <span className="w-6 text-center text-xl">{aiProgressStep >= 3 ? '✅' : aiProgressStep === 2 ? '🔄' : '・'}</span>
-                            <span>AIが画像を解析・特徴抽出中...</span>
-                        </div>
-                        <div className={`flex items-center gap-4 transition-all duration-500 delay-300 ${aiProgressStep >= 3 ? 'text-blue-400 translate-x-0 opacity-100' : 'text-gray-700 -translate-x-4 opacity-0'}`}>
-                            <span className="w-6 text-center text-xl">{aiProgressStep >= 4 ? '✅' : aiProgressStep === 3 ? '🔄' : '・'}</span>
-                            <span>マスターデータと照合・推論中...</span>
-                        </div>
-                        <div className={`flex items-center gap-4 transition-all duration-500 delay-300 ${aiProgressStep >= 4 ? 'text-green-400 scale-110 translate-x-0 opacity-100' : 'text-gray-700 -translate-x-4 opacity-0'}`}>
-                            <span className="w-6 text-center text-xl">{aiProgressStep >= 4 ? '✨' : '・'}</span>
-                            <span>解析完了！結果を出力します</span>
-                        </div>
+                    <button onClick={runAiAnalysis} disabled={!imgData1} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-md flex justify-center items-center gap-2 disabled:bg-gray-700">解析してカートに追加</button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ★ 新設：フレコン一括AIモーダル */}
+      {isBulkAiModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="bg-gray-900 w-full max-w-4xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-gradient-to-r from-purple-900/50 to-indigo-900/50">
+              <h3 className="font-black text-white flex items-center gap-2"><Icons.Sparkles /> AI フレコン一括査定 (PROTOTYPE)</h3>
+              {aiStatus !== 'ANALYZING' && <button onClick={() => {setIsBulkAiModalOpen(false); setBulkImages([]);}} className="text-gray-400 hover:text-white"><Icons.Close /></button>}
+            </div>
+            
+            <div className="p-6 overflow-y-auto">
+              {aiStatus === 'ANALYZING' ? (
+                <div className="py-12 flex flex-col items-center animate-in fade-in zoom-in duration-500">
+                    <div className="relative w-24 h-24 mb-8">
+                        <div className="absolute inset-0 border-4 border-purple-500/20 rounded-full"></div>
+                        <div className="absolute inset-0 border-4 border-purple-500 rounded-full border-t-transparent animate-spin"></div>
+                        <div className="absolute inset-0 flex items-center justify-center text-purple-400 text-2xl"><Icons.Box /></div>
+                    </div>
+                    <div className="space-y-5 w-full max-w-md font-bold text-sm">
+                        <div className={`flex items-center gap-4 transition-all duration-500 ${aiProgressStep >= 1 ? 'text-purple-400 translate-x-0 opacity-100' : 'text-gray-700 -translate-x-4 opacity-0'}`}><span className="w-6 text-center text-xl">🚀</span><span>全画像のパケットをGoogle Cloudへ転送中...</span></div>
+                        <div className={`flex items-center gap-4 transition-all duration-500 delay-300 ${aiProgressStep >= 2 ? 'text-purple-400 translate-x-0 opacity-100' : 'text-gray-700 -translate-x-4 opacity-0'}`}><span className="w-6 text-center text-xl">🧠</span><span>Gemini 2.5 Proによる空間・質量の一括推論...</span></div>
+                        <div className={`flex items-center gap-4 transition-all duration-500 delay-300 ${aiProgressStep >= 3 ? 'text-purple-400 translate-x-0 opacity-100' : 'text-gray-700 -translate-x-4 opacity-0'}`}><span className="w-6 text-center text-xl">⚖️</span><span>電線ごとの構成比率と推定歩留まりを演算中...</span></div>
                     </div>
                 </div>
               ) : (
                 <div className="animate-in fade-in">
-                    <p className="text-sm text-gray-300 mb-6 leading-relaxed">
-                        判断に迷う特殊な線種をAIに査定させます。<br/>
-                        スケール（定規）が写った断面写真と、あれば印字の写真をアップロードしてください。<br/>
-                    </p>
-
-                    <div className="flex flex-col md:flex-row gap-4 mb-6">
-                        <div className={`flex-1 p-4 border-2 border-dashed rounded-md flex flex-col items-center justify-center transition-all relative overflow-hidden ${imgData1 ? 'border-blue-500 bg-blue-900/20 p-2' : 'border-gray-600 bg-gray-800/50'}`}>
-                            {imgData1 ? (
-                                <div className="w-full flex flex-col items-center">
-                                    <div className="relative w-full h-32 mb-2 rounded-sm overflow-hidden group">
-                                        <img src={`data:image/jpeg;base64,${imgData1}`} alt="断面プレビュー" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
-                                        <button onClick={() => setImgData1('')} className="absolute top-2 right-2 bg-red-600/90 hover:bg-red-500 text-white p-2 rounded-sm shadow-md transition-colors">
-                                            <Icons.Trash />
-                                        </button>
-                                    </div>
-                                    <span className="text-xs font-bold text-blue-400">✅ 断面画像 (セット完了)</span>
-                                </div>
-                            ) : (
-                                <>
-                                    <span className="text-sm font-bold mb-4 text-gray-300">1. 断面画像 (必須)</span>
-                                    <div className="flex gap-2 w-full">
-                                        <label className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-sm text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-sm">
-                                            <Icons.Camera /> カメラ
-                                            <input type="file" onChange={e => handleAiImageUpload(e, 1)} className="hidden" accept="image/*" capture="environment" />
-                                        </label>
-                                        <label className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-sm text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-sm">
-                                            <Icons.UploadCloud /> フォルダ
-                                            <input type="file" onChange={e => handleAiImageUpload(e, 1)} className="hidden" accept="image/*" />
-                                        </label>
-                                    </div>
-                                </>
-                            )}
-                        </div>
-
-                        <div className={`flex-1 p-4 border-2 border-dashed rounded-md flex flex-col items-center justify-center transition-all relative overflow-hidden ${imgData2 ? 'border-blue-500 bg-blue-900/20 p-2' : 'border-gray-600 bg-gray-800/50'}`}>
-                            {imgData2 ? (
-                                <div className="w-full flex flex-col items-center">
-                                    <div className="relative w-full h-32 mb-2 rounded-sm overflow-hidden group">
-                                        <img src={`data:image/jpeg;base64,${imgData2}`} alt="印字プレビュー" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
-                                        <button onClick={() => setImgData2('')} className="absolute top-2 right-2 bg-red-600/90 hover:bg-red-500 text-white p-2 rounded-sm shadow-md transition-colors">
-                                            <Icons.Trash />
-                                        </button>
-                                    </div>
-                                    <span className="text-xs font-bold text-blue-400">✅ 印字画像 (セット完了)</span>
-                                </div>
-                            ) : (
-                                <>
-                                    <span className="text-sm font-bold mb-4 text-gray-300">2. 表面印字 (任意)</span>
-                                    <div className="flex gap-2 w-full">
-                                        <label className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-sm text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-sm">
-                                            <Icons.Camera /> カメラ
-                                            <input type="file" onChange={e => handleAiImageUpload(e, 2)} className="hidden" accept="image/*" capture="environment" />
-                                        </label>
-                                        <label className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-sm text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-sm">
-                                            <Icons.UploadCloud /> フォルダ
-                                            <input type="file" onChange={e => handleAiImageUpload(e, 2)} className="hidden" accept="image/*" />
-                                        </label>
-                                    </div>
-                                </>
-                            )}
-                        </div>
+                    <div className="bg-purple-900/20 border border-purple-500/30 p-4 rounded-sm mb-6 text-purple-100 text-sm leading-relaxed">
+                        <strong>フレコンの中身をAIが丸ごと査定します。</strong><br/>
+                        全体像、寄り（断面や被覆の印字）、計量器の重量表示など、判断材料になる写真を何枚でもアップロードしてください。
                     </div>
 
-                    <button onClick={runAiAnalysis} disabled={!imgData1} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-md flex justify-center items-center gap-2 disabled:bg-gray-700 transition shadow-lg text-lg">
-                        <Icons.Sparkles />解析してカートに追加する
+                    {/* 画像プレビューグリッド */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-6">
+                        {bulkImages.map((b64, idx) => (
+                            <div key={idx} className="relative aspect-square rounded-sm overflow-hidden border border-gray-600 group shadow-md">
+                                <img src={`data:image/jpeg;base64,${b64}`} className="w-full h-full object-cover" alt={`bulk-${idx}`} />
+                                <div className="absolute top-1 left-1 bg-black/70 text-white text-[10px] px-1.5 rounded font-mono">{idx + 1}</div>
+                                <button onClick={() => removeBulkImage(idx)} className="absolute top-1 right-1 bg-red-600/90 text-white p-1.5 rounded-sm opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"><Icons.Trash /></button>
+                            </div>
+                        ))}
+                        
+                        {/* 追加ボタン（常に最後尾に表示） */}
+                        <label className="aspect-square rounded-sm border-2 border-dashed border-gray-600 bg-gray-800/50 hover:bg-gray-700/50 hover:border-purple-500 transition-all flex flex-col items-center justify-center cursor-pointer text-gray-400 hover:text-purple-400 shadow-inner">
+                            <Icons.Camera />
+                            <span className="text-xs font-bold mt-2">写真を追加</span>
+                            <input type="file" multiple accept="image/*" onChange={handleBulkImageUpload} className="hidden" />
+                        </label>
+                    </div>
+
+                    <button 
+                        onClick={runBulkAiAnalysis} 
+                        disabled={bulkImages.length === 0} 
+                        className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black py-4 rounded-sm flex justify-center items-center gap-2 disabled:opacity-50 disabled:grayscale transition shadow-lg text-lg"
+                    >
+                        <Icons.Sparkles /> 画像 {bulkImages.length} 枚で一括査定を実行
                     </button>
                 </div>
               )}
