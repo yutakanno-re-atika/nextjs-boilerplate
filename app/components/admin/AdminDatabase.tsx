@@ -21,7 +21,8 @@ const Icons = {
   Play: () => <svg className="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   Save: () => <svg className="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>,
   Ruler: () => <svg className="w-4 h-4 inline-block text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M3 14h18m-9-4v8m-4-8v8m8-8v8M4 6h16a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2z" /></svg>,
-  AlertTriangle: () => <svg className="w-4 h-4 inline-block text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+  AlertTriangle: () => <svg className="w-4 h-4 inline-block text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
+  Mic: () => <svg className="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
 };
 
 const formatTimeShort = (timeStr: string) => {
@@ -65,7 +66,6 @@ const parseCoreForInput = (core: string) => {
     return match ? match[1] : String(core);
 };
 
-// ★ 画像URLの生成ロジック（最も安定する公式thumbnailエンドポイント）
 const getDriveImageUrl = (url: string) => {
     if (!url) return '';
     const match = url.match(/id=([^&]+)/) || url.match(/file\/d\/([^\/]+)/);
@@ -75,7 +75,6 @@ const getDriveImageUrl = (url: string) => {
     return url;
 };
 
-// ★ クリック時に別タブで開く用の公式プレビューURL
 const getDriveViewUrl = (url: string) => {
     if (!url) return '';
     const match = url.match(/id=([^&]+)/) || url.match(/file\/d\/([^\/]+)/);
@@ -98,13 +97,16 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadingImageId, setUploadingImageId] = useState<string | null>(null);
 
-  const [isTinPlated, setIsTinPlated] = useState(false);
-
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [aiStatus, setAiStatus] = useState<'IDLE' | 'ANALYZING'>('IDLE');
   const [aiProgressStep, setAiProgressStep] = useState(0); 
   const [imgData1, setImgData1] = useState<string>('');
   const [imgData2, setImgData2] = useState<string>('');
+  const [aiHint, setAiHint] = useState<string>('');
+
+  const [isListeningHint, setIsListeningHint] = useState(false);
+  const hintRecognitionRef = useRef<any>(null);
+  const hintTimeoutRef = useRef<any>(null);
   
   const [autoMarketSync, setAutoMarketSync] = useState(true);
   const [autoLeadGen, setAutoLeadGen] = useState(true);
@@ -121,113 +123,96 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const clients = data?.clients || [];
   const staffs = data?.staffs || [];
 
+  // ★ 追加：POS画面から別タブで開かれた際の連携処理
+  useEffect(() => {
+    const pendingDataStr = localStorage.getItem('factoryOS_pendingAIItem');
+    if (pendingDataStr) {
+      try {
+        const pendingData = JSON.parse(pendingDataStr);
+        setActiveTab('WIRES');
+        setEditingItem({
+          name: pendingData.name || '',
+          maker: '',
+          year: '',
+          _sqValue: '',
+          _sqUnit: 'sq',
+          _coreValue: '',
+          conductor: pendingData.conductor || '',
+          material: pendingData.material || '純銅',
+          ratio: pendingData.ratio || '',
+          _pendingImageData1: pendingData.image1 || null,
+          _pendingImageData2: pendingData.image2 || null,
+          memo: `【POS連携 AI推論結果】\n${pendingData.reason || ''}`
+        });
+        setIsModalOpen(true);
+        localStorage.removeItem('factoryOS_pendingAIItem'); // 読み込んだら消す
+      } catch (e) {
+        console.error('Failed to parse pending AI item', e);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     const localSync = localStorage.getItem('factoryOS_autoMarketSync');
     const localLead = localStorage.getItem('factoryOS_autoLeadGen');
-
-    if (localSync !== null) {
-        setAutoMarketSync(localSync === 'true');
-    } else if (data?.config) {
-        setAutoMarketSync(String(data.config.auto_market_sync) !== 'false');
-    }
-
-    if (localLead !== null) {
-        setAutoLeadGen(localLead === 'true');
-    } else if (data?.config) {
-        setAutoLeadGen(String(data.config.auto_lead_gen) !== 'false');
-    }
+    if (localSync !== null) setAutoMarketSync(localSync === 'true');
+    else if (data?.config) setAutoMarketSync(String(data.config.auto_market_sync) !== 'false');
+    if (localLead !== null) setAutoLeadGen(localLead === 'true');
+    else if (data?.config) setAutoLeadGen(String(data.config.auto_lead_gen) !== 'false');
   }, [data?.config]);
 
   const uniqueMakers = Array.from(new Set(wires.map((w:any) => w.maker).filter((m:any) => m && m !== '-')));
   const uniqueTypes = Array.from(new Set(castings.map((c:any) => c.type).filter(Boolean)));
 
   const handleTabChange = (tab: any) => {
-    setActiveTab(tab);
-    setSearchTerm('');
-    setFilterMaker('');
-    setFilterType('');
-    setSortConfig(null); 
+    setActiveTab(tab); setSearchTerm(''); setFilterMaker(''); setFilterType(''); setSortConfig(null); 
   };
 
   const handleOpenModal = (item: any = null) => {
     const sqData = parseSqForInput(item?.sq);
     const coreData = parseCoreForInput(item?.core);
-
-    setEditingItem({
-        ...item,
-        _sqValue: sqData.val,
-        _sqUnit: sqData.unit,
-        _coreValue: coreData,
-        material: item?.material || '純銅'
-    });
-    
-    setSampleTotal(item?.sampleTotal || '');
-    setSampleCopper(item?.sampleCopper || '');
-    setSampleCover(item?.sampleCover || ''); 
-
+    setEditingItem({ ...item, _sqValue: sqData.val, _sqUnit: sqData.unit, _coreValue: coreData, material: item?.material || '純銅' });
+    setSampleTotal(item?.sampleTotal || ''); setSampleCopper(item?.sampleCopper || ''); setSampleCover(item?.sampleCover || ''); 
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
-    setEditingItem(null);
-    setSampleTotal('');
-    setSampleCopper('');
-    setSampleCover('');
-    setIsModalOpen(false);
+    setEditingItem(null); setSampleTotal(''); setSampleCopper(''); setSampleCover(''); setIsModalOpen(false);
   };
 
   const calculateRatio = (total: number | '', copper: number | '') => {
-      if (total && copper && Number(total) > 0) {
-          const r = (Number(copper) / Number(total)) * 100;
-          return r.toFixed(2);
-      }
+      if (total && copper && Number(total) > 0) return ((Number(copper) / Number(total)) * 100).toFixed(2);
       return '';
   };
 
   const handleSampleTotalChange = (val: string) => {
       const num = val ? Number(val) : '';
-      setSampleTotal(num);
-      setEditingItem({...editingItem, sampleTotal: num, ratio: calculateRatio(num, sampleCopper)});
+      setSampleTotal(num); setEditingItem({...editingItem, sampleTotal: num, ratio: calculateRatio(num, sampleCopper)});
   };
 
   const handleSampleCopperChange = (val: string) => {
       const num = val ? Number(val) : '';
-      setSampleCopper(num);
-      setEditingItem({...editingItem, sampleCopper: num, ratio: calculateRatio(sampleTotal, num)});
+      setSampleCopper(num); setEditingItem({...editingItem, sampleCopper: num, ratio: calculateRatio(sampleTotal, num)});
   };
 
   const handleSampleCoverChange = (val: string) => {
       const num = val ? Number(val) : '';
-      setSampleCover(num);
-      setEditingItem({...editingItem, sampleCover: num});
+      setSampleCover(num); setEditingItem({...editingItem, sampleCover: num});
   };
 
   const getJuteWeight = () => {
       if (sampleTotal && (sampleCopper || sampleCover)) {
-          const t = Number(sampleTotal) || 0;
-          const c = Number(sampleCopper) || 0;
-          const p = Number(sampleCover) || 0;
-          const jute = t - c - p;
-          return jute > 0 ? jute.toFixed(3) : '0.000';
+          const t = Number(sampleTotal) || 0; const c = Number(sampleCopper) || 0; const p = Number(sampleCover) || 0;
+          const jute = t - c - p; return jute > 0 ? jute.toFixed(3) : '0.000';
       }
       return '---';
   };
 
   const handlePromoteToWire = (unknownItem: any) => {
       setActiveTab('WIRES');
-      
       setEditingItem({
-          name: unknownItem.name.replace(/【.*?】/g, ''), 
-          maker: '', 
-          year: '', 
-          _sqValue: '',
-          _sqUnit: 'sq',
-          _coreValue: '', 
-          conductor: '',
-          material: unknownItem.material || '純銅',
-          ratio: '', 
-          image1: unknownItem.image1, 
-          image2: unknownItem.image2, 
+          name: unknownItem.name.replace(/【.*?】/g, ''), maker: '', year: '', _sqValue: '', _sqUnit: 'sq', _coreValue: '', 
+          conductor: '', material: unknownItem.material || '純銅', ratio: '', image1: unknownItem.image1, image2: unknownItem.image2, 
           memo: `【AI推論からの昇格】\n推論日時: ${unknownItem.createdAt}\nAIの根拠: ${unknownItem.reason}`
       });
       setIsModalOpen(true);
@@ -240,16 +225,13 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       if (isNaN(d) || d <= 0) return alert("正しい数値を入力してください。");
 
       const isSolid = editingItem.conductor && (editingItem.conductor.includes('単線') || editingItem.conductor === 'Solid');
-      
       if (isSolid) {
           setEditingItem({ ...editingItem, _sqValue: String(d), _sqUnit: 'mm' });
           alert(`単線として「${d}mm」を適用しました。`);
       } else {
-          const r = d / 2;
-          const approxSq = (r * r * Math.PI) * 0.75;
+          const r = d / 2; const approxSq = (r * r * Math.PI) * 0.75;
           const jisSqs = [1.25, 2, 3.5, 5.5, 8, 14, 22, 38, 60, 100, 150, 200, 250, 325];
           const closestSq = jisSqs.reduce((prev, curr) => Math.abs(curr - approxSq) < Math.abs(prev - approxSq) ? curr : prev);
-          
           if (window.confirm(`【より線のSQ概算結果】\n直径: ${d}mm\n概算断面積: 約${approxSq.toFixed(1)}sq\n\nJIS規格の「${closestSq} sq」を適用しますか？`)) {
               setEditingItem({ ...editingItem, _sqValue: String(closestSq), _sqUnit: 'sq' });
           }
@@ -259,78 +241,41 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const handleSaveSettings = async () => {
       setIsSavingSettings(true);
       try {
-          await fetch('/api/gas', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ action: 'UPDATE_CONFIG', key: 'auto_market_sync', value: autoMarketSync.toString(), description: '市況自動取得フラグ' })
-          });
-          
+          await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'UPDATE_CONFIG', key: 'auto_market_sync', value: autoMarketSync.toString(), description: '市況自動取得フラグ' }) });
           await new Promise(resolve => setTimeout(resolve, 500));
-          
-          await fetch('/api/gas', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ action: 'UPDATE_CONFIG', key: 'auto_lead_gen', value: autoLeadGen.toString(), description: 'AIスナイパー自動実行フラグ' })
-          });
-          
+          await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'UPDATE_CONFIG', key: 'auto_lead_gen', value: autoLeadGen.toString(), description: 'AIスナイパー自動実行フラグ' }) });
           localStorage.setItem('factoryOS_autoMarketSync', autoMarketSync.toString());
           localStorage.setItem('factoryOS_autoLeadGen', autoLeadGen.toString());
           localStorage.removeItem('factoryOS_masterData');
-          
-          alert('✅ 設定を確実に保存しました。');
-          window.location.reload();
-      } catch (e) {
-          alert('通信エラーが発生しました。設定が正常に保存されていない可能性があります。');
-      }
+          alert('✅ 設定を確実に保存しました。'); window.location.reload();
+      } catch (e) { alert('通信エラーが発生しました。'); }
       setIsSavingSettings(false);
   };
 
-  // ★ バックアップ実行に対応した handleRunBatch
   const handleRunBatch = async (type: 'MARKET' | 'LEAD' | 'BACKUP') => {
       const typeLabel = type === 'MARKET' ? '市況データ（建値）' : type === 'LEAD' ? '営業リード' : 'データベースのバックアップ';
       if (!confirm(`${typeLabel} の処理を今すぐ実行します。よろしいですか？`)) return;
       setIsRunningBatch(type);
       try {
           const action = type === 'MARKET' ? 'RUN_MARKET_SYNC' : type === 'LEAD' ? 'RUN_LEAD_GEN' : 'CREATE_BACKUP';
-          const res = await fetch('/api/gas', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ action })
-          });
+          const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }) });
           const result = await res.json();
           if (result.status === 'success') {
               alert('✅ ' + result.message);
-              if (result.url) {
-                  window.open(result.url, '_blank'); // バックアップファイルを別タブで開く
-              }
-          } else {
-              alert('エラーが発生しました: ' + result.message);
-          }
-      } catch (e) {
-          alert('通信エラーが発生しました。');
-      }
+              if (result.url) window.open(result.url, '_blank');
+          } else { alert('エラーが発生しました: ' + result.message); }
+      } catch (e) { alert('通信エラーが発生しました。'); }
       setIsRunningBatch('NONE');
   };
 
   const handleSave = async () => {
     let finalItem = { ...editingItem };
-
     finalItem.sq = finalItem._sqValue ? `${finalItem._sqValue}${finalItem._sqUnit === 'mm' ? 'mm' : ''}` : ''; 
     finalItem.core = finalItem._coreValue ? `${finalItem._coreValue}` : '';
 
     if (!finalItem.id && activeTab === 'WIRES') {
-        const isDuplicate = wires.some((w:any) => 
-            (w.maker || '') === (finalItem.maker || '') && 
-            (w.name || '') === (finalItem.name || '') && 
-            (String(w.sq) || '') === String(finalItem.sq || '') && 
-            (String(w.core) || '') === String(finalItem.core || '') &&
-            (String(w.year) || '') === String(finalItem.year || '') &&
-            (String(w.material) || '純銅') === String(finalItem.material || '純銅')
-        );
-        if (isDuplicate) {
-            alert('⚠️ この組み合わせ（メーカー・品名・サイズ・芯数・製造年・材質）は既に登録されています。\n重複登録を防ぐため、一覧から既存のデータを編集してください。');
-            return;
-        }
+        const isDuplicate = wires.some((w:any) => (w.maker || '') === (finalItem.maker || '') && (w.name || '') === (finalItem.name || '') && String(w.sq || '') === String(finalItem.sq || '') && String(w.core || '') === String(finalItem.core || '') && String(w.year || '') === String(finalItem.year || '') && String(w.material || '純銅') === String(finalItem.material || '純銅'));
+        if (isDuplicate) { alert('⚠️ この組み合わせは既に登録されています。\n重複登録を防ぐため、一覧から既存のデータを編集してください。'); return; }
     }
 
     setIsSubmitting(true);
@@ -343,52 +288,23 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
     if (finalItem._aiInitialState) {
         const ai = finalItem._aiInitialState;
-        const isMakerChanged = String(ai.maker || '') !== String(finalItem.maker || '');
-        const isNameChanged = String(ai.name || '') !== String(finalItem.name || '');
-        const isRatioChanged = String(ai.ratio || '') !== String(finalItem.ratio || '');
-        const isConductorChanged = String(ai.conductor || '') !== String(finalItem.conductor || '');
-        const isMaterialChanged = String(ai.material || '') !== String(finalItem.material || '');
-
-        if (isMakerChanged || isNameChanged || isRatioChanged || isConductorChanged || isMaterialChanged) {
-            const feedbackText = `\n\n【🤖➡️🧑‍🔧 Human Feedback (実測/訂正)】\n` +
-                                 `AI推論 : [メーカー: ${ai.maker || '不明'}, 品名: ${ai.name || '不明'}, 構造: ${ai.conductor || '不明'}, 材質: ${ai.material || '不明'}, 歩留: ${ai.ratio || '---'}%]\n` +
-                                 `人間確定: [メーカー: ${finalItem.maker || '不明'}, 品名: ${finalItem.name || '不明'}, 構造: ${finalItem.conductor || '不明'}, 材質: ${finalItem.material || '不明'}, 歩留: ${finalItem.ratio || '---'}%]\n` +
-                                 `※作業者による現物確認・ノギス測定・実測計量によりAI推論を修正し、マスターとして確定。`;
+        if (String(ai.maker||'') !== String(finalItem.maker||'') || String(ai.name||'') !== String(finalItem.name||'') || String(ai.ratio||'') !== String(finalItem.ratio||'') || String(ai.conductor||'') !== String(finalItem.conductor||'') || String(ai.material||'') !== String(finalItem.material||'')) {
+            const feedbackText = `\n\n【🤖➡️🧑‍🔧 Human Feedback (実測/訂正)】\nAI推論 : [メーカー: ${ai.maker || '不明'}, 品名: ${ai.name || '不明'}, 構造: ${ai.conductor || '不明'}, 材質: ${ai.material || '不明'}, 歩留: ${ai.ratio || '---'}%]\n人間確定: [メーカー: ${finalItem.maker || '不明'}, 品名: ${finalItem.name || '不明'}, 構造: ${finalItem.conductor || '不明'}, 材質: ${finalItem.material || '不明'}, 歩留: ${finalItem.ratio || '---'}%]\n※作業者による現物確認・実測計量によりAI推論を修正し、マスターとして確定。`;
             finalItem.memo = (finalItem.memo || '') + feedbackText;
             finalItem.reason = (finalItem.reason || '') + feedbackText; 
         }
     }
 
-    if (finalItem._pendingImageData1) {
+    const uploadImg = async (data: string, fileName: string) => {
         try {
-            const res = await fetch('/api/gas', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'UPLOAD_IMAGE', data: finalItem._pendingImageData1, mimeType: 'image/jpeg', fileName: `master_sec_${Date.now()}.jpg` })
-            });
-            const r = await res.json();
-            if (r.status === 'success') finalItem.image1 = r.url;
-        } catch(e) {}
-    }
-    if (finalItem._pendingImageData2) {
-        try {
-            const res = await fetch('/api/gas', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'UPLOAD_IMAGE', data: finalItem._pendingImageData2, mimeType: 'image/jpeg', fileName: `master_prt_${Date.now()}.jpg` })
-            });
-            const r = await res.json();
-            if (r.status === 'success') finalItem.image2 = r.url;
-        } catch(e) {}
-    }
-    if (finalItem._pendingImageData3) {
-        try {
-            const res = await fetch('/api/gas', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'UPLOAD_IMAGE', data: finalItem._pendingImageData3, mimeType: 'image/jpeg', fileName: `master_nak_${Date.now()}.jpg` })
-            });
-            const r = await res.json();
-            if (r.status === 'success') finalItem.image3 = r.url;
-        } catch(e) {}
-    }
+            const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'UPLOAD_IMAGE', data, mimeType: 'image/jpeg', fileName }) });
+            const r = await res.json(); return r.status === 'success' ? r.url : null;
+        } catch(e) { return null; }
+    };
+
+    if (finalItem._pendingImageData1) finalItem.image1 = await uploadImg(finalItem._pendingImageData1, `master_sec_${Date.now()}.jpg`) || finalItem.image1;
+    if (finalItem._pendingImageData2) finalItem.image2 = await uploadImg(finalItem._pendingImageData2, `master_prt_${Date.now()}.jpg`) || finalItem.image2;
+    if (finalItem._pendingImageData3) finalItem.image3 = await uploadImg(finalItem._pendingImageData3, `master_nak_${Date.now()}.jpg`) || finalItem.image3;
 
     const action = finalItem.id ? 'UPDATE_DB_RECORD' : 'ADD_DB_RECORD';
     const payload = finalItem.id 
@@ -398,12 +314,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     try {
       const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const result = await res.json();
-      if (result.status === 'success') {
-        alert('マスターに登録しました');
-        window.location.reload();
-      } else {
-        alert('エラー: ' + result.message);
-      }
+      if (result.status === 'success') { alert('マスターに登録しました'); window.location.reload(); } else { alert('エラー: ' + result.message); }
     } catch (e) { alert('通信エラーが発生しました'); }
     setIsSubmitting(false);
   };
@@ -416,34 +327,22 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     if (activeTab === 'CASTINGS') sheetName = 'Products_Casting';
     if (activeTab === 'CLIENTS') sheetName = 'Clients';
     if (activeTab === 'STAFF') sheetName = 'Staff';
-
     try {
       const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'DELETE_DB_RECORD', sheetName, recordId: id }) });
       const result = await res.json();
-      if (result.status === 'success') {
-        alert('削除しました');
-        window.location.reload();
-      }
+      if (result.status === 'success') { alert('削除しました'); window.location.reload(); }
     } catch (e) { alert('通信エラー'); }
   };
 
   const getUpdatesMap = (item: any, tab: string) => {
     if (tab === 'WIRES') {
-        const updates: any = { 
-            1: item.maker, 2: item.name, 3: item.year, 4: item.sq, 
-            5: item.sampleTotal, 6: item.sampleCopper,
-            7: item.core, 8: item.conductor, 9: item.ratio, 10: item.memo,
-            16: item.material,
-            17: item.sampleCover 
-        };
+        const updates: any = { 1: item.maker, 2: item.name, 3: item.year, 4: item.sq, 5: item.sampleTotal, 6: item.sampleCopper, 7: item.core, 8: item.conductor, 9: item.ratio, 10: item.memo, 16: item.material, 17: item.sampleCover };
         if (item.image1 !== undefined) updates[11] = item.image1;
         if (item.image2 !== undefined) updates[12] = item.image2;
         if (item.image3 !== undefined) updates[13] = item.image3;
         return updates;
     }
-    if (tab === 'UNKNOWN') {
-        return { 1: item.name, 2: item.ratio, 3: item.reason, 9: item.material }; 
-    }
+    if (tab === 'UNKNOWN') return { 1: item.name, 2: item.ratio, 3: item.reason, 9: item.material }; 
     if (tab === 'CASTINGS') return { 1: item.name, 2: item.type, 4: item.ratio };
     if (tab === 'CLIENTS') return { 1: item.name, 2: item.rank, 4: item.phone, 5: item.loginId, 6: item.password, 7: item.points, 8: item.memo, 9: item.address, 10: item.industry };
     if (tab === 'STAFF') return { 1: item.name, 2: item.role, 3: item.rate, 4: item.status, 5: item.loginId, 6: item.password };
@@ -468,44 +367,67 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, recordId: string, colIndex: number, sheetName: string) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
+      const file = e.target.files?.[0]; if (!file) return;
       setUploadingImageId(`${recordId}-${colIndex}`);
       try {
           const base64Data = await compressImage(file);
-          const res = await fetch('/api/gas', {
-              method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ action: 'UPLOAD_IMAGE', sheetName: sheetName, recordId: recordId, colIndex: colIndex, data: base64Data, mimeType: 'image/jpeg', fileName: `img_${recordId}_${Date.now()}.jpg` })
-          });
+          const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'UPLOAD_IMAGE', sheetName: sheetName, recordId: recordId, colIndex: colIndex, data: base64Data, mimeType: 'image/jpeg', fileName: `img_${recordId}_${Date.now()}.jpg` }) });
           const result = await res.json();
           if (result.status === 'success') { alert('画像をアップロードしました'); window.location.reload(); } else { alert('エラー: ' + result.message); }
       } catch (err) { alert('通信エラーが発生しました'); }
-      setUploadingImageId(null);
-      e.target.value = '';
+      setUploadingImageId(null); e.target.value = '';
+  };
+
+  // ★ ヒント用音声入力（トグル式）
+  const toggleHintVoiceInput = () => {
+      if (isListeningHint) {
+          if (hintRecognitionRef.current) hintRecognitionRef.current.stop();
+          return;
+      }
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) return alert('非対応ブラウザです');
+      
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'ja-JP'; recognition.continuous = true; recognition.interimResults = true;
+      let currentHint = aiHint;
+      
+      recognition.onstart = () => {
+          setIsListeningHint(true);
+          hintTimeoutRef.current = setTimeout(() => { if (hintRecognitionRef.current) hintRecognitionRef.current.stop(); }, 60000);
+      };
+      
+      let finalStr = '';
+      recognition.onresult = (event: any) => {
+          let interim = ''; finalStr = '';
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+              if (event.results[i].isFinal) finalStr += event.results[i][0].transcript;
+              else interim += event.results[i][0].transcript;
+          }
+          setAiHint(currentHint + (currentHint ? ' ' : '') + finalStr + interim);
+      };
+      
+      recognition.onend = () => {
+          setIsListeningHint(false);
+          if (hintTimeoutRef.current) clearTimeout(hintTimeoutRef.current);
+          setAiHint(currentHint + (currentHint ? ' ' : '') + finalStr);
+      };
+      hintRecognitionRef.current = recognition;
+      recognition.start();
   };
 
   const runAiExtraction = async () => {
     if (!imgData1) return alert('最低1枚の画像（断面など）をアップロードしてください');
-    setAiStatus('ANALYZING');
-    setAiProgressStep(1); 
-
-    const progressInterval = setInterval(() => {
-        setAiProgressStep(prev => {
-            if (prev === 1) return 2;
-            if (prev === 2) return 3;
-            return 3; 
-        });
-    }, 2000);
+    setAiStatus('ANALYZING'); setAiProgressStep(1); 
+    const progressInterval = setInterval(() => { setAiProgressStep(prev => prev < 3 ? prev + 1 : 3); }, 2000);
     
     try {
       const res = await fetch('/api/gas', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'VISION_AI_REGISTER', imageData: imgData1, imageData2: imgData2 })
+        body: JSON.stringify({ action: 'VISION_AI_REGISTER', imageData: imgData1, imageData2: imgData2, hint: aiHint })
       });
       const result = await res.json();
       
-      clearInterval(progressInterval);
-      setAiProgressStep(4);
+      clearInterval(progressInterval); setAiProgressStep(4);
 
       setTimeout(() => {
           if (result.status === 'success') {
@@ -513,77 +435,42 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                   window.speechSynthesis.cancel();
                   const makerText = result.data.maker && result.data.maker !== '-' ? result.data.maker : 'メーカー不明';
                   const nameText = result.data.name && result.data.name !== '-' ? result.data.name : '品名不明';
-                  const speakText = `抽出完了。メーカー、${makerText}。品名、${nameText}。`;
-                  const utterance = new SpeechSynthesisUtterance(speakText);
-                  utterance.lang = 'ja-JP';
-                  utterance.rate = 1.4;
-                  window.speechSynthesis.speak(utterance);
+                  const utterance = new SpeechSynthesisUtterance(`抽出完了。メーカー、${makerText}。品名、${nameText}。`);
+                  utterance.lang = 'ja-JP'; utterance.rate = 1.4; window.speechSynthesis.speak(utterance);
               }
-
               const cleanSize = String(result.data.size || '').replace(/[^\d.]/g, '');
               const cleanCore = String(result.data.core || '').replace(/[^\d]/g, '');
 
               setEditingItem({
-                  maker: result.data.maker === '-' ? '' : result.data.maker,
-                  name: result.data.name === '-' ? '' : result.data.name,
-                  year: result.data.year === '-' ? '' : result.data.year,
-                  _sqValue: cleanSize === '-' ? '' : cleanSize,
-                  _sqUnit: 'sq',
-                  _coreValue: cleanCore === '-' ? '' : cleanCore,
-                  conductor: result.data.conductor === '-' ? '' : result.data.conductor,
-                  material: result.data.material === '-' ? '純銅' : result.data.material,
-                  ratio: result.data.estimatedRatio || '',
-                  aiEstimatedRatio: result.data.estimatedRatio || '',
-                  memo: `【AIアシスト抽出】\nAI推論根拠: ${result.data.reason}\n※実測を行って歩留まりを上書きしてください。`,
-                  _pendingImageData1: imgData1,
-                  _pendingImageData2: imgData2,
-                  _aiInitialState: { 
-                      maker: result.data.maker === '-' ? '' : result.data.maker,
-                      name: result.data.name === '-' ? '' : result.data.name,
-                      conductor: result.data.conductor === '-' ? '' : result.data.conductor,
-                      material: result.data.material === '-' ? '純銅' : result.data.material,
-                      ratio: result.data.estimatedRatio || ''
-                  }
+                  maker: result.data.maker === '-' ? '' : result.data.maker, name: result.data.name === '-' ? '' : result.data.name,
+                  year: result.data.year === '-' ? '' : result.data.year, _sqValue: cleanSize === '-' ? '' : cleanSize,
+                  _sqUnit: 'sq', _coreValue: cleanCore === '-' ? '' : cleanCore, conductor: result.data.conductor === '-' ? '' : result.data.conductor,
+                  material: result.data.material === '-' ? '純銅' : result.data.material, ratio: result.data.estimatedRatio || '',
+                  aiEstimatedRatio: result.data.estimatedRatio || '', memo: `【AIアシスト抽出】\nAI推論根拠: ${result.data.reason}\n※実測を行って歩留まりを上書きしてください。`,
+                  _pendingImageData1: imgData1, _pendingImageData2: imgData2,
+                  _aiInitialState: { maker: result.data.maker === '-' ? '' : result.data.maker, name: result.data.name === '-' ? '' : result.data.name, conductor: result.data.conductor === '-' ? '' : result.data.conductor, material: result.data.material === '-' ? '純銅' : result.data.material, ratio: result.data.estimatedRatio || '' }
               });
 
-              setSampleTotal('');
-              setSampleCopper('');
-              setSampleCover('');
-              
-              setIsAiModalOpen(false);
-              setIsModalOpen(true);
-          } else {
-              alert('AI抽出エラー: ' + result.message);
-          }
-          setAiStatus('IDLE');
-          setAiProgressStep(0);
+              setSampleTotal(''); setSampleCopper(''); setSampleCover('');
+              setIsAiModalOpen(false); setIsModalOpen(true); setAiHint('');
+          } else { alert('AI抽出エラー: ' + result.message); }
+          setAiStatus('IDLE'); setAiProgressStep(0);
       }, 800);
-
-    } catch(err) {
-      clearInterval(progressInterval);
-      alert('通信エラーが発生しました。');
-      setAiStatus('IDLE');
-      setAiProgressStep(0);
-    }
+    } catch(err) { clearInterval(progressInterval); alert('通信エラーが発生しました。'); setAiStatus('IDLE'); setAiProgressStep(0); }
   };
 
   const handleAiImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, num: 1 | 2 | 3) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const file = e.target.files?.[0]; if (!file) return;
     try {
         const compressedBase64 = await compressImage(file);
-        if (num === 1) setImgData1(compressedBase64); 
-        else if (num === 2) setImgData2(compressedBase64);
-        else setEditingItem({...editingItem, _pendingImageData3: compressedBase64});
+        if (num === 1) setImgData1(compressedBase64); else if (num === 2) setImgData2(compressedBase64); else setEditingItem({...editingItem, _pendingImageData3: compressedBase64});
     } catch (err) { alert("画像の処理に失敗しました。"); }
     e.target.value = '';
   };
 
   const handleSort = (key: string) => {
     let direction: 'asc' | 'desc' = 'asc';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') direction = 'desc';
     setSortConfig({ key, direction });
   };
 
@@ -598,33 +485,20 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
             <div className="p-6 md:p-10 bg-white h-full overflow-y-auto animate-in fade-in">
                 <div className="max-w-3xl mx-auto space-y-10">
                     <div>
-                        <h3 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-3 mb-6 flex items-center gap-2">
-                            <Icons.Settings /> システム自動実行バッチの制御
-                        </h3>
-                        <p className="text-sm text-gray-600 leading-relaxed mb-6">
-                            GAS（Google Apps Script）で1時間おきに実行されているバックグラウンド処理の稼働状況を制御します。
-                            意図しないAPIコストの発生や、相場急変時の安全確保のために利用してください。
-                        </p>
+                        <h3 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-3 mb-6 flex items-center gap-2"><Icons.Settings /> システム自動実行バッチの制御</h3>
+                        <p className="text-sm text-gray-600 leading-relaxed mb-6">GAS（Google Apps Script）で1時間おきに実行されているバックグラウンド処理の稼働状況を制御します。</p>
                     </div>
 
                     <div className="space-y-6">
-                        {/* ★ 追加されたバックアップカード */}
                         <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 shadow-sm">
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                                 <div>
-                                    <h4 className="font-bold text-gray-900 flex items-center gap-2 text-lg">
-                                        <span className="w-3 h-3 rounded-full bg-purple-500 animate-pulse"></span>
-                                        データベースのバックアップ
-                                    </h4>
+                                    <h4 className="font-bold text-gray-900 flex items-center gap-2 text-lg"><span className="w-3 h-3 rounded-full bg-purple-500 animate-pulse"></span>データベースのバックアップ</h4>
                                     <p className="text-xs text-gray-500 mt-1">現在の全マスターデータをGoogleドライブに別ファイルとしてコピー保存します。</p>
                                 </div>
                             </div>
                             <div className="border-t border-gray-200 pt-4 flex justify-end">
-                                <button 
-                                    onClick={() => handleRunBatch('BACKUP')} 
-                                    disabled={isRunningBatch !== 'NONE'}
-                                    className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-bold flex items-center gap-2 hover:bg-gray-50 transition disabled:opacity-50"
-                                >
+                                <button onClick={() => handleRunBatch('BACKUP')} disabled={isRunningBatch !== 'NONE'} className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-bold flex items-center gap-2 hover:bg-gray-50 transition disabled:opacity-50">
                                     {isRunningBatch === 'BACKUP' ? <><Icons.Refresh /> 作成中...</> : <><Icons.Save /> 今すぐバックアップ作成</>}
                                 </button>
                             </div>
@@ -633,10 +507,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                         <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 shadow-sm">
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                                 <div>
-                                    <h4 className="font-bold text-gray-900 flex items-center gap-2 text-lg">
-                                        <span className={`w-3 h-3 rounded-full ${autoMarketSync ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span>
-                                        市況データ自動スクレイピング
-                                    </h4>
+                                    <h4 className="font-bold text-gray-900 flex items-center gap-2 text-lg"><span className={`w-3 h-3 rounded-full ${autoMarketSync ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span>市況データ自動スクレイピング</h4>
                                     <p className="text-xs text-gray-500 mt-1">国内メーカー建値を自動取得し、価格を更新します。</p>
                                 </div>
                                 <label className="relative inline-flex items-center cursor-pointer">
@@ -654,10 +525,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                         <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 shadow-sm">
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                                 <div>
-                                    <h4 className="font-bold text-gray-900 flex items-center gap-2 text-lg">
-                                        <span className={`w-3 h-3 rounded-full ${autoLeadGen ? 'bg-blue-500 animate-pulse' : 'bg-gray-400'}`}></span>
-                                        AIスナイパー 自動リスト抽出
-                                    </h4>
+                                    <h4 className="font-bold text-gray-900 flex items-center gap-2 text-lg"><span className={`w-3 h-3 rounded-full ${autoLeadGen ? 'bg-blue-500 animate-pulse' : 'bg-gray-400'}`}></span>AIスナイパー 自動リスト抽出</h4>
                                     <p className="text-xs text-gray-500 mt-1">Gemini APIを利用してウェブ上から営業ターゲットを抽出します。</p>
                                 </div>
                                 <label className="relative inline-flex items-center cursor-pointer">
@@ -684,49 +552,25 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     }
 
     let filteredData = [];
-    
-    if (activeTab === 'WIRES') {
-        filteredData = wires.filter((w:any) => 
-            (w.name.includes(searchTerm) || w.maker?.includes(searchTerm)) &&
-            (filterMaker === '' || w.maker === filterMaker)
-        );
-    }
-    if (activeTab === 'UNKNOWN') {
-        filteredData = unknownWires.filter((u:any) => u.name?.includes(searchTerm) || u.reason?.includes(searchTerm));
-    }
-    if (activeTab === 'CASTINGS') {
-        filteredData = castings.filter((c:any) => 
-            c.name.includes(searchTerm) &&
-            (filterType === '' || c.type === filterType)
-        );
-    }
+    if (activeTab === 'WIRES') filteredData = wires.filter((w:any) => (w.name.includes(searchTerm) || w.maker?.includes(searchTerm)) && (filterMaker === '' || w.maker === filterMaker));
+    if (activeTab === 'UNKNOWN') filteredData = unknownWires.filter((u:any) => u.name?.includes(searchTerm) || u.reason?.includes(searchTerm));
+    if (activeTab === 'CASTINGS') filteredData = castings.filter((c:any) => c.name.includes(searchTerm) && (filterType === '' || c.type === filterType));
     if (activeTab === 'CLIENTS') filteredData = clients.filter((c:any) => c.name.includes(searchTerm));
     if (activeTab === 'STAFF') filteredData = staffs.filter((s:any) => s.name.includes(searchTerm));
 
     let sortedData = [...filteredData];
     if (sortConfig !== null) {
       sortedData.sort((a, b) => {
-        let aValue = a[sortConfig.key];
-        let bValue = b[sortConfig.key];
-
+        let aValue = a[sortConfig.key]; let bValue = b[sortConfig.key];
         const isDate = (val: any) => typeof val === 'string' && val.match(/^\d{4}[-\/]\d{2}[-\/]\d{2}/);
-
         if (isDate(aValue) || isDate(bValue)) {
-            const dateA = aValue ? new Date(aValue).getTime() : 0;
-            const dateB = bValue ? new Date(bValue).getTime() : 0;
+            const dateA = aValue ? new Date(aValue).getTime() : 0; const dateB = bValue ? new Date(bValue).getTime() : 0;
             if (dateA < dateB) return sortConfig.direction === 'asc' ? -1 : 1;
             if (dateA > dateB) return sortConfig.direction === 'asc' ? 1 : -1;
             return 0;
         }
-
-        if (aValue !== '' && bValue !== '' && !isNaN(Number(aValue)) && !isNaN(Number(bValue))) {
-             aValue = Number(aValue);
-             bValue = Number(bValue);
-        } else {
-             aValue = String(aValue || '').toLowerCase();
-             bValue = String(bValue || '').toLowerCase();
-        }
-
+        if (aValue !== '' && bValue !== '' && !isNaN(Number(aValue)) && !isNaN(Number(bValue))) { aValue = Number(aValue); bValue = Number(bValue); } 
+        else { aValue = String(aValue || '').toLowerCase(); bValue = String(bValue || '').toLowerCase(); }
         if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
         if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
         return 0;
@@ -745,51 +589,22 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
           <thead className="bg-gray-100 text-gray-500 uppercase tracking-wider text-xs sticky top-0 z-20 shadow-sm">
             <tr>
               {activeTab === 'WIRES' && (
-                  <>
-                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('maker')}>メーカー <SortIcon columnKey="maker" /></th>
-                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('name')}>品名 <SortIcon columnKey="name" /></th>
-                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('year')}>製造年 <SortIcon columnKey="year" /></th>
-                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('sq')}>SQ/芯数 <SortIcon columnKey="sq" /></th>
-                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('ratio')}>歩留まり <SortIcon columnKey="ratio" /></th>
-                      <th className="p-3 text-center">画像 (1:断面 2:印字 3:剥線)</th>
-                  </>
+                  <><th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('maker')}>メーカー <SortIcon columnKey="maker" /></th><th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('name')}>品名 <SortIcon columnKey="name" /></th><th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('year')}>製造年 <SortIcon columnKey="year" /></th><th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('sq')}>SQ/芯数 <SortIcon columnKey="sq" /></th><th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('ratio')}>歩留まり <SortIcon columnKey="ratio" /></th><th className="p-3 text-center">画像 (1:断面 2:印字 3:剥線)</th></>
               )}
               {activeTab === 'UNKNOWN' && (
-                  <>
-                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('createdAt')}>登録日時 <SortIcon columnKey="createdAt" /></th>
-                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('name')}>AI推定品名 <SortIcon columnKey="name" /></th>
-                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('ratio')}>算出歩留まり <SortIcon columnKey="ratio" /></th>
-                      <th className="p-3 w-1/3">推論の根拠 (Reasoning)</th>
-                  </>
+                  <><th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('createdAt')}>登録日時 <SortIcon columnKey="createdAt" /></th><th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('name')}>AI推定品名 <SortIcon columnKey="name" /></th><th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('ratio')}>算出歩留まり <SortIcon columnKey="ratio" /></th><th className="p-3 w-1/3">推論の根拠 (Reasoning)</th></>
               )}
               {activeTab === 'CASTINGS' && (
-                  <>
-                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('name')}>品目名 <SortIcon columnKey="name" /></th>
-                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('type')}>種別 <SortIcon columnKey="type" /></th>
-                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('ratio')}>歩留まり <SortIcon columnKey="ratio" /></th>
-                  </>
+                  <><th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('name')}>品目名 <SortIcon columnKey="name" /></th><th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('type')}>種別 <SortIcon columnKey="type" /></th><th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('ratio')}>歩留まり <SortIcon columnKey="ratio" /></th></>
               )}
               {activeTab === 'CLIENTS' && (
-                  <>
-                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('name')}>業者名 <SortIcon columnKey="name" /></th>
-                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('rank')}>ランク <SortIcon columnKey="rank" /></th>
-                      <th className="p-3">電話番号</th>
-                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('points')}>保有ポイント <SortIcon columnKey="points" /></th>
-                  </>
+                  <><th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('name')}>業者名 <SortIcon columnKey="name" /></th><th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('rank')}>ランク <SortIcon columnKey="rank" /></th><th className="p-3">電話番号</th><th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('points')}>保有ポイント <SortIcon columnKey="points" /></th></>
               )}
               {activeTab === 'STAFF' && (
-                  <>
-                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('name')}>スタッフ名 <SortIcon columnKey="name" /></th>
-                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('role')}>権限 <SortIcon columnKey="role" /></th>
-                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('status')}>ステータス <SortIcon columnKey="status" /></th>
-                  </>
+                  <><th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('name')}>スタッフ名 <SortIcon columnKey="name" /></th><th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('role')}>権限 <SortIcon columnKey="role" /></th><th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('status')}>ステータス <SortIcon columnKey="status" /></th></>
               )}
-              {activeTab !== 'UNKNOWN' && (
-                <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('updatedAt')}>登録/更新 <SortIcon columnKey="updatedAt" /></th>
-              )}
-              {activeTab === 'UNKNOWN' && (
-                 <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('updatedAt')}>更新 <SortIcon columnKey="updatedAt" /></th>
-              )}
+              {activeTab !== 'UNKNOWN' && <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('updatedAt')}>登録/更新 <SortIcon columnKey="updatedAt" /></th>}
+              {activeTab === 'UNKNOWN' && <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('updatedAt')}>更新 <SortIcon columnKey="updatedAt" /></th>}
               <th className="p-3 text-right">操作</th>
             </tr>
           </thead>
@@ -801,16 +616,8 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                     <td className="p-3 font-bold text-gray-700">{item.maker || '-'}</td>
                     <td className="p-3 font-bold text-gray-900">
                         {item.name}
-                        {item.material === '錫メッキ' && (
-                            <span className="ml-2 inline-flex items-center gap-0.5 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm whitespace-nowrap shadow-sm">
-                                <Icons.AlertTriangle /> 錫メッキ
-                            </span>
-                        )}
-                        {item.material === 'アルミ' && (
-                            <span className="ml-2 inline-flex items-center gap-0.5 bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm whitespace-nowrap shadow-sm">
-                                アルミ
-                            </span>
-                        )}
+                        {item.material === '錫メッキ' && <span className="ml-2 inline-flex items-center gap-0.5 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm whitespace-nowrap shadow-sm"><Icons.AlertTriangle /> 錫メッキ</span>}
+                        {item.material === 'アルミ' && <span className="ml-2 inline-flex items-center gap-0.5 bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm whitespace-nowrap shadow-sm">アルミ</span>}
                     </td>
                     <td className="p-3 text-gray-600">{item.year || '-'}</td>
                     <td className="p-3 text-gray-600 font-mono text-xs">{formatSqDisplay(item.sq)} / {formatCoreDisplay(item.core)}</td>
@@ -822,24 +629,12 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                                 return (
                                     <div key={colIdx} className="flex flex-col gap-1 items-center w-14">
                                         <div className="relative w-full h-12 border border-gray-300 rounded-sm overflow-hidden bg-gray-100 flex items-center justify-center group shadow-sm">
-                                            {hasImage ? (
-                                                <a href={getDriveViewUrl(item[`image${colIdx-10}`])} target="_blank" rel="noopener noreferrer" className="w-full h-full block">
-                                                    <img src={getDriveImageUrl(item[`image${colIdx-10}`])} referrerPolicy="no-referrer" className="w-full h-full object-cover group-hover:scale-110 transition-transform cursor-zoom-in" alt="Wire" />
-                                                </a>
-                                            ) : (
-                                                <Icons.Image />
-                                            )}
+                                            {hasImage ? ( <a href={getDriveViewUrl(item[`image${colIdx-10}`])} target="_blank" rel="noopener noreferrer" className="w-full h-full block"><img src={getDriveImageUrl(item[`image${colIdx-10}`])} referrerPolicy="no-referrer" className="w-full h-full object-cover group-hover:scale-110 transition-transform cursor-zoom-in" alt="Wire" /></a> ) : ( <Icons.Image /> )}
                                             {uploadingImageId === `${item.id}-${colIdx}` && <div className="absolute inset-0 bg-black/50 flex items-center justify-center"><Icons.Refresh /></div>}
                                         </div>
                                         <div className="flex gap-1 w-full">
-                                            <label className={`flex-1 flex justify-center items-center py-1 rounded-sm cursor-pointer transition ${hasImage ? 'bg-gray-100 hover:bg-gray-200 text-gray-600' : 'bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200'}`} title="カメラで撮影">
-                                                <Icons.Camera />
-                                                <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => handleImageUpload(e, item.id, colIdx, 'Products_Wire')} />
-                                            </label>
-                                            <label className={`flex-1 flex justify-center items-center py-1 rounded-sm cursor-pointer transition ${hasImage ? 'bg-gray-100 hover:bg-gray-200 text-gray-600' : 'bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200'}`} title="フォルダから選択">
-                                                <Icons.UploadCloud />
-                                                <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, item.id, colIdx, 'Products_Wire')} />
-                                            </label>
+                                            <label className={`flex-1 flex justify-center items-center py-1 rounded-sm cursor-pointer transition ${hasImage ? 'bg-gray-100 hover:bg-gray-200 text-gray-600' : 'bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200'}`} title="カメラで撮影"><Icons.Camera /><input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => handleImageUpload(e, item.id, colIdx, 'Products_Wire')} /></label>
+                                            <label className={`flex-1 flex justify-center items-center py-1 rounded-sm cursor-pointer transition ${hasImage ? 'bg-gray-100 hover:bg-gray-200 text-gray-600' : 'bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200'}`} title="フォルダから選択"><Icons.UploadCloud /><input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, item.id, colIdx, 'Products_Wire')} /></label>
                                         </div>
                                     </div>
                                 );
@@ -859,44 +654,22 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                 )}
 
                 {activeTab === 'CASTINGS' && (
-                  <>
-                    <td className="p-3 font-bold text-gray-900">{item.name}</td>
-                    <td className="p-3 text-gray-600">{item.type}</td>
-                    <td className="p-3 font-mono font-bold text-blue-600 text-base">{item.ratio}%</td>
-                  </>
+                  <><td className="p-3 font-bold text-gray-900">{item.name}</td><td className="p-3 text-gray-600">{item.type}</td><td className="p-3 font-mono font-bold text-blue-600 text-base">{item.ratio}%</td></>
                 )}
-                
                 {activeTab === 'CLIENTS' && (
-                  <>
-                    <td className="p-3 font-bold text-gray-900">{item.name}</td>
-                    <td className="p-3"><span className="bg-gray-200 px-2 py-1 rounded-sm text-xs font-bold">{item.rank}</span></td>
-                    <td className="p-3 font-mono">{item.phone}</td>
-                    <td className="p-3 font-mono text-orange-600 font-bold">{item.points} pt</td>
-                  </>
+                  <><td className="p-3 font-bold text-gray-900">{item.name}</td><td className="p-3"><span className="bg-gray-200 px-2 py-1 rounded-sm text-xs font-bold">{item.rank}</span></td><td className="p-3 font-mono">{item.phone}</td><td className="p-3 font-mono text-orange-600 font-bold">{item.points} pt</td></>
                 )}
-                
                 {activeTab === 'STAFF' && (
-                  <>
-                    <td className="p-3 font-bold text-gray-900">{item.name}</td>
-                    <td className="p-3 text-gray-600">{item.role}</td>
-                    <td className="p-3"><span className={`px-2 py-1 rounded-sm text-xs font-bold text-white ${item.status === 'ACTIVE' ? 'bg-green-500' : 'bg-red-500'}`}>{item.status}</span></td>
-                  </>
+                  <><td className="p-3 font-bold text-gray-900">{item.name}</td><td className="p-3 text-gray-600">{item.role}</td><td className="p-3"><span className={`px-2 py-1 rounded-sm text-xs font-bold text-white ${item.status === 'ACTIVE' ? 'bg-green-500' : 'bg-red-500'}`}>{item.status}</span></td></>
                 )}
 
                 <td className="p-3 text-[10px] text-gray-400 font-mono align-top">
-                    <div className="flex flex-col gap-1">
-                        {activeTab !== 'UNKNOWN' && <span title="登録日">➕ {formatTimeShort(item.createdAt)}</span>}
-                        <span title="更新日">🔄 {formatTimeShort(item.updatedAt)}</span>
-                    </div>
+                    <div className="flex flex-col gap-1">{activeTab !== 'UNKNOWN' && <span title="登録日">➕ {formatTimeShort(item.createdAt)}</span>}<span title="更新日">🔄 {formatTimeShort(item.updatedAt)}</span></div>
                 </td>
 
                 <td className="p-3 text-right align-top">
                   <div className="flex justify-end gap-2">
-                    {activeTab === 'UNKNOWN' && (
-                        <button onClick={() => handlePromoteToWire(item)} className="p-2 text-white bg-blue-600 hover:bg-blue-700 rounded-sm flex items-center gap-1 text-xs font-bold transition shadow-sm">
-                            <Icons.ArrowUp /> 確定マスターへ
-                        </button>
-                    )}
+                    {activeTab === 'UNKNOWN' && ( <button onClick={() => handlePromoteToWire(item)} className="p-2 text-white bg-blue-600 hover:bg-blue-700 rounded-sm flex items-center gap-1 text-xs font-bold transition shadow-sm"><Icons.ArrowUp /> 確定マスターへ</button> )}
                     <button onClick={() => handleOpenModal(item)} className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-sm transition"><Icons.Edit /></button>
                     <button onClick={() => handleDelete(item.id)} className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-sm transition"><Icons.Trash /></button>
                   </div>
@@ -917,30 +690,9 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
             <div className="bg-gray-50 p-4 border border-gray-200 rounded-sm">
                 <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-widest">現在登録されているマスター画像</label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {editingItem.image1 && (
-                        <div>
-                            <p className="text-[10px] text-gray-400 mb-1">1. 断面</p>
-                            <a href={getDriveViewUrl(editingItem.image1)} target="_blank" rel="noopener noreferrer">
-                                <img src={getDriveImageUrl(editingItem.image1)} referrerPolicy="no-referrer" alt="master img 1" className="w-full h-32 md:h-40 object-cover rounded-sm border border-gray-300 shadow-sm hover:opacity-80 transition cursor-zoom-in" />
-                            </a>
-                        </div>
-                    )}
-                    {editingItem.image2 && (
-                        <div>
-                            <p className="text-[10px] text-gray-400 mb-1">2. 印字</p>
-                            <a href={getDriveViewUrl(editingItem.image2)} target="_blank" rel="noopener noreferrer">
-                                <img src={getDriveImageUrl(editingItem.image2)} referrerPolicy="no-referrer" alt="master img 2" className="w-full h-32 md:h-40 object-cover rounded-sm border border-gray-300 shadow-sm hover:opacity-80 transition cursor-zoom-in" />
-                            </a>
-                        </div>
-                    )}
-                    {editingItem.image3 && (
-                        <div>
-                            <p className="text-[10px] text-gray-400 mb-1">3. 剥線後 (実測時)</p>
-                            <a href={getDriveViewUrl(editingItem.image3)} target="_blank" rel="noopener noreferrer">
-                                <img src={getDriveImageUrl(editingItem.image3)} referrerPolicy="no-referrer" alt="master img 3" className="w-full h-32 md:h-40 object-cover rounded-sm border border-gray-300 shadow-sm hover:opacity-80 transition cursor-zoom-in" />
-                            </a>
-                        </div>
-                    )}
+                    {editingItem.image1 && ( <div><p className="text-[10px] text-gray-400 mb-1">1. 断面</p><a href={getDriveViewUrl(editingItem.image1)} target="_blank" rel="noopener noreferrer"><img src={getDriveImageUrl(editingItem.image1)} referrerPolicy="no-referrer" alt="master img 1" className="w-full h-32 md:h-40 object-cover rounded-sm border border-gray-300 shadow-sm hover:opacity-80 transition cursor-zoom-in" /></a></div> )}
+                    {editingItem.image2 && ( <div><p className="text-[10px] text-gray-400 mb-1">2. 印字</p><a href={getDriveViewUrl(editingItem.image2)} target="_blank" rel="noopener noreferrer"><img src={getDriveImageUrl(editingItem.image2)} referrerPolicy="no-referrer" alt="master img 2" className="w-full h-32 md:h-40 object-cover rounded-sm border border-gray-300 shadow-sm hover:opacity-80 transition cursor-zoom-in" /></a></div> )}
+                    {editingItem.image3 && ( <div><p className="text-[10px] text-gray-400 mb-1">3. 剥線後 (実測時)</p><a href={getDriveViewUrl(editingItem.image3)} target="_blank" rel="noopener noreferrer"><img src={getDriveImageUrl(editingItem.image3)} referrerPolicy="no-referrer" alt="master img 3" className="w-full h-32 md:h-40 object-cover rounded-sm border border-gray-300 shadow-sm hover:opacity-80 transition cursor-zoom-in" /></a></div> )}
                 </div>
             </div>
         )}
@@ -956,39 +708,23 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
             <div><label className="block text-xs font-bold text-gray-500 mb-1">メーカー</label><input type="text" className="w-full border p-2.5 rounded-sm outline-none focus:border-blue-500 font-bold" value={editingItem.maker || ''} onChange={e => setEditingItem({...editingItem, maker: e.target.value})} /></div>
             <div>
                 <label className="block text-xs font-bold text-gray-500 mb-1">品名</label>
-                <div className="flex items-center gap-2">
-                    <input type="text" className="w-full border p-2.5 rounded-sm outline-none focus:border-blue-500 font-bold" value={editingItem.name || ''} onChange={e => setEditingItem({...editingItem, name: e.target.value})} />
-                </div>
+                <div className="flex items-center gap-2"><input type="text" className="w-full border p-2.5 rounded-sm outline-none focus:border-blue-500 font-bold" value={editingItem.name || ''} onChange={e => setEditingItem({...editingItem, name: e.target.value})} /></div>
             </div>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div><label className="block text-xs font-bold text-gray-500 mb-1">製造年</label><input type="text" placeholder="例: 2024" className="w-full border p-2.5 rounded-sm outline-none focus:border-blue-500" value={editingItem.year || ''} onChange={e => setEditingItem({...editingItem, year: e.target.value})} /></div>
-            
             <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1 flex items-center justify-between">
-                    <span>サイズ</span>
-                    <button onClick={handleCaliperInput} className="text-blue-600 hover:text-blue-800 flex items-center gap-0.5 bg-blue-50 px-1.5 py-0.5 rounded-sm border border-blue-200 transition shadow-sm">
-                        <Icons.Ruler /> <span className="text-[9px]">ノギス</span>
-                    </button>
-                </label>
+                <label className="block text-xs font-bold text-gray-500 mb-1 flex items-center justify-between"><span>サイズ</span><button onClick={handleCaliperInput} className="text-blue-600 hover:text-blue-800 flex items-center gap-0.5 bg-blue-50 px-1.5 py-0.5 rounded-sm border border-blue-200 transition shadow-sm"><Icons.Ruler /> <span className="text-[9px]">ノギス</span></button></label>
                 <div className="flex rounded-sm shadow-sm relative">
                     <input type="number" step="0.01" className="w-full border-y border-l border-gray-300 p-2.5 rounded-l-sm outline-none focus:border-blue-500 font-mono text-right" value={editingItem._sqValue || ''} onChange={e => setEditingItem({...editingItem, _sqValue: e.target.value})} placeholder="2.0" />
-                    <select className="border border-gray-300 bg-gray-50 px-2 rounded-r-sm text-xs font-bold text-gray-600 outline-none focus:border-blue-500" value={editingItem._sqUnit || 'sq'} onChange={e => setEditingItem({...editingItem, _sqUnit: e.target.value})}>
-                        <option value="sq">sq</option>
-                        <option value="mm">mm</option>
-                    </select>
+                    <select className="border border-gray-300 bg-gray-50 px-2 rounded-r-sm text-xs font-bold text-gray-600 outline-none focus:border-blue-500" value={editingItem._sqUnit || 'sq'} onChange={e => setEditingItem({...editingItem, _sqUnit: e.target.value})}><option value="sq">sq</option><option value="mm">mm</option></select>
                 </div>
             </div>
-
             <div>
                 <label className="block text-xs font-bold text-gray-500 mb-1">芯数</label>
-                <div className="relative">
-                    <input type="number" className="w-full border p-2.5 rounded-sm outline-none focus:border-blue-500 font-mono pr-8 text-right" value={editingItem._coreValue || ''} onChange={e => setEditingItem({...editingItem, _coreValue: e.target.value.replace(/[^\d]/g, '')})} placeholder="3" />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold pointer-events-none">C</span>
-                </div>
+                <div className="relative"><input type="number" className="w-full border p-2.5 rounded-sm outline-none focus:border-blue-500 font-mono pr-8 text-right" value={editingItem._coreValue || ''} onChange={e => setEditingItem({...editingItem, _coreValue: e.target.value.replace(/[^\d]/g, '')})} placeholder="3" /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold pointer-events-none">C</span></div>
             </div>
-            
             <div>
                 <label className="block text-xs font-bold text-gray-500 mb-1">導体構成 (構造)</label>
                 <input type="text" placeholder="単線/7本より線等" className="w-full border p-2.5 rounded-sm outline-none focus:border-blue-500" value={editingItem.conductor || ''} onChange={e => setEditingItem({...editingItem, conductor: e.target.value})} />
@@ -1007,66 +743,42 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
             <div className="mb-6 bg-white p-3 rounded-sm border border-gray-300 shadow-sm">
                 <label className="block text-xs font-bold text-gray-700 mb-2">成分要素 (材質)</label>
                 <div className="grid grid-cols-3 gap-2">
-                    <button 
-                        onClick={() => setEditingItem({...editingItem, material: '純銅'})} 
-                        className={`py-2 rounded-sm text-sm font-bold border transition ${editingItem.material === '純銅' ? 'bg-orange-50 border-orange-400 text-orange-800' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'}`}
-                    >純銅</button>
-                    <button 
-                        onClick={() => setEditingItem({...editingItem, material: '錫メッキ'})} 
-                        className={`py-2 rounded-sm text-sm font-bold border transition ${editingItem.material === '錫メッキ' ? 'bg-red-50 border-red-500 text-red-700 animate-pulse' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'}`}
-                    >⚠️ 錫メッキ</button>
-                    <button 
-                        onClick={() => setEditingItem({...editingItem, material: 'アルミ'})} 
-                        className={`py-2 rounded-sm text-sm font-bold border transition ${editingItem.material === 'アルミ' ? 'bg-blue-50 border-blue-400 text-blue-800' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'}`}
-                    >アルミ</button>
+                    <button onClick={() => setEditingItem({...editingItem, material: '純銅'})} className={`py-2 rounded-sm text-sm font-bold border transition ${editingItem.material === '純銅' ? 'bg-orange-50 border-orange-400 text-orange-800' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'}`}>純銅</button>
+                    <button onClick={() => setEditingItem({...editingItem, material: '錫メッキ'})} className={`py-2 rounded-sm text-sm font-bold border transition ${editingItem.material === '錫メッキ' ? 'bg-red-50 border-red-500 text-red-700 animate-pulse' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'}`}>⚠️ 錫メッキ</button>
+                    <button onClick={() => setEditingItem({...editingItem, material: 'アルミ'})} className={`py-2 rounded-sm text-sm font-bold border transition ${editingItem.material === 'アルミ' ? 'bg-blue-50 border-blue-400 text-blue-800' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'}`}>アルミ</button>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 items-end">
                 <div className="flex flex-col items-center border border-gray-300 p-2 rounded-sm bg-white h-[66px] justify-center relative overflow-hidden group shadow-sm w-full">
                     {editingItem._pendingImageData3 ? (
-                        <>
-                            <img src={`data:image/jpeg;base64,${editingItem._pendingImageData3}`} className="absolute inset-0 w-full h-full object-cover opacity-60" />
-                            <span className="relative z-10 text-xs font-bold text-blue-700 bg-white/80 px-2 py-0.5 rounded-sm backdrop-blur-sm">✅ 撮影済</span>
-                            <button onClick={() => setEditingItem({...editingItem, _pendingImageData3: null})} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm shadow-md z-20 hover:bg-red-700">
-                                <Icons.Trash />
-                            </button>
-                        </>
+                        <><img src={`data:image/jpeg;base64,${editingItem._pendingImageData3}`} className="absolute inset-0 w-full h-full object-cover opacity-60" /><span className="relative z-10 text-xs font-bold text-blue-700 bg-white/80 px-2 py-0.5 rounded-sm backdrop-blur-sm">✅ 撮影済</span><button onClick={() => setEditingItem({...editingItem, _pendingImageData3: null})} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm shadow-md z-20 hover:bg-red-700"><Icons.Trash /></button></>
                     ) : (
-                        <div className="flex gap-1 w-full h-full">
-                            <label className="flex-1 cursor-pointer flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-500 hover:text-blue-600 transition border border-gray-200 rounded-sm" title="カメラ">
-                                <Icons.Camera />
-                                <span className="text-[8px] font-bold mt-1">剥線画像</span>
-                                <input type="file" onChange={e => handleAiImageUpload(e, 3)} className="hidden" accept="image/*" capture="environment" />
-                            </label>
-                        </div>
+                        <div className="flex gap-1 w-full h-full"><label className="flex-1 cursor-pointer flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-500 hover:text-blue-600 transition border border-gray-200 rounded-sm" title="カメラ"><Icons.Camera /><span className="text-[8px] font-bold mt-1">剥線画像</span><input type="file" onChange={e => handleAiImageUpload(e, 3)} className="hidden" accept="image/*" capture="environment" /></label></div>
                     )}
                 </div>
-                <div className="w-full">
-                    <label className="block text-[10px] font-bold text-gray-600 mb-1">全体重量(g)</label>
-                    <input type="number" step="0.001" className="w-full border-none shadow-sm p-2 rounded-sm font-mono text-lg outline-none focus:ring-2 focus:ring-blue-500" value={sampleTotal} onChange={e => handleSampleTotalChange(e.target.value)} placeholder="0.000" />
-                </div>
-                <div className="w-full">
-                    <label className="block text-[10px] font-bold text-[#D32F2F] mb-1">純銅重量(g)</label>
-                    <input type="number" step="0.001" className="w-full border-none shadow-sm p-2 rounded-sm font-mono text-lg outline-none focus:ring-2 focus:ring-red-500" value={sampleCopper} onChange={e => handleSampleCopperChange(e.target.value)} placeholder="0.000" />
-                </div>
-                <div className="w-full">
-                    <label className="block text-[10px] font-bold text-gray-600 mb-1">被覆重量(g)</label>
-                    <input type="number" step="0.001" className="w-full border-none shadow-sm p-2 rounded-sm font-mono text-lg outline-none focus:ring-2 focus:ring-gray-500" value={sampleCover} onChange={e => handleSampleCoverChange(e.target.value)} placeholder="0.000" />
-                </div>
+                <div className="w-full"><label className="block text-[10px] font-bold text-gray-600 mb-1">全体重量(g)</label><input type="number" step="0.001" className="w-full border-none shadow-sm p-2 rounded-sm font-mono text-lg outline-none focus:ring-2 focus:ring-blue-500" value={sampleTotal} onChange={e => handleSampleTotalChange(e.target.value)} placeholder="0.000" /></div>
+                <div className="w-full"><label className="block text-[10px] font-bold text-[#D32F2F] mb-1">純銅重量(g)</label><input type="number" step="0.001" className="w-full border-none shadow-sm p-2 rounded-sm font-mono text-lg outline-none focus:ring-2 focus:ring-red-500" value={sampleCopper} onChange={e => handleSampleCopperChange(e.target.value)} placeholder="0.000" /></div>
+                <div className="w-full"><label className="block text-[10px] font-bold text-gray-600 mb-1">被覆重量(g)</label><input type="number" step="0.001" className="w-full border-none shadow-sm p-2 rounded-sm font-mono text-lg outline-none focus:ring-2 focus:ring-gray-500" value={sampleCover} onChange={e => handleSampleCoverChange(e.target.value)} placeholder="0.000" /></div>
                 <div className="w-full flex flex-col gap-2">
-                    <div className="bg-white border border-gray-300 shadow-inner p-1.5 rounded-sm flex justify-between items-center">
-                        <span className="text-[9px] font-bold text-gray-500">ダスト(Jute)</span>
-                        <span className="font-mono text-sm font-bold text-gray-700">{getJuteWeight()}g</span>
-                    </div>
-                    <div className="bg-blue-50 border border-blue-200 shadow-inner p-1.5 rounded-sm flex justify-between items-center relative">
-                        <span className="text-[9px] font-bold text-blue-800">歩留まり</span>
-                        {editingItem.aiEstimatedRatio && !sampleTotal && <span className="absolute -top-2 -right-2 text-[8px] bg-blue-500 text-white px-1 py-0.5 rounded shadow animate-pulse">AI</span>}
-                        <span className="font-mono text-base font-black text-blue-700">{editingItem.ratio || '---'}%</span>
-                    </div>
+                    <div className="bg-white border border-gray-300 shadow-inner p-1.5 rounded-sm flex justify-between items-center"><span className="text-[9px] font-bold text-gray-500">ダスト(Jute)</span><span className="font-mono text-sm font-bold text-gray-700">{getJuteWeight()}g</span></div>
+                    <div className="bg-blue-50 border border-blue-200 shadow-inner p-1.5 rounded-sm flex justify-between items-center relative"><span className="text-[9px] font-bold text-blue-800">歩留まり</span>{editingItem.aiEstimatedRatio && !sampleTotal && <span className="absolute -top-2 -right-2 text-[8px] bg-blue-500 text-white px-1 py-0.5 rounded shadow animate-pulse">AI</span>}<span className="font-mono text-base font-black text-blue-700">{editingItem.ratio || '---'}%</span></div>
                 </div>
             </div>
         </div>
+
+        {/* 単一AIモーダル時のヒント入力用コンポーネント */}
+        {isAiModalOpen && (
+             <div className="mb-6 bg-gray-800/50 border border-gray-700 p-3 rounded-md relative">
+                <label className="block text-xs font-bold text-gray-400 mb-2 flex items-center justify-between">
+                    <span>🗣️ AIへのヒント・補足（任意）</span>
+                    <button onClick={toggleHintVoiceInput} className={`p-1.5 rounded transition ${isListeningHint ? 'bg-red-500 text-white animate-pulse' : 'bg-gray-700 text-gray-300 hover:bg-blue-600'}`}>
+                        <Icons.Mic />
+                    </button>
+                </label>
+                <textarea className="w-full bg-gray-900 border border-gray-600 rounded text-sm text-white p-2 outline-none focus:border-blue-500 min-h-[60px]" placeholder="例: 中身は細線の束、かなり重い、雑線は入っていない等..." value={aiHint} onChange={e => setAiHint(e.target.value)} />
+            </div>
+        )}
 
         <div className="mt-4"><label className="block text-xs font-bold text-gray-500 mb-1">メモ / 特記事項 (AIの推論根拠など)</label><textarea className="w-full border p-3 rounded-sm h-28 text-sm outline-none focus:border-gray-500 leading-relaxed shadow-sm bg-gray-50" value={editingItem.memo || editingItem.reason || ''} onChange={e => setEditingItem({...editingItem, memo: e.target.value, reason: e.target.value})} /></div>
       </div>
@@ -1076,13 +788,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       <div className="space-y-4">
         <div><label className="block text-xs font-bold text-gray-500 mb-1">品目名</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.name || ''} onChange={e => setEditingItem({...editingItem, name: e.target.value})} /></div>
         <div className="grid grid-cols-2 gap-4">
-            <div><label className="block text-xs font-bold text-gray-500 mb-1">種別</label>
-                <select className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.type || 'BRASS'} onChange={e => setEditingItem({...editingItem, type: e.target.value})}>
-                    <option value="BRASS">真鍮 (Brass)</option>
-                    <option value="ZINC">亜鉛 (Zinc)</option>
-                    <option value="LEAD">鉛 (Lead)</option>
-                </select>
-            </div>
+            <div><label className="block text-xs font-bold text-gray-500 mb-1">種別</label><select className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.type || 'BRASS'} onChange={e => setEditingItem({...editingItem, type: e.target.value})}><option value="BRASS">真鍮 (Brass)</option><option value="ZINC">亜鉛 (Zinc)</option><option value="LEAD">鉛 (Lead)</option></select></div>
             <div><label className="block text-xs font-bold text-gray-500 mb-1">歩留まり (%)</label><input type="number" step="0.1" className="w-full border p-2 rounded-sm font-bold text-blue-600 outline-none focus:border-blue-500" value={editingItem.ratio || ''} onChange={e => setEditingItem({...editingItem, ratio: e.target.value})} /></div>
         </div>
       </div>
@@ -1092,15 +798,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
             <div><label className="block text-xs font-bold text-gray-500 mb-1">業者名</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.name || ''} onChange={e => setEditingItem({...editingItem, name: e.target.value})} /></div>
-            <div><label className="block text-xs font-bold text-gray-500 mb-1">ランク</label>
-                <select className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.rank || 'NORMAL'} onChange={e => setEditingItem({...editingItem, rank: e.target.value})}>
-                    <option value="NORMAL">一般 (NORMAL)</option>
-                    <option value="BRONZE">ブロンズ (BRONZE)</option>
-                    <option value="SILVER">シルバー (SILVER)</option>
-                    <option value="GOLD">ゴールド (GOLD)</option>
-                    <option value="VIP">VIP</option>
-                </select>
-            </div>
+            <div><label className="block text-xs font-bold text-gray-500 mb-1">ランク</label><select className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.rank || 'NORMAL'} onChange={e => setEditingItem({...editingItem, rank: e.target.value})}><option value="NORMAL">一般 (NORMAL)</option><option value="BRONZE">ブロンズ (BRONZE)</option><option value="SILVER">シルバー (SILVER)</option><option value="GOLD">ゴールド (GOLD)</option><option value="VIP">VIP</option></select></div>
         </div>
         <div className="grid grid-cols-2 gap-4">
             <div><label className="block text-xs font-bold text-gray-500 mb-1">電話番号</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.phone || ''} onChange={e => setEditingItem({...editingItem, phone: e.target.value})} /></div>
@@ -1122,23 +820,10 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
             <div><label className="block text-xs font-bold text-gray-500 mb-1">スタッフ名</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.name || ''} onChange={e => setEditingItem({...editingItem, name: e.target.value})} /></div>
-            <div><label className="block text-xs font-bold text-gray-500 mb-1">ステータス</label>
-                <select className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.status || 'ACTIVE'} onChange={e => setEditingItem({...editingItem, status: e.target.value})}>
-                    <option value="ACTIVE">有効 (ACTIVE)</option>
-                    <option value="INACTIVE">停止 (INACTIVE)</option>
-                </select>
-            </div>
+            <div><label className="block text-xs font-bold text-gray-500 mb-1">ステータス</label><select className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.status || 'ACTIVE'} onChange={e => setEditingItem({...editingItem, status: e.target.value})}><option value="ACTIVE">有効 (ACTIVE)</option><option value="INACTIVE">停止 (INACTIVE)</option></select></div>
         </div>
         <div className="grid grid-cols-2 gap-4">
-            <div><label className="block text-xs font-bold text-gray-500 mb-1">権限 (Role)</label>
-                <select className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.role || 'FRONT'} onChange={e => setEditingItem({...editingItem, role: e.target.value})}>
-                    <option value="FRONT">受付 (FRONT)</option>
-                    <option value="INSPECTION">検収 (INSPECTION)</option>
-                    <option value="PLANT">工場 (PLANT)</option>
-                    <option value="MANAGER">工場長 (MANAGER)</option>
-                    <option value="ALL">管理者 (ALL)</option>
-                </select>
-            </div>
+            <div><label className="block text-xs font-bold text-gray-500 mb-1">権限 (Role)</label><select className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.role || 'FRONT'} onChange={e => setEditingItem({...editingItem, role: e.target.value})}><option value="FRONT">受付 (FRONT)</option><option value="INSPECTION">検収 (INSPECTION)</option><option value="PLANT">工場 (PLANT)</option><option value="MANAGER">工場長 (MANAGER)</option><option value="ALL">管理者 (ALL)</option></select></div>
             <div><label className="block text-xs font-bold text-gray-500 mb-1">時給/単価</label><input type="number" className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.rate || 0} onChange={e => setEditingItem({...editingItem, rate: e.target.value})} /></div>
         </div>
         <div className="grid grid-cols-2 gap-4">
@@ -1214,13 +899,11 @@ return (
             </div>
         )}
         
-        {/* ★ テーブル描画エリア */}
         <div className="flex-1 overflow-hidden relative">
             {renderTable()}
         </div>
       </div>
 
-      {/* ★ AIアシスト用の画像アップロードモーダル */}
       {isAiModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-gray-900 w-full max-w-2xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col">
@@ -1240,22 +923,10 @@ return (
                         <div className="absolute inset-0 flex items-center justify-center text-blue-400"><Icons.Sparkles /></div>
                     </div>
                     <div className="space-y-5 w-full max-w-xs font-bold text-sm">
-                        <div className={`flex items-center gap-4 transition-all duration-500 ${aiProgressStep >= 1 ? 'text-blue-400 translate-x-0 opacity-100' : 'text-gray-700 -translate-x-4 opacity-0'}`}>
-                            <span className="w-6 text-center text-xl">{aiProgressStep >= 2 ? '✅' : aiProgressStep === 1 ? '🔄' : '・'}</span>
-                            <span>画像をサーバーへ送信中...</span>
-                        </div>
-                        <div className={`flex items-center gap-4 transition-all duration-500 delay-300 ${aiProgressStep >= 2 ? 'text-blue-400 translate-x-0 opacity-100' : 'text-gray-700 -translate-x-4 opacity-0'}`}>
-                            <span className="w-6 text-center text-xl">{aiProgressStep >= 3 ? '✅' : aiProgressStep === 2 ? '🔄' : '・'}</span>
-                            <span>AIが画像を解析・特徴抽出中...</span>
-                        </div>
-                        <div className={`flex items-center gap-4 transition-all duration-500 delay-300 ${aiProgressStep >= 3 ? 'text-blue-400 translate-x-0 opacity-100' : 'text-gray-700 -translate-x-4 opacity-0'}`}>
-                            <span className="w-6 text-center text-xl">{aiProgressStep >= 4 ? '✅' : aiProgressStep === 3 ? '🔄' : '・'}</span>
-                            <span>マスターデータと照合・推論中...</span>
-                        </div>
-                        <div className={`flex items-center gap-4 transition-all duration-500 delay-300 ${aiProgressStep >= 4 ? 'text-green-400 scale-110 translate-x-0 opacity-100' : 'text-gray-700 -translate-x-4 opacity-0'}`}>
-                            <span className="w-6 text-center text-xl">{aiProgressStep >= 4 ? '✨' : '・'}</span>
-                            <span>解析完了！結果を出力します</span>
-                        </div>
+                        <div className={`flex items-center gap-4 transition-all duration-500 ${aiProgressStep >= 1 ? 'text-blue-400 translate-x-0 opacity-100' : 'text-gray-700 -translate-x-4 opacity-0'}`}><span className="w-6 text-center text-xl">{aiProgressStep >= 2 ? '✅' : aiProgressStep === 1 ? '🔄' : '・'}</span><span>画像をサーバーへ送信中...</span></div>
+                        <div className={`flex items-center gap-4 transition-all duration-500 delay-300 ${aiProgressStep >= 2 ? 'text-blue-400 translate-x-0 opacity-100' : 'text-gray-700 -translate-x-4 opacity-0'}`}><span className="w-6 text-center text-xl">{aiProgressStep >= 3 ? '✅' : aiProgressStep === 2 ? '🔄' : '・'}</span><span>AIが画像を解析・特徴抽出中...</span></div>
+                        <div className={`flex items-center gap-4 transition-all duration-500 delay-300 ${aiProgressStep >= 3 ? 'text-blue-400 translate-x-0 opacity-100' : 'text-gray-700 -translate-x-4 opacity-0'}`}><span className="w-6 text-center text-xl">{aiProgressStep >= 4 ? '✅' : aiProgressStep === 3 ? '🔄' : '・'}</span><span>マスターデータと照合・推論中...</span></div>
+                        <div className={`flex items-center gap-4 transition-all duration-500 delay-300 ${aiProgressStep >= 4 ? 'text-green-400 scale-110 translate-x-0 opacity-100' : 'text-gray-700 -translate-x-4 opacity-0'}`}><span className="w-6 text-center text-xl">{aiProgressStep >= 4 ? '✨' : '・'}</span><span>解析完了！結果を出力します</span></div>
                     </div>
                 </div>
               ) : (
@@ -1269,61 +940,38 @@ return (
                         <div className={`flex-1 p-4 border-2 border-dashed rounded-md flex flex-col items-center justify-center transition-all relative overflow-hidden ${imgData1 ? 'border-blue-500 bg-blue-900/20 p-2' : 'border-gray-600 bg-gray-800/50'}`}>
                             {imgData1 ? (
                                 <div className="w-full flex flex-col items-center">
-                                    <div className="relative w-full h-32 mb-2 rounded-sm overflow-hidden group">
-                                        <img src={`data:image/jpeg;base64,${imgData1}`} alt="断面プレビュー" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
-                                        <button onClick={() => setImgData1('')} className="absolute top-2 right-2 bg-red-600/90 hover:bg-red-500 text-white p-2 rounded-sm shadow-md transition-colors">
-                                            <Icons.Trash />
-                                        </button>
-                                    </div>
+                                    <div className="relative w-full h-32 mb-2 rounded-sm overflow-hidden group"><img src={`data:image/jpeg;base64,${imgData1}`} alt="断面プレビュー" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" /><button onClick={() => setImgData1('')} className="absolute top-2 right-2 bg-red-600/90 hover:bg-red-500 text-white p-2 rounded-sm shadow-md transition-colors"><Icons.Trash /></button></div>
                                     <span className="text-xs font-bold text-blue-400">✅ 断面画像 (セット完了)</span>
                                 </div>
                             ) : (
-                                <>
-                                    <span className="text-sm font-bold mb-4 text-gray-300">1. 断面画像 (必須)</span>
-                                    <div className="flex gap-2 w-full">
-                                        <label className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-sm text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-sm">
-                                            <Icons.Camera /> カメラ
-                                            <input type="file" onChange={e => handleAiImageUpload(e, 1)} className="hidden" accept="image/*" capture="environment" />
-                                        </label>
-                                        <label className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-sm text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-sm">
-                                            <Icons.UploadCloud /> フォルダ
-                                            <input type="file" onChange={e => handleAiImageUpload(e, 1)} className="hidden" accept="image/*" />
-                                        </label>
-                                    </div>
-                                </>
+                                <><span className="text-sm font-bold mb-4 text-gray-300">1. 断面画像 (必須)</span><div className="flex gap-2 w-full"><label className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-sm text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-sm"><Icons.Camera /> カメラ<input type="file" onChange={e => handleAiImageUpload(e, 1)} className="hidden" accept="image/*" capture="environment" /></label><label className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-sm text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-sm"><Icons.UploadCloud /> フォルダ<input type="file" onChange={e => handleAiImageUpload(e, 1)} className="hidden" accept="image/*" /></label></div></>
                             )}
                         </div>
 
                         <div className={`flex-1 p-4 border-2 border-dashed rounded-md flex flex-col items-center justify-center transition-all relative overflow-hidden ${imgData2 ? 'border-blue-500 bg-blue-900/20 p-2' : 'border-gray-600 bg-gray-800/50'}`}>
                             {imgData2 ? (
                                 <div className="w-full flex flex-col items-center">
-                                    <div className="relative w-full h-32 mb-2 rounded-sm overflow-hidden group">
-                                        <img src={`data:image/jpeg;base64,${imgData2}`} alt="印字プレビュー" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
-                                        <button onClick={() => setImgData2('')} className="absolute top-2 right-2 bg-red-600/90 hover:bg-red-500 text-white p-2 rounded-sm shadow-md transition-colors">
-                                            <Icons.Trash />
-                                        </button>
-                                    </div>
+                                    <div className="relative w-full h-32 mb-2 rounded-sm overflow-hidden group"><img src={`data:image/jpeg;base64,${imgData2}`} alt="印字プレビュー" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" /><button onClick={() => setImgData2('')} className="absolute top-2 right-2 bg-red-600/90 hover:bg-red-500 text-white p-2 rounded-sm shadow-md transition-colors"><Icons.Trash /></button></div>
                                     <span className="text-xs font-bold text-blue-400">✅ 印字画像 (セット完了)</span>
                                 </div>
                             ) : (
-                                <>
-                                    <span className="text-sm font-bold mb-4 text-gray-300">2. 表面印字 (任意)</span>
-                                    <div className="flex gap-2 w-full">
-                                        <label className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-sm text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-sm">
-                                            <Icons.Camera /> カメラ
-                                            <input type="file" onChange={e => handleAiImageUpload(e, 2)} className="hidden" accept="image/*" capture="environment" />
-                                        </label>
-                                        <label className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-sm text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-sm">
-                                            <Icons.UploadCloud /> フォルダ
-                                            <input type="file" onChange={e => handleAiImageUpload(e, 2)} className="hidden" accept="image/*" />
-                                        </label>
-                                    </div>
-                                </>
+                                <><span className="text-sm font-bold mb-4 text-gray-300">2. 表面印字 (任意)</span><div className="flex gap-2 w-full"><label className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-sm text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-sm"><Icons.Camera /> カメラ<input type="file" onChange={e => handleAiImageUpload(e, 2)} className="hidden" accept="image/*" capture="environment" /></label><label className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-sm text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-sm"><Icons.UploadCloud /> フォルダ<input type="file" onChange={e => handleAiImageUpload(e, 2)} className="hidden" accept="image/*" /></label></div></>
                             )}
                         </div>
                     </div>
+                    
+                    {/* ★ ヒント入力欄 */}
+                    <div className="mb-6 bg-gray-800/50 border border-gray-700 p-3 rounded-md relative">
+                        <label className="block text-xs font-bold text-gray-400 mb-2 flex items-center justify-between">
+                            <span>🗣️ AIへのヒント・補足（任意）</span>
+                            <button onClick={toggleHintVoiceInput} className={`p-1.5 rounded transition ${isListeningHint ? 'bg-red-500 text-white animate-pulse' : 'bg-gray-700 text-gray-300 hover:bg-blue-600'}`}>
+                                <Icons.Mic />
+                            </button>
+                        </label>
+                        <textarea className="w-full bg-gray-900 border border-gray-600 rounded text-sm text-white p-2 outline-none focus:border-blue-500 min-h-[60px]" placeholder="例: 中身は細線の束、かなり重い、雑線は入っていない等..." value={aiHint} onChange={e => setAiHint(e.target.value)} />
+                    </div>
 
-                    <button onClick={runAiExtraction} disabled={!imgData1} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-md flex justify-center items-center gap-2 disabled:bg-gray-700 transition shadow-lg text-lg">
+                    <button onClick={runAiExtraction} disabled={!imgData1 && !aiHint} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-md flex justify-center items-center gap-2 disabled:bg-gray-700 transition shadow-lg text-lg">
                         <Icons.Sparkles />解析してデータを埋める
                     </button>
                 </div>
