@@ -39,7 +39,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   const [isBulkAiModalOpen, setIsBulkAiModalOpen] = useState(false);
   const [bulkImages, setBulkImages] = useState<string[]>([]);
 
-  // 音声入力管理（制限なしトグル）
   const [isListening, setIsListening] = useState(false);
   const [voiceText, setVoiceText] = useState('');
   const [isProcessingVoice, setIsProcessingVoice] = useState(false);
@@ -47,8 +46,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
 
   const [isListeningHint, setIsListeningHint] = useState(false);
   const hintRecognitionRef = useRef<any>(null);
-
-  const [isUploadingMaster, setIsUploadingMaster] = useState<string | null>(null);
 
   const [simConfig, setSimConfig] = useState({
     disposalCostPerKg: 40, laborCostPerHour: 3000, capacityPerHour: 150, targetMargin: 15         
@@ -160,7 +157,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
             const displayName = result.data.isNewFlag || isMixed ? `💡 AI査定: ${wireTypeStr}` : wireTypeStr;
             
             setCart(prev => [{
-                id: Date.now().toString(), product: displayName, ratio: result.data.estimatedRatio || 0, 
+                id: `ai-${Date.now()}`, product: displayName, ratio: result.data.estimatedRatio || 0, 
                 weight: 0, percentage: 0, isNewAi: result.data.isNewFlag, reason: result.data.reason || '',
                 masterId: result.data.masterId, isMasterImageEmpty: result.data.isMasterImageEmpty,
                 pendingImg1: imgData1, pendingImg2: imgData2, isImageUploaded: false,
@@ -212,7 +209,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
     } catch(err: any) { clearInterval(progressInterval); alert(`通信エラー: ${err.message}`); setAiStatus('IDLE'); setAiProgressStep(0); } 
   };
 
-  // ★ 検索用音声入力（制限なしトグル式）
   const toggleVoiceInput = () => {
       if (isListening) {
           if (recognitionRef.current) recognitionRef.current.stop();
@@ -275,7 +271,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       setIsProcessingVoice(false); setTimeout(() => setVoiceText(''), 3000);
   };
 
-  // ★ ヒント用音声入力（制限なしトグル式）
   const toggleHintVoiceInput = () => {
       if (isListeningHint) {
           if (hintRecognitionRef.current) hintRecognitionRef.current.stop();
@@ -288,9 +283,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       recognition.lang = 'ja-JP'; recognition.continuous = true; recognition.interimResults = true;
       let currentHint = aiHint;
       
-      recognition.onstart = () => {
-          setIsListeningHint(true);
-      };
+      recognition.onstart = () => { setIsListeningHint(true); };
       
       let finalStr = '';
       recognition.onresult = (event: any) => {
@@ -310,7 +303,8 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       recognition.start();
   };
 
-  const handleOpenMasterRegistration = (item: any) => {
+  // ★ 修正：別タブを開かず、トーストを出してDB画面への切り替えを促す
+  const handlePrepareMasterRegistration = (item: any) => {
       const pendingData = {
           name: item.product.replace(/💡 AI査定: |📦 AI解析: /, '').trim(),
           ratio: item.ratio,
@@ -321,7 +315,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           image2: item.pendingImg2
       };
       localStorage.setItem('factoryOS_pendingAIItem', JSON.stringify(pendingData));
-      window.open(window.location.href, '_blank');
+      showToast('データ転送完了', '左のメニューから「データベース」を開いてください。自動で入力画面が立ち上がります。', 'success');
   };
 
   const simulation = useMemo(() => {
@@ -484,9 +478,10 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                         </div>
                         <div className="text-xs text-gray-500 mt-1 flex items-center gap-3">
                             <span>歩留まり: <span className="font-mono font-bold text-blue-600">{item.ratio}%</span></span>
-                            {item.isNewAi && (
-                                <button onClick={() => handleOpenMasterRegistration(item)} className="text-[10px] bg-white border border-blue-300 text-blue-700 px-2 py-0.5 rounded shadow-sm hover:bg-blue-50 transition flex items-center gap-1">
-                                    <Icons.Edit /> マスターへ登録 (別タブ)
+                            {/* ★ 修正: bulk- で始まらない単一AI査定のものだけボタンを表示する */}
+                            {item.isNewAi && !String(item.id).startsWith('bulk-') && (
+                                <button onClick={() => handlePrepareMasterRegistration(item)} className="text-[10px] bg-white border border-blue-300 text-blue-700 px-2 py-0.5 rounded shadow-sm hover:bg-blue-50 transition flex items-center gap-1">
+                                    <Icons.Edit /> マスターへ登録 (DB画面へ)
                                 </button>
                             )}
                         </div>
@@ -555,7 +550,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         </div>
       </div>
 
-      {/* 単一AIモーダル（ヒント入力対応） */}
+      {/* 単一AIモーダル */}
       {isAiModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-gray-900 w-full max-w-2xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col">
@@ -579,7 +574,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                             {imgData2 ? ( <div className="relative h-24"><img src={`data:image/jpeg;base64,${imgData2}`} className="w-full h-full object-cover" /><button onClick={()=>setImgData2('')} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded"><Icons.Trash/></button></div> ) : ( <><p className="text-sm font-bold text-gray-300 mb-2">2. 印字画像</p><input type="file" onChange={e=>handleAiImageUpload(e,2)} className="w-full text-white text-xs"/></> )}
                         </div>
                     </div>
-                    {/* ★ ヒント入力欄 */}
+                    {/* ヒント入力欄 */}
                     <div className="mb-6 bg-gray-800/50 border border-gray-700 p-3 rounded-md relative">
                         <label className="block text-xs font-bold text-gray-400 mb-2 flex items-center justify-between">
                             <span>🗣️ AIへのヒント・補足（任意）</span>
@@ -597,7 +592,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         </div>
       )}
 
-      {/* フレコン一括AIモーダル（ヒント入力対応） */}
+      {/* フレコン一括AIモーダル */}
       {isBulkAiModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-gray-900 w-full max-w-4xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col max-h-[90vh]">
@@ -619,7 +614,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                         ))}
                         <label className="aspect-square rounded-sm border-2 border-dashed border-gray-600 bg-gray-800/50 hover:bg-gray-700/50 hover:border-purple-500 transition-all flex flex-col items-center justify-center cursor-pointer text-gray-400"><Icons.Camera /><span className="text-xs font-bold mt-2">写真を追加</span><input type="file" multiple accept="image/*" onChange={handleBulkImageUpload} className="hidden" /></label>
                     </div>
-                    {/* ★ ヒント入力欄 */}
+                    {/* ヒント入力欄 */}
                     <div className="mb-6 bg-purple-900/20 border border-purple-500/30 p-3 rounded-md relative">
                         <label className="block text-xs font-bold text-purple-300 mb-2 flex items-center justify-between">
                             <span>🗣️ AIへのヒント・補足（任意）</span>
