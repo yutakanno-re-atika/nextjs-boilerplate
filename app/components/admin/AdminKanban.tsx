@@ -1,380 +1,210 @@
 // @ts-nocheck
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 const Icons = {
-  Play: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-  Check: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-  Alert: () => <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
-  Scale: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>,
-  Close: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>,
-  Refresh: () => <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+  Printer: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>,
+  Clock: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+  User: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>,
+  Alert: () => <svg className="w-4 h-4 inline-block text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
 };
 
-// ★修正：タイムゾーン問題を回避する安全な文字列切り出し
-const formatTimeShort = (timeStr: string) => {
-  if (!timeStr) return '--/-- --:--';
-  const str = String(timeStr);
-  const match = str.match(/(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})[T\s](\d{1,2}):(\d{1,2})/);
-  if (match) {
-    const MM = match[2].padStart(2, '0');
-    const DD = match[3].padStart(2, '0');
-    const HH = match[4].padStart(2, '0');
-    const mm = match[5].padStart(2, '0');
-    return `${MM}/${DD} ${HH}:${mm}`;
-  }
-  return str.substring(0, 16);
+const formatTime = (timeStr: string) => {
+  if (!timeStr) return '';
+  const d = new Date(timeStr);
+  return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 };
 
-// ローカルでの仮時間生成用
-const getLocalNow = () => {
-  const d = new Date();
-  return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
-};
-
-export const AdminKanban = ({ data }: { data: any }) => {
-  const [reservations, setReservations] = useState<any[]>([]);
-  const [productions, setProductions] = useState<any[]>([]);
+export const AdminKanban = ({ localReservations, onUpdateStatus, onEditReservation }: { localReservations: any[], onUpdateStatus: (id: string, status: string) => void, onEditReservation: (id: string) => void }) => {
   
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedRes, setSelectedRes] = useState<any>(null);
-  
-  const [isProcessingId, setIsProcessingId] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const [inWeight, setInWeight] = useState<number | ''>('');
-  const [outRed, setOutRed] = useState<number | ''>('');
-  const [outMixed, setOutMixed] = useState<number | ''>('');
-  const [outChips, setOutChips] = useState<number | ''>('');
-  const [outJute, setOutJute] = useState<number | ''>('');
-  const [memo, setMemo] = useState('');
-
-  useEffect(() => {
-    if (data?.reservations) {
-      const activeFlow = data.reservations.filter((r:any) => r.status === 'RESERVED' || r.status === 'COMPLETED' || r.status === 'PROCESSING');
-      setReservations(activeFlow);
-    }
-    if (data?.productions) {
-      setProductions(data.productions.slice(-20).reverse());
-    }
-  }, [data]);
-
-  const updateStatus = async (id: string, status: string) => {
-    setIsProcessingId(id);
-    try {
-      const res = await fetch('/api/gas', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'UPDATE_RESERVATION_STATUS', reservationId: id, status })
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const result = await res.json();
+  // ★ 現場提出用の「検収報告書」をPDF/印刷出力する機能
+  const handlePrint = (res: any) => {
+      let items = [];
+      try { items = typeof res.items === 'string' ? JSON.parse(res.items) : res.items; } catch (e) {}
       
-      if (result.status === 'success') {
-        const nowStr = getLocalNow();
-        setReservations(prev => prev.map(r => r.id === id ? { ...r, status, updatedAt: nowStr } : r));
-      } else {
-        alert('GAS側のエラー: ' + result.message);
-      }
-    } catch (e: any) { 
-      alert('通信エラーの詳細: ' + e.message); 
-    } finally {
-      setIsProcessingId(null);
-    }
+      const totalWeight = items.reduce((sum: number, item: any) => sum + Number(item.weight || 0), 0).toFixed(1);
+      const hasTin = items.some((i: any) => i.material === '錫メッキ' || i.product.includes('錫'));
+
+      const itemsHtml = items.map((item: any) => `
+          <tr>
+              <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold; color: #333;">
+                ${item.product}
+                ${(item.material === '錫メッキ' || item.product.includes('錫')) ? '<span style="background: #fee2e2; color: #dc2626; font-size: 10px; padding: 2px 4px; border-radius: 3px; margin-left: 5px;">⚠️錫</span>' : ''}
+              </td>
+              <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: center;">${item.material || '純銅'}</td>
+              <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right; font-family: monospace;">${item.ratio}%</td>
+              <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right; font-family: monospace; font-weight: bold;">${item.weight} kg</td>
+          </tr>
+      `).join('');
+
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) return alert('ポップアップブロックを解除してください。');
+
+      const html = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <title>検収内訳書_${res.memberName || 'ゲスト'}</title>
+              <style>
+                  body { font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif; padding: 40px; color: #111; line-height: 1.6; }
+                  .header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #111; padding-bottom: 10px; margin-bottom: 30px; }
+                  .header h1 { margin: 0; font-size: 24px; font-weight: 900; letter-spacing: 2px; }
+                  .header p { margin: 0; color: #555; font-size: 12px; }
+                  .info-grid { display: flex; justify-content: space-between; background: #f9f9f9; padding: 15px 20px; border-radius: 5px; margin-bottom: 30px; border: 1px solid #eee; }
+                  .info-box p { margin: 0 0 5px 0; font-size: 12px; color: #666; font-weight: bold; }
+                  .info-box h3 { margin: 0; font-size: 18px; color: #111; }
+                  table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+                  th { background-color: #f1f5f9; padding: 12px 10px; text-align: left; font-size: 12px; color: #475569; border-bottom: 2px solid #cbd5e1; }
+                  .total-row { display: flex; justify-content: flex-end; align-items: center; font-size: 20px; font-weight: 900; border-top: 2px solid #111; padding-top: 15px; }
+                  .total-row span { font-size: 14px; color: #666; margin-right: 15px; font-weight: bold; }
+                  .memo { margin-top: 40px; padding: 15px; border: 1px dashed #ccc; background: #fff; font-size: 12px; color: #444; border-radius: 5px; }
+                  .alert { background: #fee2e2; border-left: 4px solid #ef4444; padding: 10px; margin-bottom: 20px; font-size: 14px; color: #b91c1c; font-weight: bold; }
+                  @media print { body { padding: 0; margin: 0; } @page { margin: 15mm; } }
+              </style>
+          </head>
+          <body>
+              <div class="header">
+                  <h1>現場検収 内訳報告書</h1>
+                  <p>印刷日時: ${new Date().toLocaleString('ja-JP')}</p>
+              </div>
+
+              ${hasTin ? '<div class="alert">⚠️ 注意：このロットには「錫メッキ線」が含まれています。純銅ラインへの混入を防止してください。</div>' : ''}
+
+              <div class="info-grid">
+                  <div class="info-box">
+                      <p>持込業者・顧客名</p>
+                      <h3>${res.memberName || '新規・非会員 (飛込)'} 様</h3>
+                  </div>
+                  <div class="info-box" style="text-align: right;">
+                      <p>受付日時</p>
+                      <h3>${new Date(res.createdAt).toLocaleString('ja-JP')}</h3>
+                  </div>
+              </div>
+
+              <table>
+                  <thead>
+                      <tr>
+                          <th>電線品名 / 構成</th>
+                          <th style="text-align: center;">材質</th>
+                          <th style="text-align: right;">銅分 (歩留)</th>
+                          <th style="text-align: right;">計量重量</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      ${itemsHtml}
+                  </tbody>
+              </table>
+
+              <div class="total-row">
+                  <span>総重量</span> ${totalWeight} kg
+              </div>
+
+              ${res.memo ? `<div class="memo"><strong>【現場メモ / AI推論根拠】</strong><br/>${res.memo.replace(/\n/g, '<br/>')}</div>` : ''}
+
+              <div style="margin-top: 50px; display: flex; justify-content: flex-end; gap: 50px;">
+                  <div style="text-align: center; border-top: 1px solid #111; width: 200px; padding-top: 10px; font-size: 12px; color: #555;">検収担当者 印</div>
+                  <div style="text-align: center; border-top: 1px solid #111; width: 200px; padding-top: 10px; font-size: 12px; color: #555;">事務所受領 印</div>
+              </div>
+
+              <script>
+                  window.onload = function() { 
+                      setTimeout(() => { window.print(); window.close(); }, 300); 
+                  };
+              </script>
+          </body>
+          </html>
+      `;
+      printWindow.document.write(html);
+      printWindow.document.close();
   };
 
-  const handleOpenModal = (res: any) => {
-    setSelectedRes(res);
-    let initialWeight = 0;
-    try {
-      const items = typeof res.items === 'string' ? JSON.parse(res.items) : res.items;
-      initialWeight = items.reduce((sum: number, it: any) => sum + (Number(it.weight) || 0), 0);
-    } catch (e) {}
-    
-    setInWeight(initialWeight || '');
-    setOutRed(''); setOutMixed(''); setOutChips(''); setOutJute(''); setMemo('');
-    setIsModalOpen(true);
-  };
+  const handleDragStart = (e: React.DragEvent, id: string) => { e.dataTransfer.setData('resId', id); };
+  const handleDrop = (e: React.DragEvent, status: string) => { e.preventDefault(); const id = e.dataTransfer.getData('resId'); if (id) onUpdateStatus(id, status); };
+  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); };
 
-  const handleSaveProduction = async () => {
-    if (!inWeight || Number(inWeight) <= 0) return alert('投入重量を入力してください');
-    setIsSubmitting(true);
-
-    let materialName = '不明な品目';
-    try {
-      const items = typeof selectedRes.items === 'string' ? JSON.parse(selectedRes.items) : selectedRes.items;
-      materialName = items.map((i:any) => i.product).join(' + ');
-    } catch (e) {}
-
-    const totalCopper = (Number(outRed) || 0) + (Number(outMixed) || 0);
-    const actualRatio = Number(inWeight) > 0 ? (totalCopper / Number(inWeight)) * 100 : 0;
-
-    const payload = {
-      action: 'REGISTER_PRODUCTION',
-      reservationId: selectedRes.id,
-      memberName: selectedRes.memberName,
-      materialName: materialName,
-      inputWeight: Number(inWeight),
-      outputRed: Number(outRed) || 0,
-      outputMixed: Number(outMixed) || 0,
-      outputChips: Number(outChips) || 0,
-      outputJute: Number(outJute) || 0,
-      actualRatio: actualRatio.toFixed(1),
-      memo: memo
-    };
-
-    try {
-      const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      const result = await res.json();
-      
-      if (result.status === 'success') {
-        await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'UPDATE_RESERVATION_STATUS', reservationId: selectedRes.id, status: 'PROCESSED' }) });
-        
-        const nowStr = getLocalNow();
-        setReservations(prev => prev.filter(r => r.id !== selectedRes.id));
-        setProductions(prev => [{ 
-            memberName: selectedRes.memberName, 
-            inputWeight: Number(inWeight), 
-            actualRatio: actualRatio.toFixed(1),
-            createdAt: nowStr 
-        }, ...prev]);
-        
-        setIsModalOpen(false);
-      } else {
-        alert('エラー: ' + result.message);
-      }
-    } catch (e) { alert('通信エラーが発生しました'); }
-    setIsSubmitting(false);
-  };
-
-  const waitingList = reservations.filter(r => r.status === 'RESERVED' || r.status === 'COMPLETED');
-  const processingList = reservations.filter(r => r.status === 'PROCESSING');
-
-  const renderCard = (res: any, type: 'WAITING' | 'PROCESSING') => {
-    let items = [];
-    try { items = typeof res.items === 'string' ? JSON.parse(res.items) : res.items; } catch (e) {}
-    const totalWeight = items.reduce((sum: number, it: any) => sum + (Number(it.weight) || 0), 0);
-    const isLoading = isProcessingId === res.id;
-
-    return (
-      <div key={res.id} className={`bg-white border border-gray-200 rounded-sm shadow-sm p-4 mb-3 transition-all ${isLoading ? 'opacity-50 pointer-events-none' : 'hover:shadow-md'}`}>
-        <div className="flex justify-between items-start mb-2">
-          <h4 className="font-black text-gray-900 text-lg">{res.memberName}</h4>
-          <span className="text-xs font-mono text-gray-400">{res.id.split('-')[1]}</span>
-        </div>
-        
-        <div className="text-sm text-gray-600 mb-3 bg-gray-50 p-2 rounded-sm border border-gray-100">
-          {items.map((it:any, idx:number) => (
-            <div key={idx} className="flex justify-between border-b border-gray-200 last:border-0 py-1">
-              <span className="font-bold">{it.product}</span>
-              <span>{it.weight} kg</span>
-            </div>
-          ))}
-          <div className="flex justify-between mt-1 pt-1 border-t border-gray-300 font-black text-gray-900">
-            <span>総重量</span>
-            <span>{totalWeight} kg</span>
-          </div>
-        </div>
-        
-        <div className="flex justify-between items-center text-[10px] text-gray-400 font-mono mb-3 bg-gray-50/50 p-1.5 rounded-sm border border-gray-100/50">
-          <div className="flex items-center gap-1" title={`登録日時: ${res.createdAt}`}>
-            <span>🕒</span> 登録 {formatTimeShort(res.createdAt)}
-          </div>
-          <div className="flex items-center gap-1" title={`最終更新: ${res.updatedAt}`}>
-            <span>✏️</span> 更新 {formatTimeShort(res.updatedAt)}
-          </div>
-        </div>
-
-        {type === 'WAITING' ? (
-          <button 
-            onClick={() => updateStatus(res.id, 'PROCESSING')} 
-            disabled={isLoading}
-            className="w-full py-2 bg-blue-50 text-blue-700 font-bold border border-blue-200 rounded-sm hover:bg-blue-600 hover:text-white transition flex items-center justify-center gap-2 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200"
-          >
-            {isLoading ? <><Icons.Refresh /> 処理中...</> : <><Icons.Play /> プラント投入 (稼働)</>}
-          </button>
-        ) : (
-          <button 
-            onClick={() => handleOpenModal(res)} 
-            className="w-full py-3 bg-gray-900 text-white font-bold rounded-sm hover:bg-gray-800 transition shadow-md flex items-center justify-center gap-2 animate-pulse"
-          >
-            <Icons.Scale /> WN-800 排出計量
-          </button>
-        )}
-      </div>
-    );
-  };
-
-  const valIn = Number(inWeight) || 0;
-  const valRed = Number(outRed) || 0;
-  const valMixed = Number(outMixed) || 0;
-  const valChips = Number(outChips) || 0;
-  const valJute = Number(outJute) || 0;
-  
-  const totalOut = valRed + valMixed + valChips + valJute;
-  const recoveryRate = valIn > 0 ? (totalOut / valIn) * 100 : 0;
-  const actualYield = valIn > 0 ? ((valRed + valMixed) / valIn) * 100 : 0;
-  
-  const isWarning = valIn > 0 && (recoveryRate < 95 || recoveryRate > 102);
+  const columns = [
+    { id: 'RESERVED', title: '受付・計量 (POS)', color: 'border-blue-500', bg: 'bg-blue-50' },
+    { id: 'RECEIVED', title: '検収完了 (投入待ち)', color: 'border-purple-500', bg: 'bg-purple-50' },
+    { id: 'IN_PROGRESS', title: 'プラント処理中', color: 'border-orange-500', bg: 'bg-orange-50' },
+    { id: 'COMPLETED', title: '処理完了', color: 'border-green-500', bg: 'bg-green-50' }
+  ];
 
   return (
-    <div className="flex flex-col h-full animate-in fade-in duration-500 max-w-7xl mx-auto w-full">
-      <header className="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
-        <div>
-          <h2 className="text-2xl font-black text-gray-900 font-serif tracking-tight">FACTORY KANBAN</h2>
-          <p className="text-xs text-gray-500 mt-1 font-mono">WN-800 プラント稼働・バッチ管理システム</p>
-        </div>
+    <div className="flex flex-col h-full animate-in fade-in duration-500">
+      <header className="mb-6">
+        <h2 className="text-2xl font-black text-gray-900 font-serif tracking-tight">PLANT KANBAN</h2>
+        <p className="text-xs text-gray-500 mt-1 font-mono">プラント投入・処理ステータス管理</p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 flex-1 min-h-[600px]">
-        {/* 1. 処理待ち */}
-        <div className="bg-gray-100 rounded-sm border border-gray-200 flex flex-col">
-          <div className="p-4 border-b border-gray-200 bg-gray-200/50 flex justify-between items-center">
-            <h3 className="font-bold text-gray-700 flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-gray-400"></span> 処理待ち (フレコン)
-            </h3>
-            <span className="bg-white text-gray-600 px-2 py-0.5 rounded-full text-xs font-bold">{waitingList.length}</span>
-          </div>
-          <div className="p-3 flex-1 overflow-y-auto">
-            {waitingList.map(res => renderCard(res, 'WAITING'))}
-            {waitingList.length === 0 && <p className="text-center text-gray-400 text-sm mt-10">待機中のロットはありません</p>}
-          </div>
-        </div>
-
-        {/* 2. 稼働中 */}
-        <div className="bg-blue-50/50 rounded-sm border border-blue-100 flex flex-col">
-          <div className="p-4 border-b border-blue-100 bg-blue-100/50 flex justify-between items-center">
-            <h3 className="font-bold text-blue-800 flex items-center gap-2 animate-pulse">
-              <span className="w-3 h-3 rounded-full bg-blue-500"></span> プラント稼働中
-            </h3>
-            <span className="bg-white text-blue-600 px-2 py-0.5 rounded-full text-xs font-bold shadow-sm">{processingList.length}</span>
-          </div>
-          <div className="p-3 flex-1 overflow-y-auto">
-            {processingList.map(res => renderCard(res, 'PROCESSING'))}
-            {processingList.length === 0 && <p className="text-center text-gray-400 text-sm mt-10">稼働中のロットはありません</p>}
-          </div>
-        </div>
-
-        {/* 3. 完了履歴 */}
-        <div className="bg-white rounded-sm border border-gray-200 flex flex-col shadow-sm">
-          <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-            <h3 className="font-bold text-gray-900 flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-green-500"></span> 完了・計量履歴
-            </h3>
-          </div>
-          <div className="p-0 flex-1 overflow-y-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-gray-50 border-b border-gray-200 text-xs text-gray-500 sticky top-0">
-                <tr>
-                  <th className="p-3">業者名 / 日時</th>
-                  <th className="p-3 text-right">投入</th>
-                  <th className="p-3 text-right">歩留</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {productions.map((p, i) => (
-                  <tr key={i} className="hover:bg-gray-50">
-                    <td className="p-3">
-                      <div className="font-bold text-gray-800">{p.memberName}</div>
-                      <div className="text-[10px] text-gray-400 font-mono mt-0.5">{formatTimeShort(p.createdAt)}</div>
-                    </td>
-                    <td className="p-3 text-right text-gray-600 font-mono align-middle">{p.inputWeight}kg</td>
-                    <td className="p-3 text-right font-black text-blue-600 font-mono align-middle">{p.actualRatio}%</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      {/* WN-800 実績登録モーダル */}
-      {isModalOpen && selectedRes && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-2xl rounded-sm shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
-            
-            <div className="p-5 border-b border-gray-200 flex justify-between items-center bg-gray-900 text-white rounded-t-sm">
-              <h3 className="font-black text-lg flex items-center gap-2">
-                <Icons.Scale /> WN-800 排出計量登録
-              </h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-white transition"><Icons.Close /></button>
-            </div>
-
-            <div className="p-6 overflow-y-auto flex-1 bg-gray-50">
-              <div className="mb-6 bg-white p-4 rounded-sm border border-gray-200 shadow-sm flex justify-between items-center">
-                <div>
-                  <p className="text-xs font-bold text-gray-400 tracking-widest uppercase mb-1">対象顧客 / ロット</p>
-                  <p className="text-xl font-black text-gray-900">{selectedRes.memberName}</p>
-                </div>
-                <div className="text-right w-1/3">
-                  <label className="text-xs font-bold text-gray-400 tracking-widest uppercase mb-1 block">投入総重量 (kg)</label>
-                  <input type="number" className="w-full text-right text-2xl font-black font-mono border-b-2 border-gray-400 bg-transparent outline-none focus:border-blue-500 p-1 text-gray-900" value={inWeight} onChange={e => setInWeight(e.target.value ? Number(e.target.value) : '')} placeholder="0" />
-                </div>
+      <div className="flex gap-4 overflow-x-auto pb-4 h-full">
+        {columns.map(col => {
+          const colData = localReservations.filter(r => r.status === col.id).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          
+          return (
+            <div key={col.id} className="flex-1 min-w-[300px] flex flex-col bg-gray-100/50 rounded-md border border-gray-200 overflow-hidden" onDrop={(e) => handleDrop(e, col.id)} onDragOver={handleDragOver}>
+              <div className={`p-3 border-t-4 ${col.color} ${col.bg} flex justify-between items-center shadow-sm`}>
+                <h3 className="font-bold text-gray-800 text-sm">{col.title}</h3>
+                <span className="bg-white px-2 py-0.5 rounded-full text-xs font-bold text-gray-600 shadow-sm">{colData.length}</span>
               </div>
+              
+              <div className="flex-1 p-3 overflow-y-auto space-y-3">
+                {colData.map(res => {
+                  let items = [];
+                  try { items = typeof res.items === 'string' ? JSON.parse(res.items) : res.items; } catch(e){}
+                  const totalW = items.reduce((sum: number, i: any) => sum + Number(i.weight || 0), 0);
+                  const hasTin = items.some((i: any) => i.material === '錫メッキ' || i.product.includes('錫'));
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-red-50 p-3 rounded-sm border border-red-200 shadow-inner">
-                  <label className="block text-xs font-bold text-red-800 mb-2">① 赤ナゲ (kg)<br/><span className="text-[10px] text-red-600">高品質銅</span></label>
-                  <input type="number" className="w-full border-none bg-white p-3 rounded-sm font-black text-red-700 text-xl text-right outline-none ring-1 ring-red-300 focus:ring-2 focus:ring-red-500" value={outRed} onChange={e => setOutRed(e.target.value ? Number(e.target.value) : '')} placeholder="0" />
-                </div>
-                <div className="bg-orange-50 p-3 rounded-sm border border-orange-200 shadow-inner">
-                  <label className="block text-xs font-bold text-orange-800 mb-2">② 雑ナゲ (kg)<br/><span className="text-[10px] text-orange-600">微細・混じり</span></label>
-                  <input type="number" className="w-full border-none bg-white p-3 rounded-sm font-black text-orange-700 text-xl text-right outline-none ring-1 ring-orange-300 focus:ring-2 focus:ring-orange-500" value={outMixed} onChange={e => setOutMixed(e.target.value ? Number(e.target.value) : '')} placeholder="0" />
-                </div>
-                <div className="bg-gray-100 p-3 rounded-sm border border-gray-300 shadow-inner">
-                  <label className="block text-xs font-bold text-gray-700 mb-2">③ 被覆チップ (kg)<br/><span className="text-[10px] text-gray-500">産廃1</span></label>
-                  <input type="number" className="w-full border-none bg-white p-3 rounded-sm font-black text-gray-800 text-xl text-right outline-none ring-1 ring-gray-300 focus:ring-2 focus:ring-gray-500" value={outChips} onChange={e => setOutChips(e.target.value ? Number(e.target.value) : '')} placeholder="0" />
-                </div>
-                <div className="bg-stone-100 p-3 rounded-sm border border-stone-300 shadow-inner">
-                  <label className="block text-xs font-bold text-stone-700 mb-2">④ ジュート (kg)<br/><span className="text-[10px] text-stone-500">産廃2 / 紙・粉</span></label>
-                  <input type="number" className="w-full border-none bg-white p-3 rounded-sm font-black text-stone-800 text-xl text-right outline-none ring-1 ring-stone-300 focus:ring-2 focus:ring-stone-500" value={outJute} onChange={e => setOutJute(e.target.value ? Number(e.target.value) : '')} placeholder="0" />
-                </div>
-              </div>
+                  return (
+                    <div key={res.id} draggable onDragStart={(e) => handleDragStart(e, res.id)} className={`bg-white p-3 rounded-sm shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing hover:shadow-md transition relative group ${hasTin ? 'border-l-4 border-l-red-500' : 'border-l-4 border-l-blue-500'}`}>
+                      
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center gap-1.5 text-xs text-gray-500 font-mono"><Icons.Clock /> {formatTime(res.createdAt)}</div>
+                        
+                        {/* ★ PDF出力/印刷ボタン */}
+                        <button onClick={() => handlePrint(res)} className="text-[10px] bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded shadow-sm flex items-center gap-1 transition opacity-0 group-hover:opacity-100">
+                            <Icons.Printer /> 帳票出力
+                        </button>
+                      </div>
+                      
+                      <div className="font-bold text-gray-900 text-sm mb-1 flex items-center gap-1">
+                          <Icons.User /> {res.memberName || '新規・非会員'}
+                      </div>
 
-              <div className="bg-white border-2 border-dashed border-gray-300 p-5 rounded-sm mb-4 relative">
-                {isWarning && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-red-600 text-white px-4 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-md animate-pulse whitespace-nowrap">
-                    <Icons.Alert /> 機内残留または計量ミスの可能性があります！
-                  </div>
+                      {hasTin && (
+                          <div className="text-[9px] bg-red-100 text-red-700 font-bold px-1.5 py-0.5 rounded-sm inline-flex items-center gap-1 mb-2">
+                              <Icons.Alert /> 錫メッキ混入あり
+                          </div>
+                      )}
+
+                      <div className="bg-gray-50 rounded-sm p-2 text-xs mb-2 border border-gray-100">
+                        {items.slice(0, 3).map((item: any, idx: number) => (
+                            <div key={idx} className="flex justify-between items-center py-0.5 border-b border-gray-200 last:border-0 truncate">
+                                <span className="text-gray-700 truncate mr-2" title={item.product}>{item.product}</span>
+                                <span className="font-mono font-bold text-gray-900 shrink-0">{item.weight}kg</span>
+                            </div>
+                        ))}
+                        {items.length > 3 && <div className="text-center text-[10px] text-gray-400 mt-1 pt-1">他 {items.length - 3} 品目...</div>}
+                      </div>
+
+                      <div className="flex justify-between items-end mt-3">
+                          <div className="text-[10px] text-gray-500 font-bold bg-gray-100 px-2 py-1 rounded-sm">総重量: <span className="text-sm font-black text-gray-800 font-mono">{totalW.toFixed(1)}</span> kg</div>
+                          
+                          <button onClick={() => onEditReservation(res.id)} className="text-[10px] text-blue-600 hover:underline font-bold">
+                              POSで再編集 ✏️
+                          </button>
+                      </div>
+                    </div>
+                  );
+                })}
+                {colData.length === 0 && (
+                    <div className="h-full flex items-center justify-center border-2 border-dashed border-gray-200 rounded-sm">
+                        <span className="text-xs font-bold text-gray-400">カードをドロップ</span>
+                    </div>
                 )}
-                
-                <div className="flex justify-between items-center mb-4 pb-4 border-b border-gray-100">
-                  <div className="text-gray-500 font-bold text-sm">排出合計 / 回収率</div>
-                  <div className="text-right">
-                    <span className={`text-2xl font-black font-mono ${isWarning ? 'text-red-600' : 'text-gray-900'}`}>{totalOut.toFixed(1)}</span>
-                    <span className="text-sm font-bold text-gray-500 mx-1">kg /</span>
-                    <span className={`text-xl font-bold font-mono ${isWarning ? 'text-red-600' : 'text-green-600'}`}>{recoveryRate.toFixed(1)}%</span>
-                  </div>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <div className="text-blue-800 font-black text-lg">実測 銅・歩留まり</div>
-                  <div className="text-right">
-                    <span className="text-4xl font-black text-blue-600 font-mono tracking-tighter">{actualYield.toFixed(1)}</span>
-                    <span className="text-xl font-bold text-blue-600 ml-1">%</span>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-500 mb-2">作業メモ・特記事項</label>
-                <input type="text" className="w-full border border-gray-300 p-3 rounded-sm outline-none focus:border-blue-500 text-sm" value={memo} onChange={e => setMemo(e.target.value)} placeholder="例: 異物混入多め、刃の交換を実施 等" />
               </div>
             </div>
-
-            <div className="p-5 border-t border-gray-200 flex justify-end gap-3 bg-white rounded-b-sm">
-              <button onClick={() => setIsModalOpen(false)} className="px-6 py-3 text-gray-600 font-bold hover:bg-gray-100 rounded-sm transition">キャンセル</button>
-              <button 
-                onClick={handleSaveProduction} 
-                disabled={isSubmitting || !inWeight || isWarning} 
-                className="px-8 py-3 bg-blue-600 text-white font-bold rounded-sm hover:bg-blue-700 transition disabled:opacity-50 disabled:bg-gray-400 flex items-center gap-2 shadow-md active:scale-95"
-              >
-                {isSubmitting ? <><Icons.Refresh /> 保存中...</> : <><Icons.Check /> 計量確定して完了</>}
-              </button>
-            </div>
-            
-            {isWarning && <p className="text-center text-xs text-red-500 pb-3 font-bold bg-white">※合計が95%〜102%の範囲に収まるまで確定できません。</p>}
-          </div>
-        </div>
-      )}
+          );
+        })}
+      </div>
     </div>
   );
 };
