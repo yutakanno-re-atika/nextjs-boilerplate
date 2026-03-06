@@ -34,8 +34,12 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [aiStatus, setAiStatus] = useState<'IDLE' | 'ANALYZING'>('IDLE');
   const [aiProgressStep, setAiProgressStep] = useState(0);
+  
+  // ★ 画像枠を4枚に拡張
   const [imgData1, setImgData1] = useState<string>('');
   const [imgData2, setImgData2] = useState<string>('');
+  const [imgData3, setImgData3] = useState<string>('');
+  const [imgData4, setImgData4] = useState<string>('');
   const [aiHint, setAiHint] = useState<string>('');
 
   const [isBulkAiModalOpen, setIsBulkAiModalOpen] = useState(false);
@@ -49,15 +53,11 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   const [isListeningHint, setIsListeningHint] = useState(false);
   const hintRecognitionRef = useRef<any>(null);
 
-  const [simConfig, setSimConfig] = useState({
-    disposalCostPerKg: 40, laborCostPerHour: 3000, capacityPerHour: 150, targetMargin: 15         
-  });
+  const [simConfig, setSimConfig] = useState({ disposalCostPerKg: 40, laborCostPerHour: 3000, capacityPerHour: 150, targetMargin: 15 });
 
   const copperPrice = data?.market?.copper?.price || 1400;
 
-  // ★ 現場の呼び方に合わせたカテゴリ再定義
   const CATEGORIES = ['すべて', 'IV線', 'CV・電力線', 'VVF / VV (ネズミ線)', '制御・通信線', 'キャブタイヤ・雑線', 'その他'];
-  
   const getCategory = (name: string) => {
       if (!name) return 'その他';
       const n = name.toUpperCase();
@@ -86,13 +86,16 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         }
       }
     } else {
-      setCart([]); setSelectedClient(null); setImgData1(''); setImgData2(''); setBulkTotalWeight(''); setAiHint('');
+      setCart([]); setSelectedClient(null); 
+      // リセット時に4枚ともクリア
+      setImgData1(''); setImgData2(''); setImgData3(''); setImgData4(''); 
+      setBulkTotalWeight(''); setAiHint('');
     }
   }, [editingResId, localReservations, data]);
 
   const showToast = (title: string, desc: string, type: 'success' | 'info' = 'success') => {
       setToastMessage({ title, desc, type });
-      setTimeout(() => setToastMessage(null), 4000);
+      setTimeout(() => setToastMessage(null), 6000);
   };
 
   const buildProductName = (p: any) => {
@@ -123,7 +126,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   const removeItem = (id: string) => { setCart(prev => prev.filter(item => item.id !== id)); };
 
   const compressImage = (file: File): Promise<string> => {
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
           const reader = new FileReader(); reader.readAsDataURL(file);
           reader.onload = (event) => {
               const img = new Image(); img.src = event.target?.result as string;
@@ -139,9 +142,15 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       });
   };
 
-  const handleAiImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, num: 1 | 2) => {
+  const handleAiImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, num: 1 | 2 | 3 | 4) => {
     const file = e.target.files?.[0]; if (!file) return;
-    try { const compressed = await compressImage(file); if (num === 1) setImgData1(compressed); else setImgData2(compressed); } catch (err) {}
+    try { 
+        const compressed = await compressImage(file); 
+        if (num === 1) setImgData1(compressed); 
+        else if (num === 2) setImgData2(compressed); 
+        else if (num === 3) setImgData3(compressed); 
+        else if (num === 4) setImgData4(compressed); 
+    } catch (err) {}
     e.target.value = '';
   };
 
@@ -154,18 +163,17 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   const removeBulkImage = (index: number) => setBulkImages(prev => prev.filter((_, i) => i !== index));
 
   const runAiAnalysis = async () => {
-    if (!imgData1) return alert('最低1枚の画像をアップロードしてください');
+    if (!imgData1) return alert('1. 断面画像（必須）をアップロードしてください');
     setAiStatus('ANALYZING'); setAiProgressStep(1); 
     const progressInterval = setInterval(() => { setAiProgressStep(prev => prev < 3 ? prev + 1 : 3); }, 2000);
 
     try {
-      const res = await fetch('/api/gas', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'VISION_AI_ASSESS', imageData: imgData1, imageData2: imgData2, hint: aiHint })
+      // ★ 画像3,4も一緒にバックエンドへ送る
+      const res = await fetch('/api/gas', { 
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, 
+          body: JSON.stringify({ action: 'VISION_AI_ASSESS', imageData: imgData1, imageData2: imgData2, imageData3: imgData3, imageData4: imgData4, hint: aiHint }) 
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const result = await res.json();
-      
       clearInterval(progressInterval); setAiProgressStep(4); 
 
       setTimeout(() => {
@@ -173,22 +181,18 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
             const wireTypeStr = result.data.wireType || result.data.name || '不明な線種';
             const isMixed = wireTypeStr.includes('フレコン') || wireTypeStr.includes('混合');
             const displayName = result.data.isNewFlag || isMixed ? `💡 AI査定: ${wireTypeStr}` : wireTypeStr;
-            
             setCart(prev => [{
-                id: `ai-${Date.now()}`, product: displayName, ratio: result.data.estimatedRatio || 0, 
-                weight: 0, percentage: 0, isNewAi: result.data.isNewFlag, reason: result.data.reason || '',
-                masterId: result.data.masterId, isMasterImageEmpty: result.data.isMasterImageEmpty,
-                pendingImg1: imgData1, pendingImg2: imgData2, isImageUploaded: false,
+                id: `ai-${Date.now()}`, product: displayName, ratio: result.data.estimatedRatio || 0, weight: 0, percentage: 0, 
+                isNewAi: result.data.isNewFlag, reason: result.data.reason || '', masterId: result.data.masterId, 
+                isMasterImageEmpty: result.data.isMasterImageEmpty, pendingImg1: imgData1, pendingImg2: imgData2, 
                 conductor: result.data.conductor || '', material: result.data.material || '純銅' 
             }, ...prev]);
-
             showToast(result.data.isNewFlag ? '未知線種を仮登録しました' : '既存マスターと一致', `「${wireTypeStr}」として査定しました。`, result.data.isNewFlag ? 'success' : 'info');
-
-            setIsAiModalOpen(false); setImgData1(''); setImgData2(''); setAiHint(''); setAiProgressStep(0);
+            setIsAiModalOpen(false); setImgData1(''); setImgData2(''); setImgData3(''); setImgData4(''); setAiHint(''); setAiProgressStep(0);
           } else { alert('AI解析エラー: ' + result.message); setIsAiModalOpen(false); setAiProgressStep(0); }
           setAiStatus('IDLE');
       }, 800);
-    } catch(err: any) { clearInterval(progressInterval); alert(`通信エラー: ${err.message}`); setAiStatus('IDLE'); setAiProgressStep(0); } 
+    } catch(err: any) { clearInterval(progressInterval); alert(`通信エラー`); setAiStatus('IDLE'); setAiProgressStep(0); } 
   };
 
   const runBulkAiAnalysis = async () => {
@@ -197,19 +201,39 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
     const progressInterval = setInterval(() => { setAiProgressStep(prev => prev < 3 ? prev + 1 : 3); }, 3000); 
 
     try {
-      const res = await fetch('/api/gas', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'VISION_AI_BULK_ASSESS', images: bulkImages, hint: aiHint })
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'VISION_AI_BULK_ASSESS', images: bulkImages, hint: aiHint }) });
       const result = await res.json();
-      
       clearInterval(progressInterval); setAiProgressStep(4); 
 
       setTimeout(() => {
           if (result.status === 'success' && result.data) {
             setPosMode('BULK');
-            if (result.data.estimatedWeight) setBulkTotalWeight(Number(result.data.estimatedWeight));
+            
+            if (result.data.estimatedWeight) {
+                setBulkTotalWeight(Number(result.data.estimatedWeight));
+            }
+
+            // ★ 顧客名の「厳密」マッチングロジック（ノイズ除去）
+            let clientMatched = false;
+            let foundClientName = '';
+            if (result.data.clientName && data?.clients) {
+                foundClientName = result.data.clientName;
+                
+                // AIが読み取った名前から「株式会社」等の法人格やノイズ文字を完全に除去
+                const noiseRegex = /(株式会社|有限会社|合同会社|\(株\)|\(有\)|\(同\)|㈱|㈲|㈾|営業所|支店|現場|\s|　)/g;
+                const cleanAiName = foundClientName.replace(noiseRegex, '').toLowerCase();
+
+                if (cleanAiName.length >= 2) { // 誤爆を防ぐため最低2文字以上で照合
+                    const matchedClient = data.clients.find((c:any) => {
+                        const cleanDbName = c.name.replace(noiseRegex, '').toLowerCase();
+                        return cleanDbName && (cleanAiName.includes(cleanDbName) || cleanDbName.includes(cleanAiName));
+                    });
+                    if (matchedClient) {
+                        setSelectedClient(matchedClient);
+                        clientMatched = true;
+                    }
+                }
+            }
 
             const newCartItems = (result.data.components || []).map((comp: any, idx: number) => ({
                 id: `bulk-${Date.now()}-${idx}`, product: `📦 AI解析: ${comp.name || '不明'}`,
@@ -218,26 +242,28 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
             }));
             
             setCart(newCartItems);
-            showToast('フレコン一括解析完了', `全体の推定歩留まりは ${result.data.overallYield || result.data.overallRatio || '---'}% です。`, 'success');
 
+            let toastMsg = `歩留まり ${result.data.overallYield || result.data.overallRatio || '---'}% で展開しました。`;
+            if (result.data.estimatedWeight) toastMsg += `\n⚖️ 重量 ${result.data.estimatedWeight}kg を自動入力しました。`;
+            if (foundClientName) {
+                if (clientMatched) toastMsg += `\n👤 顧客「${selectedClient?.name || foundClientName}」を自動選択しました。`;
+                else toastMsg += `\n👤 顧客「${foundClientName}」の記載を確認（未登録）。`;
+            }
+
+            showToast('フレコン一括解析 完了', toastMsg, 'success');
             setIsBulkAiModalOpen(false); setBulkImages([]); setAiHint(''); setAiProgressStep(0);
           } else { alert('AI解析エラー: ' + result.message); setIsBulkAiModalOpen(false); setAiProgressStep(0); }
           setAiStatus('IDLE');
       }, 800);
-    } catch(err: any) { clearInterval(progressInterval); alert(`通信エラー: ${err.message}`); setAiStatus('IDLE'); setAiProgressStep(0); } 
+    } catch(err: any) { clearInterval(progressInterval); alert(`通信エラー`); setAiStatus('IDLE'); setAiProgressStep(0); } 
   };
 
   const toggleVoiceInput = () => {
-      if (isListening) {
-          if (recognitionRef.current) recognitionRef.current.stop();
-          return;
-      }
+      if (isListening) { if (recognitionRef.current) recognitionRef.current.stop(); return; }
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) { alert('お使いのブラウザは音声入力に対応していません。'); return; }
-      
+      if (!SpeechRecognition) return;
       const recognition = new SpeechRecognition();
       recognition.lang = 'ja-JP'; recognition.continuous = true; recognition.interimResults = true;
-
       recognition.onstart = () => { setIsListening(true); setVoiceText('🎤 認識中... (もう一度押すと終了して送信)'); };
       
       let finalTranscript = '';
@@ -249,12 +275,9 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           }
           setVoiceText(finalTranscript + interimTranscript);
       };
-
       recognition.onerror = () => { setIsListening(false); setVoiceText('認識エラー'); setTimeout(() => setVoiceText(''), 2000); };
       recognition.onend = () => { setIsListening(false); if (finalTranscript) processVoiceCommand(finalTranscript); else setTimeout(() => setVoiceText(''), 2000); };
-      
-      recognitionRef.current = recognition;
-      recognition.start();
+      recognitionRef.current = recognition; recognition.start();
   };
 
   const processVoiceCommand = async (text: string) => {
@@ -280,19 +303,13 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   };
 
   const toggleHintVoiceInput = () => {
-      if (isListeningHint) {
-          if (hintRecognitionRef.current) hintRecognitionRef.current.stop();
-          return;
-      }
+      if (isListeningHint) { if (hintRecognitionRef.current) hintRecognitionRef.current.stop(); return; }
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) return alert('非対応');
-      
+      if (!SpeechRecognition) return;
       const recognition = new SpeechRecognition();
       recognition.lang = 'ja-JP'; recognition.continuous = true; recognition.interimResults = true;
       let currentHint = aiHint;
-      
       recognition.onstart = () => { setIsListeningHint(true); };
-      
       let finalStr = '';
       recognition.onresult = (event: any) => {
           let interim = ''; finalStr = '';
@@ -302,13 +319,8 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           }
           setAiHint(currentHint + (currentHint ? ' ' : '') + finalStr + interim);
       };
-      
-      recognition.onend = () => {
-          setIsListeningHint(false);
-          setAiHint(currentHint + (currentHint ? ' ' : '') + finalStr);
-      };
-      hintRecognitionRef.current = recognition;
-      recognition.start();
+      recognition.onend = () => { setIsListeningHint(false); setAiHint(currentHint + (currentHint ? ' ' : '') + finalStr); };
+      hintRecognitionRef.current = recognition; recognition.start();
   };
 
   const handlePrepareMasterRegistration = (item: any) => {
@@ -321,7 +333,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       showToast('データ転送完了', '左メニューから「データベース」を開くと、自動で入力画面が立ち上がります。', 'success');
   };
 
-  // ★ AND検索対応の高度なフィルタリング
   const filteredProducts = useMemo(() => {
       return (data?.wires || []).filter((w:any) => {
           if (selectedCategory !== 'すべて' && getCategory(w.name) !== selectedCategory) return false;
@@ -334,7 +345,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
               const sqFormatted = sqStr && sqStr !== '-' ? `${sqStr}sq ${sqStr}スケ` : '';
               
               const searchTarget = `${w.name} ${w.maker} ${sqFormatted} ${sqStr} ${coreFormatted} ${coreStr} ${w.year}`.toLowerCase();
-              // 全角スペースを半角に変換し、空白で分割して複数の検索語（AND条件）を生成
               const terms = searchTerm.toLowerCase().replace(/　/g, ' ').split(' ').filter(Boolean);
               return terms.every(term => searchTarget.includes(term));
           }
@@ -393,14 +403,14 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       
       {toastMessage && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[70] animate-in slide-in-from-top-10 fade-in duration-300 w-[90%] max-w-md">
-            <div className={`bg-white border-l-4 ${toastMessage.type === 'success' ? 'border-green-500' : 'border-blue-500'} p-3 rounded-sm shadow-2xl flex items-start gap-2`}>
+            <div className={`bg-white border-l-4 ${toastMessage.type === 'success' ? 'border-green-500' : 'border-blue-500'} p-3 rounded-sm shadow-2xl flex items-start gap-2 whitespace-pre-wrap`}>
                 <div className="mt-0.5">{toastMessage.type === 'success' ? <Icons.CheckCircle /> : <Icons.Sparkles />}</div>
-                <div><h4 className="font-bold text-gray-900 text-sm">{toastMessage.title}</h4><p className="text-xs text-gray-600 mt-0.5">{toastMessage.desc}</p></div>
+                <div><h4 className="font-bold text-gray-900 text-sm">{toastMessage.title}</h4><p className="text-xs text-gray-600 mt-0.5 leading-relaxed">{toastMessage.desc}</p></div>
             </div>
         </div>
       )}
 
-      {/* ★ 左側：商品マスター選択エリア */}
+      {/* 左側：商品マスター選択エリア */}
       <div className="w-full lg:w-7/12 flex flex-col bg-white border border-gray-200 rounded-sm shadow-sm overflow-hidden h-[45vh] lg:h-full shrink-0">
         <div className="p-3 bg-gray-50 border-b border-gray-200 flex flex-col gap-2 relative shrink-0">
           {(isListening || isProcessingVoice || voiceText) && (
@@ -598,30 +608,38 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         </div>
       </div>
 
-      {/* 単一AIモーダル */}
+      {/* 単一AIモーダル（★画像4枚枠に拡張） */}
       {isAiModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-          <div className="bg-gray-900 w-full max-w-2xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col">
+          <div className="bg-gray-900 w-full max-w-4xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col max-h-[90vh]">
             <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-black/50">
-              <h3 className="font-black text-white flex items-center gap-2"><Icons.Sparkles /> AI 線種分析 (単一)</h3>
+              <h3 className="font-black text-white flex items-center gap-2"><Icons.Sparkles /> AI 線種分析 (精密マクロ解析)</h3>
               {aiStatus !== 'ANALYZING' && <button onClick={() => setIsAiModalOpen(false)} className="text-gray-400 hover:text-white"><Icons.Close /></button>}
             </div>
-            <div className="p-6">
+            <div className="p-6 overflow-y-auto">
               {aiStatus === 'ANALYZING' ? (
                 <div className="py-8 flex flex-col items-center animate-in fade-in zoom-in duration-500">
                     <div className="relative w-20 h-20 mb-8"><div className="absolute inset-0 border-4 border-blue-500/20 rounded-full"></div><div className="absolute inset-0 border-4 border-blue-500 rounded-full border-t-transparent animate-spin"></div><div className="absolute inset-0 flex items-center justify-center text-blue-400"><Icons.Sparkles /></div></div>
-                    <div className="space-y-5 w-full max-w-xs font-bold text-sm text-center text-blue-400">解析中...</div>
+                    <div className="space-y-5 w-full max-w-xs font-bold text-sm text-center text-blue-400">マクロ画像・印字を解析中...</div>
                 </div>
               ) : (
                 <div className="animate-in fade-in">
-                    <div className="flex flex-col md:flex-row gap-4 mb-4">
-                        <div className="flex-1 p-4 border-2 border-dashed border-gray-600 bg-gray-800/50 rounded-md">
-                            {imgData1 ? ( <div className="relative h-24"><img src={`data:image/jpeg;base64,${imgData1}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData1('')} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm"><Icons.Trash/></button></div> ) : ( <><p className="text-sm font-bold text-gray-300 mb-2">1. 断面画像</p><input type="file" onChange={e=>handleAiImageUpload(e,1)} className="w-full text-white text-xs"/></> )}
+                    {/* ★ 4枚の画像グリッド */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                        <div className="flex flex-col p-3 border-2 border-dashed border-gray-600 bg-gray-800/50 rounded-md">
+                            {imgData1 ? ( <div className="relative h-24"><img src={`data:image/jpeg;base64,${imgData1}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData1('')} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm"><Icons.Trash/></button></div> ) : ( <><p className="text-[10px] font-bold text-blue-400 mb-2">1. 断面 (必須)</p><input type="file" onChange={e=>handleAiImageUpload(e,1)} className="w-full text-white text-[10px]"/></> )}
                         </div>
-                        <div className="flex-1 p-4 border-2 border-dashed border-gray-600 bg-gray-800/50 rounded-md">
-                            {imgData2 ? ( <div className="relative h-24"><img src={`data:image/jpeg;base64,${imgData2}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData2('')} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm"><Icons.Trash/></button></div> ) : ( <><p className="text-sm font-bold text-gray-300 mb-2">2. 印字画像</p><input type="file" onChange={e=>handleAiImageUpload(e,2)} className="w-full text-white text-xs"/></> )}
+                        <div className="flex flex-col p-3 border-2 border-dashed border-gray-600 bg-gray-800/50 rounded-md">
+                            {imgData2 ? ( <div className="relative h-24"><img src={`data:image/jpeg;base64,${imgData2}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData2('')} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm"><Icons.Trash/></button></div> ) : ( <><p className="text-[10px] font-bold text-gray-300 mb-2">2. 全体・被覆 (任意)</p><input type="file" onChange={e=>handleAiImageUpload(e,2)} className="w-full text-white text-[10px]"/></> )}
+                        </div>
+                        <div className="flex flex-col p-3 border-2 border-dashed border-gray-600 bg-gray-800/50 rounded-md">
+                            {imgData3 ? ( <div className="relative h-24"><img src={`data:image/jpeg;base64,${imgData3}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData3('')} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm"><Icons.Trash/></button></div> ) : ( <><p className="text-[10px] font-bold text-gray-300 mb-2">3. 印字(引き) (任意)</p><input type="file" onChange={e=>handleAiImageUpload(e,3)} className="w-full text-white text-[10px]"/></> )}
+                        </div>
+                        <div className="flex flex-col p-3 border-2 border-dashed border-gray-600 bg-gray-800/50 rounded-md">
+                            {imgData4 ? ( <div className="relative h-24"><img src={`data:image/jpeg;base64,${imgData4}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData4('')} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm"><Icons.Trash/></button></div> ) : ( <><p className="text-[10px] font-bold text-gray-300 mb-2">4. 印字(ドアップ) (任意)</p><input type="file" onChange={e=>handleAiImageUpload(e,4)} className="w-full text-white text-[10px]"/></> )}
                         </div>
                     </div>
+
                     <div className="mb-6 bg-gray-800/50 border border-gray-700 p-3 rounded-md relative">
                         <label className="block text-xs font-bold text-gray-400 mb-2 flex items-center justify-between">
                             <span>🗣️ AIへのヒント・補足（任意）</span>
@@ -631,7 +649,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                         </label>
                         <textarea className="w-full bg-gray-900 border border-gray-600 rounded-sm text-sm text-white p-2 outline-none focus:border-blue-500 min-h-[60px]" placeholder="例: 中身は細線の束、かなり重い、雑線は入っていない等..." value={aiHint} onChange={e => setAiHint(e.target.value)} />
                     </div>
-                    <button onClick={runAiAnalysis} disabled={!imgData1 && !aiHint} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-sm flex justify-center items-center gap-2 disabled:bg-gray-700">解析してカートに追加</button>
+                    <button onClick={runAiAnalysis} disabled={!imgData1} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-sm flex justify-center items-center gap-2 disabled:bg-gray-700">解析してカートに追加</button>
                 </div>
               )}
             </div>
@@ -668,7 +686,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                                 <Icons.Mic />
                             </button>
                         </label>
-                        <textarea className="w-full bg-gray-900/80 border border-purple-800/50 rounded-sm text-sm text-white p-2 outline-none focus:border-purple-400 min-h-[60px]" placeholder="例: 表面の通信線の下は全部太いCV線、重量は袋込みで520kg..." value={aiHint} onChange={e => setAiHint(e.target.value)} />
+                        <textarea className="w-full bg-gray-900/80 border border-purple-800/50 rounded-sm text-sm text-white p-2 outline-none focus:border-purple-400 min-h-[60px]" placeholder="例: 表面の通信線の下は全部太いCV線、計量器の重量は520kg..." value={aiHint} onChange={e => setAiHint(e.target.value)} />
                     </div>
                     <button onClick={runBulkAiAnalysis} disabled={bulkImages.length === 0 && !aiHint} className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 text-white font-black py-4 rounded-sm flex justify-center items-center gap-2 disabled:opacity-50">
                         <Icons.Sparkles /> 画像 {bulkImages.length} 枚で一括査定を実行
