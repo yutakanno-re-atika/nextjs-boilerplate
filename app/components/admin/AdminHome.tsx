@@ -1,3 +1,4 @@
+// app/components/admin/AdminHome.tsx
 // @ts-nocheck
 import React, { useMemo, useState, useEffect } from 'react';
 
@@ -5,24 +6,15 @@ const Icons = {
   TrendingUp: () => <svg className="w-4 h-4 text-[#D32F2F]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>,
   TrendingDown: () => <svg className="w-4 h-4 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>,
   Minus: () => <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M20 12H4" /></svg>,
-  Truck: () => <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4-4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>,
-  Radar: () => <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>,
-  Factory: () => <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>,
-  Scale: () => <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>,
-  ArrowRight: () => <svg className="w-5 h-5 text-gray-300 group-hover:text-[#D32F2F] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>,
-  Message: () => <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>,
   Print: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>,
   Refresh: () => <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
-  Brain: () => <svg className="w-4 h-4 inline-block mr-1" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 18a8 8 0 110-16 8 8 0 010 16zm1-11h-2v2h2V9zm0 4h-2v6h2v-6z" /></svg>,
   ExternalLink: () => <svg className="w-3 h-3 ml-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
 };
 
-// ★ バッジのスタイル変更：文字サイズ12px、色を赤・黒・ダークレッド（赤黒混色）に変更
 const ProvenanceBadge = ({ type }: { type: 'HUMAN' | 'AI_AUTO' | 'CO_OP' }) => {
-  const baseStyle = "inline-block px-1.5 py-0.5 text-[12px] font-mono font-bold tracking-widest rounded-sm text-white cursor-default shadow-sm";
+  const baseStyle = "inline-block px-2 py-0.5 text-[12px] font-mono font-bold tracking-widest rounded-sm text-white cursor-default shadow-sm";
   switch (type) {
     case 'HUMAN': return <span className={`${baseStyle} bg-gray-900`} title="実測・確定データ">HUMAN</span>;
-    // ★ 赤（#D32F2F）と黒（#111827）を混ぜたダークレッド
     case 'CO_OP': return <span className={`${baseStyle} bg-[#7A1C1C]`} title="AI＋人間 協調データ">AI+HUMAN</span>;
     case 'AI_AUTO': return <span className={`${baseStyle} bg-[#D32F2F]`} title="AI予測・推論データ">AI</span>;
     default: return null;
@@ -69,6 +61,23 @@ const getDisplayName = (w: any) => {
   return name;
 };
 
+const formatTime = (val: any) => {
+  if (!val) return '--:--';
+  try {
+    let d = new Date(val);
+    if (typeof val === 'string') d = new Date(val.replace(/-/g, '/'));
+    if (!isNaN(d.getTime())) {
+      return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+    }
+    
+    const strVal = String(val);
+    const match = strVal.match(/(\d{1,2}):(\d{2})/);
+    if (match) return `${match[1].padStart(2, '0')}:${match[2]}`;
+    
+    return '--:--';
+  } catch(e) { return '--:--'; }
+};
+
 export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, localReservations: any[], onNavigate: any }) => {
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
@@ -81,9 +90,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
   const zincPrice = Number(data?.config?.zinc_price) || 450;
   const leadPrice = Number(data?.config?.lead_price) || 380;
   const tinPrice = Number(data?.config?.tin_price) || 8900;
-  const usdjpy = Number(data?.config?.usdjpy) || 150.00;
-  const lmeCopper = Number(data?.config?.lme_copper_usd) || 9000;
-  const jpyCopperPrice = Math.floor((lmeCopper * usdjpy) / 1000);
 
   const history = data?.history || [];
   const currentPrice = history.length > 0 ? Number(history[history.length - 1].value) : copperPrice;
@@ -239,6 +245,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
           </div>
         </header>
 
+        {/* ★ 建値情報 */}
         <div className="mb-10 px-2 w-full">
           <div className={`transition-opacity duration-300 ${showAiData ? 'opacity-100' : 'opacity-20 grayscale pointer-events-none'}`}>
             <div className="flex xl:grid xl:grid-cols-5 gap-4 overflow-x-auto xl:overflow-visible no-scrollbar pb-4 xl:pb-0 snap-x w-full">
@@ -275,12 +282,12 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
           </div>
         </div>
 
+        {/* ★ 上段 3カラム（評価額 / 現場稼働 / AIコンシェルジュ稼働） */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 px-2">
           
           <div className="bg-white p-6 md:p-8 rounded-sm border border-gray-200 shadow-sm flex flex-col justify-between group hover:border-[#D32F2F] hover:shadow-md transition-all relative overflow-hidden">
             <div className="absolute top-4 right-4 z-20"><ProvenanceBadge type="CO_OP" /></div>
-            <div className="absolute -right-4 -top-4 opacity-5 transform scale-150 group-hover:rotate-12 transition-transform duration-700 text-gray-900"><Icons.Scale /></div>
-            <p className="text-xs font-bold text-gray-500 mb-4 uppercase tracking-widest flex items-center gap-2 relative z-10"><Icons.Scale /> 推定総在庫 評価額</p>
+            <h3 className="font-black text-gray-900 tracking-wider text-lg mb-6 relative z-10">推定総在庫 評価額</h3>
             <div className="flex items-baseline gap-2 mt-auto relative z-10">
               <span className="text-2xl font-light text-gray-400">¥</span>
               <span className={`text-5xl md:text-6xl font-black tracking-tighter transition-colors ${showAiData ? 'text-gray-900' : 'text-gray-300'}`}>{showAiData ? inventoryValue.toLocaleString() : '---'}</span>
@@ -293,7 +300,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
 
           <div className="bg-white p-6 md:p-8 rounded-sm border border-gray-200 shadow-sm flex flex-col justify-between group hover:border-[#D32F2F] hover:shadow-md transition-all relative">
             <div className="absolute top-4 right-4 z-20"><ProvenanceBadge type="HUMAN" /></div>
-            <p className="text-xs font-bold text-gray-500 mb-4 uppercase tracking-widest flex items-center gap-2"><Icons.Truck /> 本日の現場稼働</p>
+            <h3 className="font-black text-gray-900 tracking-wider text-lg mb-6">本日の現場稼働</h3>
             <div className="flex items-center gap-6 mt-auto">
               <div>
                 <p className="text-xs text-gray-400 font-bold mb-1">受付件数</p>
@@ -307,30 +314,38 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
             </div>
           </div>
 
-          <div className="bg-white rounded-sm border border-gray-200 shadow-sm p-6 md:p-8 flex flex-col cursor-pointer group hover:border-[#D32F2F] hover:shadow-md transition-all relative" onClick={() => onNavigate('PRODUCTION')}>
-            <div className="absolute top-4 right-4 z-20 flex gap-1"><ProvenanceBadge type="HUMAN" /></div>
-            <div className="flex justify-between items-start mb-6"><h3 className="font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2 text-xs"><Icons.Factory /> 今月の生産実績</h3><Icons.ArrowRight /></div>
-            <div className="flex-1 flex flex-col justify-center gap-6">
-              <div className="flex items-center justify-between border-l-4 border-gray-900 pl-4 py-1">
-                <div><p className="text-xs text-gray-500 font-bold mb-1">ピカ銅 生産量</p><div className="flex items-baseline gap-1"><span className="text-2xl font-black text-gray-900">{mCopper.toLocaleString()}</span><span className="text-xs text-gray-400 font-bold">kg</span></div></div>
-                <div className="text-right"><p className="text-xs text-gray-500 font-bold mb-1">月末予測 <span className="ml-1"><ProvenanceBadge type="AI_AUTO" /></span></p><div className="flex items-baseline gap-1 justify-end"><span className={`text-xl font-black ${showAiData ? 'text-[#D32F2F]' : 'text-gray-300'}`}>{showAiData ? projectedCopper.toLocaleString() : '---'}</span><span className="text-xs text-gray-400 font-bold">kg</span></div></div>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-sm border border-gray-100 flex justify-between items-center group-hover:bg-red-50/30 transition-colors">
-                <span className="text-xs text-gray-500 font-bold">マスター比 乖離 (直近10件)</span>
-                <div className="flex items-baseline gap-1 bg-white px-3 py-1 rounded-sm shadow-sm border border-gray-200">
-                  <span className={`text-xl font-black tracking-tighter ${yieldStats.isPositive ? 'text-gray-900' : 'text-[#D32F2F]'}`}>{yieldStats.isPositive ? '+' : ''}{yieldStats.diff.toFixed(1)}</span><span className="text-xs text-gray-500 font-bold">%</span>
-                </div>
-              </div>
+          <div className={`bg-white p-6 md:p-8 rounded-sm border border-gray-200 shadow-sm flex flex-col justify-between relative overflow-hidden group transition-all duration-300 hover:border-[#D32F2F] hover:shadow-md ${showAiData ? 'opacity-100' : 'opacity-20 grayscale pointer-events-none'}`}>
+            <div className="absolute top-4 right-4 z-20"><ProvenanceBadge type="AI_AUTO" /></div>
+            <h3 className="font-black text-gray-900 tracking-wider text-lg mb-6 relative z-10 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#D32F2F] animate-pulse"></span>AIコンシェルジュ稼働
+            </h3>
+            <div className="flex items-baseline gap-2 mt-auto relative z-10">
+                <span className="text-5xl md:text-6xl font-black text-gray-900 tracking-tighter">{data?.chatStats?.today || 0}</span>
+                <span className="text-sm font-bold text-gray-600">件の対応</span>
+            </div>
+            <div className="mt-5 pt-4 border-t border-gray-100 text-xs text-gray-600 font-mono relative z-10 flex justify-between items-center">
+                <span className="font-bold">累計対応数: {data?.chatStats?.total || 0} 件</span>
+                <button onClick={async (e) => {
+                    const btn = e.currentTarget; const originalText = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<span class="animate-spin mr-1">↻</span> トレーニング中...';
+                    try {
+                        const res = await fetch('/api/simulate', { method: 'POST' }); const simData = await res.json();
+                        if(simData.success) { alert("仮想トレーニング完了！\n\n【ペルソナ】\n" + simData.persona + "\n\n【生成された会話】\n" + simData.chatHistory); window.location.reload(); } else { alert("エラー: " + simData.message); }
+                    } catch(err) { alert("通信エラーが発生しました。"); }
+                    btn.disabled = false; btn.innerHTML = originalText;
+                }} className="bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 px-3 py-1.5 rounded-sm text-[10px] font-bold shadow-sm transition flex items-center gap-1 disabled:opacity-50 group-hover:border-[#D32F2F] group-hover:text-[#D32F2F]">
+                    仮想トレーニング
+                </button>
             </div>
           </div>
 
         </div>
 
+        {/* ★ 中段 3カラム（AI競合価格 / 今月の生産実績 / 余白） */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 px-2 mb-10">
             
             <div className={`bg-white rounded-sm border border-gray-200 shadow-sm p-6 md:p-8 flex flex-col cursor-pointer transition-all relative group ${showAiData ? 'hover:border-[#D32F2F] hover:shadow-md' : 'opacity-20 grayscale pointer-events-none'}`} onClick={() => showAiData && onNavigate('COMPETITOR')}>
                 <div className="absolute top-4 right-4 z-20"><ProvenanceBadge type="AI_AUTO" /></div>
-                <div className="flex justify-between items-start mb-6"><h3 className="font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2 text-xs"><Icons.Radar /> AI 競合価格勝敗</h3><Icons.ArrowRight /></div>
+                <h3 className="font-black text-gray-900 tracking-wider text-lg mb-6">AI 競合価格勝敗</h3>
                 <div className="flex-1 flex flex-col justify-center">
                     <div className="flex items-end justify-between mb-3"><span className="text-xs text-gray-500 font-bold mb-1">自社優勢 (Win)</span><span className="text-4xl font-black text-gray-900 tracking-tighter">{win}</span></div>
                     <div className="w-full bg-gray-100 h-3 rounded-sm overflow-hidden mb-4 border border-gray-200 shadow-inner"><div className="h-full bg-gray-900 transition-all duration-1000" style={{ width: `${(win / Math.max(1, win + lose + draw)) * 100}%` }}></div></div>
@@ -338,70 +353,78 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                 </div>
             </div>
 
-            <div className={`bg-white p-6 md:p-8 rounded-sm border border-gray-200 shadow-sm flex flex-col justify-between relative overflow-hidden group transition-all duration-300 hover:border-[#D32F2F] hover:shadow-md ${showAiData ? 'opacity-100' : 'opacity-20 grayscale pointer-events-none'}`}>
-                <div className="absolute top-4 right-4 z-20"><ProvenanceBadge type="AI_AUTO" /></div>
-                <div className="absolute -right-4 -top-4 opacity-5 transform scale-150 text-gray-900 transition-transform duration-700 group-hover:rotate-12"><Icons.Message /></div>
-                <p className="text-xs font-bold text-gray-500 mb-4 uppercase tracking-widest flex items-center gap-2 relative z-10"><span className="w-2 h-2 rounded-full bg-[#D32F2F] animate-pulse"></span>AIコンシェルジュ稼働</p>
-                <div className="flex items-baseline gap-2 mt-auto relative z-10">
-                    <span className="text-5xl md:text-6xl font-black text-gray-900 tracking-tighter">{data?.chatStats?.today || 0}</span>
-                    <span className="text-sm font-bold text-gray-600">件の対応</span>
+            <div className="bg-white rounded-sm border border-gray-200 shadow-sm p-6 md:p-8 flex flex-col cursor-pointer group hover:border-[#D32F2F] hover:shadow-md transition-all relative" onClick={() => onNavigate('PRODUCTION')}>
+              <div className="absolute top-4 right-4 z-20 flex gap-1"><ProvenanceBadge type="HUMAN" /></div>
+              <h3 className="font-black text-gray-900 tracking-wider text-lg mb-6">今月の生産実績</h3>
+              <div className="flex-1 flex flex-col justify-center gap-6">
+                <div className="flex items-center justify-between border-l-4 border-gray-900 pl-4 py-1">
+                  <div><p className="text-xs text-gray-500 font-bold mb-1">ピカ銅 生産量</p><div className="flex items-baseline gap-1"><span className="text-2xl font-black text-gray-900">{mCopper.toLocaleString()}</span><span className="text-xs text-gray-400 font-bold">kg</span></div></div>
+                  <div className="text-right"><p className="text-xs text-gray-500 font-bold mb-1">月末予測 <span className="ml-1"><ProvenanceBadge type="AI_AUTO" /></span></p><div className="flex items-baseline gap-1 justify-end"><span className={`text-xl font-black ${showAiData ? 'text-[#D32F2F]' : 'text-gray-300'}`}>{showAiData ? projectedCopper.toLocaleString() : '---'}</span><span className="text-xs text-gray-400 font-bold">kg</span></div></div>
                 </div>
-                <div className="mt-5 pt-4 border-t border-gray-100 text-xs text-gray-600 font-mono relative z-10 flex justify-between items-center">
-                    <span className="font-bold">累計対応数: {data?.chatStats?.total || 0} 件</span>
-                    <button onClick={async (e) => {
-                        const btn = e.currentTarget; const originalText = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<span class="animate-spin mr-1">↻</span> トレーニング中...';
-                        try {
-                            const res = await fetch('/api/simulate', { method: 'POST' }); const simData = await res.json();
-                            if(simData.success) { alert("仮想トレーニング完了！\n\n【ペルソナ】\n" + simData.persona + "\n\n【生成された会話】\n" + simData.chatHistory); window.location.reload(); } else { alert("エラー: " + simData.message); }
-                        } catch(err) { alert("通信エラーが発生しました。"); }
-                        btn.disabled = false; btn.innerHTML = originalText;
-                    }} className="bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 px-3 py-1.5 rounded-sm text-[10px] font-bold shadow-sm transition flex items-center gap-1 disabled:opacity-50 group-hover:border-[#D32F2F] group-hover:text-[#D32F2F]">
-                        <Icons.Brain /> 仮想トレーニング
-                    </button>
+                <div className="bg-gray-50 p-4 rounded-sm border border-gray-100 flex justify-between items-center group-hover:bg-red-50/30 transition-colors">
+                  <span className="text-xs text-gray-500 font-bold">マスター比 乖離 (直近10件)</span>
+                  <div className="flex items-baseline gap-1 bg-white px-3 py-1 rounded-sm shadow-sm border border-gray-200">
+                    <span className={`text-xl font-black tracking-tighter ${yieldStats.isPositive ? 'text-gray-900' : 'text-[#D32F2F]'}`}>{yieldStats.isPositive ? '+' : ''}{yieldStats.diff.toFixed(1)}</span><span className="text-xs text-gray-500 font-bold">%</span>
+                  </div>
                 </div>
+              </div>
             </div>
 
-            <div className="bg-white rounded-sm border border-gray-200 shadow-sm overflow-hidden group hover:border-[#D32F2F] hover:shadow-md transition-all h-full flex flex-col relative">
+            {/* 3カラム目は余白（空のdiv） */}
+            <div></div>
+
+        </div>
+
+        {/* ★ 買取価格表をフル幅化し、詳細を追加 */}
+        <div className="px-2 mb-6 w-full">
+            <div className="bg-white rounded-sm border border-gray-200 shadow-sm overflow-hidden group hover:border-[#D32F2F] hover:shadow-md transition-all relative cursor-pointer" onClick={() => onNavigate('DATABASE')}>
                 <div className="absolute top-4 right-4 z-20"><ProvenanceBadge type="CO_OP" /></div>
-                <div className="p-5 border-b border-gray-100 bg-white flex justify-between items-center cursor-pointer pr-24 shrink-0" onClick={() => onNavigate('DATABASE')}>
-                    <h3 className="font-bold text-xs text-gray-500 uppercase tracking-widest flex items-center gap-2">本日の買取価格表 <span className="text-[10px] font-normal">(主要品目)</span></h3><Icons.ArrowRight />
+                <div className="p-6 border-b border-gray-100 bg-white transition pr-24 shrink-0">
+                    <h3 className="font-black text-gray-900 tracking-wider text-lg">本日の買取価格表</h3>
                 </div>
-                <div className="p-0 overflow-y-auto flex-1">
+                <div className="p-0 overflow-x-auto">
                     <table className="w-full text-left">
-                        <thead className="bg-gray-50 border-b border-gray-100 text-[10px] font-bold text-gray-400 uppercase tracking-widest sticky top-0 z-10">
-                            <tr><th className="p-3 pl-6">品名</th><th className="p-3 text-center">歩留</th><th className="p-3 pr-6 text-right">単価</th></tr>
+                        <thead className="bg-gray-50 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-widest">
+                            <tr>
+                                <th className="p-4 pl-6">メーカー / 品名 / サイズ</th>
+                                <th className="p-4 text-center">材質</th>
+                                <th className="p-4 text-center">銅分率 (歩留)</th>
+                                <th className="p-4 pr-6 text-right">本日の買取単価</th>
+                            </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50 text-sm">
-                            {data?.wires?.slice(0, 5).map((w: any) => (
-                                <tr key={w.id} className="hover:bg-red-50/30 transition cursor-pointer" onClick={() => onNavigate('DATABASE')}>
-                                    <td className="p-3 pl-6 font-bold text-gray-800">{getDisplayName(w)}</td>
-                                    <td className="p-3 text-center text-gray-500 font-bold">{w.ratio}%</td>
-                                    <td className="p-3 pr-6 text-right font-black text-lg text-[#D32F2F] tracking-tighter">{showAiData ? `¥${Math.floor(copperPrice * (w.ratio/100) * 0.85).toLocaleString()}` : '---'}</td>
+                            {data?.wires?.slice(0, 10).map((w: any) => (
+                                <tr key={w.id} className="hover:bg-red-50/30 transition">
+                                    <td className="p-4 pl-6 font-bold text-gray-800">
+                                        {w.maker && w.maker !== '-' ? `【${w.maker}】` : ''}{w.name} {w.sq !== '-' ? `${w.sq}sq` : ''} {w.core !== '-' ? `${w.core}C` : ''}
+                                    </td>
+                                    <td className="p-4 text-center text-gray-600">{w.material}</td>
+                                    <td className="p-4 text-center text-gray-900 font-bold font-mono">{w.ratio}%</td>
+                                    <td className="p-4 pr-6 text-right font-black text-xl text-[#D32F2F] tracking-tighter">
+                                        {showAiData ? `¥${Math.floor(copperPrice * (w.ratio/100) * 0.85).toLocaleString()}` : '---'}
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 </div>
             </div>
-
         </div>
 
         {/* ★ 下段 1カラムフル幅（リアルタイム稼働状況のカード型） */}
         <div className="px-2 mb-10 w-full">
             <div className="bg-white rounded-sm border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-[300px] relative group hover:border-[#D32F2F] hover:shadow-md transition-all">
                 <div className="absolute top-4 right-4 z-20"><ProvenanceBadge type="HUMAN" /></div>
-                <div className="p-5 border-b border-gray-100 bg-white flex justify-between items-center cursor-pointer transition pr-24 shrink-0" onClick={() => onNavigate('OPERATIONS')}>
-                    <h3 className="font-bold text-xs text-gray-500 flex items-center gap-3 tracking-widest uppercase">
+                <div className="p-6 border-b border-gray-100 bg-white cursor-pointer transition pr-24 shrink-0" onClick={() => onNavigate('OPERATIONS')}>
+                    <h3 className="font-black text-gray-900 tracking-wider text-lg flex items-center gap-3">
                         <span className="relative flex h-2.5 w-2.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#D32F2F] opacity-75"></span><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#D32F2F]"></span></span>
                         リアルタイム稼働状況 (現場カンバン)
                     </h3>
-                    <Icons.ArrowRight />
                 </div>
                 
                 <div className="p-6 bg-gray-50 flex-1 overflow-y-auto">
                     {activeReservations.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full text-gray-400 py-10">
-                            <Icons.Truck />
                             <p className="text-sm font-bold mt-3">本日の予定・処理待ちの荷物はありません</p>
                         </div>
                     ) : (
