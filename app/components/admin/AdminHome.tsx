@@ -17,12 +17,13 @@ const Icons = {
   ExternalLink: () => <svg className="w-3 h-3 ml-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
 };
 
-// ★ バッジのスタイル変更：文字サイズ12px、色を赤・黒・赤黒半々に変更
+// ★ バッジのスタイル変更：文字サイズ12px、色を赤・黒・ダークレッド（赤黒混色）に変更
 const ProvenanceBadge = ({ type }: { type: 'HUMAN' | 'AI_AUTO' | 'CO_OP' }) => {
   const baseStyle = "inline-block px-1.5 py-0.5 text-[12px] font-mono font-bold tracking-widest rounded-sm text-white cursor-default shadow-sm";
   switch (type) {
     case 'HUMAN': return <span className={`${baseStyle} bg-gray-900`} title="実測・確定データ">HUMAN</span>;
-    case 'CO_OP': return <span className={`${baseStyle} bg-gradient-to-r from-[#D32F2F] to-gray-900`} title="AI＋人間 協調データ">AI+HUMAN</span>;
+    // ★ 赤（#D32F2F）と黒（#111827）を混ぜたダークレッド
+    case 'CO_OP': return <span className={`${baseStyle} bg-[#7A1C1C]`} title="AI＋人間 協調データ">AI+HUMAN</span>;
     case 'AI_AUTO': return <span className={`${baseStyle} bg-[#D32F2F]`} title="AI予測・推論データ">AI</span>;
     default: return null;
   }
@@ -66,23 +67,6 @@ const getDisplayName = (w: any) => {
   if (w.sq && w.sq !== '-') name += ` ${w.sq}sq`;
   if (w.core && w.core !== '-') name += ` ${w.core}C`;
   return name;
-};
-
-const formatTime = (val: any) => {
-  if (!val) return '--:--';
-  try {
-    let d = new Date(val);
-    if (typeof val === 'string') d = new Date(val.replace(/-/g, '/'));
-    if (!isNaN(d.getTime())) {
-      return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
-    }
-    
-    const strVal = String(val);
-    const match = strVal.match(/(\d{1,2}):(\d{2})/);
-    if (match) return `${match[1].padStart(2, '0')}:${match[2]}`;
-    
-    return '--:--';
-  } catch(e) { return '--:--'; }
 };
 
 export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, localReservations: any[], onNavigate: any }) => {
@@ -239,7 +223,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
           <div>
             <h2 className="text-2xl font-black flex items-center gap-3 font-serif tracking-tight">
               <span className="w-1.5 h-6 bg-[#D32F2F] rounded-full"></span>
-              {/* ★ タイトル変更 */}
               主要指標・運用情報一覧
             </h2>
             <p className="text-xs text-gray-500 mt-2 font-mono tracking-widest ml-4 uppercase font-bold">経営概況および重要指標</p>
@@ -256,7 +239,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
           </div>
         </header>
 
-        {/* ★ 建値情報 */}
         <div className="mb-10 px-2 w-full">
           <div className={`transition-opacity duration-300 ${showAiData ? 'opacity-100' : 'opacity-20 grayscale pointer-events-none'}`}>
             <div className="flex xl:grid xl:grid-cols-5 gap-4 overflow-x-auto xl:overflow-visible no-scrollbar pb-4 xl:pb-0 snap-x w-full">
@@ -293,12 +275,11 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
           </div>
         </div>
 
-        {/* ★ 上段 3カラム（評価額 / 現場稼働 / 今月の生産実績） */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 px-2">
           
           <div className="bg-white p-6 md:p-8 rounded-sm border border-gray-200 shadow-sm flex flex-col justify-between group hover:border-[#D32F2F] hover:shadow-md transition-all relative overflow-hidden">
             <div className="absolute top-4 right-4 z-20"><ProvenanceBadge type="CO_OP" /></div>
-            <div className="absolute -right-4 -top-4 opacity-5 transform scale-150 group-hover:rotate-12 transition-transform duration-700"><Icons.Scale /></div>
+            <div className="absolute -right-4 -top-4 opacity-5 transform scale-150 group-hover:rotate-12 transition-transform duration-700 text-gray-900"><Icons.Scale /></div>
             <p className="text-xs font-bold text-gray-500 mb-4 uppercase tracking-widest flex items-center gap-2 relative z-10"><Icons.Scale /> 推定総在庫 評価額</p>
             <div className="flex items-baseline gap-2 mt-auto relative z-10">
               <span className="text-2xl font-light text-gray-400">¥</span>
@@ -345,7 +326,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
 
         </div>
 
-        {/* ★ 中段 3カラム（AI競合価格 / AIコンシェルジュ / 買取価格表） */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 px-2 mb-10">
             
             <div className={`bg-white rounded-sm border border-gray-200 shadow-sm p-6 md:p-8 flex flex-col cursor-pointer transition-all relative group ${showAiData ? 'hover:border-[#D32F2F] hover:shadow-md' : 'opacity-20 grayscale pointer-events-none'}`} onClick={() => showAiData && onNavigate('COMPETITOR')}>
@@ -439,7 +419,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                                 } catch(e){}
                                 
                                 return (
-                                    <div key={res.id} className="bg-white border border-gray-200 p-4 rounded-sm shadow-sm hover:border-[#D32F2F] transition-colors cursor-pointer" onClick={() => onNavigate('OPERATIONS')}>
+                                    <div key={res.id} className="bg-white border border-gray-200 p-4 rounded-sm shadow-sm hover:border-[#D32F2F] transition-colors cursor-pointer group" onClick={() => onNavigate('OPERATIONS')}>
                                         <div className="flex justify-between items-center mb-3">
                                             <div className="flex items-center gap-2">
                                                 <div className={`w-2 h-2 rounded-full ${res.status === 'PROCESSING' ? 'bg-gray-400' : 'bg-[#D32F2F] animate-pulse'}`}></div>
