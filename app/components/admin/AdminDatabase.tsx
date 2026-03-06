@@ -306,7 +306,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     return {};
   };
 
-  // ★ メモリ不足対応版 compressImage
   const compressImage = (file: File): Promise<string> => {
       return new Promise((resolve, reject) => {
           if (!file) return reject(new Error("ファイルがありません"));
@@ -316,14 +315,14 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
               img.onload = () => {
                   try {
                       const canvas = document.createElement('canvas');
-                      const MAX = 1024; // メモリ不足対策
+                      const MAX = 1024; 
                       let w = img.width; let h = img.height;
                       if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } } else { if (h > MAX) { w *= MAX / h; h = MAX; } }
                       canvas.width = w; canvas.height = h;
                       const ctx = canvas.getContext('2d'); 
                       if (!ctx) throw new Error("Canvas context error");
                       ctx.drawImage(img, 0, 0, w, h);
-                      resolve(canvas.toDataURL('image/jpeg', 0.7).split(',')[1]); // 画質を少し落として軽量化
+                      resolve(canvas.toDataURL('image/jpeg', 0.7).split(',')[1]); 
                   } catch (e) {
                       reject(new Error("画像の圧縮に失敗しました。解像度を下げてお試しください。"));
                   }
@@ -336,7 +335,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       });
   };
 
-  // 既存のマスターに対する画像アップロード
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, recordId: string, colIndex: number, sheetName: string) => {
       const file = e.target.files?.[0]; if (!file) return;
       setUploadingImageId(`${recordId}-${colIndex}`);
@@ -349,7 +347,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       setUploadingImageId(null); e.target.value = '';
   };
 
-  // ★ AIアシスト用の画像アップロード（4枚枠対応）
   const handleAiImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, num: 1 | 2 | 3 | 4) => {
     const file = e.target.files?.[0]; if (!file) return;
     try { 
@@ -427,7 +424,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     const progressInterval = setInterval(() => { setAiProgressStep(prev => { if (prev === 1) return 2; if (prev === 2) return 3; return 3; }); }, 2000);
     
     try {
-      // ★ imageData3, 4 も送る
       const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'VISION_AI_REGISTER', imageData: imgData1, imageData2: imgData2, imageData3: imgData3, imageData4: imgData4, hint: aiHint }) });
       const result = await res.json();
       
@@ -583,7 +579,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       } catch (e) { alert('通信エラーが発生しました。'); }
       setIsRunningBatch('NONE');
   };
-  const handleSaveSettings = () => {}; // ダミー
+  const handleSaveSettings = () => {}; 
 
   const renderTable = () => {
     if (activeTab === 'SETTINGS') {
@@ -616,7 +612,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                                 </button>
                             </div>
                         </div>
-                        {/* 市況データなどは省略せずそのまま表示 */}
                         <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 shadow-sm">
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                                 <div>
@@ -718,7 +713,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                                             {uploadingImageId === `${item.id}-${colIdx}` && <div className="absolute inset-0 bg-black/50 flex items-center justify-center"><Icons.Refresh /></div>}
                                         </div>
                                         <div className="flex gap-1 w-full">
-                                            {/* ★ 修正ポイント：handleAiImageUploadではなく、既存のhandleImageUploadを呼ぶ */}
+                                            {/* マスター一覧の画像更新もカメラとフォルダを分離 */}
                                             <label className={`flex-1 flex justify-center items-center py-1 rounded-sm cursor-pointer transition ${hasImage ? 'bg-gray-100 hover:bg-gray-200 text-gray-600' : 'bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200'}`} title="カメラで撮影"><Icons.Camera /><input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => handleImageUpload(e, item.id, colIdx, 'Products_Wire')} /></label>
                                             <label className={`flex-1 flex justify-center items-center py-1 rounded-sm cursor-pointer transition ${hasImage ? 'bg-gray-100 hover:bg-gray-200 text-gray-600' : 'bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200'}`} title="フォルダから選択"><Icons.UploadCloud /><input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, item.id, colIdx, 'Products_Wire')} /></label>
                                         </div>
@@ -905,7 +900,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         </div>
       </div>
 
-      {/* ★ AIアシストモーダル（4枚枠対応） */}
+      {/* ★ AIアシストモーダル（カメラとフォルダを完全分離） */}
       {isAiModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-gray-900 w-full max-w-4xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col">
@@ -951,17 +946,21 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                     </p>
 
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                        <div className="flex flex-col p-3 border-2 border-dashed border-gray-600 bg-gray-800/50 rounded-md">
-                            {imgData1 ? ( <div className="relative h-24"><img src={`data:image/jpeg;base64,${imgData1}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData1('')} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm"><Icons.Trash/></button></div> ) : ( <><p className="text-[10px] font-bold text-blue-400 mb-2">1. 断面 (必須)</p><input type="file" onChange={e=>handleAiImageUpload(e,1)} className="w-full text-white text-[10px]"/></> )}
+                        {/* 枠1 */}
+                        <div className="flex flex-col p-2 border-2 border-dashed border-gray-600 bg-gray-800/50 rounded-md h-28">
+                            {imgData1 ? ( <div className="relative w-full h-full"><img src={`data:image/jpeg;base64,${imgData1}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData1('')} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm shadow-md"><Icons.Trash/></button><span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">1.断面</span></div> ) : ( <><p className="text-[10px] font-bold text-blue-400 mb-1.5 text-center">1. 断面 (必須)</p><div className="flex gap-1.5 h-full"><label className="flex-1 bg-gray-700 hover:bg-gray-600 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-300 hover:text-white shadow-sm"><Icons.Camera /><span className="text-[8px] mt-1 font-bold">カメラ</span><input type="file" onChange={e=>handleAiImageUpload(e,1)} className="hidden" accept="image/*" capture="environment"/></label><label className="flex-1 bg-gray-700 hover:bg-gray-600 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-300 hover:text-white shadow-sm"><Icons.UploadCloud /><span className="text-[8px] mt-1 font-bold">フォルダ</span><input type="file" onChange={e=>handleAiImageUpload(e,1)} className="hidden" accept="image/*"/></label></div></> )}
                         </div>
-                        <div className="flex flex-col p-3 border-2 border-dashed border-gray-600 bg-gray-800/50 rounded-md">
-                            {imgData2 ? ( <div className="relative h-24"><img src={`data:image/jpeg;base64,${imgData2}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData2('')} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm"><Icons.Trash/></button></div> ) : ( <><p className="text-[10px] font-bold text-gray-300 mb-2">2. 全体・被覆 (任意)</p><input type="file" onChange={e=>handleAiImageUpload(e,2)} className="w-full text-white text-[10px]"/></> )}
+                        {/* 枠2 */}
+                        <div className="flex flex-col p-2 border-2 border-dashed border-gray-600 bg-gray-800/50 rounded-md h-28">
+                            {imgData2 ? ( <div className="relative w-full h-full"><img src={`data:image/jpeg;base64,${imgData2}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData2('')} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm shadow-md"><Icons.Trash/></button><span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">2.全体</span></div> ) : ( <><p className="text-[10px] font-bold text-gray-300 mb-1.5 text-center">2. 全体・被覆</p><div className="flex gap-1.5 h-full"><label className="flex-1 bg-gray-700 hover:bg-gray-600 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-300 hover:text-white shadow-sm"><Icons.Camera /><span className="text-[8px] mt-1 font-bold">カメラ</span><input type="file" onChange={e=>handleAiImageUpload(e,2)} className="hidden" accept="image/*" capture="environment"/></label><label className="flex-1 bg-gray-700 hover:bg-gray-600 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-300 hover:text-white shadow-sm"><Icons.UploadCloud /><span className="text-[8px] mt-1 font-bold">フォルダ</span><input type="file" onChange={e=>handleAiImageUpload(e,2)} className="hidden" accept="image/*"/></label></div></> )}
                         </div>
-                        <div className="flex flex-col p-3 border-2 border-dashed border-gray-600 bg-gray-800/50 rounded-md">
-                            {imgData3 ? ( <div className="relative h-24"><img src={`data:image/jpeg;base64,${imgData3}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData3('')} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm"><Icons.Trash/></button></div> ) : ( <><p className="text-[10px] font-bold text-gray-300 mb-2">3. 印字(引き) (任意)</p><input type="file" onChange={e=>handleAiImageUpload(e,3)} className="w-full text-white text-[10px]"/></> )}
+                        {/* 枠3 */}
+                        <div className="flex flex-col p-2 border-2 border-dashed border-gray-600 bg-gray-800/50 rounded-md h-28">
+                            {imgData3 ? ( <div className="relative w-full h-full"><img src={`data:image/jpeg;base64,${imgData3}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData3('')} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm shadow-md"><Icons.Trash/></button><span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">3.印字(引)</span></div> ) : ( <><p className="text-[10px] font-bold text-gray-300 mb-1.5 text-center">3. 印字(引き)</p><div className="flex gap-1.5 h-full"><label className="flex-1 bg-gray-700 hover:bg-gray-600 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-300 hover:text-white shadow-sm"><Icons.Camera /><span className="text-[8px] mt-1 font-bold">カメラ</span><input type="file" onChange={e=>handleAiImageUpload(e,3)} className="hidden" accept="image/*" capture="environment"/></label><label className="flex-1 bg-gray-700 hover:bg-gray-600 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-300 hover:text-white shadow-sm"><Icons.UploadCloud /><span className="text-[8px] mt-1 font-bold">フォルダ</span><input type="file" onChange={e=>handleAiImageUpload(e,3)} className="hidden" accept="image/*"/></label></div></> )}
                         </div>
-                        <div className="flex flex-col p-3 border-2 border-dashed border-gray-600 bg-gray-800/50 rounded-md">
-                            {imgData4 ? ( <div className="relative h-24"><img src={`data:image/jpeg;base64,${imgData4}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData4('')} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm"><Icons.Trash/></button></div> ) : ( <><p className="text-[10px] font-bold text-gray-300 mb-2">4. 印字(アップ) (任意)</p><input type="file" onChange={e=>handleAiImageUpload(e,4)} className="w-full text-white text-[10px]"/></> )}
+                        {/* 枠4 */}
+                        <div className="flex flex-col p-2 border-2 border-dashed border-gray-600 bg-gray-800/50 rounded-md h-28">
+                            {imgData4 ? ( <div className="relative w-full h-full"><img src={`data:image/jpeg;base64,${imgData4}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData4('')} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm shadow-md"><Icons.Trash/></button><span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">4.印字(寄)</span></div> ) : ( <><p className="text-[10px] font-bold text-gray-300 mb-1.5 text-center">4. 印字(寄)</p><div className="flex gap-1.5 h-full"><label className="flex-1 bg-gray-700 hover:bg-gray-600 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-300 hover:text-white shadow-sm"><Icons.Camera /><span className="text-[8px] mt-1 font-bold">カメラ</span><input type="file" onChange={e=>handleAiImageUpload(e,4)} className="hidden" accept="image/*" capture="environment"/></label><label className="flex-1 bg-gray-700 hover:bg-gray-600 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-300 hover:text-white shadow-sm"><Icons.UploadCloud /><span className="text-[8px] mt-1 font-bold">フォルダ</span><input type="file" onChange={e=>handleAiImageUpload(e,4)} className="hidden" accept="image/*"/></label></div></> )}
                         </div>
                     </div>
 
@@ -1053,12 +1052,13 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                                 <div className="flex flex-col items-center border border-gray-300 p-2 rounded-sm bg-white h-[66px] justify-center relative overflow-hidden group shadow-sm w-full">
                                     {editingItem._pendingImageData3 ? (
                                         <><img src={`data:image/jpeg;base64,${editingItem._pendingImageData3}`} className="absolute inset-0 w-full h-full object-cover opacity-60" /><span className="relative z-10 text-xs font-bold text-blue-700 bg-white/80 px-2 py-0.5 rounded-sm backdrop-blur-sm">✅ 撮影済</span><button onClick={() => setEditingItem({...editingItem, _pendingImageData3: null})} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm shadow-md z-20 hover:bg-red-700"><Icons.Trash /></button></>
-                                    ) : ( <div className="flex gap-1 w-full h-full"><label className="flex-1 cursor-pointer flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-500 hover:text-blue-600 transition border border-gray-200 rounded-sm" title="カメラ"><Icons.Camera /><span className="text-[8px] font-bold mt-1">剥線画像</span><input type="file" onChange={(e) => {
-                                        const file = e.target.files?.[0];
-                                        if(file){
-                                            compressImage(file).then(b64 => setEditingItem({...editingItem, _pendingImageData3: b64})).catch(e=>alert(e.message));
-                                        }
-                                    }} className="hidden" accept="image/*" capture="environment" /></label></div> )}
+                                    ) : ( 
+                                        <div className="flex gap-1 w-full h-full">
+                                            {/* ★ ここもカメラとフォルダを分離！ */}
+                                            <label className="flex-1 cursor-pointer flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-500 hover:text-blue-600 transition border border-gray-200 rounded-sm" title="カメラ"><Icons.Camera /><span className="text-[8px] font-bold mt-1">カメラ</span><input type="file" onChange={(e) => { const file = e.target.files?.[0]; if(file){ compressImage(file).then(b64 => setEditingItem({...editingItem, _pendingImageData3: b64})).catch(e=>alert(e.message)); } }} className="hidden" accept="image/*" capture="environment" /></label>
+                                            <label className="flex-1 cursor-pointer flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-500 hover:text-blue-600 transition border border-gray-200 rounded-sm" title="フォルダ"><Icons.UploadCloud /><span className="text-[8px] font-bold mt-1">フォルダ</span><input type="file" onChange={(e) => { const file = e.target.files?.[0]; if(file){ compressImage(file).then(b64 => setEditingItem({...editingItem, _pendingImageData3: b64})).catch(e=>alert(e.message)); } }} className="hidden" accept="image/*" /></label>
+                                        </div> 
+                                    )}
                                 </div>
                                 <div className="w-full"><label className="block text-[10px] font-bold text-gray-600 mb-1">全体重量(g)</label><input type="number" step="0.001" className="w-full border-none shadow-sm p-2 rounded-sm font-mono text-lg outline-none focus:ring-2 focus:ring-blue-500" value={sampleTotal} onChange={e => handleSampleTotalChange(e.target.value)} placeholder="0.000" /></div>
                                 <div className="w-full"><label className="block text-[10px] font-bold text-[#D32F2F] mb-1">純銅重量(g)</label><input type="number" step="0.001" className="w-full border-none shadow-sm p-2 rounded-sm font-mono text-lg outline-none focus:ring-2 focus:ring-red-500" value={sampleCopper} onChange={e => handleSampleCopperChange(e.target.value)} placeholder="0.000" /></div>
