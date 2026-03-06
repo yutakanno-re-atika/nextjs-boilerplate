@@ -35,7 +35,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   const [aiStatus, setAiStatus] = useState<'IDLE' | 'ANALYZING'>('IDLE');
   const [aiProgressStep, setAiProgressStep] = useState(0);
   
-  // ★ 画像枠を4枚に拡張
   const [imgData1, setImgData1] = useState<string>('');
   const [imgData2, setImgData2] = useState<string>('');
   const [imgData3, setImgData3] = useState<string>('');
@@ -53,9 +52,18 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   const [isListeningHint, setIsListeningHint] = useState(false);
   const hintRecognitionRef = useRef<any>(null);
 
-  const [simConfig, setSimConfig] = useState({ disposalCostPerKg: 40, laborCostPerHour: 3000, capacityPerHour: 150, targetMargin: 15 });
+  // ★ 真の製造原価シミュレーター設定（ボスと算出したリアルな数字をデフォルトに！）
+  const [simConfig, setSimConfig] = useState({ 
+      chipCostPerKg: 30,          // チップ処理費（円/kg）
+      juteCostPerKg: 50,          // ジュート処理費（円/kg）
+      laborCostPerHour: 2515,     // 真の時給（社保・賞与込）
+      powerCostPerHour: 1125,     // プラント電気代（円/h）
+      capacityPerHour: 150,       // ナゲット機処理能力（kg/h）
+      machineLossPercent: 1,      // 機械ロス（歩留まり低下率 %）
+      targetMargin: 15            // 目標粗利率（%）
+  });
 
-  const copperPrice = data?.market?.copper?.price || 1400;
+  const copperPrice = data?.market?.copper?.price || 2130; // リアル建値！
 
   const CATEGORIES = ['すべて', 'IV線', 'CV・電力線', 'VVF / VV (ネズミ線)', '制御・通信線', 'キャブタイヤ・雑線', 'その他'];
   const getCategory = (name: string) => {
@@ -87,7 +95,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       }
     } else {
       setCart([]); setSelectedClient(null); 
-      // リセット時に4枚ともクリア
       setImgData1(''); setImgData2(''); setImgData3(''); setImgData4(''); 
       setBulkTotalWeight(''); setAiHint('');
     }
@@ -113,7 +120,9 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
     setCart(prev => [...prev, { 
         id: newItemId, product: buildProductName(product), ratio: product.ratio, 
         weight: overrideWeight !== undefined ? overrideWeight : 0, percentage: 0,
-        conductor: product.conductor || '', material: product.material || '純銅'
+        conductor: product.conductor || '', material: product.material || '純銅',
+        // ★ カートにチップ割合（仮）を持たせる（マスターにあればそれを使用、なければざっくり85%と仮定）
+        chipRatio: product.chipRatio || 85 
     }]);
     setSearchTerm('');
   };
@@ -168,7 +177,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
     const progressInterval = setInterval(() => { setAiProgressStep(prev => prev < 3 ? prev + 1 : 3); }, 2000);
 
     try {
-      // ★ 画像3,4も一緒にバックエンドへ送る
       const res = await fetch('/api/gas', { 
           method: 'POST', headers: { 'Content-Type': 'application/json' }, 
           body: JSON.stringify({ action: 'VISION_AI_ASSESS', imageData: imgData1, imageData2: imgData2, imageData3: imgData3, imageData4: imgData4, hint: aiHint }) 
@@ -185,7 +193,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                 id: `ai-${Date.now()}`, product: displayName, ratio: result.data.estimatedRatio || 0, weight: 0, percentage: 0, 
                 isNewAi: result.data.isNewFlag, reason: result.data.reason || '', masterId: result.data.masterId, 
                 isMasterImageEmpty: result.data.isMasterImageEmpty, pendingImg1: imgData1, pendingImg2: imgData2, 
-                conductor: result.data.conductor || '', material: result.data.material || '純銅' 
+                conductor: result.data.conductor || '', material: result.data.material || '純銅', chipRatio: 85
             }, ...prev]);
             showToast(result.data.isNewFlag ? '未知線種を仮登録しました' : '既存マスターと一致', `「${wireTypeStr}」として査定しました。`, result.data.isNewFlag ? 'success' : 'info');
             setIsAiModalOpen(false); setImgData1(''); setImgData2(''); setImgData3(''); setImgData4(''); setAiHint(''); setAiProgressStep(0);
@@ -213,17 +221,14 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                 setBulkTotalWeight(Number(result.data.estimatedWeight));
             }
 
-            // ★ 顧客名の「厳密」マッチングロジック（ノイズ除去）
             let clientMatched = false;
             let foundClientName = '';
             if (result.data.clientName && data?.clients) {
                 foundClientName = result.data.clientName;
-                
-                // AIが読み取った名前から「株式会社」等の法人格やノイズ文字を完全に除去
                 const noiseRegex = /(株式会社|有限会社|合同会社|\(株\)|\(有\)|\(同\)|㈱|㈲|㈾|営業所|支店|現場|\s|　)/g;
                 const cleanAiName = foundClientName.replace(noiseRegex, '').toLowerCase();
 
-                if (cleanAiName.length >= 2) { // 誤爆を防ぐため最低2文字以上で照合
+                if (cleanAiName.length >= 2) { 
                     const matchedClient = data.clients.find((c:any) => {
                         const cleanDbName = c.name.replace(noiseRegex, '').toLowerCase();
                         return cleanDbName && (cleanAiName.includes(cleanDbName) || cleanDbName.includes(cleanAiName));
@@ -238,7 +243,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
             const newCartItems = (result.data.components || []).map((comp: any, idx: number) => ({
                 id: `bulk-${Date.now()}-${idx}`, product: `📦 AI解析: ${comp.name || '不明'}`,
                 ratio: comp.copperYield || comp.ratio || 0, weight: 0, percentage: comp.mixPercentage || comp.percentage || 0,
-                isNewAi: true, reason: idx === 0 ? result.data.reason : '', material: '純銅' 
+                isNewAi: true, reason: idx === 0 ? result.data.reason : '', material: '純銅', chipRatio: 85
             }));
             
             setCart(newCartItems);
@@ -352,20 +357,57 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       });
   }, [data, selectedCategory, selectedMaker, searchTerm]);
 
+  // ★ 究極の「真の原価・限界単価シミュレーション」
   const simulation = useMemo(() => {
-    let totalWeight = 0; let cuWeight = 0;
+    let totalWeight = 0; 
+    let cuWeight = 0;
+    let totalChipWeight = 0;
+
     cart.forEach(item => {
       const w = posMode === 'BULK' ? (Number(bulkTotalWeight) || 0) * ((Number(item.percentage) || 0) / 100) : (Number(item.weight) || 0);
       const r = Number(item.ratio) || 0;
-      totalWeight += w; cuWeight += w * (r / 100);
+      
+      totalWeight += w; 
+      
+      // 1%の機械ロスを考慮した「実回収できる銅重量」
+      const effectiveRatio = r * (1 - (simConfig.machineLossPercent / 100));
+      cuWeight += w * (effectiveRatio / 100);
+
+      // ゴミ（被覆等）の総重量を計算し、チップとジュートに分解
+      const wasteW = w * (1 - (r / 100));
+      const chipRatio = item.chipRatio || 85; // デフォルト85%をチップとする
+      totalChipWeight += wasteW * (chipRatio / 100);
     });
-    const wasteWeight = totalWeight - cuWeight; const grossCuValue = cuWeight * copperPrice; 
-    const disposalCost = wasteWeight * simConfig.disposalCostPerKg; const processingHours = totalWeight / simConfig.capacityPerHour; 
-    const laborCost = processingHours * simConfig.laborCostPerHour; const targetProfitAmount = grossCuValue * (simConfig.targetMargin / 100); 
-    let limitTotalCost = grossCuValue - disposalCost - laborCost - targetProfitAmount; if (limitTotalCost < 0) limitTotalCost = 0;
-    const limitUnitPrice = totalWeight > 0 ? Math.floor(limitTotalCost / totalWeight) : 0;
+
     const expectedYield = totalWeight > 0 ? (cuWeight / totalWeight) * 100 : 0;
-    return { totalWeight, cuWeight, wasteWeight, grossCuValue, disposalCost, laborCost, targetProfitAmount, limitTotalCost, limitUnitPrice, processingHours, expectedYield };
+    
+    // ゴミ内訳
+    const totalWasteWeight = totalWeight - cuWeight; // ロスした銅はゴミ側に回る
+    const juteWeight = totalWasteWeight - totalChipWeight;
+
+    // 産廃処理コスト（チップとジュートを分ける！）
+    const disposalCost = (totalChipWeight * simConfig.chipCostPerKg) + (juteWeight * simConfig.juteCostPerKg);
+
+    // 工場稼働コスト（電気代＋真の時給）
+    const processingHours = totalWeight / simConfig.capacityPerHour; 
+    const laborCost = processingHours * simConfig.laborCostPerHour; 
+    const powerCost = processingHours * simConfig.powerCostPerHour;
+    const totalFactoryCost = laborCost + powerCost;
+
+    const grossCuValue = cuWeight * copperPrice; 
+    const targetProfitAmount = grossCuValue * (simConfig.targetMargin / 100); 
+    
+    // 限界コスト（絶対に赤字にならないボーダー）
+    let limitTotalCost = grossCuValue - disposalCost - totalFactoryCost - targetProfitAmount; 
+    if (limitTotalCost < 0) limitTotalCost = 0;
+    
+    const limitUnitPrice = totalWeight > 0 ? Math.floor(limitTotalCost / totalWeight) : 0;
+    
+    return { 
+        totalWeight, cuWeight, totalWasteWeight, totalChipWeight, juteWeight,
+        grossCuValue, disposalCost, laborCost, powerCost, totalFactoryCost, targetProfitAmount, 
+        limitTotalCost, limitUnitPrice, processingHours, expectedYield 
+    };
   }, [cart, copperPrice, simConfig, posMode, bulkTotalWeight]);
 
   const totalPercentage = cart.reduce((sum, item) => sum + (Number(item.percentage) || 0), 0);
@@ -571,31 +613,44 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           )}
         </div>
 
+        {/* ★ 真の製造原価シミュレーター表示エリア */}
         <div className={`bg-[#111111] text-white p-3 border-t-4 relative shrink-0 ${hasTinPlated ? 'border-red-500' : 'border-blue-600'}`}>
           <div className="flex justify-between items-center mb-2">
-            <h3 className="font-bold text-xs tracking-widest text-gray-300 flex items-center gap-1">参考買取シミュレーション</h3>
-            <button onClick={() => setShowSimDetails(!showSimDetails)} className="text-gray-400 hover:text-white flex items-center gap-1 text-[9px] bg-gray-800 px-1.5 py-0.5 rounded-sm transition"><Icons.Settings /> 設定</button>
+            <h3 className="font-bold text-xs tracking-widest text-gray-300 flex items-center gap-1">真の限界買取シミュレーション</h3>
+            <button onClick={() => setShowSimDetails(!showSimDetails)} className="text-gray-400 hover:text-white flex items-center gap-1 text-[9px] bg-gray-800 px-1.5 py-0.5 rounded-sm transition"><Icons.Settings /> コスト設定</button>
           </div>
 
           {showSimDetails && (
-            <div className="grid grid-cols-3 gap-1.5 mb-2 bg-gray-800 p-2 rounded-sm border border-gray-700">
-              <div><label className="block text-[9px] text-gray-400 mb-0.5">産廃処分(円)</label><input type="number" className="w-full bg-gray-900 border-gray-600 rounded-sm p-1 text-xs text-right" value={simConfig.disposalCostPerKg} onChange={e => setSimConfig({...simConfig, disposalCostPerKg: Number(e.target.value)})} /></div>
-              <div><label className="block text-[9px] text-gray-400 mb-0.5">工場コスト(円)</label><input type="number" className="w-full bg-gray-900 border-gray-600 rounded-sm p-1 text-xs text-right" value={simConfig.laborCostPerHour} onChange={e => setSimConfig({...simConfig, laborCostPerHour: Number(e.target.value)})} /></div>
-              <div><label className="block text-[9px] text-blue-400 mb-0.5">利益率(%)</label><input type="number" className="w-full bg-blue-900/30 border-blue-500 text-blue-100 font-bold rounded-sm p-1 text-xs text-right" value={simConfig.targetMargin} onChange={e => setSimConfig({...simConfig, targetMargin: Number(e.target.value)})} /></div>
+            <div className="mb-2 bg-gray-800 p-2 rounded-sm border border-gray-700 space-y-2">
+              <div className="grid grid-cols-2 gap-1.5">
+                  <div><label className="block text-[9px] text-gray-400 mb-0.5">チップ処分(円/kg)</label><input type="number" className="w-full bg-gray-900 border-gray-600 rounded-sm p-1 text-xs text-right text-gray-300" value={simConfig.chipCostPerKg} onChange={e => setSimConfig({...simConfig, chipCostPerKg: Number(e.target.value)})} /></div>
+                  <div><label className="block text-[9px] text-gray-400 mb-0.5">ジュート処分(円/kg)</label><input type="number" className="w-full bg-gray-900 border-gray-600 rounded-sm p-1 text-xs text-right text-gray-300" value={simConfig.juteCostPerKg} onChange={e => setSimConfig({...simConfig, juteCostPerKg: Number(e.target.value)})} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-1.5">
+                  <div><label className="block text-[9px] text-gray-400 mb-0.5">真の時給(円)</label><input type="number" className="w-full bg-gray-900 border-gray-600 rounded-sm p-1 text-xs text-right text-gray-300" value={simConfig.laborCostPerHour} onChange={e => setSimConfig({...simConfig, laborCostPerHour: Number(e.target.value)})} /></div>
+                  <div><label className="block text-[9px] text-gray-400 mb-0.5">機械ロス率(%)</label><input type="number" className="w-full bg-gray-900 border-gray-600 rounded-sm p-1 text-xs text-right text-red-400 font-bold" value={simConfig.machineLossPercent} onChange={e => setSimConfig({...simConfig, machineLossPercent: Number(e.target.value)})} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-1.5">
+                  <div><label className="block text-[9px] text-blue-400 mb-0.5">目標利益率(%)</label><input type="number" className="w-full bg-blue-900/30 border-blue-500 text-blue-100 font-bold rounded-sm p-1 text-xs text-right" value={simConfig.targetMargin} onChange={e => setSimConfig({...simConfig, targetMargin: Number(e.target.value)})} /></div>
+                  <div className="text-[9px] text-gray-500 flex flex-col justify-end text-right pb-1">※電気代: ¥{simConfig.powerCostPerHour}/h<br/>※能力: {simConfig.capacityPerHour}kg/h</div>
+              </div>
             </div>
           )}
 
           <div className="flex justify-between items-end mb-3">
             <div>
-              <p className="text-[9px] text-gray-400 font-bold mb-0.5">参考単価</p>
-              <div className="flex items-baseline gap-0.5"><span className="text-2xl font-black font-mono text-white leading-none">¥{simulation.limitUnitPrice.toLocaleString()}</span><span className="text-[10px] text-gray-400 font-bold">/kg</span></div>
+              <p className="text-[9px] text-gray-400 font-bold mb-0.5">絶対に赤字にならない限界単価</p>
+              <div className="flex items-baseline gap-0.5"><span className="text-3xl font-black font-mono text-white leading-none">¥{simulation.limitUnitPrice.toLocaleString()}</span><span className="text-[10px] text-gray-400 font-bold">/kg</span></div>
             </div>
             <div className="text-right flex flex-col items-end">
               <p className="text-[10px] text-gray-400 font-bold">総重量: {simulation.totalWeight.toFixed(1)}kg</p>
-              {posMode === 'BULK' && simulation.totalWeight > 0 && (
-                  <p className="text-[10px] text-blue-300 mt-0.5">平均銅分: <span className="font-mono">{simulation.expectedYield.toFixed(1)}%</span></p>
+              {simulation.totalWeight > 0 && (
+                  <>
+                    <p className="text-[10px] text-blue-300 mt-0.5">実回収銅: <span className="font-mono">{simulation.cuWeight.toFixed(1)}kg ({simulation.expectedYield.toFixed(1)}%)</span></p>
+                    <p className="text-[10px] text-red-300 mt-0.5 flex gap-2"><span>C: {simulation.totalChipWeight.toFixed(1)}kg</span><span>ごみ: {simulation.juteWeight.toFixed(1)}kg</span></p>
+                  </>
               )}
-              <p className="text-lg font-bold font-mono text-white mt-0.5">計 ¥{simulation.limitTotalCost.toLocaleString()}</p>
+              <p className="text-lg font-bold font-mono text-white mt-1 border-t border-gray-700 pt-1">予算上限 ¥{simulation.limitTotalCost.toLocaleString()}</p>
             </div>
           </div>
 
@@ -608,7 +663,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         </div>
       </div>
 
-      {/* 単一AIモーダル（★画像4枚枠に拡張） */}
+      {/* 単一AIモーダル（画像4枚枠） */}
       {isAiModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-gray-900 w-full max-w-4xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col max-h-[90vh]">
@@ -624,7 +679,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                 </div>
               ) : (
                 <div className="animate-in fade-in">
-                    {/* ★ 4枚の画像グリッド */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                         <div className="flex flex-col p-3 border-2 border-dashed border-gray-600 bg-gray-800/50 rounded-md">
                             {imgData1 ? ( <div className="relative h-24"><img src={`data:image/jpeg;base64,${imgData1}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData1('')} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm"><Icons.Trash/></button></div> ) : ( <><p className="text-[10px] font-bold text-blue-400 mb-2">1. 断面 (必須)</p><input type="file" onChange={e=>handleAiImageUpload(e,1)} className="w-full text-white text-[10px]"/></> )}
