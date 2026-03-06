@@ -15,7 +15,9 @@ const Icons = {
     Refresh: () => <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
     Brain: () => <svg className="w-4 h-4 inline-block mr-1" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 18a8 8 0 110-16 8 8 0 010 16zm1-11h-2v2h2V9zm0 4h-2v6h2v-6z" /></svg>,
     Camera: () => <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
-    UploadCloud: () => <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+    UploadCloud: () => <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>,
+    // ★ クラッシュ防止のため追加
+    Check: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
 };
 
 const ProvenanceBadge = ({ type }: { type: 'HUMAN' | 'AI_AUTO' | 'CO_OP' }) => {
@@ -257,7 +259,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
         });
     };
 
-    // ★ 修正：ファイルピッカーが確実に開くように label 経由での発火に変更、さらに1秒スリープを追加
     const handleMultiPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
         if (files.length === 0) return;
@@ -297,7 +298,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                         newUrls.push(result.url);
                     } else { alert(`画像 ${i+1}枚目のアップロード失敗: ` + result.message); }
 
-                    // ★ GASへの過負荷（Too many concurrent requests）を防ぐための安全なスリープ処理
                     if (i < files.length - 1) {
                         await new Promise(resolve => setTimeout(resolve, 1000));
                     }
@@ -410,181 +410,3 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                             <span className="font-bold">累計対応数: {data?.chatStats?.total || 0} 件</span>
                             <button onClick={async (e) => {
                                 const btn = e.currentTarget; const originalText = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<span class="animate-spin mr-1">↻</span> トレーニング中...';
-                                try {
-                                    const res = await fetch('/api/simulate', { method: 'POST' }); const simData = await res.json();
-                                    if(simData.success) { alert("仮想トレーニング完了！\n\n【ペルソナ】\n" + simData.persona + "\n\n【生成された会話】\n" + simData.chatHistory); window.location.reload(); } else { alert("エラー: " + simData.message); }
-                                } catch(err) { alert("通信エラーが発生しました。"); }
-                                btn.disabled = false; btn.innerHTML = originalText;
-                            }} className="bg-gray-900 hover:bg-black text-white px-3 py-1.5 rounded-sm text-[10px] font-bold shadow-sm transition flex items-center gap-1 disabled:opacity-50">
-                                <Icons.Brain /> 仮想トレーニング実行
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 px-2 mb-10">
-                    <div className="xl:col-span-2 space-y-8">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            
-                            <div className={`group bg-white rounded-sm border border-gray-200 shadow-sm p-6 md:p-8 flex flex-col cursor-pointer transition-all relative ${showAiData ? 'hover:border-[#D32F2F] hover:shadow-md' : 'opacity-20 grayscale pointer-events-none'}`} onClick={() => showAiData && onNavigate('COMPETITOR')}>
-                                <div className="absolute top-4 right-4 z-20"><ProvenanceBadge type="AI_AUTO" /></div>
-                                <div className="flex justify-between items-start mb-6"><h3 className="font-bold text-gray-900 flex items-center gap-2 text-sm"><Icons.Radar /> AI 競合価格勝敗</h3></div>
-                                <div className="flex-1 flex flex-col justify-center">
-                                    <div className="flex items-end justify-between mb-3"><span className="text-xs text-gray-500 font-bold mb-1">自社優勢 (Win)</span><span className="text-4xl font-black text-gray-900 tracking-tighter">{win}</span></div>
-                                    <div className="w-full bg-gray-100 h-3 rounded-sm overflow-hidden mb-4 border border-gray-200 shadow-inner"><div className="h-full bg-gray-900 transition-all duration-1000" style={{ width: `${(win / Math.max(1, win + lose + draw)) * 100}%` }}></div></div>
-                                    <div className="flex justify-between text-xs font-bold text-gray-500"><span>同値: {draw}</span><span>劣勢: {lose}</span></div>
-                                </div>
-                            </div>
-
-                            <div className="group bg-white rounded-sm border border-gray-200 shadow-sm p-6 md:p-8 flex flex-col cursor-pointer hover:border-[#D32F2F] hover:shadow-md transition-all relative" onClick={() => onNavigate('PRODUCTION')}>
-                                <div className="absolute top-4 right-4 z-20 flex gap-1"><ProvenanceBadge type="HUMAN" /></div>
-                                <div className="flex justify-between items-start mb-6"><h3 className="font-bold text-gray-900 flex items-center gap-2 text-sm"><Icons.Factory /> 今月の生産実績</h3><Icons.ArrowRight /></div>
-                                <div className="flex-1 flex flex-col justify-center gap-6">
-                                    <div className="flex items-center justify-between border-l-4 border-gray-900 pl-4 py-1">
-                                        <div><p className="text-xs text-gray-500 font-bold mb-1">ピカ銅 生産量</p><div className="flex items-baseline gap-1"><span className="text-2xl font-black text-gray-900">{mCopper.toLocaleString()}</span><span className="text-xs text-gray-400 font-bold">kg</span></div></div>
-                                        <div className="text-right"><p className="text-xs text-gray-500 font-bold mb-1">月末予測 <span className="ml-1"><ProvenanceBadge type="AI_AUTO" /></span></p><div className="flex items-baseline gap-1 justify-end"><span className={`text-xl font-black ${showAiData ? 'text-[#D32F2F]' : 'text-gray-300'}`}>{showAiData ? projectedCopper.toLocaleString() : '---'}</span><span className="text-xs text-gray-400 font-bold">kg</span></div></div>
-                                    </div>
-                                    <div className="bg-gray-50 p-4 rounded-sm border border-gray-200 flex justify-between items-center">
-                                        <span className="text-xs text-gray-500 font-bold">マスター比 乖離 (直近10件)</span>
-                                        <div className="flex items-baseline gap-1 bg-white px-3 py-1 rounded-sm shadow-sm border border-gray-100">
-                                            <span className={`text-xl font-black tracking-tighter ${yieldStats.isPositive ? 'text-gray-900' : 'text-[#D32F2F]'}`}>{yieldStats.isPositive ? '+' : ''}{yieldStats.diff.toFixed(1)}</span><span className="text-xs text-gray-500 font-bold">%</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="bg-white rounded-sm border border-gray-200 shadow-sm overflow-hidden group hover:border-gray-300 transition-colors h-fit relative">
-                            <div className="absolute top-4 right-4 z-20"><ProvenanceBadge type="CO_OP" /></div>
-                            <div className="p-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center cursor-pointer pr-24" onClick={() => onNavigate('DATABASE')}>
-                                <h3 className="font-bold text-sm text-gray-900 flex items-center gap-2">本日の買取価格表 <span className="text-xs text-gray-400 font-normal">(主要品目)</span></h3><Icons.ArrowRight />
-                            </div>
-                            <div className="p-0 overflow-x-auto pb-2">
-                                <table className="w-full text-left mb-2">
-                                    <thead className="bg-white border-b border-gray-100 text-xs font-bold text-gray-400 uppercase tracking-widest">
-                                        <tr><th className="p-4 pl-6">品名</th><th className="p-4 text-center">設定歩留まり</th><th className="p-4 pr-6 text-right">買取単価</th></tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-50 text-sm">
-                                        {data?.wires?.slice(0, 5).map((w: any) => (
-                                            <tr key={w.id} className="hover:bg-gray-50 transition cursor-pointer" onClick={() => onNavigate('DATABASE')}>
-                                                <td className="p-4 pl-6 font-bold text-gray-800">{getDisplayName(w)}</td>
-                                                <td className="p-4 text-center text-gray-500 font-bold">{w.ratio}% <span className="ml-1"><ProvenanceBadge type="HUMAN" /></span></td>
-                                                <td className="p-4 pr-6 text-right font-black text-xl text-[#D32F2F] tracking-tighter">{showAiData ? `¥${Math.floor(copperPrice * (w.ratio/100) * 0.85).toLocaleString()}` : '---'}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="space-y-8">
-                        <div className="bg-white rounded-sm border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-[500px] relative">
-                            <div className="absolute top-4 right-4 z-20"><ProvenanceBadge type="HUMAN" /></div>
-                            <div className="p-5 border-b border-gray-200 bg-[#111] text-white flex justify-between items-center cursor-pointer group transition pr-24" onClick={() => onNavigate('OPERATIONS')}>
-                                <h3 className="font-bold text-sm flex items-center gap-3 tracking-widest">
-                                    <span className="relative flex h-2.5 w-2.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#D32F2F] opacity-75"></span><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#D32F2F]"></span></span>
-                                    リアルタイム稼働状況
-                                </h3>
-                                <Icons.ArrowRight />
-                            </div>
-                            <div className="p-6 overflow-y-auto flex-1 bg-white">
-                                {activeReservations.length === 0 ? (
-                                    <div className="p-10 text-center text-gray-400 text-sm font-bold flex flex-col items-center gap-3"><Icons.Truck />本日の予定はありません</div>
-                                ) : (
-                                    <ul className="space-y-0">
-                                        {activeReservations.map((res: any) => {
-                                            let w = 0; let p = "品目不明";
-                                            try { 
-                                                let items = res.items; 
-                                                if (typeof items === 'string') items = JSON.parse(items); 
-                                                if (Array.isArray(items) && items.length > 0) { 
-                                                    w = items.reduce((s:number, i:any) => s + (Number(i.weight)||0), 0); 
-                                                    p = items[0].product || items[0].productName; 
-                                                    if(items.length > 1) p += " 他"; 
-                                                } 
-                                            } catch(e){}
-                                            
-                                            return (
-                                                <li key={res.id} className="relative pl-6 pb-8 last:pb-0 group cursor-pointer" onClick={() => onNavigate('OPERATIONS')}>
-                                                    <div className="absolute left-[7px] top-3 w-px h-full bg-gray-200 group-last:hidden"></div>
-                                                    <div className={`absolute left-0 top-1.5 w-4 h-4 rounded-full border-2 border-white ${res.status === 'PROCESSING' ? 'bg-gray-400' : 'bg-[#D32F2F] animate-pulse'} shadow-sm ring-1 ring-gray-100 z-10`}></div>
-                                                    <div className="bg-white border border-gray-100 p-4 rounded-sm shadow-sm group-hover:border-[#D32F2F] transition-colors ml-4 -mt-2">
-                                                        <div className="flex justify-between items-center mb-2">
-                                                            <span className="text-xs font-bold text-gray-500 bg-gray-50 px-2 py-0.5 rounded-sm border border-gray-100">
-                                                                {formatTime(res.createdAt || res.visitDate)}
-                                                            </span>
-                                                            <span className="text-[10px] font-mono text-gray-400">{res.id}</span>
-                                                        </div>
-                                                        <p className="font-black text-base text-gray-900 mb-1 truncate">{res.memberName}</p>
-                                                        <p className="text-xs text-gray-600 font-bold flex items-center justify-between"><span>{p}</span><span className="font-black text-[#D32F2F] text-lg">{w} <span className="text-xs font-normal text-gray-400">kg</span></span></p>
-                                                    </div>
-                                                </li>
-                                            )
-                                        })}
-                                    </ul>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="px-2 mb-10 w-full">
-                    <div className="bg-white border border-gray-200 shadow-sm rounded-sm p-6 relative overflow-hidden">
-                        <div className="absolute top-4 right-4 z-20"><ProvenanceBadge type="HUMAN" /></div>
-                        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-4">
-                            <div>
-                                <h3 className="font-bold text-gray-900 flex items-center gap-2 text-base">
-                                    <Icons.Camera /> 広報・現場写真アップロード
-                                </h3>
-                                <p className="text-xs text-gray-500 mt-1">
-                                    撮影した写真をGoogle Driveに保存します。一括アップロードに対応しました。
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* ★ 修正：label要素を使った直接起動に変更（機能不全対策） */}
-                        <div className="flex gap-3 mb-4">
-                            <label className={`flex-1 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 py-6 rounded-sm font-bold flex flex-col items-center justify-center gap-2 transition cursor-pointer ${isUploadingPhoto ? 'opacity-50 pointer-events-none' : ''}`}>
-                                <Icons.Camera />
-                                <span className="text-sm">カメラで撮影</span>
-                                <input type="file" accept="image/*" capture="environment" onChange={handleMultiPhotoUpload} className="hidden" disabled={isUploadingPhoto} />
-                            </label>
-                            
-                            <label className={`flex-1 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 py-6 rounded-sm font-bold flex flex-col items-center justify-center gap-2 transition cursor-pointer ${isUploadingPhoto ? 'opacity-50 pointer-events-none' : ''}`}>
-                                <Icons.UploadCloud />
-                                <span className="text-sm">フォルダから複数選択</span>
-                                <input type="file" accept="image/*" multiple onChange={handleMultiPhotoUpload} className="hidden" disabled={isUploadingPhoto} />
-                            </label>
-                        </div>
-
-                        {isUploadingPhoto && (
-                            <div className="text-center p-4 bg-gray-50 border border-gray-200 rounded-sm">
-                                <div className="text-blue-500 animate-spin mb-2 flex justify-center"><Icons.Refresh /></div>
-                                <p className="text-sm font-bold text-gray-700">自動圧縮＆送信中... ({uploadProgress.current} / {uploadProgress.total} 枚)</p>
-                                <div className="w-full bg-gray-200 h-2 mt-3 rounded-full overflow-hidden">
-                                    <div className="bg-blue-500 h-full transition-all duration-300" style={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }}></div>
-                                </div>
-                            </div>
-                        )}
-
-                        {!isUploadingPhoto && uploadedPhotoUrls.length > 0 && (
-                            <div className="p-4 bg-green-50 border border-green-200 rounded-sm">
-                                <div className="flex items-center gap-2 mb-2 text-green-700">
-                                    <Icons.Check />
-                                    <span className="font-bold text-sm">{uploadedPhotoUrls.length}枚のアップロード完了！</span>
-                                </div>
-                                <ul className="text-xs text-blue-600 space-y-1">
-                                    {uploadedPhotoUrls.map((url, idx) => (
-                                        <li key={idx} className="truncate"><a href={url} target="_blank" rel="noopener noreferrer" className="hover:underline">📎 画像 {idx+1}</a></li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-            </div>
-        </div>
-    );
-};
