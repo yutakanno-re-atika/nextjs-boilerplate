@@ -5,15 +5,8 @@ const Icons = {
   TrendingUp: () => <svg className="w-4 h-4 text-[#D32F2F]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>,
   TrendingDown: () => <svg className="w-4 h-4 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>,
   Minus: () => <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M20 12H4" /></svg>,
-  Truck: () => <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4-4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>,
-  Radar: () => <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>,
-  Factory: () => <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>,
-  Scale: () => <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>,
-  ArrowRight: () => <svg className="w-5 h-5 text-gray-300 group-hover:text-[#D32F2F] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>,
-  Message: () => <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>,
   Print: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>,
   Refresh: () => <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
-  Brain: () => <svg className="w-4 h-4 inline-block mr-1" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 18a8 8 0 110-16 8 8 0 010 16zm1-11h-2v2h2V9zm0 4h-2v6h2v-6z" /></svg>,
   ExternalLink: () => <svg className="w-3 h-3 ml-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>,
   Calculator: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
 };
@@ -180,6 +173,40 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
     };
   }, [data?.productions, data?.wires]);
 
+  // ★ 新規追加：価格ルールと自社単価の計算ロジック
+  const pricingRules = useMemo(() => {
+    if (data?.config?.pricing_rules) {
+      try { return JSON.parse(data.config.pricing_rules); } catch(e) {}
+    }
+    return {};
+  }, [data?.config?.pricing_rules]);
+
+  const getMyPrice = (item: string) => {
+    const rule = pricingRules[item];
+    if (!rule) return 0;
+    let basePrice = rule.base === 'brass' ? brassPrice : copperPrice;
+    return Math.floor(basePrice * (Number(rule.ratio) / 100)) + Number(rule.offset);
+  };
+
+  // ★ 新規追加：他社スニッフィングデータの最新抽出
+  const latestCompetitorData = useMemo(() => {
+    const comps = data?.competitorPrices || [];
+    const latestComps: Record<string, any> = {};
+    comps.forEach((c: any) => {
+      if (!latestComps[c.name] || new Date(c.date) > new Date(latestComps[c.name].date)) {
+        latestComps[c.name] = c;
+      }
+    });
+    return Object.values(latestComps).map(c => {
+      let p = {};
+      try { 
+        p = typeof c.prices === 'string' ? JSON.parse(c.prices) : c.prices; 
+        if (typeof p === 'string') p = JSON.parse(p);
+      } catch(e) {}
+      return { name: c.name, date: c.date, prices: p };
+    });
+  }, [data?.competitorPrices]);
+
   const { win, lose, draw } = useMemo(() => {
     const comps = data?.competitorPrices || [];
     let win = 0, lose = 0, draw = 0;
@@ -251,7 +278,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
           </div>
         </header>
 
-        {/* ★ 追加：買取価格算出ロジック表示パネル */}
         <div className="mb-8 px-2 w-full">
           <div className="bg-gray-50 border border-gray-200 rounded-sm p-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-sm group hover:border-[#D32F2F] transition-colors">
             <div className="flex items-center gap-3">
@@ -272,7 +298,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
           </div>
         </div>
 
-        {/* ★ 建値情報 */}
         <div className="mb-10 px-2 w-full">
           <div className={`transition-opacity duration-300 ${showAiData ? 'opacity-100' : 'opacity-20 grayscale pointer-events-none'}`}>
             <div className="flex xl:grid xl:grid-cols-5 gap-4 overflow-x-auto xl:overflow-visible no-scrollbar pb-4 xl:pb-0 snap-x w-full">
@@ -309,7 +334,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
           </div>
         </div>
 
-        {/* ★ 上段 3カラム（評価額 / 現場稼働 / AIコンシェルジュ稼働） */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 px-2">
           
           <div className="bg-white p-6 md:p-8 rounded-sm border border-gray-200 shadow-sm flex flex-col justify-between group hover:border-[#D32F2F] hover:shadow-md transition-all relative overflow-hidden">
@@ -320,7 +344,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
               <span className={`text-5xl md:text-6xl font-black tracking-tighter transition-colors ${showAiData ? 'text-gray-900' : 'text-gray-300'}`}>{showAiData ? inventoryValue.toLocaleString() : '---'}</span>
             </div>
             <div className="mt-5 pt-4 border-t border-gray-100 text-xs text-gray-600 font-mono relative z-10 flex justify-between items-center">
-              <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 bg-[#D32F2F] rounded-full animate-pulse"></span>銅換算在庫 <span className="ml-2"><ProvenanceBadge type="HUMAN" /></span></span>
+              <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 bg-[#D32F2F] rounded-full animate-pulse"></span>銅換算在庫</span>
               <span className="font-bold text-gray-900 text-sm">{totalCopperStock.toLocaleString()} kg</span>
             </div>
           </div>
@@ -341,33 +365,26 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
             </div>
           </div>
 
-          <div className={`bg-white p-6 md:p-8 rounded-sm border border-gray-200 shadow-sm flex flex-col justify-between relative overflow-hidden group transition-all duration-300 hover:border-[#D32F2F] hover:shadow-md ${showAiData ? 'opacity-100' : 'opacity-20 grayscale pointer-events-none'}`}>
-            <div className="absolute top-4 right-4 z-20"><ProvenanceBadge type="AI_AUTO" /></div>
-            <h3 className="font-black text-gray-900 tracking-wider text-lg mb-6 relative z-10 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#D32F2F] animate-pulse"></span>AIコンシェルジュ稼働
-            </h3>
-            <div className="flex items-baseline gap-2 mt-auto relative z-10">
-                <span className="text-5xl md:text-6xl font-black text-gray-900 tracking-tighter">{data?.chatStats?.today || 0}</span>
-                <span className="text-sm font-bold text-gray-600">件の対応</span>
-            </div>
-            <div className="mt-5 pt-4 border-t border-gray-100 text-xs text-gray-600 font-mono relative z-10 flex justify-between items-center">
-                <span className="font-bold">累計対応数: {data?.chatStats?.total || 0} 件</span>
-                <button onClick={async (e) => {
-                    const btn = e.currentTarget; const originalText = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<span class="animate-spin mr-1">↻</span> トレーニング中...';
-                    try {
-                        const res = await fetch('/api/simulate', { method: 'POST' }); const simData = await res.json();
-                        if(simData.success) { alert("仮想トレーニング完了！\n\n【ペルソナ】\n" + simData.persona + "\n\n【生成された会話】\n" + simData.chatHistory); window.location.reload(); } else { alert("エラー: " + simData.message); }
-                    } catch(err) { alert("通信エラーが発生しました。"); }
-                    btn.disabled = false; btn.innerHTML = originalText;
-                }} className="bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 px-3 py-1.5 rounded-sm text-[10px] font-bold shadow-sm transition flex items-center gap-1 disabled:opacity-50 group-hover:border-[#D32F2F] group-hover:text-[#D32F2F]">
-                    仮想トレーニング
-                </button>
+          <div className="bg-white rounded-sm border border-gray-200 shadow-sm p-6 md:p-8 flex flex-col cursor-pointer group hover:border-[#D32F2F] hover:shadow-md transition-all relative" onClick={() => onNavigate('PRODUCTION')}>
+            <div className="absolute top-4 right-4 z-20 flex gap-1"><ProvenanceBadge type="HUMAN" /></div>
+            <h3 className="font-black text-gray-900 tracking-wider text-lg mb-6">今月の生産実績</h3>
+            <div className="flex-1 flex flex-col justify-center gap-6">
+              <div className="flex items-center justify-between border-l-4 border-gray-900 pl-4 py-1">
+                <div><p className="text-xs text-gray-500 font-bold mb-1">ピカ銅 生産量</p><div className="flex items-baseline gap-1"><span className="text-2xl font-black text-gray-900">{mCopper.toLocaleString()}</span><span className="text-xs text-gray-400 font-bold">kg</span></div></div>
+                <div className="text-right"><p className="text-xs text-gray-500 font-bold mb-1 flex items-center justify-end gap-1">月末予測 <ProvenanceBadge type="AI_AUTO" /></p><div className="flex items-baseline gap-1 justify-end"><span className={`text-xl font-black ${showAiData ? 'text-[#D32F2F]' : 'text-gray-300'}`}>{showAiData ? projectedCopper.toLocaleString() : '---'}</span><span className="text-xs text-gray-400 font-bold">kg</span></div></div>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-sm border border-gray-100 flex justify-between items-center group-hover:bg-red-50/30 transition-colors">
+                <span className="text-xs text-gray-500 font-bold">マスター比 乖離 (直近10件)</span>
+                <div className="flex items-baseline gap-1 bg-white px-3 py-1 rounded-sm shadow-sm border border-gray-200">
+                  <span className={`text-xl font-black tracking-tighter ${yieldStats.isPositive ? 'text-gray-900' : 'text-[#D32F2F]'}`}>{yieldStats.isPositive ? '+' : ''}{yieldStats.diff.toFixed(1)}</span><span className="text-xs text-gray-500 font-bold">%</span>
+                </div>
+              </div>
             </div>
           </div>
 
         </div>
 
-        {/* ★ 中段 3カラム（AI競合価格 / 今月の生産実績 / 余白） */}
+        {/* ★ 中段 3カラム（AI競合価格 / 他社スニッフィング速報 / AIコンシェルジュ） */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 px-2 mb-10">
             
             <div className={`bg-white rounded-sm border border-gray-200 shadow-sm p-6 md:p-8 flex flex-col cursor-pointer transition-all relative group ${showAiData ? 'hover:border-[#D32F2F] hover:shadow-md' : 'opacity-20 grayscale pointer-events-none'}`} onClick={() => showAiData && onNavigate('COMPETITOR')}>
@@ -380,25 +397,73 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                 </div>
             </div>
 
-            <div className="bg-white rounded-sm border border-gray-200 shadow-sm p-6 md:p-8 flex flex-col cursor-pointer group hover:border-[#D32F2F] hover:shadow-md transition-all relative" onClick={() => onNavigate('PRODUCTION')}>
-              <div className="absolute top-4 right-4 z-20"><ProvenanceBadge type="HUMAN" /></div>
-              <h3 className="font-black text-gray-900 tracking-wider text-lg mb-6">今月の生産実績</h3>
-              <div className="flex-1 flex flex-col justify-center gap-6">
-                <div className="flex items-center justify-between border-l-4 border-gray-900 pl-4 py-1">
-                  <div><p className="text-xs text-gray-500 font-bold mb-1">ピカ銅 生産量</p><div className="flex items-baseline gap-1"><span className="text-2xl font-black text-gray-900">{mCopper.toLocaleString()}</span><span className="text-xs text-gray-400 font-bold">kg</span></div></div>
-                  <div className="text-right"><p className="text-xs text-gray-500 font-bold mb-1">月末予測 <span className="ml-1"><ProvenanceBadge type="AI_AUTO" /></span></p><div className="flex items-baseline gap-1 justify-end"><span className={`text-xl font-black ${showAiData ? 'text-[#D32F2F]' : 'text-gray-300'}`}>{showAiData ? projectedCopper.toLocaleString() : '---'}</span><span className="text-xs text-gray-400 font-bold">kg</span></div></div>
+            {/* ★ 新規追加：他社スニッフィング速報（空き枠に配置） */}
+            <div className={`bg-white rounded-sm border border-gray-200 shadow-sm p-6 md:p-8 flex flex-col cursor-pointer transition-all relative group ${showAiData ? 'hover:border-[#D32F2F] hover:shadow-md' : 'opacity-20 grayscale pointer-events-none'}`} onClick={() => showAiData && onNavigate('COMPETITOR')}>
+                <div className="absolute top-4 right-4 z-20"><ProvenanceBadge type="AI_AUTO" /></div>
+                <h3 className="font-black text-gray-900 tracking-wider text-lg mb-6">他社スニッフィング速報</h3>
+                <div className="flex-1 flex flex-col gap-3 justify-center">
+                    {latestCompetitorData.length === 0 ? (
+                        <p className="text-xs text-gray-400 text-center">データがありません</p>
+                    ) : (
+                        latestCompetitorData.slice(0,3).map((comp, idx) => {
+                            const pika = comp.prices['光線（ピカ線、特号）'];
+                            const pikaMy = getMyPrice('光線（ピカ線、特号）');
+                            const pikaDiff = pika ? pikaMy - pika : null;
+
+                            const wire80 = comp.prices['被覆線80%'];
+                            const wire80My = getMyPrice('被覆線80%');
+                            const wire80Diff = wire80 ? wire80My - wire80 : null;
+
+                            return (
+                                <div key={idx} className="bg-gray-50 p-3 rounded-sm border border-gray-100 group-hover:bg-red-50/30 transition-colors">
+                                    <div className="flex justify-between items-center mb-2 border-b border-gray-200 pb-1">
+                                        <span className="text-xs font-bold text-gray-800">{comp.name}</span>
+                                        <span className="text-[9px] text-gray-400 font-mono">{formatTime(comp.date)}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-xs font-mono">
+                                        <span className="text-gray-500 font-bold text-[10px]">ピカ線</span>
+                                        <span className="font-bold text-gray-900">
+                                            {pika ? `¥${pika.toLocaleString()}` : '-'}
+                                            {pikaDiff !== null && <span className={`ml-2 text-[10px] ${pikaDiff < 0 ? 'text-[#D32F2F]' : 'text-gray-400'}`}>({pikaDiff < 0 ? '' : '+'}{pikaDiff})</span>}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-xs font-mono mt-1">
+                                        <span className="text-gray-500 font-bold text-[10px]">80%線</span>
+                                        <span className="font-bold text-gray-900">
+                                            {wire80 ? `¥${wire80.toLocaleString()}` : '-'}
+                                            {wire80Diff !== null && <span className={`ml-2 text-[10px] ${wire80Diff < 0 ? 'text-[#D32F2F]' : 'text-gray-400'}`}>({wire80Diff < 0 ? '' : '+'}{wire80Diff})</span>}
+                                        </span>
+                                    </div>
+                                </div>
+                            );
+                        })
+                    )}
                 </div>
-                <div className="bg-gray-50 p-4 rounded-sm border border-gray-100 flex justify-between items-center group-hover:bg-red-50/30 transition-colors">
-                  <span className="text-xs text-gray-500 font-bold">マスター比 乖離 (直近10件)</span>
-                  <div className="flex items-baseline gap-1 bg-white px-3 py-1 rounded-sm shadow-sm border border-gray-200">
-                    <span className={`text-xl font-black tracking-tighter ${yieldStats.isPositive ? 'text-gray-900' : 'text-[#D32F2F]'}`}>{yieldStats.isPositive ? '+' : ''}{yieldStats.diff.toFixed(1)}</span><span className="text-xs text-gray-500 font-bold">%</span>
-                  </div>
-                </div>
-              </div>
             </div>
 
-            {/* 3カラム目は余白（空のdiv） */}
-            <div></div>
+            <div className={`bg-white p-6 md:p-8 rounded-sm border border-gray-200 shadow-sm flex flex-col justify-between relative overflow-hidden group transition-all duration-300 hover:border-[#D32F2F] hover:shadow-md ${showAiData ? 'opacity-100' : 'opacity-20 grayscale pointer-events-none'}`}>
+                <div className="absolute top-4 right-4 z-20"><ProvenanceBadge type="AI_AUTO" /></div>
+                <h3 className="font-black text-gray-900 tracking-wider text-lg mb-6 relative z-10 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[#D32F2F] animate-pulse"></span>AIコンシェルジュ稼働
+                </h3>
+                <div className="flex items-baseline gap-2 mt-auto relative z-10">
+                    <span className="text-5xl md:text-6xl font-black text-gray-900 tracking-tighter">{data?.chatStats?.today || 0}</span>
+                    <span className="text-sm font-bold text-gray-600">件の対応</span>
+                </div>
+                <div className="mt-5 pt-4 border-t border-gray-100 text-xs text-gray-600 font-mono relative z-10 flex justify-between items-center">
+                    <span className="font-bold">累計対応数: {data?.chatStats?.total || 0} 件</span>
+                    <button onClick={async (e) => {
+                        const btn = e.currentTarget; const originalText = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<span class="animate-spin mr-1">↻</span> トレーニング中...';
+                        try {
+                            const res = await fetch('/api/simulate', { method: 'POST' }); const simData = await res.json();
+                            if(simData.success) { alert("仮想トレーニング完了！\n\n【ペルソナ】\n" + simData.persona + "\n\n【生成された会話】\n" + simData.chatHistory); window.location.reload(); } else { alert("エラー: " + simData.message); }
+                        } catch(err) { alert("通信エラーが発生しました。"); }
+                        btn.disabled = false; btn.innerHTML = originalText;
+                    }} className="bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 px-3 py-1.5 rounded-sm text-[10px] font-bold shadow-sm transition flex items-center gap-1 disabled:opacity-50 group-hover:border-[#D32F2F] group-hover:text-[#D32F2F]">
+                        仮想トレーニング
+                    </button>
+                </div>
+            </div>
 
         </div>
 
@@ -445,7 +510,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                 <div className="p-6 border-b border-gray-100 bg-white cursor-pointer transition pr-24 shrink-0" onClick={() => onNavigate('OPERATIONS')}>
                     <h3 className="font-black text-gray-900 tracking-wider text-lg flex items-center gap-3">
                         <span className="relative flex h-2.5 w-2.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#D32F2F] opacity-75"></span><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#D32F2F]"></span></span>
-                        リアルタイム稼働状況 (現場カンバン)
+                        リアルタイム稼働状況
                     </h3>
                 </div>
                 
@@ -469,7 +534,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                                 } catch(e){}
                                 
                                 return (
-                                    <div key={res.id} className="bg-white border border-gray-200 p-4 rounded-sm shadow-sm hover:border-[#D32F2F] transition-colors cursor-pointer group" onClick={() => onNavigate('OPERATIONS')}>
+                                    <div key={res.id} className="bg-white border border-gray-200 p-4 rounded-sm shadow-sm hover:border-[#D32F2F] transition-colors cursor-pointer group/card" onClick={() => onNavigate('OPERATIONS')}>
                                         <div className="flex justify-between items-center mb-3">
                                             <div className="flex items-center gap-2">
                                                 <div className={`w-2 h-2 rounded-full ${res.status === 'PROCESSING' ? 'bg-gray-400' : 'bg-[#D32F2F] animate-pulse'}`}></div>
