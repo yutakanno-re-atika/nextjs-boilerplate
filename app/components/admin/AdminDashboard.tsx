@@ -75,6 +75,9 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
   const [isVoiceOutputEnabled, setIsVoiceOutputEnabled] = useState(true); 
   const [isLearningMode, setIsLearningMode] = useState(false); 
 
+  // ★ これが抜けていました！セッションIDを復活！
+  const [tutorSessionId] = useState(`TUTOR_${new Date().getTime().toString().slice(-6)}`);
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('factoryOS_adminTab', adminTab);
@@ -282,7 +285,7 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
           </div>
       )}
 
-{/* ★ ここでドラッグ＆リサイズ可能な「教育メンター」を呼び出す！（学習モードがONの時だけ） */}
+      {/* ★ ここでドラッグ＆リサイズ可能な「教育メンター」を呼び出す！（学習モードがONの時だけ） */}
       {isLearningMode && (
           <FloatingAiMentor 
               onClose={() => setIsLearningMode(false)} 
