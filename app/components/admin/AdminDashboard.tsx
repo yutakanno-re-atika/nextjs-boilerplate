@@ -1,6 +1,6 @@
 // @ts-nocheck
 "use client";
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 
 import { AdminHome } from './AdminHome';
 import { AdminKanban } from './AdminKanban';
@@ -10,7 +10,6 @@ import { AdminProduction } from './AdminProduction';
 import { AdminDatabase } from './AdminDatabase';
 import { AdminClientDetail } from './AdminClientDetail';
 import { AdminSales } from './AdminSales';
-// ★ 新しく作ったフローティングメンターをインポート
 import { FloatingAiMentor } from './FloatingAiMentor';
 
 const Icons = {
@@ -24,7 +23,6 @@ const Icons = {
   Logout: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>,
   Menu: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" /></svg>,
   X: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>,
-  Brain: () => <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 18a8 8 0 110-16 8 8 0 010 16zm1-11h-2v2h2V9zm0 4h-2v6h2v-6z" /></svg>,
   Shield: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>,
   School: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222"/></svg>
 };
@@ -66,16 +64,9 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
   const [selectedClientName, setSelectedClientName] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // ★ Co-Pilot（簡易版）の状態
-  const [isCoPilotEnabled, setIsCoPilotEnabled] = useState(true);
-  const [isCoPilotVisible, setIsCoPilotVisible] = useState(false);
-  const [coPilotMessage, setCoPilotMessage] = useState("");
-
-  // ★ 音声と学習モード（FloatingAiMentor）の状態
+  // ★ 音声と教育メンター（FloatingAiMentor）の状態のみ残す
   const [isVoiceOutputEnabled, setIsVoiceOutputEnabled] = useState(true); 
   const [isLearningMode, setIsLearningMode] = useState(false); 
-
-  // ★ これが抜けていました！セッションIDを復活！
   const [tutorSessionId] = useState(`TUTOR_${new Date().getTime().toString().slice(-6)}`);
 
   useEffect(() => {
@@ -93,31 +84,6 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
   useEffect(() => {
       if (data?.reservations) { setLocalReservations(data.reservations); }
   }, [data?.reservations]);
-
-  // ★ タブ切り替え時に、画面に応じた一言アドバイスを生成（簡易Co-Pilot用）
-  useEffect(() => {
-      if (!isCoPilotEnabled || isLearningMode) {
-          setIsCoPilotVisible(false);
-          return;
-      }
-      
-      setIsCoPilotVisible(false);
-      setTimeout(() => {
-          let newMessage = "";
-          switch(adminTab) {
-              case 'HOME': newMessage = "ダッシュボードですね。右上の「日次レポート」から戦略アドバイスを書き下ろします！"; break;
-              case 'OPERATIONS': newMessage = "現場のカンバンです。処理待ちのロットを『プラント稼働』へ進めてください。"; break;
-              case 'POS': newMessage = "POS画面です。カメラアイコンから『AI 線種分析』が使えますよ。"; break;
-              case 'PRODUCTION': newMessage = "ナゲット製造の要です。排出された4種類の重量を計量し、確実に入力してください。"; break;
-              case 'SALES': newMessage = "営業リスト画面です。右上の『🤖AIスナイパー』で私がターゲット企業を自動抽出します！"; break;
-              case 'COMPETITOR': newMessage = "他社の買取価格を監視し、自社の歩留まり設定を調整する画面です。"; break;
-              case 'DATABASE': newMessage = "マスターデータです。AI推論の確認や、新しい線種の登録ができます。"; break;
-              default: newMessage = "今日も1日、ご安全に！";
-          }
-          setCoPilotMessage(newMessage);
-          setIsCoPilotVisible(true);
-      }, 300);
-  }, [adminTab, currentRole, isCoPilotEnabled, isLearningMode]);
 
   const handleNavigate = (tab: any, id?: string) => {
       if (!allowedTabs.includes(tab)) {
@@ -181,26 +147,13 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
                [現在] ROLE: {currentRole}
             </p>
             
+            {/* ★ サイドバーのトグルスイッチ（不要なCo-Pilotを消してスリム化） */}
             <div className="flex flex-col gap-2 mt-3">
                 <div className="flex items-center justify-between bg-white border border-gray-200 p-2 rounded-md shadow-sm">
                     <span className="text-xs font-bold text-gray-600 flex items-center gap-1.5">
-                        <span className="text-blue-500"><Icons.Brain /></span> AI Co-Pilot
+                        <span className="text-green-600"><Icons.School /></span> 教育メンターAI
                     </span>
-                    <button onClick={() => {
-                        setIsCoPilotEnabled(!isCoPilotEnabled);
-                        if (!isCoPilotEnabled) setIsLearningMode(false); // Co-Pilotオン時は学習モードOFF
-                    }} className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${isCoPilotEnabled ? 'bg-blue-600' : 'bg-gray-300'}`}>
-                        <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${isCoPilotEnabled ? 'translate-x-5' : 'translate-x-1'}`} />
-                    </button>
-                </div>
-                <div className="flex items-center justify-between bg-white border border-gray-200 p-2 rounded-md shadow-sm">
-                    <span className="text-xs font-bold text-gray-600 flex items-center gap-1.5">
-                        <span className="text-green-600"><Icons.School /></span> 学習モード
-                    </span>
-                    <button onClick={() => { 
-                        setIsLearningMode(!isLearningMode); 
-                        if(!isLearningMode) setIsCoPilotEnabled(false); // 学習モードオン時は簡易Co-Pilotを隠す
-                    }} className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${isLearningMode ? 'bg-green-500' : 'bg-gray-300'}`}>
+                    <button onClick={() => setIsLearningMode(!isLearningMode)} className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${isLearningMode ? 'bg-green-500' : 'bg-gray-300'}`}>
                         <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${isLearningMode ? 'translate-x-5' : 'translate-x-1'}`} />
                     </button>
                 </div>
@@ -249,7 +202,7 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
 
       <main className="flex-1 overflow-y-auto bg-[#FFFFFF] p-4 md:p-8 lg:p-10 flex flex-col relative w-full selection:bg-red-100 selection:text-red-900 pb-32 md:pb-10">
          {adminTab === 'HOME' && <AdminHome data={data} localReservations={localReservations} onNavigate={handleNavigate} />}
-         {adminTab === 'OPERATIONS' && <AdminKanban data={data} onSuccess={() => {}} />}
+         {adminTab === 'OPERATIONS' && <AdminKanban data={data} onUpdateStatus={() => {}} onEditReservation={(id) => handleNavigate('POS', id)} />}
          {adminTab === 'POS' && <AdminPos data={data} editingResId={editingResId} localReservations={localReservations} onSuccess={handlePosSuccess} onClear={() => setEditingResId(null)} isVoiceOutputEnabled={isVoiceOutputEnabled} />}
          {adminTab === 'PRODUCTION' && <AdminProduction data={data} localReservations={localReservations} />}
          {adminTab === 'COMPETITOR' && <AdminCompetitor data={data} />}
@@ -258,34 +211,7 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
          {adminTab === 'CLIENT_DETAIL' && selectedClientName && <AdminClientDetail data={data} clientName={selectedClientName} onBack={() => handleNavigate('HOME')} />}
       </main>
 
-      {/* ★ 簡易版Co-Pilot（学習モードがOFFの時だけ表示） */}
-      {isCoPilotEnabled && !isLearningMode && (
-          <div className="fixed bottom-4 right-4 md:bottom-8 md:right-8 z-50 flex items-end gap-3 pointer-events-none">
-              <div className={`transition-all duration-500 ease-out origin-bottom-right pointer-events-auto ${isCoPilotVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'}`}>
-                  <div className="bg-white border shadow-2xl rounded-2xl rounded-br-sm flex flex-col overflow-hidden relative w-64 md:w-72 border-blue-200 p-4">
-                      <div className="flex justify-between items-start mb-1">
-                          <span className="text-[10px] font-bold text-blue-600 tracking-widest uppercase">FACTORY OS Co-Pilot</span>
-                          <button onClick={() => setIsCoPilotVisible(false)} className="text-gray-400 hover:text-gray-600"><Icons.X /></button>
-                      </div>
-                      <p className="text-sm font-bold text-gray-800 leading-relaxed whitespace-pre-wrap">
-                          {coPilotMessage}
-                      </p>
-                      <div className="absolute -bottom-2 right-4 w-4 h-4 bg-white border-b border-r border-blue-200 transform rotate-45"></div>
-                  </div>
-              </div>
-              
-              <button 
-                  onClick={() => setIsCoPilotVisible(!isCoPilotVisible)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white shadow-xl rounded-full p-4 transition-transform hover:scale-105 pointer-events-auto flex-shrink-0"
-              >
-                  <div className={isCoPilotVisible ? 'animate-pulse' : ''}>
-                      <Icons.Brain />
-                  </div>
-              </button>
-          </div>
-      )}
-
-      {/* ★ ここでドラッグ＆リサイズ可能な「教育メンター」を呼び出す！（学習モードがONの時だけ） */}
+      {/* ★ ドラッグ＆リサイズ可能な「教育メンター」を呼び出す！（ONの時だけ） */}
       {isLearningMode && (
           <FloatingAiMentor 
               onClose={() => setIsLearningMode(false)} 
