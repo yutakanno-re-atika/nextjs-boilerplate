@@ -1,4 +1,3 @@
-// app/components/admin/AdminHome.tsx
 // @ts-nocheck
 import React, { useMemo, useState, useEffect } from 'react';
 
@@ -6,9 +5,17 @@ const Icons = {
   TrendingUp: () => <svg className="w-4 h-4 text-[#D32F2F]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>,
   TrendingDown: () => <svg className="w-4 h-4 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>,
   Minus: () => <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M20 12H4" /></svg>,
+  Truck: () => <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4-4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>,
+  Radar: () => <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>,
+  Factory: () => <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>,
+  Scale: () => <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>,
+  ArrowRight: () => <svg className="w-5 h-5 text-gray-300 group-hover:text-[#D32F2F] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>,
+  Message: () => <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>,
   Print: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>,
   Refresh: () => <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
-  ExternalLink: () => <svg className="w-3 h-3 ml-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+  Brain: () => <svg className="w-4 h-4 inline-block mr-1" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 18a8 8 0 110-16 8 8 0 010 16zm1-11h-2v2h2V9zm0 4h-2v6h2v-6z" /></svg>,
+  ExternalLink: () => <svg className="w-3 h-3 ml-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>,
+  Calculator: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
 };
 
 const ProvenanceBadge = ({ type }: { type: 'HUMAN' | 'AI_AUTO' | 'CO_OP' }) => {
@@ -141,7 +148,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
 
   const { mCopper, yieldStats, projectedCopper } = useMemo(() => {
     const productions = data?.productions || [];
-    const targetMonthly = Number(data?.config?.target_monthly) || 30000;
     
     const today = new Date();
     const currentMonth = today.getMonth();
@@ -172,7 +178,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
       yieldStats: { diff: avgDiff, isPositive: avgDiff >= 0 }, 
       projectedCopper: projected
     };
-  }, [data?.productions, data?.wires, data?.config?.target_monthly]);
+  }, [data?.productions, data?.wires]);
 
   const { win, lose, draw } = useMemo(() => {
     const comps = data?.competitorPrices || [];
@@ -244,6 +250,27 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
             </button>
           </div>
         </header>
+
+        {/* ★ 追加：買取価格算出ロジック表示パネル */}
+        <div className="mb-8 px-2 w-full">
+          <div className="bg-gray-50 border border-gray-200 rounded-sm p-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-sm group hover:border-[#D32F2F] transition-colors">
+            <div className="flex items-center gap-3">
+              <span className="bg-gray-900 text-white text-[10px] font-bold px-2 py-1 rounded-sm tracking-widest flex items-center gap-1">
+                <Icons.Calculator /> PRICING LOGIC
+              </span>
+              <span className="text-xs font-bold text-gray-700">現在の買取単価 算出ロジック</span>
+            </div>
+            <div className="font-mono text-sm md:text-base font-black text-gray-900 flex items-center flex-wrap gap-2 md:gap-3 bg-white px-4 py-2 border border-gray-200 rounded-sm shadow-inner">
+              <span className="text-gray-600 text-xs md:text-sm">基準建値</span>
+              <span className="text-gray-400">×</span>
+              <span className="text-gray-600 text-xs md:text-sm">歩留まり(%)</span>
+              <span className="text-gray-400">＋</span>
+              <span className="text-gray-600 text-xs md:text-sm">調整額(円)</span>
+              <span className="text-gray-400">＝</span>
+              <span className="text-[#D32F2F] text-base md:text-lg">買取単価</span>
+            </div>
+          </div>
+        </div>
 
         {/* ★ 建値情報 */}
         <div className="mb-10 px-2 w-full">
@@ -354,7 +381,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
             </div>
 
             <div className="bg-white rounded-sm border border-gray-200 shadow-sm p-6 md:p-8 flex flex-col cursor-pointer group hover:border-[#D32F2F] hover:shadow-md transition-all relative" onClick={() => onNavigate('PRODUCTION')}>
-              <div className="absolute top-4 right-4 z-20 flex gap-1"><ProvenanceBadge type="HUMAN" /></div>
+              <div className="absolute top-4 right-4 z-20"><ProvenanceBadge type="HUMAN" /></div>
               <h3 className="font-black text-gray-900 tracking-wider text-lg mb-6">今月の生産実績</h3>
               <div className="flex-1 flex flex-col justify-center gap-6">
                 <div className="flex items-center justify-between border-l-4 border-gray-900 pl-4 py-1">
