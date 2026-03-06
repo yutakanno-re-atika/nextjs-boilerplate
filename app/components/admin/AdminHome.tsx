@@ -150,7 +150,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
   const { totalCopperStock, inventoryValue } = useMemo(() => {
     const productions = data?.productions || [];
     const producedCopper = productions.reduce((sum: number, p: any) => sum + (Number(p.outputCopper) || 0), 0);
-    const unprocessedCopper = 3500; 
+    const unprocessedCopper = 0; 
     const total = producedCopper + unprocessedCopper;
     return { totalCopperStock: total, inventoryValue: total * currentPrice };
   }, [data?.productions, currentPrice]);
