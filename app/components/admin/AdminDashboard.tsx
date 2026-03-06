@@ -282,11 +282,13 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
           </div>
       )}
 
-      {/* ★ ここでドラッグ＆リサイズ可能な「教育メンター」を呼び出す！（学習モードがONの時だけ） */}
+{/* ★ ここでドラッグ＆リサイズ可能な「教育メンター」を呼び出す！（学習モードがONの時だけ） */}
       {isLearningMode && (
           <FloatingAiMentor 
               onClose={() => setIsLearningMode(false)} 
-              isVoiceOutputEnabled={isVoiceOutputEnabled} 
+              isVoiceOutputEnabled={isVoiceOutputEnabled}
+              currentTab={adminTab}
+              sessionId={tutorSessionId}
           />
       )}
 
