@@ -10,6 +10,8 @@ import { AdminProduction } from './AdminProduction';
 import { AdminDatabase } from './AdminDatabase';
 import { AdminClientDetail } from './AdminClientDetail';
 import { AdminSales } from './AdminSales';
+// ★ 新しく作ったフローティングメンターをインポート
+import { FloatingAiMentor } from './FloatingAiMentor';
 
 const Icons = {
   Home: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
@@ -24,8 +26,7 @@ const Icons = {
   X: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>,
   Brain: () => <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 18a8 8 0 110-16 8 8 0 010 16zm1-11h-2v2h2V9zm0 4h-2v6h2v-6z" /></svg>,
   Shield: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>,
-  School: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222"/></svg>,
-  Send: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+  School: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222"/></svg>
 };
 
 const ROLE_PERMISSIONS = {
@@ -65,18 +66,14 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
   const [selectedClientName, setSelectedClientName] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
+  // ★ Co-Pilot（簡易版）の状態
   const [isCoPilotEnabled, setIsCoPilotEnabled] = useState(true);
+  const [isCoPilotVisible, setIsCoPilotVisible] = useState(false);
+  const [coPilotMessage, setCoPilotMessage] = useState("");
+
+  // ★ 音声と学習モード（FloatingAiMentor）の状態
   const [isVoiceOutputEnabled, setIsVoiceOutputEnabled] = useState(true); 
   const [isLearningMode, setIsLearningMode] = useState(false); 
-  
-  const [coPilotMessages, setCoPilotMessages] = useState<{role: 'user' | 'ai', text: string}[]>([]);
-  const [coPilotInput, setCoPilotInput] = useState("");
-  const [isCoPilotVisible, setIsCoPilotVisible] = useState(false);
-  const [isCoPilotTyping, setIsCoPilotTyping] = useState(false);
-  const chatScrollRef = useRef<HTMLDivElement>(null);
-
-  // ★ 追加：教育メンター用のセッションIDを生成（再読み込みするまで同一セッション）
-  const [tutorSessionId] = useState(`TUTOR_${new Date().getTime().toString().slice(-6)}`);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -94,8 +91,9 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
       if (data?.reservations) { setLocalReservations(data.reservations); }
   }, [data?.reservations]);
 
+  // ★ タブ切り替え時に、画面に応じた一言アドバイスを生成（簡易Co-Pilot用）
   useEffect(() => {
-      if (!isCoPilotEnabled) {
+      if (!isCoPilotEnabled || isLearningMode) {
           setIsCoPilotVisible(false);
           return;
       }
@@ -113,53 +111,10 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
               case 'DATABASE': newMessage = "マスターデータです。AI推論の確認や、新しい線種の登録ができます。"; break;
               default: newMessage = "今日も1日、ご安全に！";
           }
-          
-          if (isLearningMode) {
-              newMessage = `【学習モード作動中】\nここは「${adminTab}」画面です。操作方法や用語（歩留まりとは？等）で分からないことがあれば、下の入力欄から何でも質問してください。`;
-          }
-          
-          setCoPilotMessages([{ role: 'ai', text: newMessage }]);
+          setCoPilotMessage(newMessage);
           setIsCoPilotVisible(true);
       }, 300);
   }, [adminTab, currentRole, isCoPilotEnabled, isLearningMode]);
-
-  useEffect(() => {
-      if (chatScrollRef.current) {
-          chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
-      }
-  }, [coPilotMessages, isCoPilotTyping]);
-
-  // ★ 修正：tutorSessionId をAPIに投げるように変更
-  const handleSendCoPilot = async (e: React.FormEvent) => {
-      e.preventDefault();
-      if (!coPilotInput.trim() || isCoPilotTyping) return;
-
-      const userText = coPilotInput;
-      setCoPilotInput("");
-      
-      const newMessages = [...coPilotMessages, { role: 'user' as const, text: userText }];
-      setCoPilotMessages(newMessages);
-      setIsCoPilotTyping(true);
-
-      try {
-          const apiMessages = newMessages.map(m => ({ role: m.role === 'ai' ? 'assistant' : 'user', content: m.text }));
-          
-          const res = await fetch('/api/tutor', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ 
-                  messages: apiMessages,
-                  currentTab: adminTab,
-                  sessionId: tutorSessionId // ログにTUTORセッションとして記録
-              })
-          });
-          const result = await res.json();
-          setCoPilotMessages(prev => [...prev, { role: 'ai', text: result.text || 'エラーが発生しました。' }]);
-      } catch (err) {
-          setCoPilotMessages(prev => [...prev, { role: 'ai', text: '通信エラーが発生しました。' }]);
-      }
-      setIsCoPilotTyping(false);
-  };
 
   const handleNavigate = (tab: any, id?: string) => {
       if (!allowedTabs.includes(tab)) {
@@ -228,7 +183,10 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
                     <span className="text-xs font-bold text-gray-600 flex items-center gap-1.5">
                         <span className="text-blue-500"><Icons.Brain /></span> AI Co-Pilot
                     </span>
-                    <button onClick={() => setIsCoPilotEnabled(!isCoPilotEnabled)} className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${isCoPilotEnabled ? 'bg-blue-600' : 'bg-gray-300'}`}>
+                    <button onClick={() => {
+                        setIsCoPilotEnabled(!isCoPilotEnabled);
+                        if (!isCoPilotEnabled) setIsLearningMode(false); // Co-Pilotオン時は学習モードOFF
+                    }} className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${isCoPilotEnabled ? 'bg-blue-600' : 'bg-gray-300'}`}>
                         <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${isCoPilotEnabled ? 'translate-x-5' : 'translate-x-1'}`} />
                     </button>
                 </div>
@@ -236,7 +194,10 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
                     <span className="text-xs font-bold text-gray-600 flex items-center gap-1.5">
                         <span className="text-green-600"><Icons.School /></span> 学習モード
                     </span>
-                    <button onClick={() => { setIsLearningMode(!isLearningMode); if(!isLearningMode) setIsCoPilotEnabled(true); }} className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${isLearningMode ? 'bg-green-500' : 'bg-gray-300'}`}>
+                    <button onClick={() => { 
+                        setIsLearningMode(!isLearningMode); 
+                        if(!isLearningMode) setIsCoPilotEnabled(false); // 学習モードオン時は簡易Co-Pilotを隠す
+                    }} className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${isLearningMode ? 'bg-green-500' : 'bg-gray-300'}`}>
                         <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${isLearningMode ? 'translate-x-5' : 'translate-x-1'}`} />
                     </button>
                 </div>
@@ -294,77 +255,39 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
          {adminTab === 'CLIENT_DETAIL' && selectedClientName && <AdminClientDetail data={data} clientName={selectedClientName} onBack={() => handleNavigate('HOME')} />}
       </main>
 
-      {isCoPilotEnabled && (
+      {/* ★ 簡易版Co-Pilot（学習モードがOFFの時だけ表示） */}
+      {isCoPilotEnabled && !isLearningMode && (
           <div className="fixed bottom-4 right-4 md:bottom-8 md:right-8 z-50 flex items-end gap-3 pointer-events-none">
               <div className={`transition-all duration-500 ease-out origin-bottom-right pointer-events-auto ${isCoPilotVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'}`}>
-                  <div className={`bg-white border shadow-2xl rounded-2xl rounded-br-sm flex flex-col overflow-hidden relative ${isLearningMode ? 'w-80 md:w-96 h-96 border-green-300' : 'w-64 md:w-72 border-blue-200 p-4'}`}>
-                      
-                      {!isLearningMode && (
-                          <>
-                              <div className="flex justify-between items-start mb-1">
-                                  <span className="text-[10px] font-bold text-blue-600 tracking-widest uppercase">FACTORY OS Co-Pilot</span>
-                                  <button onClick={() => setIsCoPilotVisible(false)} className="text-gray-400 hover:text-gray-600"><Icons.X /></button>
-                              </div>
-                              <p className="text-sm font-bold text-gray-800 leading-relaxed whitespace-pre-wrap">
-                                  {coPilotMessages[coPilotMessages.length - 1]?.text}
-                              </p>
-                              <div className="absolute -bottom-2 right-4 w-4 h-4 bg-white border-b border-r border-blue-200 transform rotate-45"></div>
-                          </>
-                      )}
-
-                      {isLearningMode && (
-                          <>
-                              <div className="bg-gradient-to-r from-green-600 to-green-500 p-3 flex justify-between items-center shrink-0">
-                                  <span className="text-xs font-bold text-white tracking-widest flex items-center gap-1.5"><Icons.School /> 教育メンターAI</span>
-                                  <button onClick={() => setIsCoPilotVisible(false)} className="text-white/80 hover:text-white"><Icons.X /></button>
-                              </div>
-                              
-                              <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-3" ref={chatScrollRef}>
-                                  {coPilotMessages.map((msg, idx) => (
-                                      <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                          <div className={`text-sm px-3 py-2 rounded-xl max-w-[85%] whitespace-pre-wrap ${msg.role === 'user' ? 'bg-gray-800 text-white rounded-br-sm' : 'bg-white border border-gray-200 text-gray-800 rounded-bl-sm shadow-sm'}`}>
-                                              {msg.text}
-                                          </div>
-                                      </div>
-                                  ))}
-                                  {isCoPilotTyping && (
-                                      <div className="flex justify-start">
-                                          <div className="bg-white border border-gray-200 px-3 py-2 rounded-xl rounded-bl-sm shadow-sm flex gap-1 items-center">
-                                              <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></span>
-                                              <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></span>
-                                              <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></span>
-                                          </div>
-                                      </div>
-                                  )}
-                              </div>
-
-                              <form onSubmit={handleSendCoPilot} className="p-2 bg-white border-t border-gray-200 shrink-0 flex gap-2">
-                                  <input 
-                                      type="text" 
-                                      value={coPilotInput} 
-                                      onChange={e => setCoPilotInput(e.target.value)} 
-                                      placeholder="操作方法を質問する..." 
-                                      className="flex-1 bg-gray-100 border-transparent rounded-sm px-3 py-2 text-sm focus:bg-white focus:border-green-500 focus:ring-1 focus:ring-green-500 outline-none transition"
-                                      disabled={isCoPilotTyping}
-                                  />
-                                  <button type="submit" disabled={!coPilotInput.trim() || isCoPilotTyping} className="bg-green-600 text-white p-2 rounded-sm hover:bg-green-700 disabled:bg-gray-300 transition">
-                                      <Icons.Send />
-                                  </button>
-                              </form>
-                          </>
-                      )}
+                  <div className="bg-white border shadow-2xl rounded-2xl rounded-br-sm flex flex-col overflow-hidden relative w-64 md:w-72 border-blue-200 p-4">
+                      <div className="flex justify-between items-start mb-1">
+                          <span className="text-[10px] font-bold text-blue-600 tracking-widest uppercase">FACTORY OS Co-Pilot</span>
+                          <button onClick={() => setIsCoPilotVisible(false)} className="text-gray-400 hover:text-gray-600"><Icons.X /></button>
+                      </div>
+                      <p className="text-sm font-bold text-gray-800 leading-relaxed whitespace-pre-wrap">
+                          {coPilotMessage}
+                      </p>
+                      <div className="absolute -bottom-2 right-4 w-4 h-4 bg-white border-b border-r border-blue-200 transform rotate-45"></div>
                   </div>
               </div>
               
               <button 
                   onClick={() => setIsCoPilotVisible(!isCoPilotVisible)}
-                  className={`${isLearningMode ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'} text-white shadow-xl rounded-full p-4 transition-transform hover:scale-105 pointer-events-auto flex-shrink-0`}
+                  className="bg-blue-600 hover:bg-blue-700 text-white shadow-xl rounded-full p-4 transition-transform hover:scale-105 pointer-events-auto flex-shrink-0"
               >
-                  <div className={isCoPilotVisible && !isLearningMode ? 'animate-pulse' : ''}>
-                      {isLearningMode ? <Icons.School /> : <Icons.Brain />}
+                  <div className={isCoPilotVisible ? 'animate-pulse' : ''}>
+                      <Icons.Brain />
                   </div>
               </button>
           </div>
+      )}
+
+      {/* ★ ここでドラッグ＆リサイズ可能な「教育メンター」を呼び出す！（学習モードがONの時だけ） */}
+      {isLearningMode && (
+          <FloatingAiMentor 
+              onClose={() => setIsLearningMode(false)} 
+              isVoiceOutputEnabled={isVoiceOutputEnabled} 
+          />
       )}
 
     </div>
