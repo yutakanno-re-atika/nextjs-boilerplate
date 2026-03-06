@@ -1,5 +1,6 @@
+// app/components/admin/AdminHome.tsx
 // @ts-nocheck
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 
 const Icons = {
   TrendingUp: () => <svg className="w-4 h-4 text-[#D32F2F]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>,
@@ -13,10 +14,7 @@ const Icons = {
   Message: () => <svg className="w-6 h-6 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>,
   Print: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>,
   Refresh: () => <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
-  Brain: () => <svg className="w-4 h-4 inline-block mr-1" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 18a8 8 0 110-16 8 8 0 010 16zm1-11h-2v2h2V9zm0 4h-2v6h2v-6z" /></svg>,
-  Camera: () => <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
-  UploadCloud: () => <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>,
-  Check: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
+  Brain: () => <svg className="w-4 h-4 inline-block mr-1" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 18a8 8 0 110-16 8 8 0 010 16zm1-11h-2v2h2V9zm0 4h-2v6h2v-6z" /></svg>
 };
 
 const ProvenanceBadge = ({ type }: { type: 'HUMAN' | 'AI_AUTO' | 'CO_OP' }) => {
@@ -90,10 +88,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [showAiData, setShowAiData] = useState(true);
-
-  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
-  const [uploadedPhotoUrls, setUploadedPhotoUrls] = useState<string[]>([]);
   
   useEffect(() => { setIsMounted(true); }, []);
 
@@ -150,6 +144,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
   const { totalCopperStock, inventoryValue } = useMemo(() => {
     const productions = data?.productions || [];
     const producedCopper = productions.reduce((sum: number, p: any) => sum + (Number(p.outputCopper) || 0), 0);
+    // ★ ゼロからスタートするため初期在庫を0にリセットしました！
     const unprocessedCopper = 0; 
     const total = producedCopper + unprocessedCopper;
     return { totalCopperStock: total, inventoryValue: total * currentPrice };
@@ -236,76 +231,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
   const handlePrintReport = () => {
     setIsGeneratingReport(true);
     setTimeout(() => { window.print(); setIsGeneratingReport(false); }, 500);
-  };
-
-  const compressImage = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader(); reader.readAsDataURL(file);
-      reader.onload = (event) => {
-        const img = new Image(); img.src = event.target?.result as string;
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const MAX = 2000; let w = img.width; let h = img.height;
-          if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } } else { if (h > MAX) { w *= MAX / h; h = MAX; } }
-          canvas.width = w; canvas.height = h;
-          const ctx = canvas.getContext('2d'); ctx?.drawImage(img, 0, 0, w, h);
-          resolve(canvas.toDataURL('image/jpeg', 0.85).split(',')[1]); 
-        };
-        img.onerror = (e) => reject(e);
-      };
-      reader.onerror = (e) => reject(e);
-    });
-  };
-
-  const handleMultiPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-    
-    setIsUploadingPhoto(true);
-    setUploadProgress({ current: 0, total: files.length });
-    setUploadedPhotoUrls([]);
-    
-    let uploaderId = 'Staff';
-    try {
-      const userStr = localStorage.getItem('factoryOS_user');
-      if (userStr) {
-        const user = JSON.parse(userStr);
-        uploaderId = user.companyName || user.clientId || 'Staff';
-      }
-    } catch(err) {}
-
-    const newUrls: string[] = [];
-
-    try {
-      for (let i = 0; i < files.length; i++) {
-        setUploadProgress({ current: i + 1, total: files.length });
-        try {
-          const base64Data = await compressImage(files[i]);
-          const payload = {
-            action: 'UPLOAD_STAFF_PHOTO',
-            uploaderId: uploaderId,
-            fileName: `Photo_${new Date().getTime()}_${i+1}.jpg`,
-            mimeType: 'image/jpeg',
-            data: base64Data
-          };
-          
-          const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-          const result = await res.json();
-          
-          if (result.status === 'success') {
-            newUrls.push(result.url);
-          } else { alert(`画像 ${i+1}枚目のアップロード失敗: ` + result.message); }
-
-          if (i < files.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-          }
-        } catch (err) { alert(`画像 ${i+1}枚目の処理エラー: ` + err); }
-      }
-    } finally {
-      setUploadedPhotoUrls(newUrls);
-      setIsUploadingPhoto(false);
-      e.target.value = ''; 
-    }
   };
 
   if (!isMounted) return null;
@@ -526,61 +451,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
             </div>
           </div>
         </div>
-
-        <div className="px-2 mb-10 w-full">
-          <div className="bg-white border border-gray-200 shadow-sm rounded-sm p-6 relative overflow-hidden">
-            <div className="absolute top-4 right-4 z-20"><ProvenanceBadge type="HUMAN" /></div>
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-4">
-              <div>
-                <h3 className="font-bold text-gray-900 flex items-center gap-2 text-base">
-                  <Icons.Camera /> 広報・現場写真アップロード
-                </h3>
-                <p className="text-xs text-gray-500 mt-1">
-                  撮影した写真をGoogle Driveに保存します。一括アップロードに対応しました。
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-3 mb-4">
-              <label className={`flex-1 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 py-6 rounded-sm font-bold flex flex-col items-center justify-center gap-2 transition cursor-pointer ${isUploadingPhoto ? 'opacity-50 pointer-events-none' : ''}`}>
-                <Icons.Camera />
-                <span className="text-sm">カメラで撮影</span>
-                <input type="file" accept="image/*" capture="environment" onChange={handleMultiPhotoUpload} className="hidden" disabled={isUploadingPhoto} />
-              </label>
-              
-              <label className={`flex-1 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 py-6 rounded-sm font-bold flex flex-col items-center justify-center gap-2 transition cursor-pointer ${isUploadingPhoto ? 'opacity-50 pointer-events-none' : ''}`}>
-                <Icons.UploadCloud />
-                <span className="text-sm">フォルダから複数選択</span>
-                <input type="file" accept="image/*" multiple onChange={handleMultiPhotoUpload} className="hidden" disabled={isUploadingPhoto} />
-              </label>
-            </div>
-
-            {isUploadingPhoto && (
-              <div className="text-center p-4 bg-gray-50 border border-gray-200 rounded-sm">
-                <div className="text-blue-500 animate-spin mb-2 flex justify-center"><Icons.Refresh /></div>
-                <p className="text-sm font-bold text-gray-700">自動圧縮＆送信中... ({uploadProgress.current} / {uploadProgress.total} 枚)</p>
-                <div className="w-full bg-gray-200 h-2 mt-3 rounded-full overflow-hidden">
-                  <div className="bg-blue-500 h-full transition-all duration-300" style={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }}></div>
-                </div>
-              </div>
-            )}
-
-            {!isUploadingPhoto && uploadedPhotoUrls.length > 0 && (
-              <div className="p-4 bg-green-50 border border-green-200 rounded-sm">
-                <div className="flex items-center gap-2 mb-2 text-green-700">
-                  <Icons.Check />
-                  <span className="font-bold text-sm">{uploadedPhotoUrls.length}枚のアップロード完了！</span>
-                </div>
-                <ul className="text-xs text-blue-600 space-y-1">
-                  {uploadedPhotoUrls.map((url, idx) => (
-                    <li key={idx} className="truncate"><a href={url} target="_blank" rel="noopener noreferrer" className="hover:underline">📎 画像 {idx+1}</a></li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        </div>
-
       </div>
     </div>
   );
