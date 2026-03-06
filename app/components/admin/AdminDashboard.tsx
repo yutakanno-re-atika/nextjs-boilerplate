@@ -1,6 +1,7 @@
+// app/components/admin/AdminDashboard.tsx
 // @ts-nocheck
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 import { AdminHome } from './AdminHome';
 import { AdminKanban } from './AdminKanban';
@@ -11,6 +12,8 @@ import { AdminDatabase } from './AdminDatabase';
 import { AdminClientDetail } from './AdminClientDetail';
 import { AdminSales } from './AdminSales';
 import { FloatingAiMentor } from './FloatingAiMentor';
+// ★ 新規追加
+import { AdminPhotoUpload } from './AdminPhotoUpload';
 
 const Icons = {
   Home: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
@@ -20,6 +23,7 @@ const Icons = {
   Radar: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>,
   Database: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" /></svg>,
   Briefcase: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
+  Camera: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
   Logout: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>,
   Menu: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" /></svg>,
   X: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>,
@@ -27,12 +31,13 @@ const Icons = {
   School: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222"/></svg>
 };
 
+// ★ PHOTOタブの権限を追加
 const ROLE_PERMISSIONS = {
-  ADMIN:   ['HOME', 'OPERATIONS', 'POS', 'PRODUCTION', 'COMPETITOR', 'DATABASE', 'SALES', 'CLIENT_DETAIL'],
-  MANAGER: ['HOME', 'OPERATIONS', 'POS', 'PRODUCTION', 'COMPETITOR', 'DATABASE', 'SALES', 'CLIENT_DETAIL'],
-  FRONT:   ['OPERATIONS', 'POS', 'CLIENT_DETAIL'],
-  PLANT:   ['OPERATIONS', 'PRODUCTION'],
-  SALES:   ['SALES', 'CLIENT_DETAIL', 'COMPETITOR']
+  ADMIN:   ['HOME', 'OPERATIONS', 'POS', 'PRODUCTION', 'PHOTO', 'COMPETITOR', 'DATABASE', 'SALES', 'CLIENT_DETAIL'],
+  MANAGER: ['HOME', 'OPERATIONS', 'POS', 'PRODUCTION', 'PHOTO', 'COMPETITOR', 'DATABASE', 'SALES', 'CLIENT_DETAIL'],
+  FRONT:   ['OPERATIONS', 'POS', 'PHOTO', 'CLIENT_DETAIL'],
+  PLANT:   ['OPERATIONS', 'PRODUCTION', 'PHOTO'],
+  SALES:   ['SALES', 'PHOTO', 'CLIENT_DETAIL', 'COMPETITOR']
 };
 
 export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; data: any; setView: any; onLogout?: any }) => {
@@ -64,7 +69,6 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
   const [selectedClientName, setSelectedClientName] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // ★ 音声と教育メンター（FloatingAiMentor）の状態のみ残す
   const [isVoiceOutputEnabled, setIsVoiceOutputEnabled] = useState(true); 
   const [isLearningMode, setIsLearningMode] = useState(false); 
   const [tutorSessionId] = useState(`TUTOR_${new Date().getTime().toString().slice(-6)}`);
@@ -98,6 +102,7 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
 
   const handlePosSuccess = () => { setEditingResId(null); setAdminTab('OPERATIONS'); window.location.reload(); };
 
+  // ★ メニューに「現場写真アップロード」を追加
   const ALL_MENU_ITEMS = [
       { id: 'HOME', icon: Icons.Home, label: 'ダッシュボード', reqRole: 'MANAGER〜' },
       { id: 'OPERATIONS', icon: Icons.Kanban, label: '現場状況管理', reqRole: 'FRONT/PLANT〜' },
@@ -106,6 +111,7 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
       { id: 'SALES', icon: Icons.Briefcase, label: '営業・顧客', reqRole: 'SALES〜' },
       { id: 'COMPETITOR', icon: Icons.Radar, label: '相場レーダー', reqRole: 'MANAGER〜' },
       { id: 'DATABASE', icon: Icons.Database, label: 'マスターDB', reqRole: 'MANAGER〜' },
+      { id: 'PHOTO', icon: Icons.Camera, label: '写真アップロード', reqRole: 'ALL' },
   ];
 
   const MENU_ITEMS = ALL_MENU_ITEMS.filter(item => allowedTabs.includes(item.id as keyof typeof ROLE_PERMISSIONS['ADMIN']));
@@ -147,7 +153,6 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
                [現在] ROLE: {currentRole}
             </p>
             
-            {/* ★ サイドバーのトグルスイッチ（不要なCo-Pilotを消してスリム化） */}
             <div className="flex flex-col gap-2 mt-3">
                 <div className="flex items-center justify-between bg-white border border-gray-200 p-2 rounded-md shadow-sm">
                     <span className="text-xs font-bold text-gray-600 flex items-center gap-1.5">
@@ -209,9 +214,11 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
          {adminTab === 'SALES' && <AdminSales data={data} />}
          {adminTab === 'DATABASE' && <AdminDatabase data={data} isVoiceOutputEnabled={isVoiceOutputEnabled} />}
          {adminTab === 'CLIENT_DETAIL' && selectedClientName && <AdminClientDetail data={data} clientName={selectedClientName} onBack={() => handleNavigate('HOME')} />}
+         
+         {/* ★ 新しく追加した写真アップロード画面 */}
+         {adminTab === 'PHOTO' && <AdminPhotoUpload />}
       </main>
 
-      {/* ★ ドラッグ＆リサイズ可能な「教育メンター」を呼び出す！（ONの時だけ） */}
       {isLearningMode && (
           <FloatingAiMentor 
               onClose={() => setIsLearningMode(false)} 
@@ -220,7 +227,6 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
               sessionId={tutorSessionId}
           />
       )}
-
     </div>
   );
 };
