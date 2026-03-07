@@ -44,6 +44,41 @@ export default function WireMasterCloud() {
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
+  // ==========================================
+  // ★ ブラウザの「戻る/進む」対応（URLハッシュ同期）
+  // ==========================================
+  useEffect(() => {
+    const handlePopState = () => {
+      const hash = window.location.hash.replace('#', '');
+      if (hash) {
+        const parts = hash.split('/');
+        const newView = parts[0];
+        // 許可されたViewなら復元
+        if (['LP', 'LOGIN', 'ADMIN', 'MEMBER', 'FLOW', 'MEMBERSHIP', 'COMPANY', 'CONTACT'].includes(newView)) {
+          setView(newView as any);
+        }
+      } else {
+        setView('LP'); // ハッシュが空ならトップへ
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    handlePopState(); // 初回ロード時にURLハッシュからViewを復元
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Viewが変わった時にURLハッシュを更新（履歴を積む）
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const currentHash = window.location.hash.replace('#', '').split('/')[0];
+      // ADMIN/MEMBER の場合は下位コンポーネントで詳細なハッシュ（タブ名等）をつけるのでここではスキップ
+      if (currentHash !== view && view !== 'ADMIN' && view !== 'MEMBER') {
+        window.history.pushState(null, '', `#${view}`);
+      }
+    }
+  }, [view]);
+
+  // 初期ロードとデータフェッチ
   useEffect(() => {
     const savedUser = localStorage.getItem('factoryOS_user');
     const savedView = localStorage.getItem('factoryOS_view');
@@ -52,7 +87,10 @@ export default function WireMasterCloud() {
     if (savedUser && savedUser !== 'undefined' && savedView) {
       try {
         setUser(JSON.parse(savedUser));
-        setView(savedView as 'MEMBER' | 'ADMIN');
+        // URLハッシュが優先されるため、ハッシュがない場合のみlocalStorageのViewを適用
+        if (!window.location.hash) {
+            setView(savedView as 'MEMBER' | 'ADMIN');
+        }
       } catch (e) {
         localStorage.removeItem('factoryOS_user');
         localStorage.removeItem('factoryOS_view');
@@ -62,13 +100,12 @@ export default function WireMasterCloud() {
     if (cachedData && cachedData !== 'undefined') {
         try {
             setData(JSON.parse(cachedData));
-            setIsLoading(false); // キャッシュがあればすぐ画面を表示する
+            setIsLoading(false);
         } catch (e) {
             localStorage.removeItem('factoryOS_masterData');
         }
     }
 
-    // ★ 修正: 通信エラー時に alert を出さず、サイレントに処理する
     fetch(`/api/gas?t=${new Date().getTime()}`, { cache: 'no-store' })
       .then(res => {
           if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
@@ -80,13 +117,11 @@ export default function WireMasterCloud() {
               localStorage.setItem('factoryOS_masterData', JSON.stringify(d));
           } else {
               console.warn("GAS API レスポンスエラー:", d.message);
-              // アラートは出さない
           }
           setIsLoading(false); 
       })
       .catch(err => {
           console.warn("データ同期遅延:", err.message, "※キャッシュデータで継続稼働します。");
-          // アラートは出さない（ユーザー操作を妨害しない）
           setIsLoading(false);
       });
   }, []);
