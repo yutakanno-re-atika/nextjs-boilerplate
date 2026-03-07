@@ -54,6 +54,12 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
 
   const [adminTab, setAdminTab] = useState<any>(() => {
     if (typeof window !== 'undefined') {
+      // 初期化時にURLハッシュを確認（#ADMIN/POS など）
+      const hashParts = window.location.hash.replace('#', '').split('/');
+      if (hashParts[0] === 'ADMIN' && hashParts[1] && allowedTabs.includes(hashParts[1])) {
+        return hashParts[1] === 'CLIENT_DETAIL' ? 'HOME' : hashParts[1];
+      }
+      // ハッシュがなければローカルストレージから
       const savedTab = localStorage.getItem('factoryOS_adminTab');
       if (savedTab === 'CLIENT_DETAIL') return 'HOME';
       if (savedTab && allowedTabs.includes(savedTab)) {
@@ -72,11 +78,55 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
   const [isLearningMode, setIsLearningMode] = useState(false); 
   const [tutorSessionId] = useState(`TUTOR_${new Date().getTime().toString().slice(-6)}`);
 
+  // ==========================================
+  // ★ ブラウザの「戻る/進む」対応（popstateの監視）
+  // ==========================================
+  useEffect(() => {
+    const handlePopState = () => {
+      const hashParts = window.location.hash.replace('#', '').split('/');
+      if (hashParts[0] === 'ADMIN' && hashParts[1] && allowedTabs.includes(hashParts[1])) {
+        // ID情報が含まれている場合 (例: #ADMIN/CLIENT_DETAIL/C-123456)
+        if (hashParts[1] === 'CLIENT_DETAIL' && hashParts[2]) {
+          setSelectedClientName(decodeURIComponent(hashParts[2]));
+        } else {
+          setSelectedClientName(null);
+        }
+
+        if (hashParts[1] === 'POS' && hashParts[2]) {
+          setEditingResId(hashParts[2]);
+        } else {
+          setEditingResId(null);
+        }
+
+        setAdminTab(hashParts[1]);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [allowedTabs]);
+
+  // ★ 状態が変わるたびにURLハッシュを更新し、履歴(pushState)を残す
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('factoryOS_adminTab', adminTab);
+      
+      const currentHash = window.location.hash.replace('#', '');
+      let targetHash = `ADMIN/${adminTab}`;
+      
+      // サブ情報がある場合はURLに付与する
+      if (adminTab === 'CLIENT_DETAIL' && selectedClientName) {
+        targetHash += `/${encodeURIComponent(selectedClientName)}`;
+      } else if (adminTab === 'POS' && editingResId) {
+        targetHash += `/${editingResId}`;
+      }
+
+      // 現在のハッシュと違う場合のみ履歴を追加（無限ループ防止）
+      if (currentHash !== targetHash) {
+        window.history.pushState(null, '', `#${targetHash}`);
+      }
     }
-  }, [adminTab]);
+  }, [adminTab, selectedClientName, editingResId]);
+
 
   useEffect(() => {
     if (!allowedTabs.includes(adminTab)) {
@@ -104,11 +154,9 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
       handleNavigate(target);
   };
 
-  const handlePosSuccess = () => { setEditingResId(null); setAdminTab('OPERATIONS'); window.location.reload(); };
+  const handlePosSuccess = () => { setEditingResId(null); handleNavigate('OPERATIONS'); window.location.reload(); };
 
-  // ★ カンバンのドラッグ＆ドロップ用のステータス更新関数を追加
   const handleUpdateStatus = async (id: string, status: string) => {
-      // 楽観的UI更新で瞬時に移動させる
       setLocalReservations(prev => prev.map(r => r.id === id ? { ...r, status } : r));
       try {
           await fetch('/api/gas', {
@@ -206,9 +254,6 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
                             <item.icon />
                             {item.label}
                         </div>
-                        <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded-sm ${isActive ? 'bg-gray-100 text-gray-500' : 'bg-gray-200 text-gray-400 group-hover:bg-gray-300'}`}>
-                            {item.reqRole}
-                        </span>
                     </button>
                 )
             })}
@@ -228,7 +273,6 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
 
       <main className="flex-1 overflow-y-auto bg-[#FFFFFF] p-4 md:p-8 lg:p-10 flex flex-col relative w-full selection:bg-red-100 selection:text-red-900 pb-32 md:pb-10">
          {adminTab === 'HOME' && <AdminHome data={data} localReservations={localReservations} onNavigate={handleNavigate} />}
-         {/* ★ handleUpdateStatus をカンバンに渡す */}
          {adminTab === 'OPERATIONS' && <AdminKanban localReservations={localReservations} onUpdateStatus={handleUpdateStatus} onEditReservation={(id) => handleNavigate('POS', id)} />}
          {adminTab === 'POS' && <AdminPos data={data} editingResId={editingResId} localReservations={localReservations} onSuccess={handlePosSuccess} onClear={() => setEditingResId(null)} isVoiceOutputEnabled={isVoiceOutputEnabled} />}
          {adminTab === 'PRODUCTION' && <AdminProduction data={data} localReservations={localReservations} />}
