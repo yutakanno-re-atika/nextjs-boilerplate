@@ -114,7 +114,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadingImageId, setUploadingImageId] = useState<string | null>(null);
 
-  // ★ AIモーダル用のステート群
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [aiStatus, setAiStatus] = useState<'IDLE' | 'ANALYZING'>('IDLE');
   const [aiProgressStep, setAiProgressStep] = useState(0); 
@@ -128,12 +127,14 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   
   const [isRunningBatch, setIsRunningBatch] = useState<'NONE' | 'MARKET' | 'LEAD' | 'BACKUP'>('NONE');
 
+  // ★ LP設定用のステートと、保存中のフラグを追加
   const [lpConfig, setLpConfig] = useState({
       autoMarketSync: data?.config?.auto_market_sync !== 'false',
       showSimulator: data?.config?.show_simulator !== 'false',
       showFaq: data?.config?.show_faq !== 'false',
       showConcierge: data?.config?.show_concierge !== 'false',
   });
+  const [isSavingConfig, setIsSavingConfig] = useState(false);
 
   const [sampleTotal, setSampleTotal] = useState<number | ''>('');
   const [sampleCopper, setSampleCopper] = useState<number | ''>('');
@@ -453,15 +454,32 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     return sortConfig.direction === 'asc' ? <Icons.SortAsc /> : <Icons.SortDesc />;
   };
 
-  const saveLpConfig = async (key: string, value: boolean) => {
-    setLpConfig(prev => ({ ...prev, [key]: value }));
-    const dbKey = key === 'showSimulator' ? 'show_simulator' : key === 'showFaq' ? 'show_faq' : key === 'showConcierge' ? 'show_concierge' : 'auto_market_sync';
+  // ★ 修正：一括で保存し、キャッシュを消してリロードさせる
+  const handleSaveLpConfig = async () => {
+    setIsSavingConfig(true);
     try {
+      const updates = [
+        { key: 'auto_market_sync', value: lpConfig.autoMarketSync ? 'true' : 'false' },
+        { key: 'show_simulator', value: lpConfig.showSimulator ? 'true' : 'false' },
+        { key: 'show_faq', value: lpConfig.showFaq ? 'true' : 'false' },
+        { key: 'show_concierge', value: lpConfig.showConcierge ? 'true' : 'false' }
+      ];
+
+      for (const req of updates) {
         await fetch('/api/gas', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'UPDATE_CONFIG', key: dbKey, value: value ? 'true' : 'false' })
+            body: JSON.stringify({ action: 'UPDATE_CONFIG', key: req.key, value: req.value })
         });
-    } catch(e) { alert("設定の保存に失敗しました。"); }
+      }
+      
+      // キャッシュを消してからリロードさせることで、LP側に即座に最新データを引かせる
+      localStorage.removeItem('factoryOS_masterData');
+      alert("システム設定を保存しました。画面を更新して反映します。");
+      window.location.reload();
+    } catch(e) {
+      alert("設定の保存に失敗しました。");
+      setIsSavingConfig(false);
+    }
   };
 
   let filteredData = [];
@@ -557,6 +575,22 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       });
   }
 
+  const handleRunBatchSettings = async (type: 'MARKET' | 'LEAD' | 'BACKUP') => {
+      const typeLabel = type === 'MARKET' ? '市況データ（建値）' : type === 'LEAD' ? '営業リード' : 'データベースのバックアップ';
+      if (!confirm(`${typeLabel} の処理を今すぐ実行します。よろしいですか？`)) return;
+      setIsRunningBatch(type);
+      try {
+          const action = type === 'MARKET' ? 'RUN_MARKET_SYNC' : type === 'LEAD' ? 'RUN_LEAD_GEN' : 'CREATE_BACKUP';
+          const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }) });
+          const result = await res.json();
+          if (result.status === 'success') {
+              alert('✅ ' + result.message);
+              if (result.url) window.open(result.url, '_blank'); 
+          } else { alert('エラーが発生しました: ' + result.message); }
+      } catch (e) { alert('通信エラーが発生しました。'); }
+      setIsRunningBatch('NONE');
+  };
+
   const ImageSlot = ({ title, imageKey, colIdx, pendingKey }: { title: string, imageKey: string, colIdx: number, pendingKey: string }) => {
     const savedImage = editingItem[imageKey];
     const pendingImage = editingItem[pendingKey];
@@ -599,14 +633,14 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                         <p className="text-sm text-gray-600 leading-relaxed mb-6">
                             お客様が閲覧するWebサイトの各機能をリアルタイムにON/OFFできます。
                         </p>
-                        <div className="space-y-4">
+                        <div className="space-y-4 mb-6">
                             <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 flex justify-between items-center shadow-sm">
                                 <div>
                                     <h4 className="font-bold text-gray-900">限界買取シミュレーター</h4>
                                     <p className="text-xs text-gray-500 mt-1">お客様が自分で歩留まりを計算できる機能</p>
                                 </div>
                                 <label className="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" className="sr-only peer" checked={lpConfig.showSimulator} onChange={(e) => saveLpConfig('showSimulator', e.target.checked)} />
+                                    <input type="checkbox" className="sr-only peer" checked={lpConfig.showSimulator} onChange={(e) => setLpConfig({...lpConfig, showSimulator: e.target.checked})} />
                                     <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                                 </label>
                             </div>
@@ -616,7 +650,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                                     <p className="text-xs text-gray-500 mt-1">画面右下に浮いているAIチャットボット</p>
                                 </div>
                                 <label className="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" className="sr-only peer" checked={lpConfig.showConcierge} onChange={(e) => saveLpConfig('showConcierge', e.target.checked)} />
+                                    <input type="checkbox" className="sr-only peer" checked={lpConfig.showConcierge} onChange={(e) => setLpConfig({...lpConfig, showConcierge: e.target.checked})} />
                                     <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                                 </label>
                             </div>
@@ -626,10 +660,22 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                                     <p className="text-xs text-gray-500 mt-1">過去の問い合わせからAIが自動生成した「よくある質問」</p>
                                 </div>
                                 <label className="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" className="sr-only peer" checked={lpConfig.showFaq} onChange={(e) => saveLpConfig('showFaq', e.target.checked)} />
+                                    <input type="checkbox" className="sr-only peer" checked={lpConfig.showFaq} onChange={(e) => setLpConfig({...lpConfig, showFaq: e.target.checked})} />
                                     <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                                 </label>
                             </div>
+                        </div>
+
+                        {/* ★ 追加：一括保存ボタン */}
+                        <div className="pt-4 border-t border-gray-200 flex justify-end">
+                            <button 
+                                onClick={handleSaveLpConfig} 
+                                disabled={isSavingConfig} 
+                                className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-sm shadow-md flex items-center gap-2 transition disabled:opacity-50"
+                            >
+                                {isSavingConfig ? <span className="animate-spin"><Icons.Refresh /></span> : <Icons.Save />}
+                                {isSavingConfig ? '保存中...' : '設定を保存して反映する'}
+                            </button>
                         </div>
                     </div>
 
@@ -659,10 +705,20 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                                     <p className="text-xs text-gray-500 mt-1">国内メーカー建値を自動取得し、価格を更新します。</p>
                                 </div>
                                 <label className="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" className="sr-only peer" checked={lpConfig.autoMarketSync} onChange={(e) => saveLpConfig('autoMarketSync', e.target.checked)} />
+                                    <input type="checkbox" className="sr-only peer" checked={lpConfig.autoMarketSync} onChange={(e) => setLpConfig({...lpConfig, autoMarketSync: e.target.checked})} />
                                     <div className="w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-500"></div>
                                 </label>
                             </div>
+                        </div>
+                        <div className="mt-4 pt-4 border-t border-gray-200 flex justify-end">
+                            <button 
+                                onClick={handleSaveLpConfig} 
+                                disabled={isSavingConfig} 
+                                className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-sm shadow-md flex items-center gap-2 transition disabled:opacity-50"
+                            >
+                                {isSavingConfig ? <span className="animate-spin"><Icons.Refresh /></span> : <Icons.Save />}
+                                {isSavingConfig ? '保存中...' : '設定を保存して反映する'}
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -994,11 +1050,11 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                     <div className="mb-6 bg-gray-800/50 border border-gray-700 p-3 rounded-md relative">
                         <label className="block text-xs font-bold text-gray-400 mb-2 flex items-center justify-between">
                             <span>🗣️ AIへのヒント・補足（任意）</span>
-                            <button onClick={toggleHintVoiceInput} className={`p-1.5 rounded transition ${isListeningHint ? 'bg-red-500 text-white animate-pulse' : 'bg-gray-700 text-gray-300 hover:bg-blue-600'}`}>
+                            <button onClick={toggleHintVoiceInput} className={`p-1.5 rounded transition ${isListeningHint ? 'bg-red-500 text-white animate-pulse shadow-inner' : 'bg-gray-700 text-gray-300 hover:bg-blue-600'}`}>
                                 <Icons.Mic />
                             </button>
                         </label>
-                        <textarea className="w-full bg-gray-900 border border-gray-600 rounded text-sm text-white p-2 outline-none focus:border-blue-500 min-h-[60px]" placeholder="例: 中身は細線の束、かなり重い、雑線は入っていない等..." value={aiHint} onChange={e => setAiHint(e.target.value)} />
+                        <textarea className="w-full bg-gray-900 border border-gray-600 rounded-sm text-sm text-white p-2 outline-none focus:border-blue-500 min-h-[60px]" placeholder="例: 中身は細線の束、かなり重い、雑線は入っていない等..." value={aiHint} onChange={e => setAiHint(e.target.value)} />
                     </div>
 
                     <button onClick={runAiExtraction} disabled={!imgData1 && !aiHint} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-md flex justify-center items-center gap-2 disabled:bg-gray-700 transition shadow-lg text-lg">
