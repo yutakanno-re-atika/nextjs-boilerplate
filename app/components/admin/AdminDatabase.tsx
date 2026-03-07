@@ -127,12 +127,12 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   
   const [isRunningBatch, setIsRunningBatch] = useState<'NONE' | 'MARKET' | 'LEAD' | 'BACKUP'>('NONE');
 
-  // ★ LP設定用のステートと、保存中のフラグを追加
+  // ★ 厳格な型チェック (String変換) によるON/OFF初期値セット
   const [lpConfig, setLpConfig] = useState({
-      autoMarketSync: data?.config?.auto_market_sync !== 'false',
-      showSimulator: data?.config?.show_simulator !== 'false',
-      showFaq: data?.config?.show_faq !== 'false',
-      showConcierge: data?.config?.show_concierge !== 'false',
+      autoMarketSync: String(data?.config?.auto_market_sync) !== 'false',
+      showSimulator: String(data?.config?.show_simulator) !== 'false',
+      showFaq: String(data?.config?.show_faq) !== 'false',
+      showConcierge: String(data?.config?.show_concierge) !== 'false',
   });
   const [isSavingConfig, setIsSavingConfig] = useState(false);
 
@@ -190,7 +190,8 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
   const handleOpenModal = (item: any = null) => {
     const sqData = parseSqForInput(item?.sq); const coreData = parseCoreForInput(item?.core);
-    setEditingItem({ ...item, _sqValue: sqData.val, _sqUnit: sqData.unit, _coreValue: coreData, material: item?.material || '純銅', showOnWeb: item ? item.showOnWeb : true });
+    // ★ 文字列 'false' も対応
+    setEditingItem({ ...item, _sqValue: sqData.val, _sqUnit: sqData.unit, _coreValue: coreData, material: item?.material || '純銅', showOnWeb: item ? String(item.showOnWeb) !== 'false' : true });
     setSampleTotal(item?.sampleTotal || ''); setSampleCopper(item?.sampleCopper || ''); setSampleCover(item?.sampleCover || ''); 
     setIsModalOpen(true);
   };
@@ -454,7 +455,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     return sortConfig.direction === 'asc' ? <Icons.SortAsc /> : <Icons.SortDesc />;
   };
 
-  // ★ 修正：一括で保存し、キャッシュを消してリロードさせる
   const handleSaveLpConfig = async () => {
     setIsSavingConfig(true);
     try {
@@ -472,10 +472,9 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         });
       }
       
-      // キャッシュを消してからリロードさせることで、LP側に即座に最新データを引かせる
-      localStorage.removeItem('factoryOS_masterData');
+      localStorage.removeItem('factoryOS_masterData'); // ★ 古いキャッシュを強制削除
       alert("システム設定を保存しました。画面を更新して反映します。");
-      window.location.reload();
+      window.location.reload(); // ★ 即座にリロードして最新のGASデータを引く
     } catch(e) {
       alert("設定の保存に失敗しました。");
       setIsSavingConfig(false);
@@ -575,22 +574,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       });
   }
 
-  const handleRunBatchSettings = async (type: 'MARKET' | 'LEAD' | 'BACKUP') => {
-      const typeLabel = type === 'MARKET' ? '市況データ（建値）' : type === 'LEAD' ? '営業リード' : 'データベースのバックアップ';
-      if (!confirm(`${typeLabel} の処理を今すぐ実行します。よろしいですか？`)) return;
-      setIsRunningBatch(type);
-      try {
-          const action = type === 'MARKET' ? 'RUN_MARKET_SYNC' : type === 'LEAD' ? 'RUN_LEAD_GEN' : 'CREATE_BACKUP';
-          const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }) });
-          const result = await res.json();
-          if (result.status === 'success') {
-              alert('✅ ' + result.message);
-              if (result.url) window.open(result.url, '_blank'); 
-          } else { alert('エラーが発生しました: ' + result.message); }
-      } catch (e) { alert('通信エラーが発生しました。'); }
-      setIsRunningBatch('NONE');
-  };
-
   const ImageSlot = ({ title, imageKey, colIdx, pendingKey }: { title: string, imageKey: string, colIdx: number, pendingKey: string }) => {
     const savedImage = editingItem[imageKey];
     const pendingImage = editingItem[pendingKey];
@@ -665,8 +648,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                                 </label>
                             </div>
                         </div>
-
-                        {/* ★ 追加：一括保存ボタン */}
                         <div className="pt-4 border-t border-gray-200 flex justify-end">
                             <button 
                                 onClick={handleSaveLpConfig} 
@@ -683,7 +664,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                         <h3 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-3 mb-6 flex items-center gap-2">
                             <Icons.Settings /> システム自動実行バッチの制御
                         </h3>
-                        <div className="space-y-4">
+                        <div className="space-y-4 mb-6">
                             <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
                                 <div>
                                     <h4 className="font-bold text-gray-900 flex items-center gap-2 text-lg">
@@ -710,7 +691,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                                 </label>
                             </div>
                         </div>
-                        <div className="mt-4 pt-4 border-t border-gray-200 flex justify-end">
+                        <div className="pt-4 border-t border-gray-200 flex justify-end">
                             <button 
                                 onClick={handleSaveLpConfig} 
                                 disabled={isSavingConfig} 
@@ -780,11 +761,11 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
           </thead>
           <tbody className="divide-y divide-gray-200 bg-white">
             {sortedData.map((item: any, idx: number) => (
-              <tr key={item.id || idx} className={`hover:bg-gray-50 transition ${activeTab === 'WIRES' && item.showOnWeb === false ? 'opacity-50 bg-gray-100' : ''}`}>
+              <tr key={item.id || idx} className={`hover:bg-gray-50 transition ${activeTab === 'WIRES' && String(item.showOnWeb) === 'false' ? 'opacity-50 bg-gray-100' : ''}`}>
                 {activeTab === 'WIRES' && (
                   <>
                     <td className="p-3 text-center">
-                        {item.showOnWeb === false ? <span className="text-gray-400" title="Web非表示"><Icons.EyeOff /></span> : <span className="text-blue-500" title="Web表示中"><Icons.Globe /></span>}
+                        {String(item.showOnWeb) === 'false' ? <span className="text-gray-400" title="Web非表示"><Icons.EyeOff /></span> : <span className="text-blue-500" title="Web表示中"><Icons.Globe /></span>}
                     </td>
                     <td className="p-3 font-bold text-gray-700">{item.maker || '-'}</td>
                     <td className="p-3 font-bold text-gray-900">
@@ -987,7 +968,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         </div>
       </div>
 
-      {/* ★ AIアシスト登録モーダル */}
       {isAiModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-gray-900 w-full max-w-4xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col max-h-[90vh]">
@@ -1050,11 +1030,11 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                     <div className="mb-6 bg-gray-800/50 border border-gray-700 p-3 rounded-md relative">
                         <label className="block text-xs font-bold text-gray-400 mb-2 flex items-center justify-between">
                             <span>🗣️ AIへのヒント・補足（任意）</span>
-                            <button onClick={toggleHintVoiceInput} className={`p-1.5 rounded transition ${isListeningHint ? 'bg-red-500 text-white animate-pulse shadow-inner' : 'bg-gray-700 text-gray-300 hover:bg-blue-600'}`}>
+                            <button onClick={toggleHintVoiceInput} className={`p-1.5 rounded transition ${isListeningHint ? 'bg-red-500 text-white animate-pulse' : 'bg-gray-700 text-gray-300 hover:bg-blue-600'}`}>
                                 <Icons.Mic />
                             </button>
                         </label>
-                        <textarea className="w-full bg-gray-900 border border-gray-600 rounded-sm text-sm text-white p-2 outline-none focus:border-blue-500 min-h-[60px]" placeholder="例: 中身は細線の束、かなり重い、雑線は入っていない等..." value={aiHint} onChange={e => setAiHint(e.target.value)} />
+                        <textarea className="w-full bg-gray-900 border border-gray-600 rounded text-sm text-white p-2 outline-none focus:border-blue-500 min-h-[60px]" placeholder="例: 中身は細線の束、かなり重い、雑線は入っていない等..." value={aiHint} onChange={e => setAiHint(e.target.value)} />
                     </div>
 
                     <button onClick={runAiExtraction} disabled={!imgData1 && !aiHint} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-md flex justify-center items-center gap-2 disabled:bg-gray-700 transition shadow-lg text-lg">
@@ -1067,7 +1047,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         </div>
       )}
 
-      {/* ★ 編集・新規登録モーダル */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4 md:p-0">
           <div className="bg-white w-full max-w-4xl rounded-sm shadow-2xl animate-in zoom-in-95 duration-200">
@@ -1090,7 +1069,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                             <p className="text-xs text-gray-500 mt-1">OFFにすると、社内システムでのみ表示される隠しマスターになります。</p>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" className="sr-only peer" checked={editingItem.showOnWeb !== false} onChange={(e) => setEditingItem({...editingItem, showOnWeb: e.target.checked})} />
+                            <input type="checkbox" className="sr-only peer" checked={String(editingItem.showOnWeb) !== 'false'} onChange={(e) => setEditingItem({...editingItem, showOnWeb: e.target.checked})} />
                             <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                         </label>
                     </div>
