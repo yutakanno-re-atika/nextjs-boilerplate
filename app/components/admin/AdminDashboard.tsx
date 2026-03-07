@@ -29,6 +29,9 @@ const Icons = {
   Shield: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>,
   School: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222"/></svg>,
   ExternalLink: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>,
+  Refresh: () => <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
+  CheckCircle: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+  AlertTriangle: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
 };
 
 const ROLE_PERMISSIONS = {
@@ -70,6 +73,9 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
   const [selectedClientName, setSelectedClientName] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
+  // ★ クラウド同期状態のステートを追加
+  const [syncStatus, setSyncStatus] = useState<'IDLE' | 'SYNCING' | 'SUCCESS' | 'ERROR'>('IDLE');
+
   const [isVoiceOutputEnabled, setIsVoiceOutputEnabled] = useState(true); 
   const [isLearningMode, setIsLearningMode] = useState(false); 
   const [tutorSessionId] = useState(`TUTOR_${new Date().getTime().toString().slice(-6)}`);
@@ -120,7 +126,7 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
 
   const handleLogoClick = () => handleNavigate(allowedTabs.includes('HOME') ? 'HOME' : defaultTab());
 
-  // ★ 修正：リロードせず、ローカルステートを即座に更新して画面を切り替える（楽観的UI更新）
+  // POS成功時
   const handlePosSuccess = (updatedData: any) => { 
       if (updatedData) {
           setLocalReservations(prev => {
@@ -131,19 +137,25 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
       }
       setEditingResId(null); 
       handleNavigate('OPERATIONS'); 
+      setSyncStatus('SUCCESS');
+      setTimeout(() => setSyncStatus('IDLE'), 3000);
   };
 
-  // ★ 修正：カンバンでのステータス移動もローカルステートを即座に更新
+  // カンバンステータス更新時
   const handleUpdateStatus = async (id: string, status: string) => {
       setLocalReservations(prev => prev.map(r => r.id === id ? { ...r, status } : r));
+      setSyncStatus('SYNCING');
       try {
           await fetch('/api/gas', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ action: 'UPDATE_RESERVATION_STATUS', reservationId: id, status: status })
           });
+          setSyncStatus('SUCCESS');
+          setTimeout(() => setSyncStatus('IDLE'), 3000);
       } catch (err) {
-          console.error('Status update failed', err);
+          setSyncStatus('ERROR');
+          setTimeout(() => setSyncStatus('IDLE'), 5000);
       }
   };
 
@@ -261,6 +273,19 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
          {adminTab === 'PHOTO' && <AdminPhotoUpload />}
       </main>
 
+      {/* ★ クラウド同期ステータスバッジ（画面左下） */}
+      {syncStatus !== 'IDLE' && (
+          <div className={`fixed bottom-4 left-4 md:left-[260px] z-[100] px-4 py-2.5 rounded-full shadow-lg flex items-center gap-2 text-sm font-bold transition-all duration-300 animate-in slide-in-from-bottom-5 ${
+              syncStatus === 'SYNCING' ? 'bg-blue-600 text-white' :
+              syncStatus === 'SUCCESS' ? 'bg-green-500 text-white' :
+              'bg-red-600 text-white'
+          }`}>
+              {syncStatus === 'SYNCING' && <><Icons.Refresh /> クラウドと同期中...</>}
+              {syncStatus === 'SUCCESS' && <><Icons.CheckCircle /> 同期完了</>}
+              {syncStatus === 'ERROR' && <><Icons.AlertTriangle /> 同期エラー（再試行してください）</>}
+          </div>
+      )}
+
       {isLearningMode && (
           <FloatingAiMentor 
               onClose={() => setIsLearningMode(false)} 
@@ -269,7 +294,6 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
               sessionId={tutorSessionId}
           />
       )}
-
     </div>
   );
 };
