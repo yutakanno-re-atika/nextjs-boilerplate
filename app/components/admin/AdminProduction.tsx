@@ -1,3 +1,4 @@
+// app/components/admin/AdminProduction.tsx
 // @ts-nocheck
 import React, { useState, useEffect, useMemo } from 'react';
 
@@ -19,13 +20,13 @@ const Icons = {
 };
 
 const ProvenanceBadge = ({ type }: { type: 'HUMAN' | 'AI_AUTO' | 'CO_OP' }) => {
-    const baseStyle = "inline-block px-1.5 py-0.5 text-[9px] font-mono font-bold tracking-widest rounded-sm text-white cursor-default shadow-sm";
-    switch (type) {
-        case 'HUMAN': return <span className={`${baseStyle} bg-gray-900`} title="実測・確定データ">HUMAN</span>;
-        case 'CO_OP': return <span className={`${baseStyle} bg-gray-600`} title="AI＋人間 協調データ">CO-P</span>;
-        case 'AI_AUTO': return <span className={`${baseStyle} bg-gray-400`} title="AI予測・推論データ">AI</span>;
-        default: return null;
-    }
+  const baseStyle = "inline-block px-1.5 py-0.5 text-[9px] font-mono font-bold tracking-widest rounded-sm text-white cursor-default shadow-sm";
+  switch (type) {
+    case 'HUMAN': return <span className={`${baseStyle} bg-gray-900`} title="実測・確定データ">HUMAN</span>;
+    case 'CO_OP': return <span className={`${baseStyle} bg-gray-600`} title="AI＋人間 協調データ">CO-P</span>;
+    case 'AI_AUTO': return <span className={`${baseStyle} bg-gray-400`} title="AI予測・推論データ">AI</span>;
+    default: return null;
+  }
 };
 
 export const AdminProduction = ({ data, localReservations }: { data: any, localReservations: any[] }) => {
@@ -83,10 +84,14 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
   const { toSortLots, readyLots } = useMemo(() => {
       let rawLots: any[] = [];
       
-      localReservations.filter(r => r.status === 'COMPLETED').forEach(res => {
+      // ★ 修正：カンバンで「RECEIVED（検収済）」または「IN_PROGRESS（処理中）」になった荷物だけを拾う
+      localReservations.filter(r => r.status === 'RECEIVED' || r.status === 'IN_PROGRESS').forEach(res => {
           let items = [];
           try { 
-              let temp = res.items; if (typeof temp === 'string') temp = JSON.parse(temp); if (typeof temp === 'string') temp = JSON.parse(temp);
+              let temp = res.items; 
+              if (typeof temp === 'string') temp = temp.replace(/""/g, '"');
+              if (typeof temp === 'string') temp = JSON.parse(temp); 
+              if (typeof temp === 'string') temp = JSON.parse(temp);
               if (Array.isArray(temp)) items = temp;
           } catch(e) {}
           
@@ -106,7 +111,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                           date: res.createdAt ? String(res.createdAt).substring(5, 16) : '不明', 
                           product: product, remainingWeight: remainingWeight, expectedRatio: productMaster ? productMaster.ratio : 0,
                           isSorted: false,
-                          isTin: product.includes('錫') // ★ 錫メッキの簡易フラグ
+                          isTin: product.includes('錫') || it.material === '錫メッキ' 
                       });
                   }
               }
@@ -169,7 +174,6 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
     const selected = readyLots.filter(l => checkedLotIds.includes(l.lotId));
     if (selected.length === 0) return alert('加工するロットを選択してください');
 
-    // ★ 追加：錫メッキ混入の強制ブロック
     const hasTin = selected.some(l => l.isTin);
     const hasCopper = selected.some(l => !l.isTin);
 
@@ -203,7 +207,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
         if (result.status === 'success') { 
             const newConsumedIds = [...localConsumedIds, ...blendingLots.map(l => l.lotId)];
             setLocalConsumedIds(newConsumedIds); localStorage.setItem('factoryOS_consumedIds', JSON.stringify(newConsumedIds));
-            alert('ブレンド加工データを記録しました！');
+            alert('ブレンド加工データを記録しました！\n（作業がすべて終わった場合は、カンバン画面で該当カードを「処理完了」に移動させてください）');
             setBlendingLots([]); setCheckedLotIds([]); window.location.reload(); 
         } else { alert('エラー: ' + result.message); }
     } catch(e) { alert('通信エラーが発生しました'); }
@@ -618,6 +622,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
           )}
       </div>
 
+      {/* 印刷用レポート（変更なし） */}
       <div className="hidden print:block w-[210mm] min-h-[297mm] bg-white text-black p-8 mx-auto font-sans">
           <div className="border-b-2 border-black pb-4 mb-6 flex justify-between items-end">
               <div>
