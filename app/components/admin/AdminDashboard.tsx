@@ -27,6 +27,7 @@ const Icons = {
   Menu: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" /></svg>,
   X: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>,
   Shield: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>,
+  School: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222"/></svg>,
   ExternalLink: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>,
 };
 
@@ -105,6 +106,21 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
 
   const handlePosSuccess = () => { setEditingResId(null); setAdminTab('OPERATIONS'); window.location.reload(); };
 
+  // ★ カンバンのドラッグ＆ドロップ用のステータス更新関数を追加
+  const handleUpdateStatus = async (id: string, status: string) => {
+      // 楽観的UI更新で瞬時に移動させる
+      setLocalReservations(prev => prev.map(r => r.id === id ? { ...r, status } : r));
+      try {
+          await fetch('/api/gas', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'UPDATE_RESERVATION_STATUS', reservationId: id, status: status })
+          });
+      } catch (err) {
+          alert('ステータス更新に失敗しました');
+      }
+  };
+
   const ALL_MENU_ITEMS = [
       { id: 'HOME', icon: Icons.Home, label: 'ダッシュボード', reqRole: 'MANAGER〜' },
       { id: 'OPERATIONS', icon: Icons.Kanban, label: '現場状況管理', reqRole: 'FRONT/PLANT〜' },
@@ -158,7 +174,7 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
             <div className="flex flex-col gap-2 mt-3">
                 <div className="flex items-center justify-between bg-white border border-gray-200 p-2 rounded-md shadow-sm">
                     <span className="text-xs font-bold text-gray-600 flex items-center gap-1.5">
-                        <span className="text-green-600"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222"/></svg></span> 教育メンターAI
+                        <span className="text-green-600"><Icons.School /></span> 教育メンターAI
                     </span>
                     <button onClick={() => setIsLearningMode(!isLearningMode)} className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${isLearningMode ? 'bg-green-500' : 'bg-gray-300'}`}>
                         <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${isLearningMode ? 'translate-x-5' : 'translate-x-1'}`} />
@@ -183,11 +199,16 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
                     <button 
                         key={item.id}
                         onClick={() => handleNavigate(item.id)} 
-                        className={`w-full text-left px-3 py-2.5 rounded-md text-sm font-bold transition-all flex items-center gap-3 relative ${isActive ? 'text-gray-900 bg-white shadow-sm border border-gray-200' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'}`}
+                        className={`w-full text-left px-3 py-2.5 rounded-md text-sm font-bold transition-all flex items-center justify-between group relative ${isActive ? 'text-gray-900 bg-white shadow-sm border border-gray-200' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'}`}
                     >
                         {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-4 bg-[#D32F2F] rounded-r-md"></div>}
-                        <item.icon />
-                        {item.label}
+                        <div className="flex items-center gap-3">
+                            <item.icon />
+                            {item.label}
+                        </div>
+                        <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded-sm ${isActive ? 'bg-gray-100 text-gray-500' : 'bg-gray-200 text-gray-400 group-hover:bg-gray-300'}`}>
+                            {item.reqRole}
+                        </span>
                     </button>
                 )
             })}
@@ -207,7 +228,8 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
 
       <main className="flex-1 overflow-y-auto bg-[#FFFFFF] p-4 md:p-8 lg:p-10 flex flex-col relative w-full selection:bg-red-100 selection:text-red-900 pb-32 md:pb-10">
          {adminTab === 'HOME' && <AdminHome data={data} localReservations={localReservations} onNavigate={handleNavigate} />}
-         {adminTab === 'OPERATIONS' && <AdminKanban data={data} onUpdateStatus={() => {}} onEditReservation={(id) => handleNavigate('POS', id)} />}
+         {/* ★ handleUpdateStatus をカンバンに渡す */}
+         {adminTab === 'OPERATIONS' && <AdminKanban localReservations={localReservations} onUpdateStatus={handleUpdateStatus} onEditReservation={(id) => handleNavigate('POS', id)} />}
          {adminTab === 'POS' && <AdminPos data={data} editingResId={editingResId} localReservations={localReservations} onSuccess={handlePosSuccess} onClear={() => setEditingResId(null)} isVoiceOutputEnabled={isVoiceOutputEnabled} />}
          {adminTab === 'PRODUCTION' && <AdminProduction data={data} localReservations={localReservations} />}
          {adminTab === 'COMPETITOR' && <AdminCompetitor data={data} />}
