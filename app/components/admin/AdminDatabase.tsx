@@ -1,3 +1,4 @@
+// app/components/admin/AdminDatabase.tsx
 // @ts-nocheck
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 
@@ -18,7 +19,6 @@ const Icons = {
   SortDesc: () => <svg className="w-3 h-3 inline-block ml-1 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" /></svg>,
   SortNone: () => <svg className="w-3 h-3 inline-block ml-1 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" /></svg>,
   Settings: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
-  Play: () => <svg className="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   Save: () => <svg className="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>,
   Ruler: () => <svg className="w-4 h-4 inline-block text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M3 14h18m-9-4v8m-4-8v8m8-8v8M4 6h16a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2z" /></svg>,
   AlertTriangle: () => <svg className="w-4 h-4 inline-block text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
@@ -126,8 +126,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const hintRecognitionRef = useRef<any>(null);
   
   const [autoMarketSync, setAutoMarketSync] = useState(true);
-  const [autoLeadGen, setAutoLeadGen] = useState(true);
-  const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [isRunningBatch, setIsRunningBatch] = useState<'NONE' | 'MARKET' | 'LEAD' | 'BACKUP'>('NONE');
 
   const [sampleTotal, setSampleTotal] = useState<number | ''>('');
@@ -146,6 +144,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const wireStats = useMemo(() => {
       let complete = 0, partial = 0, none = 0;
       wires.forEach((w:any) => {
+          // ★ 完了の条件は今まで通り、本質的な3枚（断面・全体・剥線）が揃っていることとする
           const has1 = !!w.image1; const has2 = !!w.image2; const has3 = !!w.image3;
           if (has1 && has2 && has3) complete++;
           else if (!has1 && !has2 && !has3) none++;
@@ -167,7 +166,11 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
             conductor: pendingData.conductor || '', material: pendingData.material || '純銅',
             ratio: pendingData.ratio || '', aiEstimatedRatio: pendingData.ratio || '',
             memo: `【POSからのAIアシスト引継ぎ】\nAI推論根拠: ${pendingData.reason || ''}\n※実測を行って歩留まりを上書きしてください。`,
-            _pendingImageData1: pendingData.image1 || null, _pendingImageData2: pendingData.image2 || null,
+            // ★ POSからの5枚枠への引継ぎマッピング
+            _pendingImageData1: pendingData.image1 || null, 
+            _pendingImageData2: pendingData.image2 || null,
+            _pendingImageData4: pendingData.image4 || null,
+            _pendingImageData5: pendingData.image5 || null,
             _aiInitialState: { maker: '', name: pendingData.name || '', conductor: pendingData.conductor || '', material: pendingData.material || '純銅', ratio: pendingData.ratio || '' }
         });
         setSampleTotal(''); setSampleCopper(''); setSampleCover('');
@@ -250,24 +253,20 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     if (activeTab === 'CLIENTS') sheetName = 'Clients';
     if (activeTab === 'STAFF') sheetName = 'Staff';
 
-    if (finalItem._pendingImageData1) {
-        try {
-            const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'UPLOAD_IMAGE', data: finalItem._pendingImageData1, mimeType: 'image/jpeg', fileName: `master_sec_${Date.now()}.jpg` }) });
-            const r = await res.json(); if (r.status === 'success') finalItem.image1 = r.url;
-        } catch(e) {}
-    }
-    if (finalItem._pendingImageData2) {
-        try {
-            const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'UPLOAD_IMAGE', data: finalItem._pendingImageData2, mimeType: 'image/jpeg', fileName: `master_prt_${Date.now()}.jpg` }) });
-            const r = await res.json(); if (r.status === 'success') finalItem.image2 = r.url;
-        } catch(e) {}
-    }
-    if (finalItem._pendingImageData3) {
-        try {
-            const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'UPLOAD_IMAGE', data: finalItem._pendingImageData3, mimeType: 'image/jpeg', fileName: `master_nak_${Date.now()}.jpg` }) });
-            const r = await res.json(); if (r.status === 'success') finalItem.image3 = r.url;
-        } catch(e) {}
-    }
+    // ★ pendingImageData のアップロードと紐付け
+    const uploadPendingImage = async (pendingKey: string, dbKey: string, suffix: string) => {
+        if (finalItem[pendingKey]) {
+            try {
+                const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'UPLOAD_IMAGE', data: finalItem[pendingKey], mimeType: 'image/jpeg', fileName: `master_${suffix}_${Date.now()}.jpg` }) });
+                const r = await res.json(); if (r.status === 'success') finalItem[dbKey] = r.url;
+            } catch(e) {}
+        }
+    };
+    await uploadPendingImage('_pendingImageData1', 'image1', 'sec');
+    await uploadPendingImage('_pendingImageData2', 'image2', 'all');
+    await uploadPendingImage('_pendingImageData3', 'image3', 'nak');
+    await uploadPendingImage('_pendingImageData4', 'image4', 'prt1');
+    await uploadPendingImage('_pendingImageData5', 'image5', 'prt2');
 
     const action = finalItem.id ? 'UPDATE_DB_RECORD' : 'ADD_DB_RECORD';
     const payload = finalItem.id ? { action, sheetName, recordId: finalItem.id, updates: getUpdatesMap(finalItem, activeTab) } : { action, sheetName, data: finalItem };
@@ -293,10 +292,13 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
   const getUpdatesMap = (item: any, tab: string) => {
     if (tab === 'WIRES') {
-        const updates: any = { 1: item.maker, 2: item.name, 3: item.year, 4: item.sq, 5: item.sampleTotal, 6: item.sampleCopper, 7: item.core, 8: item.conductor, 9: item.ratio, 10: item.memo, 16: item.material, 17: item.sampleCover };
+        // ★ image4, image5 に対応するためインデックスを調整
+        const updates: any = { 1: item.maker, 2: item.name, 3: item.year, 4: item.sq, 5: item.sampleTotal, 6: item.sampleCopper, 7: item.core, 8: item.conductor, 9: item.ratio, 10: item.memo, 18: item.material, 19: item.sampleCover };
         if (item.image1 !== undefined) updates[11] = item.image1;
         if (item.image2 !== undefined) updates[12] = item.image2;
         if (item.image3 !== undefined) updates[13] = item.image3;
+        if (item.image4 !== undefined) updates[14] = item.image4;
+        if (item.image5 !== undefined) updates[15] = item.image5;
         return updates;
     }
     if (tab === 'UNKNOWN') return { 1: item.name, 2: item.ratio, 3: item.reason, 9: item.material }; 
@@ -335,9 +337,19 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       });
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, recordId: string, colIndex: number, sheetName: string) => {
+  const handleImageUploadLocal = async (e: React.ChangeEvent<HTMLInputElement>, pendingKey: string) => {
       const file = e.target.files?.[0]; if (!file) return;
-      setUploadingImageId(`${recordId}-${colIndex}`);
+      try {
+          const b64 = await compressImage(file);
+          setEditingItem({...editingItem, [pendingKey]: b64});
+      } catch(err: any) { alert(err.message); }
+      e.target.value = '';
+  };
+
+  // 既存DBへの直接アップロード（※編集画面から使う旧来の即時アップロード）
+  const handleImageUploadDirect = async (e: React.ChangeEvent<HTMLInputElement>, recordId: string, colIdx: number, sheetName: string) => {
+      const file = e.target.files?.[0]; if (!file) return;
+      setUploadingImageId(`${recordId}-${colIdx}`);
       try {
           const base64Data = await compressImage(file);
           const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'UPLOAD_IMAGE', sheetName: sheetName, recordId: recordId, colIndex: colIndex, data: base64Data, mimeType: 'image/jpeg', fileName: `img_${recordId}_${Date.now()}.jpg` }) });
@@ -448,7 +460,8 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                   conductor: result.data.conductor === '-' ? '' : result.data.conductor, material: result.data.material === '-' ? '純銅' : result.data.material,
                   ratio: result.data.estimatedRatio || '', aiEstimatedRatio: result.data.estimatedRatio || '',
                   memo: `【AIアシスト抽出】\nAI推論根拠: ${result.data.reason}\n※実測を行って歩留まりを上書きしてください。`,
-                  _pendingImageData1: imgData1, _pendingImageData2: imgData2, _pendingImageData3: imgData3, _pendingImageData4: imgData4,
+                  // ★ ここで 5枠にマッピング
+                  _pendingImageData1: imgData1, _pendingImageData2: imgData2, _pendingImageData4: imgData3, _pendingImageData5: imgData4,
                   _aiInitialState: { maker: result.data.maker === '-' ? '' : result.data.maker, name: result.data.name === '-' ? '' : result.data.name, conductor: result.data.conductor === '-' ? '' : result.data.conductor, material: result.data.material === '-' ? '純銅' : result.data.material, ratio: result.data.estimatedRatio || '' }
               });
 
@@ -579,7 +592,38 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       } catch (e) { alert('通信エラーが発生しました。'); }
       setIsRunningBatch('NONE');
   };
-  const handleSaveSettings = () => {}; 
+
+  // ★ 追加：編集画面の汎用画像スロットコンポーネント
+  const ImageSlot = ({ title, imageKey, colIdx, pendingKey }: { title: string, imageKey: string, colIdx: number, pendingKey: string }) => {
+    const savedImage = editingItem[imageKey];
+    const pendingImage = editingItem[pendingKey];
+    const hasImage = !!savedImage || !!pendingImage;
+
+    return (
+        <div className="flex flex-col items-center border border-gray-300 p-2 rounded-sm bg-white h-[90px] justify-center relative overflow-hidden group shadow-sm w-full">
+            <span className="absolute top-0 left-0 bg-gray-100 text-gray-600 text-[9px] font-bold px-1.5 py-0.5 rounded-br-sm z-10">{title}</span>
+            {pendingImage ? (
+                <>
+                    <img src={`data:image/jpeg;base64,${pendingImage}`} className="absolute inset-0 w-full h-full object-cover opacity-60" />
+                    <span className="relative z-10 text-[10px] font-bold text-blue-700 bg-white/80 px-1.5 py-0.5 rounded-sm backdrop-blur-sm shadow-sm">未保存</span>
+                    <button onClick={() => setEditingItem({...editingItem, [pendingKey]: null})} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm shadow-md z-20 hover:bg-red-700"><Icons.Trash /></button>
+                </>
+            ) : savedImage ? (
+                <>
+                    <a href={getDriveViewUrl(savedImage)} target="_blank" rel="noopener noreferrer" className="absolute inset-0 w-full h-full block">
+                        <img src={getDriveImageUrl(savedImage)} referrerPolicy="no-referrer" className="w-full h-full object-cover group-hover:scale-110 transition-transform cursor-zoom-in" />
+                    </a>
+                    {uploadingImageId === `${editingItem.id}-${colIdx}` && <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white"><Icons.Refresh /></div>}
+                </>
+            ) : ( 
+                <div className="flex gap-1 w-full h-full mt-4">
+                    <label className="flex-1 cursor-pointer flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-500 hover:text-blue-600 transition border border-gray-200 rounded-sm" title="カメラ"><Icons.Camera /><input type="file" onChange={(e) => handleImageUploadLocal(e, pendingKey)} className="hidden" accept="image/*" capture="environment" /></label>
+                    <label className="flex-1 cursor-pointer flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-500 hover:text-blue-600 transition border border-gray-200 rounded-sm" title="フォルダ"><Icons.UploadCloud /><input type="file" onChange={(e) => handleImageUploadLocal(e, pendingKey)} className="hidden" accept="image/*" /></label>
+                </div> 
+            )}
+        </div>
+    );
+  };
 
   const renderTable = () => {
     if (activeTab === 'SETTINGS') {
@@ -645,7 +689,8 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                       <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('year')}>製造年 <SortIcon columnKey="year" /></th>
                       <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('sq')}>SQ/芯数 <SortIcon columnKey="sq" /></th>
                       <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('ratio')}>歩留まり <SortIcon columnKey="ratio" /></th>
-                      <th className="p-3 text-center">画像 (1:断面 2:印字 3:剥線)</th>
+                      {/* ★ ヘッダーの画像表記をシンプルに */}
+                      <th className="p-3 text-center"><Icons.Camera /> 画像データ</th>
                   </>
               )}
               {activeTab === 'UNKNOWN' && (
@@ -700,22 +745,18 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                     <td className="p-3 font-mono font-bold text-blue-600 text-base">{item.ratio}%</td>
                     <td className="p-3">
                         <div className="flex gap-2 justify-center">
-                            {[11, 12, 13].map(colIdx => {
+                            {/* ★ マスター一覧での画像アイコンを5つに拡張 */}
+                            {[11, 12, 13, 14, 15].map(colIdx => {
                                 const hasImage = !!item[`image${colIdx-10}`];
                                 return (
-                                    <div key={colIdx} className="flex flex-col gap-1 items-center w-14">
-                                        <div className="relative w-full h-12 border border-gray-300 rounded-sm overflow-hidden bg-gray-100 flex items-center justify-center group shadow-sm">
+                                    <div key={colIdx} className="flex flex-col gap-1 items-center w-10">
+                                        <div className={`relative w-full h-8 border ${hasImage ? 'border-gray-300' : 'border-gray-200 border-dashed'} rounded-sm overflow-hidden bg-gray-100 flex items-center justify-center group shadow-sm`}>
                                             {hasImage ? (
                                                 <a href={getDriveViewUrl(item[`image${colIdx-10}`])} target="_blank" rel="noopener noreferrer" className="w-full h-full block">
                                                     <img src={getDriveImageUrl(item[`image${colIdx-10}`])} referrerPolicy="no-referrer" className="w-full h-full object-cover group-hover:scale-110 transition-transform cursor-zoom-in" />
                                                 </a>
-                                            ) : ( <Icons.Image /> )}
+                                            ) : ( <span className="text-[8px] text-gray-300 font-bold">空</span> )}
                                             {uploadingImageId === `${item.id}-${colIdx}` && <div className="absolute inset-0 bg-black/50 flex items-center justify-center"><Icons.Refresh /></div>}
-                                        </div>
-                                        <div className="flex gap-1 w-full">
-                                            {/* マスター一覧の画像更新もカメラとフォルダを分離 */}
-                                            <label className={`flex-1 flex justify-center items-center py-1 rounded-sm cursor-pointer transition ${hasImage ? 'bg-gray-100 hover:bg-gray-200 text-gray-600' : 'bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200'}`} title="カメラで撮影"><Icons.Camera /><input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => handleImageUpload(e, item.id, colIdx, 'Products_Wire')} /></label>
-                                            <label className={`flex-1 flex justify-center items-center py-1 rounded-sm cursor-pointer transition ${hasImage ? 'bg-gray-100 hover:bg-gray-200 text-gray-600' : 'bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200'}`} title="フォルダから選択"><Icons.UploadCloud /><input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, item.id, colIdx, 'Products_Wire')} /></label>
                                         </div>
                                     </div>
                                 );
@@ -900,7 +941,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         </div>
       </div>
 
-      {/* ★ AIアシストモーダル（カメラとフォルダを完全分離） */}
       {isAiModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-gray-900 w-full max-w-4xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col">
@@ -945,22 +985,19 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                         最大4枚の画像をアップロードしてAIに解析させてください。<br/>
                     </p>
 
+                    {/* ★ 4枠（剥線なし） */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                        {/* 枠1 */}
                         <div className="flex flex-col p-2 border-2 border-dashed border-gray-600 bg-gray-800/50 rounded-md h-28">
-                            {imgData1 ? ( <div className="relative w-full h-full"><img src={`data:image/jpeg;base64,${imgData1}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData1('')} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm shadow-md"><Icons.Trash/></button><span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">1.断面</span></div> ) : ( <><p className="text-[10px] font-bold text-blue-400 mb-1.5 text-center">1. 断面 (必須)</p><div className="flex gap-1.5 h-full"><label className="flex-1 bg-gray-700 hover:bg-gray-600 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-300 hover:text-white shadow-sm"><Icons.Camera /><span className="text-[8px] mt-1 font-bold">カメラ</span><input type="file" onChange={e=>handleAiImageUpload(e,1)} className="hidden" accept="image/*" capture="environment"/></label><label className="flex-1 bg-gray-700 hover:bg-gray-600 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-300 hover:text-white shadow-sm"><Icons.UploadCloud /><span className="text-[8px] mt-1 font-bold">フォルダ</span><input type="file" onChange={e=>handleAiImageUpload(e,1)} className="hidden" accept="image/*"/></label></div></> )}
+                            {imgData1 ? ( <div className="relative w-full h-full"><img src={`data:image/jpeg;base64,${imgData1}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData1('')} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm shadow-md"><Icons.Trash/></button><span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">①断面</span></div> ) : ( <><p className="text-[10px] font-bold text-blue-400 mb-1.5 text-center">① 断面 (必須)</p><div className="flex gap-1.5 h-full"><label className="flex-1 bg-gray-700 hover:bg-gray-600 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-300 hover:text-white shadow-sm"><Icons.Camera /><span className="text-[8px] mt-1 font-bold">カメラ</span><input type="file" onChange={e=>handleAiImageUpload(e,1)} className="hidden" accept="image/*" capture="environment"/></label><label className="flex-1 bg-gray-700 hover:bg-gray-600 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-300 hover:text-white shadow-sm"><Icons.UploadCloud /><span className="text-[8px] mt-1 font-bold">フォルダ</span><input type="file" onChange={e=>handleAiImageUpload(e,1)} className="hidden" accept="image/*"/></label></div></> )}
                         </div>
-                        {/* 枠2 */}
                         <div className="flex flex-col p-2 border-2 border-dashed border-gray-600 bg-gray-800/50 rounded-md h-28">
-                            {imgData2 ? ( <div className="relative w-full h-full"><img src={`data:image/jpeg;base64,${imgData2}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData2('')} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm shadow-md"><Icons.Trash/></button><span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">2.全体</span></div> ) : ( <><p className="text-[10px] font-bold text-gray-300 mb-1.5 text-center">2. 全体・被覆</p><div className="flex gap-1.5 h-full"><label className="flex-1 bg-gray-700 hover:bg-gray-600 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-300 hover:text-white shadow-sm"><Icons.Camera /><span className="text-[8px] mt-1 font-bold">カメラ</span><input type="file" onChange={e=>handleAiImageUpload(e,2)} className="hidden" accept="image/*" capture="environment"/></label><label className="flex-1 bg-gray-700 hover:bg-gray-600 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-300 hover:text-white shadow-sm"><Icons.UploadCloud /><span className="text-[8px] mt-1 font-bold">フォルダ</span><input type="file" onChange={e=>handleAiImageUpload(e,2)} className="hidden" accept="image/*"/></label></div></> )}
+                            {imgData2 ? ( <div className="relative w-full h-full"><img src={`data:image/jpeg;base64,${imgData2}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData2('')} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm shadow-md"><Icons.Trash/></button><span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">②全体</span></div> ) : ( <><p className="text-[10px] font-bold text-gray-300 mb-1.5 text-center">② 全体・被覆</p><div className="flex gap-1.5 h-full"><label className="flex-1 bg-gray-700 hover:bg-gray-600 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-300 hover:text-white shadow-sm"><Icons.Camera /><span className="text-[8px] mt-1 font-bold">カメラ</span><input type="file" onChange={e=>handleAiImageUpload(e,2)} className="hidden" accept="image/*" capture="environment"/></label><label className="flex-1 bg-gray-700 hover:bg-gray-600 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-300 hover:text-white shadow-sm"><Icons.UploadCloud /><span className="text-[8px] mt-1 font-bold">フォルダ</span><input type="file" onChange={e=>handleAiImageUpload(e,2)} className="hidden" accept="image/*"/></label></div></> )}
                         </div>
-                        {/* 枠3 */}
                         <div className="flex flex-col p-2 border-2 border-dashed border-gray-600 bg-gray-800/50 rounded-md h-28">
-                            {imgData3 ? ( <div className="relative w-full h-full"><img src={`data:image/jpeg;base64,${imgData3}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData3('')} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm shadow-md"><Icons.Trash/></button><span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">3.印字(引)</span></div> ) : ( <><p className="text-[10px] font-bold text-gray-300 mb-1.5 text-center">3. 印字(引き)</p><div className="flex gap-1.5 h-full"><label className="flex-1 bg-gray-700 hover:bg-gray-600 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-300 hover:text-white shadow-sm"><Icons.Camera /><span className="text-[8px] mt-1 font-bold">カメラ</span><input type="file" onChange={e=>handleAiImageUpload(e,3)} className="hidden" accept="image/*" capture="environment"/></label><label className="flex-1 bg-gray-700 hover:bg-gray-600 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-300 hover:text-white shadow-sm"><Icons.UploadCloud /><span className="text-[8px] mt-1 font-bold">フォルダ</span><input type="file" onChange={e=>handleAiImageUpload(e,3)} className="hidden" accept="image/*"/></label></div></> )}
+                            {imgData3 ? ( <div className="relative w-full h-full"><img src={`data:image/jpeg;base64,${imgData3}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData3('')} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm shadow-md"><Icons.Trash/></button><span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">③印字1</span></div> ) : ( <><p className="text-[10px] font-bold text-gray-300 mb-1.5 text-center">③ 印字アップ1</p><div className="flex gap-1.5 h-full"><label className="flex-1 bg-gray-700 hover:bg-gray-600 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-300 hover:text-white shadow-sm"><Icons.Camera /><span className="text-[8px] mt-1 font-bold">カメラ</span><input type="file" onChange={e=>handleAiImageUpload(e,3)} className="hidden" accept="image/*" capture="environment"/></label><label className="flex-1 bg-gray-700 hover:bg-gray-600 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-300 hover:text-white shadow-sm"><Icons.UploadCloud /><span className="text-[8px] mt-1 font-bold">フォルダ</span><input type="file" onChange={e=>handleAiImageUpload(e,3)} className="hidden" accept="image/*"/></label></div></> )}
                         </div>
-                        {/* 枠4 */}
                         <div className="flex flex-col p-2 border-2 border-dashed border-gray-600 bg-gray-800/50 rounded-md h-28">
-                            {imgData4 ? ( <div className="relative w-full h-full"><img src={`data:image/jpeg;base64,${imgData4}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData4('')} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm shadow-md"><Icons.Trash/></button><span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">4.印字(寄)</span></div> ) : ( <><p className="text-[10px] font-bold text-gray-300 mb-1.5 text-center">4. 印字(寄)</p><div className="flex gap-1.5 h-full"><label className="flex-1 bg-gray-700 hover:bg-gray-600 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-300 hover:text-white shadow-sm"><Icons.Camera /><span className="text-[8px] mt-1 font-bold">カメラ</span><input type="file" onChange={e=>handleAiImageUpload(e,4)} className="hidden" accept="image/*" capture="environment"/></label><label className="flex-1 bg-gray-700 hover:bg-gray-600 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-300 hover:text-white shadow-sm"><Icons.UploadCloud /><span className="text-[8px] mt-1 font-bold">フォルダ</span><input type="file" onChange={e=>handleAiImageUpload(e,4)} className="hidden" accept="image/*"/></label></div></> )}
+                            {imgData4 ? ( <div className="relative w-full h-full"><img src={`data:image/jpeg;base64,${imgData4}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData4('')} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm shadow-md"><Icons.Trash/></button><span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">③印字2</span></div> ) : ( <><p className="text-[10px] font-bold text-gray-300 mb-1.5 text-center">③ 印字アップ2</p><div className="flex gap-1.5 h-full"><label className="flex-1 bg-gray-700 hover:bg-gray-600 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-300 hover:text-white shadow-sm"><Icons.Camera /><span className="text-[8px] mt-1 font-bold">カメラ</span><input type="file" onChange={e=>handleAiImageUpload(e,4)} className="hidden" accept="image/*" capture="environment"/></label><label className="flex-1 bg-gray-700 hover:bg-gray-600 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-300 hover:text-white shadow-sm"><Icons.UploadCloud /><span className="text-[8px] mt-1 font-bold">フォルダ</span><input type="file" onChange={e=>handleAiImageUpload(e,4)} className="hidden" accept="image/*"/></label></div></> )}
                         </div>
                     </div>
 
@@ -996,20 +1033,22 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
               <button onClick={handleCloseModal} className="text-gray-400 hover:text-gray-900 p-1"><Icons.Close /></button>
             </div>
             
-            <div className="p-4 md:p-6 max-h-[75vh] overflow-y-auto space-y-4">
-                {activeTab === 'WIRES' && editingItem.id && (editingItem.image1 || editingItem.image2 || editingItem.image3) && !editingItem._pendingImageData1 && (
+            <div className="p-4 md:p-6 max-h-[75vh] overflow-y-auto space-y-4 bg-white">
+                {activeTab === 'WIRES' && (
                     <div className="bg-gray-50 p-4 border border-gray-200 rounded-sm">
-                        <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-widest">現在登録されているマスター画像</label>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            {editingItem.image1 && <div><p className="text-[10px] text-gray-400 mb-1">1. 断面</p><a href={getDriveViewUrl(editingItem.image1)} target="_blank" rel="noopener noreferrer"><img src={getDriveImageUrl(editingItem.image1)} referrerPolicy="no-referrer" className="w-full h-32 md:h-40 object-cover rounded-sm border border-gray-300 shadow-sm hover:opacity-80 transition cursor-zoom-in" /></a></div>}
-                            {editingItem.image2 && <div><p className="text-[10px] text-gray-400 mb-1">2. 印字等</p><a href={getDriveViewUrl(editingItem.image2)} target="_blank" rel="noopener noreferrer"><img src={getDriveImageUrl(editingItem.image2)} referrerPolicy="no-referrer" className="w-full h-32 md:h-40 object-cover rounded-sm border border-gray-300 shadow-sm hover:opacity-80 transition cursor-zoom-in" /></a></div>}
-                            {editingItem.image3 && <div><p className="text-[10px] text-gray-400 mb-1">3. 剥線後</p><a href={getDriveViewUrl(editingItem.image3)} target="_blank" rel="noopener noreferrer"><img src={getDriveImageUrl(editingItem.image3)} referrerPolicy="no-referrer" className="w-full h-32 md:h-40 object-cover rounded-sm border border-gray-300 shadow-sm hover:opacity-80 transition cursor-zoom-in" /></a></div>}
+                        <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-widest">マスター画像 (全5枠)</label>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                            <ImageSlot title="① 断面" imageKey="image1" colIdx={11} pendingKey="_pendingImageData1" />
+                            <ImageSlot title="② 全体" imageKey="image2" colIdx={12} pendingKey="_pendingImageData2" />
+                            <ImageSlot title="④ 剥線" imageKey="image3" colIdx={13} pendingKey="_pendingImageData3" />
+                            <ImageSlot title="③ 印字UP1" imageKey="image4" colIdx={14} pendingKey="_pendingImageData4" />
+                            <ImageSlot title="③ 印字UP2" imageKey="image5" colIdx={15} pendingKey="_pendingImageData5" />
                         </div>
                     </div>
                 )}
 
-                {activeTab === 'WIRES' && editingItem._pendingImageData1 && (
-                    <div className="bg-blue-50 border border-blue-200 p-3 rounded-sm text-xs text-blue-800 font-bold flex flex-col gap-1">
+                {activeTab === 'WIRES' && (editingItem._pendingImageData1 || editingItem._pendingImageData4) && (
+                    <div className="bg-blue-50 border border-blue-200 p-3 rounded-sm text-xs text-blue-800 font-bold flex flex-col gap-1 shadow-sm">
                         <div className="flex items-center gap-2"><Icons.Sparkles /> 画像からAIが推論結果を自動入力しました。</div>
                         <div className="text-gray-600 ml-6 font-normal">※ 下の「確定してマスターに登録」を押すと、アップロードした画像も同時に保存されます。</div>
                     </div>
@@ -1048,18 +1087,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 items-end">
-                                <div className="flex flex-col items-center border border-gray-300 p-2 rounded-sm bg-white h-[66px] justify-center relative overflow-hidden group shadow-sm w-full">
-                                    {editingItem._pendingImageData3 ? (
-                                        <><img src={`data:image/jpeg;base64,${editingItem._pendingImageData3}`} className="absolute inset-0 w-full h-full object-cover opacity-60" /><span className="relative z-10 text-xs font-bold text-blue-700 bg-white/80 px-2 py-0.5 rounded-sm backdrop-blur-sm">✅ 撮影済</span><button onClick={() => setEditingItem({...editingItem, _pendingImageData3: null})} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm shadow-md z-20 hover:bg-red-700"><Icons.Trash /></button></>
-                                    ) : ( 
-                                        <div className="flex gap-1 w-full h-full">
-                                            {/* ★ ここもカメラとフォルダを分離！ */}
-                                            <label className="flex-1 cursor-pointer flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-500 hover:text-blue-600 transition border border-gray-200 rounded-sm" title="カメラ"><Icons.Camera /><span className="text-[8px] font-bold mt-1">カメラ</span><input type="file" onChange={(e) => { const file = e.target.files?.[0]; if(file){ compressImage(file).then(b64 => setEditingItem({...editingItem, _pendingImageData3: b64})).catch(e=>alert(e.message)); } }} className="hidden" accept="image/*" capture="environment" /></label>
-                                            <label className="flex-1 cursor-pointer flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-500 hover:text-blue-600 transition border border-gray-200 rounded-sm" title="フォルダ"><Icons.UploadCloud /><span className="text-[8px] font-bold mt-1">フォルダ</span><input type="file" onChange={(e) => { const file = e.target.files?.[0]; if(file){ compressImage(file).then(b64 => setEditingItem({...editingItem, _pendingImageData3: b64})).catch(e=>alert(e.message)); } }} className="hidden" accept="image/*" /></label>
-                                        </div> 
-                                    )}
-                                </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end">
                                 <div className="w-full"><label className="block text-[10px] font-bold text-gray-600 mb-1">全体重量(g)</label><input type="number" step="0.001" className="w-full border-none shadow-sm p-2 rounded-sm font-mono text-lg outline-none focus:ring-2 focus:ring-blue-500" value={sampleTotal} onChange={e => handleSampleTotalChange(e.target.value)} placeholder="0.000" /></div>
                                 <div className="w-full"><label className="block text-[10px] font-bold text-[#D32F2F] mb-1">純銅重量(g)</label><input type="number" step="0.001" className="w-full border-none shadow-sm p-2 rounded-sm font-mono text-lg outline-none focus:ring-2 focus:ring-red-500" value={sampleCopper} onChange={e => handleSampleCopperChange(e.target.value)} placeholder="0.000" /></div>
                                 <div className="w-full"><label className="block text-[10px] font-bold text-gray-600 mb-1">被覆重量(g)</label><input type="number" step="0.001" className="w-full border-none shadow-sm p-2 rounded-sm font-mono text-lg outline-none focus:ring-2 focus:ring-gray-500" value={sampleCover} onChange={e => handleSampleCoverChange(e.target.value)} placeholder="0.000" /></div>
