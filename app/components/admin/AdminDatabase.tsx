@@ -127,12 +127,14 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   
   const [isRunningBatch, setIsRunningBatch] = useState<'NONE' | 'MARKET' | 'LEAD' | 'BACKUP'>('NONE');
 
-  // ★ 厳格な型チェック (String変換) によるON/OFF初期値セット
+  // ★ 追加：価格表自体のON/OFFと、建値指標のON/OFFステート
   const [lpConfig, setLpConfig] = useState({
       autoMarketSync: String(data?.config?.auto_market_sync) !== 'false',
       showSimulator: String(data?.config?.show_simulator) !== 'false',
       showFaq: String(data?.config?.show_faq) !== 'false',
       showConcierge: String(data?.config?.show_concierge) !== 'false',
+      showPriceList: String(data?.config?.show_price_list) !== 'false',
+      showMarketRates: String(data?.config?.show_market_rates) !== 'false',
   });
   const [isSavingConfig, setIsSavingConfig] = useState(false);
 
@@ -190,7 +192,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
   const handleOpenModal = (item: any = null) => {
     const sqData = parseSqForInput(item?.sq); const coreData = parseCoreForInput(item?.core);
-    // ★ 文字列 'false' も対応
     setEditingItem({ ...item, _sqValue: sqData.val, _sqUnit: sqData.unit, _coreValue: coreData, material: item?.material || '純銅', showOnWeb: item ? String(item.showOnWeb) !== 'false' : true });
     setSampleTotal(item?.sampleTotal || ''); setSampleCopper(item?.sampleCopper || ''); setSampleCover(item?.sampleCover || ''); 
     setIsModalOpen(true);
@@ -455,6 +456,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     return sortConfig.direction === 'asc' ? <Icons.SortAsc /> : <Icons.SortDesc />;
   };
 
+  // ★ LP設定の保存（新しい2つのフラグも一括で保存）
   const handleSaveLpConfig = async () => {
     setIsSavingConfig(true);
     try {
@@ -462,7 +464,9 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         { key: 'auto_market_sync', value: lpConfig.autoMarketSync ? 'true' : 'false' },
         { key: 'show_simulator', value: lpConfig.showSimulator ? 'true' : 'false' },
         { key: 'show_faq', value: lpConfig.showFaq ? 'true' : 'false' },
-        { key: 'show_concierge', value: lpConfig.showConcierge ? 'true' : 'false' }
+        { key: 'show_concierge', value: lpConfig.showConcierge ? 'true' : 'false' },
+        { key: 'show_price_list', value: lpConfig.showPriceList ? 'true' : 'false' },
+        { key: 'show_market_rates', value: lpConfig.showMarketRates ? 'true' : 'false' }
       ];
 
       for (const req of updates) {
@@ -472,15 +476,16 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         });
       }
       
-      localStorage.removeItem('factoryOS_masterData'); // ★ 古いキャッシュを強制削除
+      localStorage.removeItem('factoryOS_masterData'); 
       alert("システム設定を保存しました。画面を更新して反映します。");
-      window.location.reload(); // ★ 即座にリロードして最新のGASデータを引く
+      window.location.reload(); 
     } catch(e) {
       alert("設定の保存に失敗しました。");
       setIsSavingConfig(false);
     }
   };
 
+  // ... (フィルタリング・ソート処理は省略) ...
   let filteredData = [];
   
   if (activeTab === 'WIRES') {
@@ -574,6 +579,22 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       });
   }
 
+  const handleRunBatchSettings = async (type: 'MARKET' | 'LEAD' | 'BACKUP') => {
+      const typeLabel = type === 'MARKET' ? '市況データ（建値）' : type === 'LEAD' ? '営業リード' : 'データベースのバックアップ';
+      if (!confirm(`${typeLabel} の処理を今すぐ実行します。よろしいですか？`)) return;
+      setIsRunningBatch(type);
+      try {
+          const action = type === 'MARKET' ? 'RUN_MARKET_SYNC' : type === 'LEAD' ? 'RUN_LEAD_GEN' : 'CREATE_BACKUP';
+          const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }) });
+          const result = await res.json();
+          if (result.status === 'success') {
+              alert('✅ ' + result.message);
+              if (result.url) window.open(result.url, '_blank'); 
+          } else { alert('エラーが発生しました: ' + result.message); }
+      } catch (e) { alert('通信エラーが発生しました。'); }
+      setIsRunningBatch('NONE');
+  };
+
   const ImageSlot = ({ title, imageKey, colIdx, pendingKey }: { title: string, imageKey: string, colIdx: number, pendingKey: string }) => {
     const savedImage = editingItem[imageKey];
     const pendingImage = editingItem[pendingKey];
@@ -617,6 +638,28 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                             お客様が閲覧するWebサイトの各機能をリアルタイムにON/OFFできます。
                         </p>
                         <div className="space-y-4 mb-6">
+                            {/* ★ 追加：価格表と建値のスイッチ */}
+                            <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 flex justify-between items-center shadow-sm">
+                                <div>
+                                    <h4 className="font-bold text-gray-900">本日の買取価格表</h4>
+                                    <p className="text-xs text-gray-500 mt-1">LPに買取価格の一覧表を表示する</p>
+                                </div>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" className="sr-only peer" checked={lpConfig.showPriceList} onChange={(e) => setLpConfig({...lpConfig, showPriceList: e.target.checked})} />
+                                    <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                            <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 flex justify-between items-center shadow-sm">
+                                <div>
+                                    <h4 className="font-bold text-gray-900">市況指標（各建値）の表示</h4>
+                                    <p className="text-xs text-gray-500 mt-1">買取価格表の上に銅・黄銅・亜鉛などの建値を表示する</p>
+                                </div>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" className="sr-only peer" checked={lpConfig.showMarketRates} onChange={(e) => setLpConfig({...lpConfig, showMarketRates: e.target.checked})} />
+                                    <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                            
                             <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 flex justify-between items-center shadow-sm">
                                 <div>
                                     <h4 className="font-bold text-gray-900">限界買取シミュレーター</h4>
@@ -648,6 +691,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                                 </label>
                             </div>
                         </div>
+
                         <div className="pt-4 border-t border-gray-200 flex justify-end">
                             <button 
                                 onClick={handleSaveLpConfig} 
@@ -660,6 +704,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                         </div>
                     </div>
 
+                    {/* バッチ制御などは省略せずそのまま */}
                     <div>
                         <h3 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-3 mb-6 flex items-center gap-2">
                             <Icons.Settings /> システム自動実行バッチの制御
@@ -707,6 +752,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         );
     }
 
+    // --- 以下、テーブル描画部などは省略せずにそのまま ---
     return (
       <div className="h-full overflow-y-auto relative">
         <table className="w-full text-left border-collapse text-sm whitespace-nowrap md:whitespace-normal">
@@ -968,6 +1014,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         </div>
       </div>
 
+      {/* ★ AIアシスト登録モーダル */}
       {isAiModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-gray-900 w-full max-w-4xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col max-h-[90vh]">
@@ -1047,6 +1094,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         </div>
       )}
 
+      {/* ★ 編集・新規登録モーダル */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4 md:p-0">
           <div className="bg-white w-full max-w-4xl rounded-sm shadow-2xl animate-in zoom-in-95 duration-200">
