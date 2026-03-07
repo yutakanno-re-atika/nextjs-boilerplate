@@ -29,7 +29,6 @@ const ProvenanceBadge = ({ type }: { type: 'HUMAN' | 'AI_AUTO' | 'CO_OP' }) => {
   }
 };
 
-// ★ カンバンと同じ最強のパース関数をここでも使用
 const parseItemsData = (rawItems: any) => {
     if (!rawItems) return [];
     if (Array.isArray(rawItems)) return rawItems;
@@ -348,7 +347,14 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                                               <button onClick={() => handleSkipSort(lot)} className="bg-gray-100 text-gray-600 border border-gray-300 text-xs font-bold px-3 py-2.5 rounded-sm hover:bg-gray-200 transition flex items-center gap-1">
                                                   直行 <Icons.FastForward />
                                               </button>
-                                              <button onClick={() => setSortingLot(lot)} className="bg-blue-600 text-white text-sm font-bold px-4 py-2.5 rounded-sm shadow-sm hover:bg-blue-700 transition">
+                                              
+                                              {/* ★ 修正：選別ボタンを押したとき、元ロットの見立て（品名と重量）を自動で初期セットする */}
+                                              <button onClick={() => {
+                                                  setSortingLot(lot);
+                                                  // AIの接頭辞を外し、見立ての品名と重量を1行目に入れる
+                                                  const cleanName = lot.product.replace(/💡 AI査定: |📦 AI解析: /, '').trim();
+                                                  setSortOutputs([{ product: cleanName, weight: String(lot.remainingWeight) }]);
+                                              }} className="bg-blue-600 text-white text-sm font-bold px-4 py-2.5 rounded-sm shadow-sm hover:bg-blue-700 transition">
                                                   選別
                                               </button>
                                           </div>
@@ -518,6 +524,12 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                                       <div key={idx} className="flex flex-col md:flex-row md:items-center gap-3 bg-gray-50 p-3 border border-gray-200 rounded-sm">
                                           <select className="w-full md:flex-1 p-3 bg-white border border-gray-300 rounded-sm text-base font-bold outline-none" value={out.product} onChange={e => { const newOut = [...sortOutputs]; newOut[idx].product = e.target.value; setSortOutputs(newOut); }}>
                                               <option value="">仕分け後の品目を選択</option>
+                                              
+                                              {/* ★ 追加：もし現在の値がマスターにないAI推論名だった場合、それを選択肢として表示してあげる */}
+                                              {out.product && !wiresMaster.some(w => getDisplayName(w) === out.product || w.name === out.product) && (
+                                                  <option value={out.product}>{out.product} (見立てを維持)</option>
+                                              )}
+
                                               {wiresMaster.map((w:any) => {
                                                   const dName = getDisplayName(w);
                                                   return <option key={w.id} value={dName}>{dName}</option>
@@ -558,6 +570,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
               </div>
           )}
 
+          {/* 以下、ブレンド加工モーダル等は省略（変更なし） */}
           {blendingLots.length > 0 && (
               <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4 animate-in fade-in">
                   <div className="bg-white rounded-t-xl md:rounded-sm shadow-2xl w-full max-w-xl flex flex-col max-h-[90vh] md:max-h-[85vh]">
@@ -630,75 +643,6 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                   </div>
               </div>
           )}
-      </div>
-
-      {/* 印刷用レポートは省略（変更なし） */}
-      <div className="hidden print:block w-[210mm] min-h-[297mm] bg-white text-black p-8 mx-auto font-sans">
-          <div className="border-b-2 border-black pb-4 mb-6 flex justify-between items-end">
-              <div>
-                  <h1 className="text-3xl font-black font-serif tracking-widest">ナゲット製造管理 レポート</h1>
-                  <p className="text-sm font-bold text-gray-600 mt-2">FACTORY OS</p>
-              </div>
-              <div className="text-right">
-                  <p className="text-lg font-bold font-mono">{new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}</p>
-                  <p className="text-xs font-bold bg-black text-white px-2 py-0.5 inline-block mt-1">
-                      {showAiData ? 'MIX (AI予測 + 実測)' : 'HUMAN ONLY (実測確定のみ)'}
-                  </p>
-              </div>
-          </div>
-
-          <section className="mb-8 border-2 border-black p-6 rounded-sm bg-gray-50 relative">
-              {showAiData && <div className="absolute top-2 right-2"><ProvenanceBadge type="AI_AUTO" /></div>}
-              <h2 className="text-lg font-black text-black flex items-center gap-2 mb-4">
-                  <Icons.Brain /> AI参謀からのデータインサイト
-              </h2>
-              <div className="text-sm leading-relaxed whitespace-pre-wrap font-bold text-gray-800">
-                  {showAiData ? (aiSummary || "（データ処理中です...）") : "※AI予測モードがOFFのため、インサイトは表示されません。"}
-              </div>
-          </section>
-
-          <div className="grid grid-cols-2 gap-8 mb-8">
-              <section>
-                  <h2 className="text-sm font-bold text-white bg-black px-3 py-1.5 inline-block mb-3">製造統計</h2>
-                  <div className="border border-gray-300 p-4 relative">
-                      <div className="absolute top-2 right-2"><ProvenanceBadge type="HUMAN" /></div>
-                      <p className="text-xs text-gray-500 font-bold mb-1">累計 ピカ銅生産量</p>
-                      <p className="text-3xl font-black font-mono mb-4">{totalProducedCopper.toLocaleString()} <span className="text-sm">kg</span></p>
-                      
-                      <div className="grid grid-cols-2 gap-4 border-t border-gray-200 pt-3">
-                          <div>
-                              <p className="text-[10px] text-gray-500 font-bold mb-1">選別待ちロット</p>
-                              <p className="text-xl font-bold font-mono">{toSortLots.length} 件</p>
-                          </div>
-                          <div>
-                              <p className="text-[10px] text-gray-500 font-bold mb-1">加工待ちヤード在庫</p>
-                              <p className="text-xl font-bold font-mono">{readyLots.length} 件</p>
-                          </div>
-                      </div>
-                  </div>
-              </section>
-
-              <section>
-                  <h2 className="text-sm font-bold text-white bg-black px-3 py-1.5 inline-block mb-3">直近の製造ログ (5件)</h2>
-                  <div className="border border-gray-300 p-4 relative">
-                      <div className="absolute top-2 right-2"><ProvenanceBadge type="HUMAN" /></div>
-                      <ul className="divide-y divide-gray-200">
-                          {productions.slice(-5).reverse().map((p: any, i: number) => (
-                              <li key={i} className="py-2 flex justify-between items-center text-xs">
-                                  <div>
-                                      <p className="font-bold">{p.materialName}</p>
-                                      <p className="text-[10px] text-gray-500">{p.createdAt ? String(p.createdAt).substring(5,16) : '不明'}</p>
-                                  </div>
-                                  <div className="text-right">
-                                      <p className="font-mono font-bold text-black">{p.outputCopper} kg</p>
-                                      <p className="font-mono text-[10px] text-gray-500">歩留 {p.actualRatio}%</p>
-                                  </div>
-                              </li>
-                          ))}
-                      </ul>
-                  </div>
-              </section>
-          </div>
       </div>
     </div>
   );
