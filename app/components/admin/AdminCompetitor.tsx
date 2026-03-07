@@ -14,34 +14,42 @@ const Icons = {
   Book: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>,
   Trash: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
   Refresh: () => <svg className="w-4 h-4 animate-spin inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
+  Save: () => <svg className="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>,
 };
 
 export const AdminCompetitor = ({ data }: { data: any }) => {
   const [activeTab, setActiveTab] = useState<'RADAR' | 'TARGETS' | 'DICTIONARY'>('RADAR');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // ターゲット追加用のステート
+  // ★ GASのConfigから保存されているベース掛率を取得（無ければ85%）
+  const savedMarginRate = Number(data?.config?.target_margin_rate) || 85;
+  // ★ シミュレーション用のスライダーステート
+  const [currentMarginRate, setCurrentMarginRate] = useState(savedMarginRate);
+
   const [newTarget, setNewTarget] = useState({ name: '', type: 'メーカー直系', url: '', hint: '' });
 
-  // 本物の銅建値
   const currentCopperPrice = data?.market?.copper?.price || 1450;
   
-  // 自社歩留まり
   const getWireRatio = (keyword: string, fallback: number) => {
       const found = (data?.wires || []).find((w:any) => w.name.includes(keyword));
       return found ? Number(found.ratio) : fallback;
   };
 
+  // ★ 自社の表示価格と「自社が確保するマージン」をスライダーに連動して動的に計算
   const myItems = useMemo(() => {
       return [
           { key: 'ピカ', name: 'ピカ銅 (特1号)', ratio: getWireRatio('ピカ', 98) },
           { key: '込銅', name: '込銅 (2号銅)', ratio: getWireRatio('込銅', 93) },
           { key: 'VVF', name: 'VVF (ネズミ線)', ratio: getWireRatio('VVF', 42) },
           { key: 'CV', name: 'CV線 (太線)', ratio: getWireRatio('CV', 65) },
-      ].map(item => ({ ...item, myPrice: Math.floor(currentCopperPrice * (item.ratio / 100) * 0.85) }));
-  }, [data, currentCopperPrice]);
+      ].map(item => {
+          const pureValue = currentCopperPrice * (item.ratio / 100);
+          const myPrice = Math.floor(pureValue * (currentMarginRate / 100)); // スライダー値で計算
+          const myMargin = Math.floor(pureValue - myPrice); // 自社マージン（純銅価値から買取価格を引いた額）
+          return { ...item, pureValue, myPrice, myMargin };
+      });
+  }, [data, currentCopperPrice, currentMarginRate]);
 
-  // ★ AIが引いてきた「本物の」競合価格データを処理
   const processedCompetitors = useMemo(() => {
       const targets = data?.competitorTargets || [];
       const pricesLog = [...(data?.competitorPrices || [])].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -59,28 +67,24 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
               else if (current[k] < prev[k]) trends[k] = 'down';
               else trends[k] = 'flat';
           });
-
           return { ...t, prices: current, trends };
       });
   }, [data]);
 
-  // AI逆算エンジン
   const analyzeCompetitor = (comp: any, itemName: string) => {
       const compPrice = comp.prices[itemName];
       if (!compPrice) return null;
-
       const myItem = myItems.find(i => i.name === itemName);
       if (!myItem) return null;
 
-      const pureCopperValue = currentCopperPrice * (myItem.ratio / 100);
-      const estimatedMargin = Math.floor(pureCopperValue - compPrice);
+      const estimatedMargin = Math.floor(myItem.pureValue - compPrice);
 
       let strategyAlert = '';
-      if (estimatedMargin < 40) strategyAlert = `利益を極限まで削った「赤字覚悟の集客モード」です。当社は追従せず別商材を集めるべきです。`;
+      if (estimatedMargin < 40) strategyAlert = `利益を極限まで削った「赤字覚悟の集客モード」です。`;
       else if (estimatedMargin > 150) strategyAlert = `かなり強気に利益を抜いています。当社が少し値上げすれば容易に顧客を奪えます。`;
       else strategyAlert = `標準的なマージン設定です。`;
 
-      return { compName: comp.name, itemName, compPrice, pureCopperValue: Math.floor(pureCopperValue), estimatedMargin, strategyAlert, ratio: myItem.ratio };
+      return { compName: comp.name, itemName, compPrice, pureCopperValue: Math.floor(myItem.pureValue), estimatedMargin, strategyAlert, ratio: myItem.ratio };
   };
 
   const getDiffLabel = (my: number, comp: number) => {
@@ -89,6 +93,23 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       if (diff > 0) return <span className="text-blue-600 font-bold">+{diff} (勝)</span>;
       if (diff < 0) return <span className="text-red-600 font-bold">{diff} (負)</span>;
       return <span className="text-gray-400 font-bold">同額</span>;
+  };
+
+  // ★ 掛率（スライダーの値）をGASに保存する関数
+  const handleSaveMarginRate = async () => {
+      setIsProcessing(true);
+      try {
+          await fetch('/api/gas', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'UPDATE_CONFIG', key: 'target_margin_rate', value: currentMarginRate })
+          });
+          localStorage.removeItem('factoryOS_masterData'); 
+          alert(`ベース掛率を【${currentMarginRate}%】で保存し、LP等に反映しました！`);
+          window.location.reload(); 
+      } catch(e) {
+          alert("設定の保存に失敗しました。");
+          setIsProcessing(false);
+      }
   };
 
   const handleAddTarget = async () => {
@@ -129,7 +150,7 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
           <h2 className="text-2xl font-black text-gray-900 font-serif tracking-tight flex items-center gap-2">
             <Icons.Radar /> COMPETITOR RADAR
           </h2>
-          <p className="text-xs text-gray-500 mt-1 font-mono">競合相場スクレイピング / AI戦略逆算エンジン</p>
+          <p className="text-xs text-gray-500 mt-1 font-mono">競合相場スクレイピング / 自社価格コントロール</p>
         </div>
         <div className="flex bg-gray-100 p-1 rounded-sm overflow-x-auto">
             <button onClick={() => setActiveTab('RADAR')} className={`px-4 py-2 rounded-sm text-sm font-bold transition-all whitespace-nowrap flex items-center gap-1 ${activeTab === 'RADAR' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
@@ -147,25 +168,64 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       {activeTab === 'RADAR' && (
           <div className="flex-1 flex flex-col gap-4 overflow-hidden">
               
-              <div className="bg-gray-900 text-white rounded-sm p-5 shadow-lg shrink-0 relative overflow-hidden border border-gray-700">
-                  <div className="absolute top-0 right-0 p-4 opacity-10 transform scale-150 text-blue-500"><Icons.Brain /></div>
+              {/* ★ 新機能：自社価格コントロールパネル（シミュレーター） */}
+              <div className="bg-white border-2 border-blue-600 rounded-sm shadow-lg p-5 shrink-0 relative">
+                  <div className="absolute top-0 right-0 bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded-bl-sm">PRICING CONTROL</div>
+                  
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                      <div className="flex-1">
+                          <label className="font-bold text-gray-900 mb-1 flex items-center gap-2">
+                              ベース買取掛率（％）
+                              <span className="text-xs text-gray-500 font-normal">純粋な銅価値から、何％でお客様から買い取るか</span>
+                          </label>
+                          <div className="flex items-center gap-4 mt-2">
+                              <input 
+                                  type="range" 
+                                  min="60" max="95" step="1" 
+                                  value={currentMarginRate} 
+                                  onChange={(e) => setCurrentMarginRate(Number(e.target.value))} 
+                                  className="w-full accent-blue-600" 
+                              />
+                              <span className="text-3xl font-black text-blue-600 font-mono w-20 text-right">{currentMarginRate}%</span>
+                          </div>
+                          <div className="flex justify-between mt-1 text-[10px] text-gray-400 font-bold">
+                              <span>利益重視 (60%)</span>
+                              <span>買取強化・薄利多売 (95%)</span>
+                          </div>
+                      </div>
+
+                      {/* スライダーが動いた時だけ保存ボタンが出現 */}
+                      {currentMarginRate !== savedMarginRate && (
+                          <div className="shrink-0 animate-in zoom-in duration-300">
+                              <button 
+                                  onClick={handleSaveMarginRate} 
+                                  disabled={isProcessing}
+                                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-sm font-bold shadow-lg flex items-center gap-2 transition text-lg w-full md:w-auto"
+                              >
+                                  {isProcessing ? <Icons.Refresh /> : <Icons.Save />}
+                                  設定を保存してLPに反映
+                              </button>
+                          </div>
+                      )}
+                  </div>
+              </div>
+
+              {/* AI逆算エンジン パネル */}
+              <div className="bg-gray-900 text-white rounded-sm p-4 shadow-lg shrink-0 relative overflow-hidden border border-gray-700">
                   <h3 className="text-sm font-black flex items-center gap-2 text-blue-400 mb-3 tracking-widest">
-                      <Icons.Sparkles /> リアルタイム逆算インサイト (稼働中)
+                      <Icons.Sparkles /> リアルタイム逆算インサイト (AIスナイパー)
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
-                      
-                      {/* VVFの逆算をピックアップ表示 */}
                       {processedCompetitors.map(comp => {
                           const analysis = analyzeCompetitor(comp, 'VVF (ネズミ線)');
                           if (!analysis) return null;
                           return (
-                              <div key={comp.id} className="bg-black/50 p-4 rounded border border-gray-800">
-                                  <p className="text-xs text-gray-400 font-bold mb-2">💡 {analysis.compName}のVVF（{analysis.compPrice}円）に対する逆算</p>
-                                  <p className="text-sm leading-relaxed text-gray-200">
-                                      現在の銅建値 <span className="text-blue-300 font-mono">¥{currentCopperPrice}</span> と当社のVVF歩留まり（<span className="font-mono">{analysis.ratio}%</span>）を基準にすると、VVF 1kgに含まれる純粋な銅価値は <span className="text-blue-300 font-mono">¥{analysis.pureCopperValue}</span> です。<br/>
-                                      <br/>
-                                      相手はそこから逆算して、加工賃・利益を「<span className={`font-bold font-mono ${analysis.estimatedMargin < 50 ? 'text-red-400' : 'text-green-400'}`}>推定 ¥{analysis.estimatedMargin} / kg</span>」しか抜いていません。<br/>
-                                      <span className="text-yellow-400 mt-2 block">【AIの結論】 {analysis.strategyAlert}</span>
+                              <div key={comp.id} className="bg-black/50 p-3 rounded border border-gray-800">
+                                  <p className="text-xs text-gray-400 font-bold mb-1.5">💡 {analysis.compName}のVVF（{analysis.compPrice}円）に対する逆算</p>
+                                  <p className="text-xs leading-relaxed text-gray-200">
+                                      現在の銅建値 <span className="text-blue-300 font-mono">¥{currentCopperPrice}</span> と当社のVVF歩留まり（<span className="font-mono">{analysis.ratio}%</span>）を基準にすると、VVF 1kgの純粋な銅価値は <span className="text-blue-300 font-mono">¥{analysis.pureCopperValue}</span> です。<br/>
+                                      相手の加工賃・利益は「<span className={`font-bold font-mono ${analysis.estimatedMargin < 50 ? 'text-red-400' : 'text-green-400'}`}>推定 ¥{analysis.estimatedMargin} / kg</span>」です。<br/>
+                                      <span className="text-yellow-400 mt-1 block">【AIの結論】 {analysis.strategyAlert}</span>
                                   </p>
                               </div>
                           );
@@ -176,9 +236,10 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                   </div>
               </div>
 
+              {/* 比較ヒートマップ */}
               <div className="bg-white border border-gray-200 rounded-sm shadow-sm flex-1 flex flex-col overflow-hidden">
                   <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center shrink-0">
-                      <h3 className="font-bold text-gray-900 text-sm">自社 vs 競合 リアルタイム価格差額</h3>
+                      <h3 className="font-bold text-gray-900 text-sm">自社 vs 競合 リアルタイム価格差額シミュレーション</h3>
                       <div className="flex items-center gap-4">
                           <button onClick={handleRunScrape} disabled={isProcessing || processedCompetitors.length === 0} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1 shadow-sm disabled:opacity-50">
                               {isProcessing ? <Icons.Refresh /> : <Icons.Sparkles />} AI手動巡回
@@ -190,8 +251,9 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                           <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
                               <tr>
                                   <th className="p-3 text-xs font-bold text-gray-500 uppercase tracking-widest w-1/4">品目 (マスター歩留まり)</th>
-                                  <th className="p-3 text-xs font-black text-gray-900 uppercase tracking-widest bg-blue-50 border-x border-blue-200 w-1/5">
-                                      月寒製作所 (自社)
+                                  <th className="p-3 text-xs font-black text-gray-900 uppercase tracking-widest bg-blue-50 border-x border-blue-200 w-1/4">
+                                      月寒製作所 (シミュレーション)<br/>
+                                      <span className="text-[9px] text-blue-600 font-normal">ベース建値: ¥{currentCopperPrice}</span>
                                   </th>
                                   {processedCompetitors.map(comp => (
                                       <th key={comp.id} className="p-3 text-xs font-bold text-gray-500 uppercase tracking-widest w-1/5">
@@ -205,10 +267,16 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                                   <tr key={item.name} className="hover:bg-gray-50 transition">
                                       <td className="p-3">
                                           <div className="font-bold text-gray-800 text-sm">{item.name}</div>
-                                          <div className="text-[10px] text-gray-500 font-mono mt-0.5">歩留: {item.ratio}% / 銅価値: ¥{Math.floor(currentCopperPrice * (item.ratio/100))}</div>
+                                          <div className="text-[10px] text-gray-500 font-mono mt-0.5">
+                                              歩留: {item.ratio}% / 純銅価値: <span className="font-bold text-gray-700">¥{item.pureValue}</span>
+                                          </div>
                                       </td>
-                                      <td className="p-3 bg-blue-50/30 border-x border-blue-100 font-mono font-black text-lg text-gray-900">
-                                          ¥{item.myPrice.toLocaleString()}
+                                      {/* ★ スライダーに連動して動く自社価格と自社マージン */}
+                                      <td className="p-3 bg-blue-50/30 border-x border-blue-100">
+                                          <div className="font-mono font-black text-xl text-blue-700 tracking-tighter">¥{item.myPrice.toLocaleString()}</div>
+                                          <div className="text-[10px] font-bold text-blue-600 mt-1 flex items-center gap-1">
+                                              <span className="bg-blue-100 px-1 rounded">粗利: ¥{item.myMargin} / kg</span>
+                                          </div>
                                       </td>
                                       {processedCompetitors.map(comp => {
                                           const compPrice = comp.prices[item.name];
@@ -233,7 +301,7 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                       </table>
                       {processedCompetitors.length === 0 && (
                           <div className="p-10 text-center text-gray-400 font-bold text-sm">
-                              「監視サイト登録」タブから、競合他社のURLを追加してください。
+                              「監視サイト登録」タブから、競合他社のトップページURLを追加してください。
                           </div>
                       )}
                   </div>
@@ -241,6 +309,7 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
           </div>
       )}
 
+      {/* ターゲット登録タブ、辞書タブは変更なしなので省略表記にせずそのまま残します */}
       {activeTab === 'TARGETS' && (
           <div className="flex-1 bg-white border border-gray-200 rounded-sm shadow-sm p-6 overflow-y-auto animate-in fade-in">
               <div className="max-w-4xl mx-auto space-y-6">
@@ -251,7 +320,6 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                       </div>
                   </div>
 
-                  {/* 登録フォーム */}
                   <div className="bg-gray-50 border border-gray-200 p-4 rounded-md shadow-sm">
                       <h4 className="font-bold text-sm mb-3">＋ 新規ターゲットの追加</h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
@@ -259,10 +327,10 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                           <div><select className="w-full p-2 border rounded text-sm outline-none" value={newTarget.type} onChange={e => setNewTarget({...newTarget, type: e.target.value})}><option value="メーカー直系">メーカー直系</option><option value="輸出ヤード">輸出ヤード</option><option value="同業(競合)">同業(競合)</option></select></div>
                       </div>
                       <div className="mb-3">
-                          <input type="url" placeholder="買取価格が載っているページのURL (https://...)" className="w-full p-2 border rounded text-sm outline-none font-mono" value={newTarget.url} onChange={e => setNewTarget({...newTarget, url: e.target.value})} />
+                          <input type="url" placeholder="企業のトップページのURL（AIが自動で価格表を探します）" className="w-full p-2 border rounded text-sm outline-none font-mono" value={newTarget.url} onChange={e => setNewTarget({...newTarget, url: e.target.value})} />
                       </div>
                       <div className="mb-3">
-                          <input type="text" placeholder="AIへのヒント (例: FケーブルはVVFのこと。価格は税抜で表示されている等)" className="w-full p-2 border rounded text-sm outline-none" value={newTarget.hint} onChange={e => setNewTarget({...newTarget, hint: e.target.value})} />
+                          <input type="text" placeholder="AIへのヒント (例: FケーブルはVVFのこと。価格は税抜表記等)" className="w-full p-2 border rounded text-sm outline-none" value={newTarget.hint} onChange={e => setNewTarget({...newTarget, hint: e.target.value})} />
                       </div>
                       <button onClick={handleAddTarget} disabled={isProcessing || !newTarget.name || !newTarget.url} className="bg-gray-900 hover:bg-gray-800 text-white px-6 py-2 rounded text-sm font-bold shadow-sm transition disabled:opacity-50">
                           {isProcessing ? '処理中...' : 'ターゲットを登録'}
@@ -290,7 +358,6 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                               </div>
                           </div>
                       ))}
-                      {processedCompetitors.length === 0 && <p className="text-center text-gray-400 text-sm py-4">ターゲットが登録されていません</p>}
                   </div>
               </div>
           </div>
@@ -305,7 +372,6 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                           <p className="text-xs text-gray-500 mt-1">AIが他社サイトを巡回する際、「この単語は当社のこの品目のことだ」と翻訳するための辞書です。このデータ自体がSEOや営業の強力な資産になります。</p>
                       </div>
                   </div>
-
                   <div className="space-y-6">
                       <div className="border border-gray-200 rounded-md overflow-hidden">
                           <div className="bg-gray-100 p-3 border-b border-gray-200 flex justify-between items-center">
