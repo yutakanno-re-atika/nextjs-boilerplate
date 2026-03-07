@@ -54,17 +54,13 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
 
   const [adminTab, setAdminTab] = useState<any>(() => {
     if (typeof window !== 'undefined') {
-      // 初期化時にURLハッシュを確認（#ADMIN/POS など）
       const hashParts = window.location.hash.replace('#', '').split('/');
       if (hashParts[0] === 'ADMIN' && hashParts[1] && allowedTabs.includes(hashParts[1])) {
         return hashParts[1] === 'CLIENT_DETAIL' ? 'HOME' : hashParts[1];
       }
-      // ハッシュがなければローカルストレージから
       const savedTab = localStorage.getItem('factoryOS_adminTab');
       if (savedTab === 'CLIENT_DETAIL') return 'HOME';
-      if (savedTab && allowedTabs.includes(savedTab)) {
-        return savedTab;
-      }
+      if (savedTab && allowedTabs.includes(savedTab)) return savedTab;
     }
     return defaultTab();
   });
@@ -78,25 +74,15 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
   const [isLearningMode, setIsLearningMode] = useState(false); 
   const [tutorSessionId] = useState(`TUTOR_${new Date().getTime().toString().slice(-6)}`);
 
-  // ==========================================
-  // ★ ブラウザの「戻る/進む」対応（popstateの監視）
-  // ==========================================
   useEffect(() => {
     const handlePopState = () => {
       const hashParts = window.location.hash.replace('#', '').split('/');
       if (hashParts[0] === 'ADMIN' && hashParts[1] && allowedTabs.includes(hashParts[1])) {
-        // ID情報が含まれている場合 (例: #ADMIN/CLIENT_DETAIL/C-123456)
-        if (hashParts[1] === 'CLIENT_DETAIL' && hashParts[2]) {
-          setSelectedClientName(decodeURIComponent(hashParts[2]));
-        } else {
-          setSelectedClientName(null);
-        }
+        if (hashParts[1] === 'CLIENT_DETAIL' && hashParts[2]) setSelectedClientName(decodeURIComponent(hashParts[2]));
+        else setSelectedClientName(null);
 
-        if (hashParts[1] === 'POS' && hashParts[2]) {
-          setEditingResId(hashParts[2]);
-        } else {
-          setEditingResId(null);
-        }
+        if (hashParts[1] === 'POS' && hashParts[2]) setEditingResId(hashParts[2]);
+        else setEditingResId(null);
 
         setAdminTab(hashParts[1]);
       }
@@ -105,62 +91,49 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
     return () => window.removeEventListener('popstate', handlePopState);
   }, [allowedTabs]);
 
-  // ★ 状態が変わるたびにURLハッシュを更新し、履歴(pushState)を残す
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('factoryOS_adminTab', adminTab);
-      
       const currentHash = window.location.hash.replace('#', '');
       let targetHash = `ADMIN/${adminTab}`;
-      
-      // サブ情報がある場合はURLに付与する
-      if (adminTab === 'CLIENT_DETAIL' && selectedClientName) {
-        targetHash += `/${encodeURIComponent(selectedClientName)}`;
-      } else if (adminTab === 'POS' && editingResId) {
-        targetHash += `/${editingResId}`;
-      }
-
-      // 現在のハッシュと違う場合のみ履歴を追加（無限ループ防止）
-      if (currentHash !== targetHash) {
-        window.history.pushState(null, '', `#${targetHash}`);
-      }
+      if (adminTab === 'CLIENT_DETAIL' && selectedClientName) targetHash += `/${encodeURIComponent(selectedClientName)}`;
+      else if (adminTab === 'POS' && editingResId) targetHash += `/${editingResId}`;
+      if (currentHash !== targetHash) window.history.pushState(null, '', `#${targetHash}`);
     }
   }, [adminTab, selectedClientName, editingResId]);
 
-
   useEffect(() => {
-    if (!allowedTabs.includes(adminTab)) {
-      setAdminTab(defaultTab()); 
-    }
+    if (!allowedTabs.includes(adminTab)) setAdminTab(defaultTab()); 
   }, [adminTab, currentRole, allowedTabs]);
 
   useEffect(() => {
-      if (data?.reservations) { setLocalReservations(data.reservations); }
+      if (data?.reservations) setLocalReservations(data.reservations);
   }, [data?.reservations]);
 
   const handleNavigate = (tab: any, id?: string) => {
-      if (!allowedTabs.includes(tab)) {
-          alert("この機能にアクセスする権限がありません。");
-          return;
-      }
+      if (!allowedTabs.includes(tab)) return alert("この機能にアクセスする権限がありません。");
       if (tab === 'POS' && id) setEditingResId(id); else setEditingResId(null);
       if (tab === 'CLIENT_DETAIL' && id) setSelectedClientName(id); else setSelectedClientName(null);
       setAdminTab(tab);
       setIsMobileMenuOpen(false);
   };
 
-  const handleLogoClick = () => {
-      const target = allowedTabs.includes('HOME') ? 'HOME' : defaultTab();
-      handleNavigate(target);
-  };
+  const handleLogoClick = () => handleNavigate(allowedTabs.includes('HOME') ? 'HOME' : defaultTab());
 
-const handlePosSuccess = () => { 
+  // ★ 修正：リロードせず、ローカルステートを即座に更新して画面を切り替える（楽観的UI更新）
+  const handlePosSuccess = (updatedData: any) => { 
+      if (updatedData) {
+          setLocalReservations(prev => {
+              const exists = prev.find(r => r.id === updatedData.id);
+              if (exists) return prev.map(r => r.id === updatedData.id ? { ...r, ...updatedData } : r);
+              return [updatedData, ...prev];
+          });
+      }
       setEditingResId(null); 
       handleNavigate('OPERATIONS'); 
-      // 画面遷移（ハッシュ変更）が終わってから確実にリロードして最新データを引く
-      setTimeout(() => window.location.reload(), 100); 
   };
 
+  // ★ 修正：カンバンでのステータス移動もローカルステートを即座に更新
   const handleUpdateStatus = async (id: string, status: string) => {
       setLocalReservations(prev => prev.map(r => r.id === id ? { ...r, status } : r));
       try {
@@ -170,7 +143,7 @@ const handlePosSuccess = () => {
               body: JSON.stringify({ action: 'UPDATE_RESERVATION_STATUS', reservationId: id, status: status })
           });
       } catch (err) {
-          alert('ステータス更新に失敗しました');
+          console.error('Status update failed', err);
       }
   };
 
