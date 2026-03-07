@@ -213,12 +213,10 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
     return { win, lose, draw };
   }, [data?.competitorPrices, data?.config?.pricing_rules, copperPrice, brassPrice]);
 
-  // ★ 写真収集状況の算出
   const wireStats = useMemo(() => {
       const wires = data?.wires || [];
       let complete = 0, partial = 0, none = 0;
       wires.forEach((w:any) => {
-          // 実用上、断面・全体・剥線の3枚が最重要（image1,2,3）
           const has1 = !!w.image1; const has2 = !!w.image2; const has3 = !!w.image3;
           if (has1 && has2 && has3) complete++;
           else if (!has1 && !has2 && !has3) none++;
@@ -258,6 +256,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
           </div>
         </header>
 
+        {/* 価格算出ロジック */}
         <div className="mb-8 px-2 w-full">
           <div className="bg-gray-50 border border-gray-200 rounded-sm p-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-sm group hover:border-[#D32F2F] transition-colors">
             <div className="flex items-center gap-3">
@@ -278,6 +277,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
           </div>
         </div>
 
+        {/* 建値情報 */}
         <div className="mb-10 px-2 w-full">
           <div className={`transition-opacity duration-300 ${showAiData ? 'opacity-100' : 'opacity-20 grayscale pointer-events-none'}`}>
             <div className="flex xl:grid xl:grid-cols-5 gap-4 overflow-x-auto xl:overflow-visible no-scrollbar pb-4 xl:pb-0 snap-x w-full">
@@ -319,20 +319,26 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
           
           <div className="bg-white p-6 md:p-8 rounded-sm border border-gray-200 shadow-sm flex flex-col justify-between group hover:border-[#D32F2F] hover:shadow-md transition-all relative overflow-hidden">
             <div className="absolute top-4 right-4 z-20"><ProvenanceBadge type="CO_OP" /></div>
-            <h3 className="font-black text-gray-900 tracking-wider text-lg mb-6 relative z-10">推定総在庫 評価額</h3>
+            <div className="mb-6 relative z-10">
+              <span className="text-[10px] font-bold text-gray-400 tracking-widest uppercase mb-1 block">Source: ナゲット製造管理</span>
+              <h3 className="font-black text-gray-900 tracking-wider text-lg">推定総在庫 評価額</h3>
+            </div>
             <div className="flex items-baseline gap-2 mt-auto relative z-10">
               <span className="text-2xl font-light text-gray-400">¥</span>
               <span className={`text-5xl md:text-6xl font-black tracking-tighter transition-colors ${showAiData ? 'text-gray-900' : 'text-gray-300'}`}>{showAiData ? inventoryValue.toLocaleString() : '---'}</span>
             </div>
             <div className="mt-5 pt-4 border-t border-gray-100 text-xs text-gray-600 font-mono relative z-10 flex justify-between items-center">
-              <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 bg-[#D32F2F] rounded-full animate-pulse"></span>銅換算在庫</span>
+              <span className="flex items-center gap-2">銅換算在庫</span>
               <span className="font-bold text-gray-900 text-sm">{totalCopperStock.toLocaleString()} kg</span>
             </div>
           </div>
 
           <div className="bg-white p-6 md:p-8 rounded-sm border border-gray-200 shadow-sm flex flex-col justify-between group hover:border-[#D32F2F] hover:shadow-md transition-all relative">
             <div className="absolute top-4 right-4 z-20"><ProvenanceBadge type="HUMAN" /></div>
-            <h3 className="font-black text-gray-900 tracking-wider text-lg mb-6">本日の現場稼働</h3>
+            <div className="mb-6">
+              <span className="text-[10px] font-bold text-gray-400 tracking-widest uppercase mb-1 block">Source: POS (受付・計量)</span>
+              <h3 className="font-black text-gray-900 tracking-wider text-lg">本日の現場稼働</h3>
+            </div>
             <div className="flex items-center gap-6 mt-auto">
               <div>
                 <p className="text-xs text-gray-400 font-bold mb-1">受付件数</p>
@@ -347,8 +353,11 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
           </div>
 
           <div className="bg-white rounded-sm border border-gray-200 shadow-sm p-6 md:p-8 flex flex-col cursor-pointer group hover:border-[#D32F2F] hover:shadow-md transition-all relative" onClick={() => onNavigate('PRODUCTION')}>
-            <div className="absolute top-4 right-4 z-20"><ProvenanceBadge type="HUMAN" /></div>
-            <h3 className="font-black text-gray-900 tracking-wider text-lg mb-6">今月の生産実績</h3>
+            <div className="absolute top-4 right-4 z-20 flex gap-1"><ProvenanceBadge type="HUMAN" /></div>
+            <div className="mb-6">
+              <span className="text-[10px] font-bold text-gray-400 tracking-widest uppercase mb-1 block">Source: ナゲット製造管理</span>
+              <h3 className="font-black text-gray-900 tracking-wider text-lg">今月の生産実績</h3>
+            </div>
             <div className="flex-1 flex flex-col justify-center gap-6">
               <div className="flex items-center justify-between border-l-4 border-gray-900 pl-4 py-1">
                 <div><p className="text-xs text-gray-500 font-bold mb-1">ピカ銅 生産量</p><div className="flex items-baseline gap-1"><span className="text-2xl font-black text-gray-900">{mCopper.toLocaleString()}</span><span className="text-xs text-gray-400 font-bold">kg</span></div></div>
@@ -365,12 +374,15 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
 
         </div>
 
-        {/* ★ 中段 3カラム（AI競合価格 / 写真収集ミッション / AIコンシェルジュ） */}
+        {/* ★ 中段 3カラム */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 px-2 mb-10">
             
             <div className={`bg-white rounded-sm border border-gray-200 shadow-sm p-6 md:p-8 flex flex-col cursor-pointer transition-all relative group ${showAiData ? 'hover:border-[#D32F2F] hover:shadow-md' : 'opacity-20 grayscale pointer-events-none'}`} onClick={() => showAiData && onNavigate('COMPETITOR')}>
                 <div className="absolute top-4 right-4 z-20"><ProvenanceBadge type="AI_AUTO" /></div>
-                <h3 className="font-black text-gray-900 tracking-wider text-lg mb-6">AI 競合価格勝敗</h3>
+                <div className="mb-6">
+                  <span className="text-[10px] font-bold text-gray-400 tracking-widest uppercase mb-1 block">Source: 相場レーダー</span>
+                  <h3 className="font-black text-gray-900 tracking-wider text-lg">AI 競合価格勝敗</h3>
+                </div>
                 <div className="flex-1 flex flex-col justify-center">
                     <div className="flex items-end justify-between mb-3"><span className="text-xs text-gray-500 font-bold mb-1">自社優勢 (Win)</span><span className="text-4xl font-black text-gray-900 tracking-tighter">{win}</span></div>
                     <div className="w-full bg-gray-100 h-3 rounded-sm overflow-hidden mb-4 border border-gray-200 shadow-inner"><div className="h-full bg-gray-900 transition-all duration-1000" style={{ width: `${(win / Math.max(1, win + lose + draw)) * 100}%` }}></div></div>
@@ -378,12 +390,12 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                 </div>
             </div>
 
-            {/* ★ 新規追加：写真収集ミッションパネル */}
             <div className="bg-white rounded-sm border border-gray-200 shadow-sm p-6 md:p-8 flex flex-col cursor-pointer transition-all relative group hover:border-[#D32F2F] hover:shadow-md" onClick={() => onNavigate('DATABASE')}>
                 <div className="absolute top-4 right-4 z-20"><ProvenanceBadge type="HUMAN" /></div>
-                <h3 className="font-black text-gray-900 tracking-wider text-lg mb-6">
-                    写真収集ミッション
-                </h3>
+                <div className="mb-6">
+                  <span className="text-[10px] font-bold text-gray-400 tracking-widest uppercase mb-1 block">Source: マスターDB</span>
+                  <h3 className="font-black text-gray-900 tracking-wider text-lg">写真収集ミッション</h3>
+                </div>
                 <div className="flex-1 flex flex-col justify-center">
                     <div className="flex items-end justify-between mb-3">
                         <span className="text-xs text-gray-500 font-bold mb-1">マスター完成度</span>
@@ -405,9 +417,12 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
 
             <div className={`bg-white p-6 md:p-8 rounded-sm border border-gray-200 shadow-sm flex flex-col justify-between relative overflow-hidden group transition-all duration-300 hover:border-[#D32F2F] hover:shadow-md ${showAiData ? 'opacity-100' : 'opacity-20 grayscale pointer-events-none'}`}>
                 <div className="absolute top-4 right-4 z-20"><ProvenanceBadge type="AI_AUTO" /></div>
-                <h3 className="font-black text-gray-900 tracking-wider text-lg mb-6 relative z-10 flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[#D32F2F] animate-pulse"></span>AIコンシェルジュ稼働
-                </h3>
+                <div className="mb-6 relative z-10">
+                  <span className="text-[10px] font-bold text-gray-400 tracking-widest uppercase mb-1 block">Source: 一般向けWebサイト</span>
+                  <h3 className="font-black text-gray-900 tracking-wider text-lg flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[#D32F2F] animate-pulse"></span>AIコンシェルジュ稼働
+                  </h3>
+                </div>
                 <div className="flex items-baseline gap-2 mt-auto relative z-10">
                     <span className="text-5xl md:text-6xl font-black text-gray-900 tracking-tighter">{data?.chatStats?.today || 0}</span>
                     <span className="text-sm font-bold text-gray-600">件の対応</span>
@@ -429,11 +444,49 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
 
         </div>
 
-        {/* ★ 下段 1カラムフル幅（リアルタイム稼働状況） */}
+        {/* ★ 買取価格表をフル幅化し、詳細を追加 */}
+        <div className="px-2 mb-6 w-full">
+            <div className="bg-white rounded-sm border border-gray-200 shadow-sm overflow-hidden group hover:border-[#D32F2F] hover:shadow-md transition-all relative cursor-pointer" onClick={() => onNavigate('DATABASE')}>
+                <div className="absolute top-4 right-4 z-20"><ProvenanceBadge type="CO_OP" /></div>
+                <div className="p-6 border-b border-gray-100 bg-white transition pr-24 shrink-0">
+                    <span className="text-[10px] font-bold text-gray-400 tracking-widest uppercase mb-1 block">Source: マスターDB</span>
+                    <h3 className="font-black text-gray-900 tracking-wider text-lg">本日の買取価格表</h3>
+                </div>
+                <div className="p-0 overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead className="bg-gray-50 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-widest">
+                            <tr>
+                                <th className="p-4 pl-6">メーカー / 品名 / サイズ</th>
+                                <th className="p-4 text-center">材質</th>
+                                <th className="p-4 text-center">銅分率 (歩留)</th>
+                                <th className="p-4 pr-6 text-right">本日の買取単価</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50 text-sm">
+                            {data?.wires?.slice(0, 10).map((w: any) => (
+                                <tr key={w.id} className="hover:bg-red-50/30 transition">
+                                    <td className="p-4 pl-6 font-bold text-gray-800">
+                                        {w.maker && w.maker !== '-' ? `【${w.maker}】` : ''}{w.name} {w.sq !== '-' ? `${w.sq}sq` : ''} {w.core !== '-' ? `${w.core}C` : ''}
+                                    </td>
+                                    <td className="p-4 text-center text-gray-600">{w.material}</td>
+                                    <td className="p-4 text-center text-gray-900 font-bold font-mono">{w.ratio}%</td>
+                                    <td className="p-4 pr-6 text-right font-black text-xl text-[#D32F2F] tracking-tighter">
+                                        {showAiData ? `¥${Math.floor(copperPrice * (w.ratio/100) * 0.85).toLocaleString()}` : '---'}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        {/* ★ 下段 1カラムフル幅（リアルタイム稼働状況のカード型） */}
         <div className="px-2 mb-10 w-full">
             <div className="bg-white rounded-sm border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-[300px] relative group hover:border-[#D32F2F] hover:shadow-md transition-all">
                 <div className="absolute top-4 right-4 z-20"><ProvenanceBadge type="HUMAN" /></div>
                 <div className="p-6 border-b border-gray-100 bg-white cursor-pointer transition pr-24 shrink-0" onClick={() => onNavigate('OPERATIONS')}>
+                    <span className="text-[10px] font-bold text-gray-400 tracking-widest uppercase mb-1 block">Source: 現場状況管理</span>
                     <h3 className="font-black text-gray-900 tracking-wider text-lg flex items-center gap-3">
                         <span className="relative flex h-2.5 w-2.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#D32F2F] opacity-75"></span><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#D32F2F]"></span></span>
                         リアルタイム稼働状況 (現場カンバン)
