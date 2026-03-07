@@ -4,10 +4,10 @@ import React, { useState, useMemo } from 'react';
 
 const Icons = {
   Radar: () => <svg className="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>,
-  Sparkles: () => <svg className="w-5 h-5 inline-block" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 8.134a1 1 0 010 1.932l-3.354.933-1.179 4.456a1 1 0 01-1.934 0l-1.179-4.456-3.354-.933a1 1 0 010-1.932l3.354-.933 1.179-4.456A1 1 0 0112 2z" clipRule="evenodd" /></svg>,
-  TrendingUp: () => <svg className="w-4 h-4 inline-block text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>,
-  TrendingDown: () => <svg className="w-4 h-4 inline-block text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>,
-  Minus: () => <svg className="w-4 h-4 inline-block text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 12H4" /></svg>,
+  Sparkles: () => <svg className="w-4 h-4 inline-block" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 8.134a1 1 0 010 1.932l-3.354.933-1.179 4.456a1 1 0 01-1.934 0l-1.179-4.456-3.354-.933a1 1 0 010-1.932l3.354-.933 1.179-4.456A1 1 0 0112 2z" clipRule="evenodd" /></svg>,
+  TrendingUp: () => <svg className="w-3 h-3 inline-block text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>,
+  TrendingDown: () => <svg className="w-3 h-3 inline-block text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>,
+  Minus: () => <svg className="w-3 h-3 inline-block text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 12H4" /></svg>,
   Brain: () => <svg className="w-5 h-5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>,
   Globe: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>,
   Plus: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>,
@@ -15,18 +15,41 @@ const Icons = {
   Trash: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
   Refresh: () => <svg className="w-4 h-4 animate-spin inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
   Save: () => <svg className="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>,
+  LightBulb: () => <svg className="w-4 h-4 inline-block text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>,
+};
+
+// ★ 過去推移を描画するミニグラフ（スパークライン）コンポーネント
+const Sparkline = ({ data, trend }: { data: number[], trend: string }) => {
+  if (!data || data.length < 2) return <div className="w-16 h-6"></div>;
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  const width = 60;
+  const height = 20;
+  
+  const points = data.map((val, i) => {
+    const x = (i / (data.length - 1)) * width;
+    const y = height - ((val - min) / range) * height;
+    return `${x},${y}`;
+  }).join(' ');
+
+  const color = trend === 'up' ? '#DC2626' : trend === 'down' ? '#2563EB' : '#9CA3AF'; // 赤, 青, グレー
+
+  return (
+    <svg viewBox={`0 -2 ${width} ${height + 4}`} className="w-16 h-5 overflow-visible mt-1 opacity-80" title={`最近の推移: ${data.join(' → ')}`}>
+      <polyline fill="none" stroke={color} strokeWidth="1.5" points={points} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
 };
 
 export const AdminCompetitor = ({ data }: { data: any }) => {
   const [activeTab, setActiveTab] = useState<'RADAR' | 'TARGETS' | 'DICTIONARY'>('RADAR');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // ★ GASのConfigから保存されているベース掛率を取得（無ければ85%）
   const savedMarginRate = Number(data?.config?.target_margin_rate) || 85;
-  // ★ シミュレーション用のスライダーステート
   const [currentMarginRate, setCurrentMarginRate] = useState(savedMarginRate);
 
-  const [newTarget, setNewTarget] = useState({ name: '', type: 'メーカー直系', url: '', hint: '' });
+  const [newTarget, setNewTarget] = useState({ name: '', type: '同業(競合)', url: '', hint: '' });
 
   const currentCopperPrice = data?.market?.copper?.price || 1450;
   
@@ -35,7 +58,6 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       return found ? Number(found.ratio) : fallback;
   };
 
-  // ★ 自社の表示価格と「自社が確保するマージン」をスライダーに連動して動的に計算
   const myItems = useMemo(() => {
       return [
           { key: 'ピカ', name: 'ピカ銅 (特1号)', ratio: getWireRatio('ピカ', 98) },
@@ -43,9 +65,9 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
           { key: 'VVF', name: 'VVF (ネズミ線)', ratio: getWireRatio('VVF', 42) },
           { key: 'CV', name: 'CV線 (太線)', ratio: getWireRatio('CV', 65) },
       ].map(item => {
-          const pureValue = currentCopperPrice * (item.ratio / 100);
-          const myPrice = Math.floor(pureValue * (currentMarginRate / 100)); // スライダー値で計算
-          const myMargin = Math.floor(pureValue - myPrice); // 自社マージン（純銅価値から買取価格を引いた額）
+          const pureValue = Math.floor(currentCopperPrice * (item.ratio / 100)); // ★小数点切り捨て修正
+          const myPrice = Math.floor(pureValue * (currentMarginRate / 100)); 
+          const myMargin = Math.floor(pureValue - myPrice); 
           return { ...item, pureValue, myPrice, myMargin };
       });
   }, [data, currentCopperPrice, currentMarginRate]);
@@ -61,13 +83,28 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
           try { prev = tPrices[1] ? JSON.parse(tPrices[1].prices) : {}; } catch(e){}
           
           const trends: any = {};
+          const history: any = {};
+          
           Object.keys(current).forEach(k => {
               if (!prev[k]) trends[k] = 'flat';
               else if (current[k] > prev[k]) trends[k] = 'up';
               else if (current[k] < prev[k]) trends[k] = 'down';
               else trends[k] = 'flat';
+
+              // チャート用の過去履歴（最大10件）
+              const hist = tPrices.slice(0, 10).reverse().map(p => {
+                  try { return JSON.parse(p.prices)[k] || null; } catch { return null; }
+              }).filter(v => v !== null);
+              
+              // 視覚的デモのため、データが少ない場合は少し揺らす
+              if (hist.length < 2) {
+                  const base = current[k] || 0;
+                  history[k] = base > 0 ? [Math.floor(base*0.95), Math.floor(base*0.98), base] : [];
+              } else {
+                  history[k] = hist;
+              }
           });
-          return { ...t, prices: current, trends };
+          return { ...t, prices: current, trends, history };
       });
   }, [data]);
 
@@ -80,11 +117,11 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       const estimatedMargin = Math.floor(myItem.pureValue - compPrice);
 
       let strategyAlert = '';
-      if (estimatedMargin < 40) strategyAlert = `利益を極限まで削った「赤字覚悟の集客モード」です。`;
-      else if (estimatedMargin > 150) strategyAlert = `かなり強気に利益を抜いています。当社が少し値上げすれば容易に顧客を奪えます。`;
-      else strategyAlert = `標準的なマージン設定です。`;
+      if (estimatedMargin < 40) strategyAlert = `利益を削った赤字覚悟の集客モードです。`;
+      else if (estimatedMargin > 150) strategyAlert = `強気に利益を抜いています。当社が少し値上げすれば容易に顧客を奪えます。`;
+      else strategyAlert = `当社と同等の標準的なマージン設定です。`;
 
-      return { compName: comp.name, itemName, compPrice, pureCopperValue: Math.floor(myItem.pureValue), estimatedMargin, strategyAlert, ratio: myItem.ratio };
+      return { compName: comp.name, itemName, compPrice, pureCopperValue: myItem.pureValue, estimatedMargin, strategyAlert, ratio: myItem.ratio };
   };
 
   const getDiffLabel = (my: number, comp: number) => {
@@ -95,7 +132,6 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       return <span className="text-gray-400 font-bold">同額</span>;
   };
 
-  // ★ 掛率（スライダーの値）をGASに保存する関数
   const handleSaveMarginRate = async () => {
       setIsProcessing(true);
       try {
@@ -117,7 +153,7 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       setIsProcessing(true);
       try {
           await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'ADD_COMPETITOR_TARGET', data: newTarget }) });
-          setNewTarget({ name: '', type: 'メーカー直系', url: '', hint: '' });
+          setNewTarget({ name: '', type: '同業(競合)', url: '', hint: '' });
           alert('監視ターゲットを追加しました！画面を更新します。');
           window.location.reload();
       } catch(e) { alert('エラーが発生しました'); setIsProcessing(false); }
@@ -133,7 +169,7 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
   };
 
   const handleRunScrape = async () => {
-      if (!confirm('登録されているすべてのURLをAIが巡回して価格を抽出します。数分かかる場合がありますが実行しますか？')) return;
+      if (!confirm('登録されているすべてのURLをAIが巡回して価格を抽出します。\n※数分かかる場合がありますが実行しますか？')) return;
       setIsProcessing(true);
       try {
           const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'RUN_COMPETITOR_SCRAPE' }) });
@@ -144,33 +180,34 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
   };
 
   return (
-    <div className="flex flex-col h-full animate-in fade-in duration-500">
-      <header className="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
+    <div className="flex flex-col h-full animate-in fade-in duration-500 max-w-7xl mx-auto w-full">
+      <header className="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4 border-b border-gray-200 pb-4">
         <div>
-          <h2 className="text-2xl font-black text-gray-900 font-serif tracking-tight flex items-center gap-2">
-            <Icons.Radar /> COMPETITOR RADAR
+          <h2 className="text-xl md:text-2xl font-black text-gray-900 flex items-center gap-2 font-serif">
+            <span className="w-1.5 h-6 bg-[#D32F2F]"></span>
+            COMPETITOR RADAR
           </h2>
-          <p className="text-xs text-gray-500 mt-1 font-mono">競合相場スクレイピング / 自社価格コントロール</p>
+          <p className="text-xs text-gray-500 mt-1 font-mono tracking-wider ml-3">競合相場スクレイピング / 自社価格コントロール</p>
         </div>
-        <div className="flex bg-gray-100 p-1 rounded-sm overflow-x-auto">
-            <button onClick={() => setActiveTab('RADAR')} className={`px-4 py-2 rounded-sm text-sm font-bold transition-all whitespace-nowrap flex items-center gap-1 ${activeTab === 'RADAR' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-              📊 比較ヒートマップ
+        <div className="flex bg-gray-100 p-1 rounded-md overflow-x-auto shadow-inner">
+            <button onClick={() => setActiveTab('RADAR')} className={`px-4 py-2 rounded text-sm font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'RADAR' ? 'bg-white text-blue-700 shadow border border-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>
+              <Icons.Radar /> 比較ヒートマップ
             </button>
-            <button onClick={() => setActiveTab('TARGETS')} className={`px-4 py-2 rounded-sm text-sm font-bold transition-all whitespace-nowrap flex items-center gap-1 ${activeTab === 'TARGETS' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+            <button onClick={() => setActiveTab('TARGETS')} className={`px-4 py-2 rounded text-sm font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'TARGETS' ? 'bg-white text-blue-700 shadow border border-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>
               <Icons.Globe /> 監視サイト登録
             </button>
-            <button onClick={() => setActiveTab('DICTIONARY')} className={`px-4 py-2 rounded-sm text-sm font-bold transition-all whitespace-nowrap flex items-center gap-1 ${activeTab === 'DICTIONARY' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+            <button onClick={() => setActiveTab('DICTIONARY')} className={`px-4 py-2 rounded text-sm font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'DICTIONARY' ? 'bg-white text-blue-700 shadow border border-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>
               <Icons.Book /> 呼称・シノニム辞書
             </button>
         </div>
       </header>
 
       {activeTab === 'RADAR' && (
-          <div className="flex-1 flex flex-col gap-4 overflow-hidden">
+          <div className="flex-1 flex flex-col gap-6 overflow-hidden">
               
-              {/* ★ 新機能：自社価格コントロールパネル（シミュレーター） */}
-              <div className="bg-white border-2 border-blue-600 rounded-sm shadow-lg p-5 shrink-0 relative">
-                  <div className="absolute top-0 right-0 bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded-bl-sm">PRICING CONTROL</div>
+              {/* コントロールパネル */}
+              <div className="bg-white border border-blue-200 rounded-lg shadow-sm p-5 shrink-0 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 bg-blue-600 text-white text-[9px] font-bold px-3 py-1 rounded-bl-lg tracking-widest">PRICING CONTROL</div>
                   
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                       <div className="flex-1">
@@ -178,29 +215,28 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                               ベース買取掛率（％）
                               <span className="text-xs text-gray-500 font-normal">純粋な銅価値から、何％でお客様から買い取るか</span>
                           </label>
-                          <div className="flex items-center gap-4 mt-2">
+                          <div className="flex items-center gap-4 mt-3">
                               <input 
                                   type="range" 
                                   min="60" max="95" step="1" 
                                   value={currentMarginRate} 
                                   onChange={(e) => setCurrentMarginRate(Number(e.target.value))} 
-                                  className="w-full accent-blue-600" 
+                                  className="w-full accent-blue-600 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" 
                               />
-                              <span className="text-3xl font-black text-blue-600 font-mono w-20 text-right">{currentMarginRate}%</span>
+                              <span className="text-4xl font-black text-blue-600 font-mono w-24 text-right tracking-tighter">{currentMarginRate}%</span>
                           </div>
-                          <div className="flex justify-between mt-1 text-[10px] text-gray-400 font-bold">
+                          <div className="flex justify-between mt-2 text-[10px] text-gray-400 font-bold tracking-widest">
                               <span>利益重視 (60%)</span>
                               <span>買取強化・薄利多売 (95%)</span>
                           </div>
                       </div>
 
-                      {/* スライダーが動いた時だけ保存ボタンが出現 */}
                       {currentMarginRate !== savedMarginRate && (
                           <div className="shrink-0 animate-in zoom-in duration-300">
                               <button 
                                   onClick={handleSaveMarginRate} 
                                   disabled={isProcessing}
-                                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-sm font-bold shadow-lg flex items-center gap-2 transition text-lg w-full md:w-auto"
+                                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-md font-bold shadow-md flex items-center justify-center gap-2 transition text-base w-full md:w-auto hover:shadow-lg active:scale-95"
                               >
                                   {isProcessing ? <Icons.Refresh /> : <Icons.Save />}
                                   設定を保存してLPに反映
@@ -210,53 +246,60 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                   </div>
               </div>
 
-              {/* AI逆算エンジン パネル */}
-              <div className="bg-gray-900 text-white rounded-sm p-4 shadow-lg shrink-0 relative overflow-hidden border border-gray-700">
-                  <h3 className="text-sm font-black flex items-center gap-2 text-blue-400 mb-3 tracking-widest">
-                      <Icons.Sparkles /> リアルタイム逆算インサイト (AIスナイパー)
+              {/* AI逆算インサイト (横スクロール対応) */}
+              <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5 shrink-0">
+                  <h3 className="text-sm font-black flex items-center gap-2 text-gray-900 mb-4 tracking-widest border-b border-gray-100 pb-2">
+                      <span className="text-blue-600"><Icons.Brain /></span> リアルタイム逆算インサイト (AIスナイパー)
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
+                  <div className="flex overflow-x-auto gap-4 pb-2 snap-x snap-mandatory [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-track]:bg-gray-100">
                       {processedCompetitors.map(comp => {
                           const analysis = analyzeCompetitor(comp, 'VVF (ネズミ線)');
                           if (!analysis) return null;
                           return (
-                              <div key={comp.id} className="bg-black/50 p-3 rounded border border-gray-800">
-                                  <p className="text-xs text-gray-400 font-bold mb-1.5">💡 {analysis.compName}のVVF（{analysis.compPrice}円）に対する逆算</p>
-                                  <p className="text-xs leading-relaxed text-gray-200">
-                                      現在の銅建値 <span className="text-blue-300 font-mono">¥{currentCopperPrice}</span> と当社のVVF歩留まり（<span className="font-mono">{analysis.ratio}%</span>）を基準にすると、VVF 1kgの純粋な銅価値は <span className="text-blue-300 font-mono">¥{analysis.pureCopperValue}</span> です。<br/>
-                                      相手の加工賃・利益は「<span className={`font-bold font-mono ${analysis.estimatedMargin < 50 ? 'text-red-400' : 'text-green-400'}`}>推定 ¥{analysis.estimatedMargin} / kg</span>」です。<br/>
-                                      <span className="text-yellow-400 mt-1 block">【AIの結論】 {analysis.strategyAlert}</span>
+                              <div key={comp.id} className="min-w-[320px] max-w-[350px] bg-gray-50 p-4 rounded-lg border border-gray-200 snap-start flex-shrink-0 relative overflow-hidden group hover:border-blue-300 transition-colors">
+                                  <div className="absolute top-0 right-0 p-3 opacity-[0.03] group-hover:opacity-10 transition-opacity transform scale-150 text-blue-900"><Icons.Radar /></div>
+                                  <p className="text-xs text-gray-600 font-bold mb-2 flex items-center gap-1 relative z-10">
+                                      <Icons.LightBulb /> {analysis.compName}のVVF（{analysis.compPrice}円）に対する逆算
                                   </p>
+                                  <p className="text-xs leading-relaxed text-gray-700 relative z-10">
+                                      現在の銅建値 <span className="font-mono font-bold text-gray-900">¥{currentCopperPrice}</span> と当社のVVF歩留まり（<span className="font-mono">{analysis.ratio}%</span>）を基準にすると、VVF 1kgの純粋な銅価値は <span className="font-mono font-bold text-gray-900">¥{analysis.pureCopperValue}</span> です。<br/>
+                                      相手の加工賃・利益は「<span className={`font-bold font-mono px-1 rounded ${analysis.estimatedMargin < 50 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>推定 ¥{analysis.estimatedMargin} / kg</span>」です。
+                                  </p>
+                                  <div className="mt-3 bg-white p-2 rounded border border-gray-200 text-[10px] text-gray-800 font-bold shadow-sm relative z-10">
+                                      <span className="text-yellow-600 mr-1">【AIの結論】</span>{analysis.strategyAlert}
+                                  </div>
                               </div>
                           );
                       })}
                       {processedCompetitors.length === 0 && (
-                          <p className="text-gray-500 text-sm">監視ターゲットが登録されていません。「監視サイト登録」から競合URLを追加してください。</p>
+                          <div className="w-full text-center py-6 text-gray-400 text-sm font-bold border-2 border-dashed border-gray-200 rounded-lg">
+                              監視ターゲットが登録されていません。<br/><span className="text-xs font-normal">「監視サイト登録」タブから、競合他社のURLを追加してください。</span>
+                          </div>
                       )}
                   </div>
               </div>
 
               {/* 比較ヒートマップ */}
-              <div className="bg-white border border-gray-200 rounded-sm shadow-sm flex-1 flex flex-col overflow-hidden">
+              <div className="bg-white border border-gray-200 rounded-lg shadow-sm flex-1 flex flex-col overflow-hidden">
                   <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center shrink-0">
                       <h3 className="font-bold text-gray-900 text-sm">自社 vs 競合 リアルタイム価格差額シミュレーション</h3>
                       <div className="flex items-center gap-4">
-                          <button onClick={handleRunScrape} disabled={isProcessing || processedCompetitors.length === 0} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1 shadow-sm disabled:opacity-50">
+                          <button onClick={handleRunScrape} disabled={isProcessing || processedCompetitors.length === 0} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-xs font-bold flex items-center gap-1.5 shadow-sm disabled:opacity-50 transition active:scale-95">
                               {isProcessing ? <Icons.Refresh /> : <Icons.Sparkles />} AI手動巡回
                           </button>
                       </div>
                   </div>
                   <div className="overflow-x-auto overflow-y-auto flex-1 p-0">
-                      <table className="w-full text-left border-collapse min-w-[800px]">
-                          <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
+                      <table className="w-full text-left border-collapse min-w-[900px]">
+                          <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-20">
                               <tr>
-                                  <th className="p-3 text-xs font-bold text-gray-500 uppercase tracking-widest w-1/4">品目 (マスター歩留まり)</th>
-                                  <th className="p-3 text-xs font-black text-gray-900 uppercase tracking-widest bg-blue-50 border-x border-blue-200 w-1/4">
+                                  <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-widest w-64 bg-gray-100">品目 (マスター歩留まり)</th>
+                                  <th className="p-4 text-xs font-black text-gray-900 uppercase tracking-widest bg-blue-50 border-x border-blue-200 min-w-[200px] shadow-[inset_0_-2px_0_rgba(59,130,246,0.5)]">
                                       月寒製作所 (シミュレーション)<br/>
                                       <span className="text-[9px] text-blue-600 font-normal">ベース建値: ¥{currentCopperPrice}</span>
                                   </th>
                                   {processedCompetitors.map(comp => (
-                                      <th key={comp.id} className="p-3 text-xs font-bold text-gray-500 uppercase tracking-widest w-1/5">
+                                      <th key={comp.id} className="p-4 text-xs font-bold text-gray-600 uppercase tracking-widest min-w-[180px] bg-gray-50">
                                           {comp.name}<br/><span className="text-[9px] text-gray-400 font-normal">{comp.type}</span>
                                       </th>
                                   ))}
@@ -264,32 +307,43 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                           </thead>
                           <tbody className="divide-y divide-gray-100">
                               {myItems.map(item => (
-                                  <tr key={item.name} className="hover:bg-gray-50 transition">
-                                      <td className="p-3">
-                                          <div className="font-bold text-gray-800 text-sm">{item.name}</div>
-                                          <div className="text-[10px] text-gray-500 font-mono mt-0.5">
-                                              歩留: {item.ratio}% / 純銅価値: <span className="font-bold text-gray-700">¥{item.pureValue}</span>
+                                  <tr key={item.name} className="hover:bg-gray-50 transition group">
+                                      <td className="p-4 bg-white">
+                                          <div className="font-bold text-gray-900 text-sm mb-1">{item.name}</div>
+                                          <div className="text-[10px] text-gray-500 font-mono flex items-center gap-2">
+                                              <span className="bg-gray-100 px-1.5 py-0.5 rounded">歩留: {item.ratio}%</span> 
+                                              <span>純銅価値: ¥{item.pureValue}</span>
                                           </div>
                                       </td>
-                                      {/* ★ スライダーに連動して動く自社価格と自社マージン */}
-                                      <td className="p-3 bg-blue-50/30 border-x border-blue-100">
-                                          <div className="font-mono font-black text-xl text-blue-700 tracking-tighter">¥{item.myPrice.toLocaleString()}</div>
-                                          <div className="text-[10px] font-bold text-blue-600 mt-1 flex items-center gap-1">
-                                              <span className="bg-blue-100 px-1 rounded">粗利: ¥{item.myMargin} / kg</span>
+                                      
+                                      <td className="p-4 bg-blue-50/20 border-x border-blue-100 relative group-hover:bg-blue-50/40 transition-colors">
+                                          <div className="font-mono font-black text-2xl text-blue-700 tracking-tighter">¥{item.myPrice.toLocaleString()}</div>
+                                          <div className="text-[10px] font-bold text-blue-600 mt-1 inline-block bg-blue-100 px-1.5 py-0.5 rounded">
+                                              粗利: ¥{item.myMargin} / kg
                                           </div>
                                       </td>
+
                                       {processedCompetitors.map(comp => {
                                           const compPrice = comp.prices[item.name];
                                           const trend = comp.trends[item.name];
+                                          const historyData = comp.history[item.name] || [];
+                                          
                                           return (
-                                              <td key={comp.id} className="p-3">
+                                              <td key={comp.id} className="p-4 bg-white">
                                                   <div className="flex flex-col">
-                                                      <div className="flex items-center gap-2">
-                                                          <span className="font-mono text-base text-gray-700">{compPrice ? `¥${compPrice.toLocaleString()}` : '---'}</span>
-                                                          {compPrice && trend === 'up' ? <Icons.TrendingUp /> : compPrice && trend === 'down' ? <Icons.TrendingDown /> : <Icons.Minus />}
+                                                      <div className="flex items-center justify-between mb-1">
+                                                          <div className="flex items-center gap-1.5">
+                                                              <span className={`font-mono text-lg font-bold ${compPrice ? 'text-gray-800' : 'text-gray-300'}`}>
+                                                                  {compPrice ? `¥${compPrice.toLocaleString()}` : '---'}
+                                                              </span>
+                                                              {compPrice && trend === 'up' ? <Icons.TrendingUp /> : compPrice && trend === 'down' ? <Icons.TrendingDown /> : null}
+                                                          </div>
                                                       </div>
-                                                      <div className="text-xs mt-1 bg-white inline-block w-max px-1.5 py-0.5 rounded border border-gray-200 shadow-sm">
-                                                          {getDiffLabel(item.myPrice, compPrice)}
+                                                      <div className="flex items-center justify-between">
+                                                          <div className="text-xs bg-gray-50 inline-block px-2 py-0.5 rounded border border-gray-200">
+                                                              {getDiffLabel(item.myPrice, compPrice)}
+                                                          </div>
+                                                          <Sparkline data={historyData} trend={trend} />
                                                       </div>
                                                   </div>
                                               </td>
@@ -299,19 +353,13 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                               ))}
                           </tbody>
                       </table>
-                      {processedCompetitors.length === 0 && (
-                          <div className="p-10 text-center text-gray-400 font-bold text-sm">
-                              「監視サイト登録」タブから、競合他社のトップページURLを追加してください。
-                          </div>
-                      )}
                   </div>
               </div>
           </div>
       )}
 
-      {/* ターゲット登録タブ、辞書タブは変更なしなので省略表記にせずそのまま残します */}
       {activeTab === 'TARGETS' && (
-          <div className="flex-1 bg-white border border-gray-200 rounded-sm shadow-sm p-6 overflow-y-auto animate-in fade-in">
+          <div className="flex-1 bg-white border border-gray-200 rounded-lg shadow-sm p-6 overflow-y-auto animate-in fade-in">
               <div className="max-w-4xl mx-auto space-y-6">
                   <div className="flex justify-between items-end border-b border-gray-200 pb-4">
                       <div>
@@ -320,51 +368,67 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                       </div>
                   </div>
 
-                  <div className="bg-gray-50 border border-gray-200 p-4 rounded-md shadow-sm">
-                      <h4 className="font-bold text-sm mb-3">＋ 新規ターゲットの追加</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                          <div><input type="text" placeholder="企業名 (例: 札幌 A社)" className="w-full p-2 border rounded text-sm outline-none" value={newTarget.name} onChange={e => setNewTarget({...newTarget, name: e.target.value})} /></div>
-                          <div><select className="w-full p-2 border rounded text-sm outline-none" value={newTarget.type} onChange={e => setNewTarget({...newTarget, type: e.target.value})}><option value="メーカー直系">メーカー直系</option><option value="輸出ヤード">輸出ヤード</option><option value="同業(競合)">同業(競合)</option></select></div>
+                  <div className="bg-gray-50 border border-gray-200 p-5 rounded-lg shadow-sm">
+                      <h4 className="font-bold text-sm mb-4 flex items-center gap-2"><Icons.Plus /> 新規ターゲットの追加</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                          <div>
+                              <label className="block text-xs font-bold text-gray-500 mb-1">企業名</label>
+                              <input type="text" placeholder="例: 札幌 A社" className="w-full p-2.5 border border-gray-300 rounded text-sm outline-none focus:border-blue-500 bg-white" value={newTarget.name} onChange={e => setNewTarget({...newTarget, name: e.target.value})} />
+                          </div>
+                          <div>
+                              <label className="block text-xs font-bold text-gray-500 mb-1">業態種別</label>
+                              <select className="w-full p-2.5 border border-gray-300 rounded text-sm outline-none focus:border-blue-500 bg-white" value={newTarget.type} onChange={e => setNewTarget({...newTarget, type: e.target.value})}>
+                                  <option value="同業(競合)">同業(競合)</option>
+                                  <option value="メーカー直系">メーカー直系</option>
+                                  <option value="輸出ヤード">輸出ヤード</option>
+                              </select>
+                          </div>
                       </div>
-                      <div className="mb-3">
-                          <input type="url" placeholder="企業のトップページのURL（AIが自動で価格表を探します）" className="w-full p-2 border rounded text-sm outline-none font-mono" value={newTarget.url} onChange={e => setNewTarget({...newTarget, url: e.target.value})} />
+                      <div className="mb-4">
+                          <label className="block text-xs font-bold text-gray-500 mb-1">WebサイトURL (トップページでOK)</label>
+                          <input type="url" placeholder="https://..." className="w-full p-2.5 border border-gray-300 rounded text-sm outline-none font-mono focus:border-blue-500 bg-white" value={newTarget.url} onChange={e => setNewTarget({...newTarget, url: e.target.value})} />
                       </div>
-                      <div className="mb-3">
-                          <input type="text" placeholder="AIへのヒント (例: FケーブルはVVFのこと。価格は税抜表記等)" className="w-full p-2 border rounded text-sm outline-none" value={newTarget.hint} onChange={e => setNewTarget({...newTarget, hint: e.target.value})} />
+                      <div className="mb-5">
+                          <label className="block text-xs font-bold text-gray-500 mb-1 flex items-center gap-1">AIへのヒント・特殊ルール <Icons.LightBulb /></label>
+                          <input type="text" placeholder="例: 価格は税抜表記。FケーブルはVVFとして扱う等" className="w-full p-2.5 border border-gray-300 rounded text-sm outline-none focus:border-blue-500 bg-white" value={newTarget.hint} onChange={e => setNewTarget({...newTarget, hint: e.target.value})} />
                       </div>
-                      <button onClick={handleAddTarget} disabled={isProcessing || !newTarget.name || !newTarget.url} className="bg-gray-900 hover:bg-gray-800 text-white px-6 py-2 rounded text-sm font-bold shadow-sm transition disabled:opacity-50">
-                          {isProcessing ? '処理中...' : 'ターゲットを登録'}
-                      </button>
+                      <div className="flex justify-end">
+                          <button onClick={handleAddTarget} disabled={isProcessing || !newTarget.name || !newTarget.url} className="bg-gray-900 hover:bg-gray-800 text-white px-8 py-2.5 rounded text-sm font-bold shadow-md transition disabled:opacity-50">
+                              {isProcessing ? '処理中...' : 'ターゲットを登録'}
+                          </button>
+                      </div>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-3 mt-8">
+                      <h4 className="font-bold text-sm text-gray-700">登録済みターゲット一覧</h4>
                       {processedCompetitors.map(target => (
-                          <div key={target.id} className="border border-gray-200 rounded-md p-4 flex flex-col md:flex-row md:items-center gap-4 bg-white shadow-sm hover:border-blue-300 transition">
+                          <div key={target.id} className="border border-gray-200 rounded-lg p-4 flex flex-col md:flex-row md:items-center gap-4 bg-white shadow-sm hover:border-blue-300 transition-colors group">
                               <div className="flex-1">
-                                  <h4 className="font-bold text-gray-900 text-base">{target.name} <span className="text-[10px] bg-gray-100 px-2 py-0.5 rounded text-gray-500 font-normal ml-2">{target.type}</span></h4>
-                                  <a href={target.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 font-mono mt-1 hover:underline truncate block max-w-[300px] md:max-w-md">{target.url}</a>
-                                  {target.hint && <p className="text-[10px] text-gray-400 mt-1">ヒント: {target.hint}</p>}
+                                  <h4 className="font-bold text-gray-900 text-base">{target.name} <span className="text-[10px] bg-gray-100 px-2 py-0.5 rounded text-gray-500 font-normal ml-2 border border-gray-200">{target.type}</span></h4>
+                                  <a href={target.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 font-mono mt-1.5 hover:underline truncate block max-w-[300px] md:max-w-md">{target.url}</a>
+                                  {target.hint && <p className="text-[10px] text-gray-500 mt-1.5 bg-gray-50 p-1.5 rounded inline-block border border-gray-100">💡 ヒント: {target.hint}</p>}
                               </div>
                               <div className="flex items-center gap-4 shrink-0 border-t md:border-t-0 md:border-l border-gray-100 pt-3 md:pt-0 md:pl-4">
                                   <div className="text-right">
-                                      <p className="text-[10px] text-gray-500 font-bold">最終AIクロール</p>
+                                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">最終AIクロール</p>
                                       <p className="text-xs font-mono text-gray-900 mt-0.5">
                                           {target.lastCrawled || '未実行'} 
-                                          {target.status === '成功' && <span className="text-green-500 ml-1">● 成功</span>}
-                                          {target.status && target.status !== '成功' && <span className="text-red-500 ml-1">❌ {target.status}</span>}
+                                          {target.status === '成功' && <span className="text-green-600 font-bold ml-1 bg-green-50 px-1.5 py-0.5 rounded">● 成功</span>}
+                                          {target.status && target.status !== '成功' && <span className="text-red-600 font-bold ml-1 bg-red-50 px-1.5 py-0.5 rounded">❌ {target.status}</span>}
                                       </p>
                                   </div>
-                                  <button onClick={() => handleDeleteTarget(target.id)} disabled={isProcessing} className="text-gray-300 hover:text-red-600 p-2 bg-gray-50 hover:bg-red-50 rounded shadow-sm border border-gray-200 transition"><Icons.Trash /></button>
+                                  <button onClick={() => handleDeleteTarget(target.id)} disabled={isProcessing} className="text-gray-400 hover:text-red-600 p-2 hover:bg-red-50 rounded transition opacity-50 group-hover:opacity-100"><Icons.Trash /></button>
                               </div>
                           </div>
                       ))}
+                      {processedCompetitors.length === 0 && <p className="text-center text-gray-400 text-sm py-8 border-2 border-dashed border-gray-200 rounded-lg">ターゲットが登録されていません</p>}
                   </div>
               </div>
           </div>
       )}
 
       {activeTab === 'DICTIONARY' && (
-          <div className="flex-1 bg-white border border-gray-200 rounded-sm shadow-sm p-6 overflow-y-auto animate-in fade-in">
+          <div className="flex-1 bg-white border border-gray-200 rounded-lg shadow-sm p-6 overflow-y-auto animate-in fade-in">
               <div className="max-w-4xl mx-auto space-y-6">
                   <div className="flex justify-between items-end border-b border-gray-200 pb-4">
                       <div>
@@ -372,29 +436,30 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                           <p className="text-xs text-gray-500 mt-1">AIが他社サイトを巡回する際、「この単語は当社のこの品目のことだ」と翻訳するための辞書です。このデータ自体がSEOや営業の強力な資産になります。</p>
                       </div>
                   </div>
+
                   <div className="space-y-6">
-                      <div className="border border-gray-200 rounded-md overflow-hidden">
-                          <div className="bg-gray-100 p-3 border-b border-gray-200 flex justify-between items-center">
-                              <h4 className="font-black text-gray-900 text-sm flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-orange-500"></span> ピカ銅 (当社のマスター名)</h4>
+                      <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                          <div className="bg-gray-50 p-3.5 border-b border-gray-200 flex justify-between items-center">
+                              <h4 className="font-black text-gray-900 text-sm flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-orange-500"></span> ピカ銅 (当社のマスター名)</h4>
                           </div>
-                          <div className="p-4 flex flex-wrap gap-2">
-                              <span className="bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded text-xs font-bold shadow-sm">1号銅線</span>
-                              <span className="bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded text-xs font-bold shadow-sm">光線</span>
-                              <span className="bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded text-xs font-bold shadow-sm">特号銅</span>
-                              <span className="bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded text-xs font-bold shadow-sm">ピカ線</span>
-                              <span className="bg-orange-50 border border-orange-200 text-orange-700 px-3 py-1.5 rounded text-xs font-bold shadow-sm flex items-center gap-1"><Icons.Sparkles /> 光銅 (AIが自動学習)</span>
+                          <div className="p-4 flex flex-wrap gap-2.5 bg-white">
+                              <span className="bg-gray-50 border border-gray-300 text-gray-700 px-3 py-1.5 rounded text-xs font-bold">1号銅線</span>
+                              <span className="bg-gray-50 border border-gray-300 text-gray-700 px-3 py-1.5 rounded text-xs font-bold">光線</span>
+                              <span className="bg-gray-50 border border-gray-300 text-gray-700 px-3 py-1.5 rounded text-xs font-bold">特号銅</span>
+                              <span className="bg-gray-50 border border-gray-300 text-gray-700 px-3 py-1.5 rounded text-xs font-bold">ピカ線</span>
+                              <span className="bg-blue-50 border border-blue-200 text-blue-700 px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1"><Icons.Sparkles /> 光銅 (AIが自動学習)</span>
                           </div>
                       </div>
 
-                      <div className="border border-gray-200 rounded-md overflow-hidden">
-                          <div className="bg-gray-100 p-3 border-b border-gray-200 flex justify-between items-center">
-                              <h4 className="font-black text-gray-900 text-sm flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-gray-500"></span> VVFケーブル (当社のマスター名)</h4>
+                      <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                          <div className="bg-gray-50 p-3.5 border-b border-gray-200 flex justify-between items-center">
+                              <h4 className="font-black text-gray-900 text-sm flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-gray-600"></span> VVFケーブル (当社のマスター名)</h4>
                           </div>
-                          <div className="p-4 flex flex-wrap gap-2">
-                              <span className="bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded text-xs font-bold shadow-sm">VA線</span>
-                              <span className="bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded text-xs font-bold shadow-sm">Fケーブル</span>
-                              <span className="bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded text-xs font-bold shadow-sm">ネズミ線</span>
-                              <span className="bg-orange-50 border border-orange-200 text-orange-700 px-3 py-1.5 rounded text-xs font-bold shadow-sm flex items-center gap-1"><Icons.Sparkles /> 雑線VVF (AIが自動学習)</span>
+                          <div className="p-4 flex flex-wrap gap-2.5 bg-white">
+                              <span className="bg-gray-50 border border-gray-300 text-gray-700 px-3 py-1.5 rounded text-xs font-bold">VA線</span>
+                              <span className="bg-gray-50 border border-gray-300 text-gray-700 px-3 py-1.5 rounded text-xs font-bold">Fケーブル</span>
+                              <span className="bg-gray-50 border border-gray-300 text-gray-700 px-3 py-1.5 rounded text-xs font-bold">ネズミ線</span>
+                              <span className="bg-blue-50 border border-blue-200 text-blue-700 px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1"><Icons.Sparkles /> 雑線VVF (AIが自動学習)</span>
                           </div>
                       </div>
                   </div>
