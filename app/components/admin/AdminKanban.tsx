@@ -1,3 +1,4 @@
+// app/components/admin/AdminKanban.tsx
 // @ts-nocheck
 import React, { useState } from 'react';
 
@@ -5,7 +6,11 @@ const Icons = {
   Printer: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>,
   Clock: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   User: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>,
-  Alert: () => <svg className="w-4 h-4 inline-block text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+  Alert: () => <svg className="w-4 h-4 inline-block text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
+  FrontDesk: () => <svg className="w-4 h-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
+  Inspection: () => <svg className="w-4 h-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+  Plant: () => <svg className="w-4 h-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>,
+  Check: () => <svg className="w-4 h-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
 };
 
 const formatTime = (timeStr: string) => {
@@ -18,17 +23,20 @@ export const AdminKanban = ({ localReservations = [], onUpdateStatus, onEditRese
   
   const handlePrint = (res: any) => {
       let items = [];
-      try { items = typeof res.items === 'string' ? JSON.parse(res.items) : res.items; } catch (e) {}
+      try { 
+          let temp = res.items;
+          if (typeof temp === 'string') temp = temp.replace(/""/g, '"');
+          if (typeof temp === 'string') temp = JSON.parse(temp);
+          if (typeof temp === 'string') temp = JSON.parse(temp);
+          if (Array.isArray(temp)) items = temp;
+      } catch (e) {}
       
       const totalWeight = items.reduce((sum: number, item: any) => sum + Number(item.weight || 0), 0).toFixed(1);
-      
-      // ★ 旧データのプロパティ不足を補う（フォールバック）
       const hasTin = items.some((i: any) => i.material === '錫メッキ' || (i.product || i.name || '').includes('錫'));
 
       const itemsHtml = items.map((item: any) => {
-          // ★ 新旧フォーマットの互換性を確保
           const itemName = item.product || item.name || '品名未設定';
-          const itemMaterial = item.material || '純銅(旧)';
+          const itemMaterial = item.material || '純銅';
           const itemRatio = item.ratio !== undefined ? `${item.ratio}%` : '---';
           const itemWeight = item.weight !== undefined ? item.weight : '0';
           const isTinItem = itemMaterial === '錫メッキ' || itemName.includes('錫');
@@ -76,9 +84,7 @@ export const AdminKanban = ({ localReservations = [], onUpdateStatus, onEditRese
                   <h1>現場検収 内訳報告書</h1>
                   <p>印刷日時: ${new Date().toLocaleString('ja-JP')}</p>
               </div>
-
               ${hasTin ? '<div class="alert">⚠️ 注意：このロットには「錫メッキ線」が含まれています。純銅ラインへの混入を防止してください。</div>' : ''}
-
               <div class="info-grid">
                   <div class="info-box">
                       <p>持込業者・顧客名</p>
@@ -89,7 +95,6 @@ export const AdminKanban = ({ localReservations = [], onUpdateStatus, onEditRese
                       <h3>${new Date(res.createdAt).toLocaleString('ja-JP')}</h3>
                   </div>
               </div>
-
               <table>
                   <thead>
                       <tr>
@@ -99,27 +104,15 @@ export const AdminKanban = ({ localReservations = [], onUpdateStatus, onEditRese
                           <th style="text-align: right;">計量重量</th>
                       </tr>
                   </thead>
-                  <tbody>
-                      ${itemsHtml}
-                  </tbody>
+                  <tbody>${itemsHtml}</tbody>
               </table>
-
-              <div class="total-row">
-                  <span>総重量</span> ${totalWeight} kg
-              </div>
-
+              <div class="total-row"><span>総重量</span> ${totalWeight} kg</div>
               ${res.memo ? `<div class="memo"><strong>【現場メモ / AI推論根拠】</strong><br/>${res.memo.replace(/\n/g, '<br/>')}</div>` : ''}
-
               <div style="margin-top: 50px; display: flex; justify-content: flex-end; gap: 50px;">
                   <div style="text-align: center; border-top: 1px solid #111; width: 200px; padding-top: 10px; font-size: 12px; color: #555;">検収担当者 印</div>
                   <div style="text-align: center; border-top: 1px solid #111; width: 200px; padding-top: 10px; font-size: 12px; color: #555;">事務所受領 印</div>
               </div>
-
-              <script>
-                  window.onload = function() { 
-                      setTimeout(() => { window.print(); window.close(); }, 300); 
-                  };
-              </script>
+              <script>window.onload = function() { setTimeout(() => { window.print(); window.close(); }, 300); };</script>
           </body>
           </html>
       `;
@@ -131,18 +124,59 @@ export const AdminKanban = ({ localReservations = [], onUpdateStatus, onEditRese
   const handleDrop = (e: React.DragEvent, status: string) => { e.preventDefault(); const id = e.dataTransfer.getData('resId'); if (id) onUpdateStatus(id, status); };
   const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); };
 
+  // ★ 部署フローの役割と説明を明確化
   const columns = [
-    { id: 'RESERVED', title: '受付・計量 (POS)', color: 'border-blue-500', bg: 'bg-blue-50' },
-    { id: 'RECEIVED', title: '検収完了 (投入待ち)', color: 'border-purple-500', bg: 'bg-purple-50' },
-    { id: 'IN_PROGRESS', title: 'プラント処理中', color: 'border-orange-500', bg: 'bg-orange-50' },
-    { id: 'COMPLETED', title: '処理完了', color: 'border-green-500', bg: 'bg-green-50' }
+    { 
+      id: 'RESERVED', 
+      title: '受付・計量', 
+      subtitle: 'フロント担当',
+      icon: Icons.FrontDesk,
+      desc: 'POSで受付。内容を確認して検収列へ。',
+      color: 'border-blue-500', 
+      bg: 'bg-blue-50',
+      headerBg: 'bg-blue-100',
+      textColor: 'text-blue-800'
+    },
+    { 
+      id: 'RECEIVED', 
+      title: '検収完了 (ヤード待機)', 
+      subtitle: '現場査定担当',
+      icon: Icons.Inspection,
+      desc: '現物確認済。プラントへの投入待ち。',
+      color: 'border-purple-500', 
+      bg: 'bg-purple-50',
+      headerBg: 'bg-purple-100',
+      textColor: 'text-purple-800'
+    },
+    { 
+      id: 'IN_PROGRESS', 
+      title: 'プラント処理中', 
+      subtitle: 'プラント担当',
+      icon: Icons.Plant,
+      desc: '現在ナゲット機や選別ラインで加工中。',
+      color: 'border-orange-500', 
+      bg: 'bg-orange-50',
+      headerBg: 'bg-orange-100',
+      textColor: 'text-orange-800'
+    },
+    { 
+      id: 'COMPLETED', 
+      title: '処理完了', 
+      subtitle: '実績確定',
+      icon: Icons.Check,
+      desc: '加工終了。歩留まり確定済。',
+      color: 'border-gray-400', 
+      bg: 'bg-gray-50',
+      headerBg: 'bg-gray-200',
+      textColor: 'text-gray-700'
+    }
   ];
 
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-500">
       <header className="mb-6">
-        <h2 className="text-2xl font-black text-gray-900 font-serif tracking-tight">PLANT KANBAN</h2>
-        <p className="text-xs text-gray-500 mt-1 font-mono">プラント投入・処理ステータス管理</p>
+        <h2 className="text-2xl font-black text-gray-900 font-serif tracking-tight">OPERATIONS KANBAN</h2>
+        <p className="text-xs text-gray-500 mt-1 font-mono">受付から製造までの全体ワークフロー管理</p>
       </header>
 
       <div className="flex gap-4 overflow-x-auto pb-4 h-full">
@@ -152,22 +186,35 @@ export const AdminKanban = ({ localReservations = [], onUpdateStatus, onEditRese
           
           return (
             <div key={col.id} className="flex-1 min-w-[300px] flex flex-col bg-gray-100/50 rounded-md border border-gray-200 overflow-hidden" onDrop={(e) => handleDrop(e, col.id)} onDragOver={handleDragOver}>
-              <div className={`p-3 border-t-4 ${col.color} ${col.bg} flex justify-between items-center shadow-sm`}>
-                <h3 className="font-bold text-gray-800 text-sm">{col.title}</h3>
-                <span className="bg-white px-2 py-0.5 rounded-full text-xs font-bold text-gray-600 shadow-sm">{colData.length}</span>
+              <div className={`p-4 border-t-4 ${col.color} ${col.headerBg}`}>
+                <div className="flex justify-between items-center mb-1">
+                    <h3 className={`font-bold ${col.textColor} text-sm flex items-center`}>
+                        <col.icon /> {col.title}
+                    </h3>
+                    <span className="bg-white px-2.5 py-0.5 rounded-full text-xs font-bold text-gray-600 shadow-sm">{colData.length}</span>
+                </div>
+                <p className={`text-[10px] ${col.textColor} font-bold tracking-widest`}>担当: {col.subtitle}</p>
               </div>
               
               <div className="flex-1 p-3 overflow-y-auto space-y-3">
                 {colData.map(res => {
                   let items = [];
-                  try { items = typeof res.items === 'string' ? JSON.parse(res.items) : res.items; } catch(e){}
-                  const totalW = items.reduce((sum: number, i: any) => sum + Number(i.weight || 0), 0);
+                  // ★ 二重エスケープなどのパースエラーを完全に防ぐ処理
+                  try { 
+                      let temp = res.items;
+                      if (typeof temp === 'string') temp = temp.replace(/""/g, '"');
+                      if (typeof temp === 'string') temp = JSON.parse(temp);
+                      if (typeof temp === 'string') temp = JSON.parse(temp);
+                      if (Array.isArray(temp)) items = temp;
+                  } catch(e) {
+                      console.error("Item parse failed for", res.id);
+                  }
                   
-                  // ★ 旧データ対応
+                  const totalW = items.reduce((sum: number, i: any) => sum + Number(i.weight || 0), 0);
                   const hasTin = items.some((i: any) => i.material === '錫メッキ' || (i.product || i.name || '').includes('錫'));
 
                   return (
-                    <div key={res.id} draggable onDragStart={(e) => handleDragStart(e, res.id)} className={`bg-white p-3 rounded-sm shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing hover:shadow-md transition relative group ${hasTin ? 'border-l-4 border-l-red-500' : 'border-l-4 border-l-blue-500'}`}>
+                    <div key={res.id} draggable onDragStart={(e) => handleDragStart(e, res.id)} className={`bg-white p-3 rounded-sm shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing hover:shadow-md transition relative group ${hasTin ? 'border-l-4 border-l-red-500' : `border-l-4 ${col.color}`}`}>
                       
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex items-center gap-1.5 text-xs text-gray-500 font-mono"><Icons.Clock /> {formatTime(res.createdAt)}</div>
@@ -188,34 +235,40 @@ export const AdminKanban = ({ localReservations = [], onUpdateStatus, onEditRese
                       )}
 
                       <div className="bg-gray-50 rounded-sm p-2 text-xs mb-2 border border-gray-100">
-                        {items.slice(0, 3).map((item: any, idx: number) => {
-                            // ★ 旧フォーマット対応（product が無い場合は name を表示）
-                            const displayName = item.product || item.name || '不明な商材';
-                            const displayWeight = item.weight !== undefined ? item.weight : '0';
-                            
-                            return (
-                                <div key={idx} className="flex justify-between items-center py-0.5 border-b border-gray-200 last:border-0 truncate">
-                                    <span className="text-gray-700 truncate mr-2" title={displayName}>{displayName}</span>
-                                    <span className="font-mono font-bold text-gray-900 shrink-0">{displayWeight}kg</span>
-                                </div>
-                            );
-                        })}
+                        {items.length === 0 ? (
+                            <div className="text-gray-400 text-center py-1">データなし</div>
+                        ) : (
+                            items.slice(0, 3).map((item: any, idx: number) => {
+                                const displayName = item.product || item.name || '不明な商材';
+                                const displayWeight = item.weight !== undefined ? item.weight : '0';
+                                
+                                return (
+                                    <div key={idx} className="flex justify-between items-center py-0.5 border-b border-gray-200 last:border-0 truncate">
+                                        <span className="text-gray-700 truncate mr-2" title={displayName}>{displayName}</span>
+                                        <span className="font-mono font-bold text-gray-900 shrink-0">{displayWeight}kg</span>
+                                    </div>
+                                );
+                            })
+                        )}
                         {items.length > 3 && <div className="text-center text-[10px] text-gray-400 mt-1 pt-1">他 {items.length - 3} 品目...</div>}
                       </div>
 
                       <div className="flex justify-between items-end mt-3">
                           <div className="text-[10px] text-gray-500 font-bold bg-gray-100 px-2 py-1 rounded-sm">総重量: <span className="text-sm font-black text-gray-800 font-mono">{totalW.toFixed(1)}</span> kg</div>
                           
-                          <button onClick={() => onEditReservation(res.id)} className="text-[10px] text-blue-600 hover:underline font-bold">
-                              POSで再編集 ✏️
-                          </button>
+                          {col.id === 'RESERVED' && (
+                              <button onClick={() => onEditReservation(res.id)} className="text-[10px] text-blue-600 hover:underline font-bold">
+                                  POSで再編集 ✏️
+                              </button>
+                          )}
                       </div>
                     </div>
                   );
                 })}
                 {colData.length === 0 && (
-                    <div className="h-full flex items-center justify-center border-2 border-dashed border-gray-200 rounded-sm">
-                        <span className="text-xs font-bold text-gray-400">カードをドロップ</span>
+                    <div className="h-full flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-sm text-gray-400">
+                        <span className="text-[10px] font-bold mb-1">{col.desc}</span>
+                        <span className="text-xs font-bold opacity-50">カードをドロップ</span>
                     </div>
                 )}
               </div>
