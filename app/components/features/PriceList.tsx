@@ -7,8 +7,8 @@ const CATEGORIES = ['すべて', 'IV線', 'CV・電力線', 'VVF / VV (ネズミ
 export const PriceList = ({ data, marketPrice }: { data: any, marketPrice: number }) => {
   const [activeCat, setActiveCat] = useState('すべて');
 
-  // ★ ここが超重要：マスターで showOnWeb が false に設定された商材を完全に除外する
-  const validWires = (data?.wires || []).filter((w: any) => w.showOnWeb !== false);
+  // ★ ここが超重要：文字列の 'false' と 真偽値の false の両方を除外する
+  const validWires = (data?.wires || []).filter((w: any) => String(w.showOnWeb) !== 'false');
 
   const getCategory = (name: string) => {
     if (!name) return 'その他';
