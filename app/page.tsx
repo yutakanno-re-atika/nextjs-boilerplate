@@ -301,17 +301,17 @@ export default function WireMasterCloud() {
             <PriceList data={data} marketPrice={marketPrice} />
             <ServiceCriteria />
             
-            {/* ★ ダッシュボードの設定に基づいて表示をON/OFF */}
-            {data?.config?.show_faq !== 'false' && <AutoFaq faqData={data?.faq} />}
-            {data?.config?.show_simulator !== 'false' && <div id="simulator"><Simulator marketPrice={marketPrice} data={data} /></div>}
+            {/* ★ 厳格な型チェック (String変換) によるON/OFF制御 */}
+            {String(data?.config?.show_faq) !== 'false' && <AutoFaq faqData={data?.faq} />}
+            {String(data?.config?.show_simulator) !== 'false' && <div id="simulator"><Simulator marketPrice={marketPrice} data={data} /></div>}
         </>
       )}
 
       {view === 'FLOW' && <div className="pt-20"><FlowGuide /></div>}
       {view === 'MEMBERSHIP' && <div className="pt-20"><MembershipGuide /></div>}
 
-      {/* ★ コンシェルジュも設定でON/OFF可能に */}
-      {data?.config?.show_concierge !== 'false' && <Concierge />}
+      {/* ★ コンシェルジュの厳格なON/OFF制御 */}
+      {String(data?.config?.show_concierge) !== 'false' && <Concierge />}
 
       <FatFooter setView={setView} />
     </div>
