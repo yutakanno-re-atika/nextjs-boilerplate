@@ -41,11 +41,10 @@ export default function WireMasterCloud() {
   const [user, setUser] = useState<UserData | null>(null);
   
   const [isLoading, setIsLoading] = useState(true);
-  const [loadingStep, setLoadingStep] = useState(0); // ★ ローディングメッセージ用ステート
+  const [loadingStep, setLoadingStep] = useState(0); 
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  // ★ ブラウザの「戻る/進む」対応（URLハッシュ同期）
   useEffect(() => {
     const handlePopState = () => {
       const hash = window.location.hash.replace('#', '');
@@ -74,16 +73,14 @@ export default function WireMasterCloud() {
     }
   }, [view]);
 
-  // ★ 起動シーケンスのメッセージタイマー
   useEffect(() => {
     if (!isLoading) return;
     const interval = setInterval(() => {
       setLoadingStep(prev => prev < 4 ? prev + 1 : 0);
-    }, 1500); // 1.5秒ごとに切り替わり、動いている感を出す
+    }, 1500); 
     return () => clearInterval(interval);
   }, [isLoading]);
 
-  // 初期ロードとデータフェッチ
   useEffect(() => {
     const savedUser = localStorage.getItem('factoryOS_user');
     const savedView = localStorage.getItem('factoryOS_view');
@@ -104,7 +101,7 @@ export default function WireMasterCloud() {
     if (cachedData && cachedData !== 'undefined') {
         try {
             setData(JSON.parse(cachedData));
-            setIsLoading(false); // キャッシュがあればすぐ表示
+            setIsLoading(false); 
         } catch (e) {
             localStorage.removeItem('factoryOS_masterData');
         }
@@ -166,7 +163,6 @@ export default function WireMasterCloud() {
     localStorage.removeItem('factoryOS_view');
   };
 
-  // ★ 改善されたローディング画面（進行状況を明示）
   if (isLoading) {
     const loadingMessages = [
       "クラウドデータベースに接続中...",
@@ -304,15 +300,18 @@ export default function WireMasterCloud() {
 
             <PriceList data={data} marketPrice={marketPrice} />
             <ServiceCriteria />
-            <AutoFaq faqData={data?.faq} />
-            <div id="simulator"><Simulator marketPrice={marketPrice} data={data} /></div>
+            
+            {/* ★ ダッシュボードの設定に基づいて表示をON/OFF */}
+            {data?.config?.show_faq !== 'false' && <AutoFaq faqData={data?.faq} />}
+            {data?.config?.show_simulator !== 'false' && <div id="simulator"><Simulator marketPrice={marketPrice} data={data} /></div>}
         </>
       )}
 
       {view === 'FLOW' && <div className="pt-20"><FlowGuide /></div>}
       {view === 'MEMBERSHIP' && <div className="pt-20"><MembershipGuide /></div>}
 
-      <Concierge />
+      {/* ★ コンシェルジュも設定でON/OFF可能に */}
+      {data?.config?.show_concierge !== 'false' && <Concierge />}
 
       <FatFooter setView={setView} />
     </div>
