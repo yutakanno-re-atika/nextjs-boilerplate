@@ -19,21 +19,36 @@ const formatTime = (timeStr: string) => {
   return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 };
 
+// ★ どんなに汚いJSONでも確実にパースする最強の解読関数
+const parseItemsData = (rawItems: any) => {
+    if (!rawItems) return [];
+    if (Array.isArray(rawItems)) return rawItems;
+    let temp = rawItems;
+    try {
+        if (typeof temp === 'string') {
+            if (temp.startsWith('"') && temp.endsWith('"') && temp.includes('""')) {
+                temp = temp.substring(1, temp.length - 1).replace(/""/g, '"');
+            }
+            temp = temp.replace(/[\n\r\t]/g, (match) => {
+                if (match === '\n') return '\\n';
+                if (match === '\r') return '\\r';
+                if (match === '\t') return '\\t';
+                return match;
+            });
+            let parsed = JSON.parse(temp);
+            if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+            if (Array.isArray(parsed)) return parsed;
+        }
+    } catch(e) {
+        console.error("JSON parse error:", e);
+    }
+    return [];
+};
+
 export const AdminKanban = ({ localReservations = [], onUpdateStatus, onEditReservation }: { localReservations: any[], onUpdateStatus: (id: string, status: string) => void, onEditReservation: (id: string) => void }) => {
   
   const handlePrint = (res: any) => {
-      let items = [];
-      try { 
-          let temp = res.items;
-          if (typeof temp === 'string') {
-              temp = temp.replace(/""/g, '"');
-              temp = temp.replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/\t/g, "\\t");
-              temp = JSON.parse(temp);
-          }
-          if (typeof temp === 'string') temp = JSON.parse(temp);
-          if (Array.isArray(temp)) items = temp;
-      } catch (e) {}
-      
+      const items = parseItemsData(res.items);
       const totalWeight = items.reduce((sum: number, item: any) => sum + Number(item.weight || 0), 0).toFixed(1);
       const hasTin = items.some((i: any) => i.material === '錫メッキ' || (i.product || i.name || '').includes('錫'));
 
@@ -200,22 +215,8 @@ export const AdminKanban = ({ localReservations = [], onUpdateStatus, onEditRese
               
               <div className="flex-1 p-3 overflow-y-auto space-y-3">
                 {colData.map(res => {
-                  let items = [];
-                  // ★ 二重エスケープや改行文字によるパースエラーを防ぐ堅牢な処理
-                  try { 
-                      let temp = res.items;
-                      if (typeof temp === 'string') {
-                          temp = temp.replace(/""/g, '"');
-                          // AIの理由などに含まれる改行をエスケープ
-                          temp = temp.replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/\t/g, "\\t");
-                          temp = JSON.parse(temp);
-                      }
-                      if (typeof temp === 'string') temp = JSON.parse(temp);
-                      if (Array.isArray(temp)) items = temp;
-                  } catch(e) {
-                      console.error("Item parse failed for", res.id, e);
-                  }
-                  
+                  // ★ 改良版パース関数を使用
+                  const items = parseItemsData(res.items);
                   const totalW = items.reduce((sum: number, i: any) => sum + Number(i.weight || 0), 0);
                   const hasTin = items.some((i: any) => i.material === '錫メッキ' || (i.product || i.name || '').includes('錫'));
 
@@ -242,7 +243,7 @@ export const AdminKanban = ({ localReservations = [], onUpdateStatus, onEditRese
 
                       <div className="bg-gray-50 rounded-sm p-2 text-xs mb-2 border border-gray-100">
                         {items.length === 0 ? (
-                            <div className="text-gray-400 text-center py-1">データなし</div>
+                            <div className="text-gray-400 text-center py-1 font-bold">データ解読エラー</div>
                         ) : (
                             items.slice(0, 3).map((item: any, idx: number) => {
                                 const displayName = item.product || item.name || '不明な商材';
