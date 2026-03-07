@@ -19,7 +19,7 @@ const formatTime = (timeStr: string) => {
   return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 };
 
-// ★ あらゆる汚れ・改行を乗り越える最強のJSONパース関数
+// ★ どんなに汚いJSONでも確実にパースする最強の解読関数
 export const parseItemsData = (rawItems: any) => {
     if (!rawItems) return [];
     if (Array.isArray(rawItems)) return rawItems;
