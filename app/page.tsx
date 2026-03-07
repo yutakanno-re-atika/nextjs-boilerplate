@@ -41,42 +41,47 @@ export default function WireMasterCloud() {
   const [user, setUser] = useState<UserData | null>(null);
   
   const [isLoading, setIsLoading] = useState(true);
+  const [loadingStep, setLoadingStep] = useState(0); // ★ ローディングメッセージ用ステート
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  // ==========================================
   // ★ ブラウザの「戻る/進む」対応（URLハッシュ同期）
-  // ==========================================
   useEffect(() => {
     const handlePopState = () => {
       const hash = window.location.hash.replace('#', '');
       if (hash) {
         const parts = hash.split('/');
         const newView = parts[0];
-        // 許可されたViewなら復元
         if (['LP', 'LOGIN', 'ADMIN', 'MEMBER', 'FLOW', 'MEMBERSHIP', 'COMPANY', 'CONTACT'].includes(newView)) {
           setView(newView as any);
         }
       } else {
-        setView('LP'); // ハッシュが空ならトップへ
+        setView('LP'); 
       }
     };
 
     window.addEventListener('popstate', handlePopState);
-    handlePopState(); // 初回ロード時にURLハッシュからViewを復元
+    handlePopState(); 
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // Viewが変わった時にURLハッシュを更新（履歴を積む）
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const currentHash = window.location.hash.replace('#', '').split('/')[0];
-      // ADMIN/MEMBER の場合は下位コンポーネントで詳細なハッシュ（タブ名等）をつけるのでここではスキップ
       if (currentHash !== view && view !== 'ADMIN' && view !== 'MEMBER') {
         window.history.pushState(null, '', `#${view}`);
       }
     }
   }, [view]);
+
+  // ★ 起動シーケンスのメッセージタイマー
+  useEffect(() => {
+    if (!isLoading) return;
+    const interval = setInterval(() => {
+      setLoadingStep(prev => prev < 4 ? prev + 1 : 0);
+    }, 1500); // 1.5秒ごとに切り替わり、動いている感を出す
+    return () => clearInterval(interval);
+  }, [isLoading]);
 
   // 初期ロードとデータフェッチ
   useEffect(() => {
@@ -87,7 +92,6 @@ export default function WireMasterCloud() {
     if (savedUser && savedUser !== 'undefined' && savedView) {
       try {
         setUser(JSON.parse(savedUser));
-        // URLハッシュが優先されるため、ハッシュがない場合のみlocalStorageのViewを適用
         if (!window.location.hash) {
             setView(savedView as 'MEMBER' | 'ADMIN');
         }
@@ -100,7 +104,7 @@ export default function WireMasterCloud() {
     if (cachedData && cachedData !== 'undefined') {
         try {
             setData(JSON.parse(cachedData));
-            setIsLoading(false);
+            setIsLoading(false); // キャッシュがあればすぐ表示
         } catch (e) {
             localStorage.removeItem('factoryOS_masterData');
         }
@@ -115,13 +119,10 @@ export default function WireMasterCloud() {
           if(d.status === 'success') {
               setData(d); 
               localStorage.setItem('factoryOS_masterData', JSON.stringify(d));
-          } else {
-              console.warn("GAS API レスポンスエラー:", d.message);
           }
           setIsLoading(false); 
       })
       .catch(err => {
-          console.warn("データ同期遅延:", err.message, "※キャッシュデータで継続稼働します。");
           setIsLoading(false);
       });
   }, []);
@@ -165,17 +166,36 @@ export default function WireMasterCloud() {
     localStorage.removeItem('factoryOS_view');
   };
 
+  // ★ 改善されたローディング画面（進行状況を明示）
   if (isLoading) {
+    const loadingMessages = [
+      "クラウドデータベースに接続中...",
+      "最新の市況データを同期中...",
+      "現場の稼働ステータスを取得中...",
+      "AIエンジンをスタンバイ中...",
+      "まもなく起動します..."
+    ];
+
     return (
-      <div className="h-screen w-full flex flex-col items-center justify-center bg-[#F5F5F7]">
-        <div className="animate-spin w-10 h-10 border-4 border-gray-300 border-t-[#D32F2F] rounded-full mb-4"></div>
-        <p className="text-gray-500 font-bold tracking-widest text-sm">LOADING FACTORY OS...</p>
+      <div className="h-screen w-full flex flex-col items-center justify-center bg-[#F5F5F7] animate-in fade-in duration-500">
+        <div className="w-16 h-16 relative mb-8">
+            <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
+            <div className="absolute inset-0 border-4 border-[#D32F2F] rounded-full border-t-transparent animate-spin"></div>
+        </div>
+        <h2 className="text-xl font-black font-serif tracking-widest text-gray-900 mb-4">FACTORY OS</h2>
+        
+        <div className="w-64 bg-gray-200 h-1.5 rounded-full overflow-hidden mb-4">
+            <div className="bg-[#D32F2F] h-full transition-all duration-1000 ease-out" style={{ width: `${(loadingStep + 1) * 20}%` }}></div>
+        </div>
+        
+        <p className="text-gray-500 font-bold text-xs font-mono h-4">
+            {loadingMessages[loadingStep]}
+        </p>
       </div>
     );
   }
 
   if (view === 'ADMIN') return <AdminDashboard user={user} data={data} setView={setView} onLogout={handleLogout} />;
-  
   if (view === 'MEMBER') return <MemberDashboard user={user} data={data} setView={setView} onLogout={handleLogout} />;
   
   if (view === 'COMPANY' || view === 'CONTACT') {
@@ -284,9 +304,7 @@ export default function WireMasterCloud() {
 
             <PriceList data={data} marketPrice={marketPrice} />
             <ServiceCriteria />
-            
             <AutoFaq faqData={data?.faq} />
-            
             <div id="simulator"><Simulator marketPrice={marketPrice} data={data} /></div>
         </>
       )}
