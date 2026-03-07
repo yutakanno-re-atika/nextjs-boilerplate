@@ -14,8 +14,6 @@ const Icons = {
   Refresh: () => <svg className="w-5 h-5 animate-spin inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
   Camera: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
   UploadCloud: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>,
-  Settings: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
-  Save: () => <svg className="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>,
   Ruler: () => <svg className="w-4 h-4 inline-block text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M3 14h18m-9-4v8m-4-8v8m8-8v8M4 6h16a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2z" /></svg>,
   Globe: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>,
   EyeOff: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>,
@@ -95,7 +93,8 @@ const getCategory = (name: string) => {
 };
 
 export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoiceOutputEnabled?: boolean }) => {
-  const [activeTab, setActiveTab] = useState<'WIRES' | 'UNKNOWN' | 'CASTINGS' | 'CLIENTS' | 'STAFF' | 'SETTINGS'>('WIRES');
+  // ★ SETTINGSタブを削除
+  const [activeTab, setActiveTab] = useState<'WIRES' | 'UNKNOWN' | 'CASTINGS' | 'CLIENTS' | 'STAFF'>('WIRES');
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('すべて');
@@ -125,19 +124,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const [isListeningHint, setIsListeningHint] = useState(false);
   const hintRecognitionRef = useRef<any>(null);
   
-  const [isRunningBatch, setIsRunningBatch] = useState<'NONE' | 'MARKET' | 'LEAD' | 'BACKUP'>('NONE');
-
-  // ★ 追加：価格表自体のON/OFFと、建値指標のON/OFFステート
-  const [lpConfig, setLpConfig] = useState({
-      autoMarketSync: String(data?.config?.auto_market_sync) !== 'false',
-      showSimulator: String(data?.config?.show_simulator) !== 'false',
-      showFaq: String(data?.config?.show_faq) !== 'false',
-      showConcierge: String(data?.config?.show_concierge) !== 'false',
-      showPriceList: String(data?.config?.show_price_list) !== 'false',
-      showMarketRates: String(data?.config?.show_market_rates) !== 'false',
-  });
-  const [isSavingConfig, setIsSavingConfig] = useState(false);
-
   const [sampleTotal, setSampleTotal] = useState<number | ''>('');
   const [sampleCopper, setSampleCopper] = useState<number | ''>('');
   const [sampleCover, setSampleCover] = useState<number | ''>('');
@@ -456,36 +442,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     return sortConfig.direction === 'asc' ? <Icons.SortAsc /> : <Icons.SortDesc />;
   };
 
-  // ★ LP設定の保存（新しい2つのフラグも一括で保存）
-  const handleSaveLpConfig = async () => {
-    setIsSavingConfig(true);
-    try {
-      const updates = [
-        { key: 'auto_market_sync', value: lpConfig.autoMarketSync ? 'true' : 'false' },
-        { key: 'show_simulator', value: lpConfig.showSimulator ? 'true' : 'false' },
-        { key: 'show_faq', value: lpConfig.showFaq ? 'true' : 'false' },
-        { key: 'show_concierge', value: lpConfig.showConcierge ? 'true' : 'false' },
-        { key: 'show_price_list', value: lpConfig.showPriceList ? 'true' : 'false' },
-        { key: 'show_market_rates', value: lpConfig.showMarketRates ? 'true' : 'false' }
-      ];
-
-      for (const req of updates) {
-        await fetch('/api/gas', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'UPDATE_CONFIG', key: req.key, value: req.value })
-        });
-      }
-      
-      localStorage.removeItem('factoryOS_masterData'); 
-      alert("システム設定を保存しました。画面を更新して反映します。");
-      window.location.reload(); 
-    } catch(e) {
-      alert("設定の保存に失敗しました。");
-      setIsSavingConfig(false);
-    }
-  };
-
-  // ... (フィルタリング・ソート処理は省略) ...
   let filteredData = [];
   
   if (activeTab === 'WIRES') {
@@ -579,22 +535,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       });
   }
 
-  const handleRunBatchSettings = async (type: 'MARKET' | 'LEAD' | 'BACKUP') => {
-      const typeLabel = type === 'MARKET' ? '市況データ（建値）' : type === 'LEAD' ? '営業リード' : 'データベースのバックアップ';
-      if (!confirm(`${typeLabel} の処理を今すぐ実行します。よろしいですか？`)) return;
-      setIsRunningBatch(type);
-      try {
-          const action = type === 'MARKET' ? 'RUN_MARKET_SYNC' : type === 'LEAD' ? 'RUN_LEAD_GEN' : 'CREATE_BACKUP';
-          const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }) });
-          const result = await res.json();
-          if (result.status === 'success') {
-              alert('✅ ' + result.message);
-              if (result.url) window.open(result.url, '_blank'); 
-          } else { alert('エラーが発生しました: ' + result.message); }
-      } catch (e) { alert('通信エラーが発生しました。'); }
-      setIsRunningBatch('NONE');
-  };
-
   const ImageSlot = ({ title, imageKey, colIdx, pendingKey }: { title: string, imageKey: string, colIdx: number, pendingKey: string }) => {
     const savedImage = editingItem[imageKey];
     const pendingImage = editingItem[pendingKey];
@@ -625,277 +565,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     );
   };
 
-  const renderTable = () => {
-    if (activeTab === 'SETTINGS') {
-        return (
-            <div className="p-6 md:p-10 bg-white h-full overflow-y-auto animate-in fade-in">
-                <div className="max-w-3xl mx-auto space-y-10">
-                    <div>
-                        <h3 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-3 mb-6 flex items-center gap-2">
-                            <Icons.Globe /> LP（一般向けWebサイト）の表示制御
-                        </h3>
-                        <p className="text-sm text-gray-600 leading-relaxed mb-6">
-                            お客様が閲覧するWebサイトの各機能をリアルタイムにON/OFFできます。
-                        </p>
-                        <div className="space-y-4 mb-6">
-                            {/* ★ 追加：価格表と建値のスイッチ */}
-                            <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 flex justify-between items-center shadow-sm">
-                                <div>
-                                    <h4 className="font-bold text-gray-900">本日の買取価格表</h4>
-                                    <p className="text-xs text-gray-500 mt-1">LPに買取価格の一覧表を表示する</p>
-                                </div>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" className="sr-only peer" checked={lpConfig.showPriceList} onChange={(e) => setLpConfig({...lpConfig, showPriceList: e.target.checked})} />
-                                    <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                                </label>
-                            </div>
-                            <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 flex justify-between items-center shadow-sm">
-                                <div>
-                                    <h4 className="font-bold text-gray-900">市況指標（各建値）の表示</h4>
-                                    <p className="text-xs text-gray-500 mt-1">買取価格表の上に銅・黄銅・亜鉛などの建値を表示する</p>
-                                </div>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" className="sr-only peer" checked={lpConfig.showMarketRates} onChange={(e) => setLpConfig({...lpConfig, showMarketRates: e.target.checked})} />
-                                    <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                                </label>
-                            </div>
-                            
-                            <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 flex justify-between items-center shadow-sm">
-                                <div>
-                                    <h4 className="font-bold text-gray-900">限界買取シミュレーター</h4>
-                                    <p className="text-xs text-gray-500 mt-1">お客様が自分で歩留まりを計算できる機能</p>
-                                </div>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" className="sr-only peer" checked={lpConfig.showSimulator} onChange={(e) => setLpConfig({...lpConfig, showSimulator: e.target.checked})} />
-                                    <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                                </label>
-                            </div>
-                            <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 flex justify-between items-center shadow-sm">
-                                <div>
-                                    <h4 className="font-bold text-gray-900">AIコンシェルジュチャット</h4>
-                                    <p className="text-xs text-gray-500 mt-1">画面右下に浮いているAIチャットボット</p>
-                                </div>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" className="sr-only peer" checked={lpConfig.showConcierge} onChange={(e) => setLpConfig({...lpConfig, showConcierge: e.target.checked})} />
-                                    <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                                </label>
-                            </div>
-                            <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 flex justify-between items-center shadow-sm">
-                                <div>
-                                    <h4 className="font-bold text-gray-900">AI自動生成FAQ</h4>
-                                    <p className="text-xs text-gray-500 mt-1">過去の問い合わせからAIが自動生成した「よくある質問」</p>
-                                </div>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" className="sr-only peer" checked={lpConfig.showFaq} onChange={(e) => setLpConfig({...lpConfig, showFaq: e.target.checked})} />
-                                    <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div className="pt-4 border-t border-gray-200 flex justify-end">
-                            <button 
-                                onClick={handleSaveLpConfig} 
-                                disabled={isSavingConfig} 
-                                className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-sm shadow-md flex items-center gap-2 transition disabled:opacity-50"
-                            >
-                                {isSavingConfig ? <span className="animate-spin"><Icons.Refresh /></span> : <Icons.Save />}
-                                {isSavingConfig ? '保存中...' : '設定を保存して反映する'}
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* バッチ制御などは省略せずそのまま */}
-                    <div>
-                        <h3 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-3 mb-6 flex items-center gap-2">
-                            <Icons.Settings /> システム自動実行バッチの制御
-                        </h3>
-                        <div className="space-y-4 mb-6">
-                            <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
-                                <div>
-                                    <h4 className="font-bold text-gray-900 flex items-center gap-2 text-lg">
-                                        <span className="w-3 h-3 rounded-full bg-purple-500 animate-pulse"></span>
-                                        データベースのバックアップ
-                                    </h4>
-                                    <p className="text-xs text-gray-500 mt-1">現在の全マスターデータをGoogleドライブに別ファイルとしてコピー保存します。</p>
-                                </div>
-                                <button onClick={() => handleRunBatchSettings('BACKUP')} disabled={isRunningBatch !== 'NONE'} className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-bold flex items-center gap-2 hover:bg-gray-50 transition disabled:opacity-50 whitespace-nowrap">
-                                    {isRunningBatch === 'BACKUP' ? <><Icons.Refresh /> 作成中...</> : <><Icons.Save /> 今すぐバックアップ作成</>}
-                                </button>
-                            </div>
-                            <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 flex justify-between items-center shadow-sm">
-                                <div>
-                                    <h4 className="font-bold text-gray-900 flex items-center gap-2 text-lg">
-                                        <span className={`w-3 h-3 rounded-full ${lpConfig.autoMarketSync ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span>
-                                        市況データ自動スクレイピング
-                                    </h4>
-                                    <p className="text-xs text-gray-500 mt-1">国内メーカー建値を自動取得し、価格を更新します。</p>
-                                </div>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" className="sr-only peer" checked={lpConfig.autoMarketSync} onChange={(e) => setLpConfig({...lpConfig, autoMarketSync: e.target.checked})} />
-                                    <div className="w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-500"></div>
-                                </label>
-                            </div>
-                        </div>
-                        <div className="pt-4 border-t border-gray-200 flex justify-end">
-                            <button 
-                                onClick={handleSaveLpConfig} 
-                                disabled={isSavingConfig} 
-                                className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-sm shadow-md flex items-center gap-2 transition disabled:opacity-50"
-                            >
-                                {isSavingConfig ? <span className="animate-spin"><Icons.Refresh /></span> : <Icons.Save />}
-                                {isSavingConfig ? '保存中...' : '設定を保存して反映する'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    // --- 以下、テーブル描画部などは省略せずにそのまま ---
-    return (
-      <div className="h-full overflow-y-auto relative">
-        <table className="w-full text-left border-collapse text-sm whitespace-nowrap md:whitespace-normal">
-          <thead className="bg-gray-100 text-gray-500 uppercase tracking-wider text-xs sticky top-0 z-20 shadow-sm">
-            <tr>
-              {activeTab === 'WIRES' && (
-                  <>
-                      <th className="p-3 w-10 text-center" title="Web(LP)の価格表に表示するかどうか"><Icons.Globe /></th>
-                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('maker')}>メーカー <SortIcon columnKey="maker" /></th>
-                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('name')}>品名 <SortIcon columnKey="name" /></th>
-                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('year')}>製造年 <SortIcon columnKey="year" /></th>
-                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('sq')}>SQ/芯数 <SortIcon columnKey="sq" /></th>
-                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('ratio')}>歩留まり <SortIcon columnKey="ratio" /></th>
-                      <th className="p-3 text-center"><Icons.Camera /> 画像データ</th>
-                  </>
-              )}
-              {activeTab === 'UNKNOWN' && (
-                  <>
-                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('createdAt')}>登録日時 <SortIcon columnKey="createdAt" /></th>
-                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('name')}>AI推定品名 <SortIcon columnKey="name" /></th>
-                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('ratio')}>歩留まり <SortIcon columnKey="ratio" /></th>
-                      <th className="p-3 w-1/3">推論の根拠</th>
-                  </>
-              )}
-              {activeTab === 'CASTINGS' && (
-                  <>
-                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('name')}>品目名 <SortIcon columnKey="name" /></th>
-                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('type')}>種別 <SortIcon columnKey="type" /></th>
-                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('ratio')}>歩留まり <SortIcon columnKey="ratio" /></th>
-                  </>
-              )}
-              {activeTab === 'CLIENTS' && (
-                  <>
-                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('name')}>業者名 <SortIcon columnKey="name" /></th>
-                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('rank')}>ランク <SortIcon columnKey="rank" /></th>
-                      <th className="p-3">電話番号</th>
-                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('points')}>ポイント <SortIcon columnKey="points" /></th>
-                  </>
-              )}
-              {activeTab === 'STAFF' && (
-                  <>
-                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('name')}>スタッフ名 <SortIcon columnKey="name" /></th>
-                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('role')}>権限 <SortIcon columnKey="role" /></th>
-                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('status')}>ステータス <SortIcon columnKey="status" /></th>
-                  </>
-              )}
-              {activeTab !== 'UNKNOWN' && (
-                <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('updatedAt')}>登録/更新 <SortIcon columnKey="updatedAt" /></th>
-              )}
-              <th className="p-3 text-right">操作</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 bg-white">
-            {sortedData.map((item: any, idx: number) => (
-              <tr key={item.id || idx} className={`hover:bg-gray-50 transition ${activeTab === 'WIRES' && String(item.showOnWeb) === 'false' ? 'opacity-50 bg-gray-100' : ''}`}>
-                {activeTab === 'WIRES' && (
-                  <>
-                    <td className="p-3 text-center">
-                        {String(item.showOnWeb) === 'false' ? <span className="text-gray-400" title="Web非表示"><Icons.EyeOff /></span> : <span className="text-blue-500" title="Web表示中"><Icons.Globe /></span>}
-                    </td>
-                    <td className="p-3 font-bold text-gray-700">{item.maker || '-'}</td>
-                    <td className="p-3 font-bold text-gray-900">
-                        {item.name}
-                        {item.material === '錫メッキ' && <span className="ml-2 inline-flex items-center gap-0.5 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm whitespace-nowrap shadow-sm"><Icons.AlertTriangle /> 錫</span>}
-                        {item.material === 'アルミ' && <span className="ml-2 inline-flex items-center gap-0.5 bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm whitespace-nowrap shadow-sm">アルミ</span>}
-                    </td>
-                    <td className="p-3 text-gray-600">{item.year || '-'}</td>
-                    <td className="p-3 text-gray-600 font-mono text-xs">{formatSqDisplay(item.sq)} / {formatCoreDisplay(item.core)}</td>
-                    <td className="p-3 font-mono font-bold text-blue-600 text-base">{item.ratio}%</td>
-                    <td className="p-3">
-                        <div className="flex gap-2 justify-center">
-                            {[11, 12, 13, 14, 15].map(colIdx => {
-                                const hasImage = !!item[`image${colIdx-10}`];
-                                return (
-                                    <div key={colIdx} className="flex flex-col gap-1 items-center w-10">
-                                        <div className={`relative w-full h-8 border ${hasImage ? 'border-gray-300' : 'border-gray-200 border-dashed'} rounded-sm overflow-hidden bg-gray-100 flex items-center justify-center group shadow-sm`}>
-                                            {hasImage ? (
-                                                <a href={getDriveViewUrl(item[`image${colIdx-10}`])} target="_blank" rel="noopener noreferrer" className="w-full h-full block">
-                                                    <img src={getDriveImageUrl(item[`image${colIdx-10}`])} referrerPolicy="no-referrer" className="w-full h-full object-cover group-hover:scale-110 transition-transform cursor-zoom-in" />
-                                                </a>
-                                            ) : ( <span className="text-[8px] text-gray-300 font-bold">空</span> )}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </td>
-                  </>
-                )}
-
-                {activeTab === 'UNKNOWN' && (
-                  <>
-                    <td className="p-3 text-xs text-gray-500 font-mono">{formatTimeShort(item.createdAt)}</td>
-                    <td className="p-3 font-bold text-orange-700 flex items-center gap-1"><Icons.Sparkles /> {item.name}</td>
-                    <td className="p-3 font-mono font-black text-orange-600 text-lg">{item.ratio}%</td>
-                    <td className="p-3 text-xs text-gray-600 leading-relaxed bg-orange-50/50 rounded-sm m-1 whitespace-normal">{item.reason}</td>
-                  </>
-                )}
-                {activeTab === 'CASTINGS' && (
-                  <>
-                    <td className="p-3 font-bold text-gray-900">{item.name}</td>
-                    <td className="p-3 text-gray-600">{item.type}</td>
-                    <td className="p-3 font-mono font-bold text-blue-600 text-base">{item.ratio}%</td>
-                  </>
-                )}
-                {activeTab === 'CLIENTS' && (
-                  <>
-                    <td className="p-3 font-bold text-gray-900">{item.name}</td>
-                    <td className="p-3"><span className="bg-gray-200 px-2 py-1 rounded-sm text-xs font-bold">{item.rank}</span></td>
-                    <td className="p-3 font-mono">{item.phone}</td>
-                    <td className="p-3 font-mono text-orange-600 font-bold">{item.points} pt</td>
-                  </>
-                )}
-                {activeTab === 'STAFF' && (
-                  <>
-                    <td className="p-3 font-bold text-gray-900">{item.name}</td>
-                    <td className="p-3 text-gray-600">{item.role}</td>
-                    <td className="p-3"><span className={`px-2 py-1 rounded-sm text-xs font-bold text-white ${item.status === 'ACTIVE' ? 'bg-green-500' : 'bg-red-500'}`}>{item.status}</span></td>
-                  </>
-                )}
-                {activeTab !== 'UNKNOWN' && (
-                    <td className="p-3 text-[10px] text-gray-400 font-mono align-top">
-                        <div className="flex flex-col gap-1"><span title="登録日">➕ {formatTimeShort(item.createdAt)}</span><span title="更新日">🔄 {formatTimeShort(item.updatedAt)}</span></div>
-                    </td>
-                )}
-
-                <td className="p-3 text-right align-top">
-                  <div className="flex justify-end gap-2">
-                    {activeTab === 'UNKNOWN' && (
-                        <button onClick={() => handlePromoteToWire(item)} className="p-2 text-white bg-blue-600 hover:bg-blue-700 rounded-sm flex items-center gap-1 text-xs font-bold transition shadow-sm"><Icons.ArrowUp /> マスターへ</button>
-                    )}
-                    <button onClick={() => handleOpenModal(item)} className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-sm transition"><Icons.Edit /></button>
-                    <button onClick={() => handleDelete(item.id)} className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-sm transition"><Icons.Trash /></button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
-  };
-
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-500">
       <header className="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
@@ -904,113 +573,249 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
           <p className="text-xs text-gray-500 mt-1 font-mono">コアデータベース管理 / AI推論監視</p>
         </div>
         <div className="flex bg-gray-100 p-1 rounded-sm overflow-x-auto">
-          {['WIRES', 'UNKNOWN', 'CASTINGS', 'CLIENTS', 'STAFF', 'SETTINGS'].map(tab => (
+          {['WIRES', 'UNKNOWN', 'CASTINGS', 'CLIENTS', 'STAFF'].map(tab => (
             <button key={tab} onClick={() => handleTabChange(tab as any)} className={`px-4 py-2 rounded-sm text-sm font-bold transition-all whitespace-nowrap flex items-center gap-1 ${activeTab === tab ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-              {tab === 'WIRES' ? '電線' : tab === 'UNKNOWN' ? '💡 未知線種' : tab === 'CASTINGS' ? '非鉄金属' : tab === 'CLIENTS' ? '顧客' : tab === 'STAFF' ? 'スタッフ' : <><Icons.Settings /> システム設定</>}
+              {tab === 'WIRES' ? '電線' : tab === 'UNKNOWN' ? '💡 未知線種' : tab === 'CASTINGS' ? '非鉄金属' : tab === 'CLIENTS' ? '顧客' : 'スタッフ'}
             </button>
           ))}
         </div>
       </header>
 
       <div className="bg-white border border-gray-200 shadow-sm rounded-sm flex-1 flex flex-col overflow-hidden relative">
-        {activeTab !== 'SETTINGS' && (
-            <div className="p-4 border-b border-gray-200 bg-gray-50 flex flex-col gap-3 z-30 relative">
-              
-              {(isListening || voiceText) && (
-                  <div className="absolute top-full left-0 w-full z-40 bg-blue-900 text-white p-2 text-center text-sm font-bold shadow-md animate-in slide-in-from-top-2">
-                      {isListening ? <span className="animate-pulse">{voiceText}</span> : <span>{voiceText}</span>}
-                  </div>
-              )}
+        <div className="p-4 border-b border-gray-200 bg-gray-50 flex flex-col gap-3 z-30 relative">
+          
+          {(isListening || voiceText) && (
+              <div className="absolute top-full left-0 w-full z-40 bg-blue-900 text-white p-2 text-center text-sm font-bold shadow-md animate-in slide-in-from-top-2">
+                  {isListening ? <span className="animate-pulse">{voiceText}</span> : <span>{voiceText}</span>}
+              </div>
+          )}
 
-              {activeTab === 'WIRES' && (
-                  <div className="bg-white border border-blue-200 rounded-sm shadow-sm flex flex-col lg:flex-row items-start lg:items-center justify-between p-3 gap-4">
-                      <div className="flex items-center gap-3 w-full lg:w-1/3">
-                          <div className="bg-blue-100 text-blue-800 p-2 rounded-full hidden sm:block"><Icons.Camera /></div>
-                          <div className="flex-1">
-                              <h4 className="text-xs font-bold text-blue-900 tracking-widest flex justify-between">
-                                  <span>📸 写真収集ミッション</span>
-                                  <span>{Math.floor((wireStats.complete / wireStats.total) * 100)}% 完成</span>
-                              </h4>
-                              <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1.5 overflow-hidden">
-                                  <div className="bg-blue-600 h-full rounded-full transition-all duration-1000" style={{ width: `${(wireStats.complete / wireStats.total) * 100}%` }}></div>
-                              </div>
+          {activeTab === 'WIRES' && (
+              <div className="bg-white border border-blue-200 rounded-sm shadow-sm flex flex-col lg:flex-row items-start lg:items-center justify-between p-3 gap-4">
+                  <div className="flex items-center gap-3 w-full lg:w-1/3">
+                      <div className="bg-blue-100 text-blue-800 p-2 rounded-full hidden sm:block"><Icons.Camera /></div>
+                      <div className="flex-1">
+                          <h4 className="text-xs font-bold text-blue-900 tracking-widest flex justify-between">
+                              <span>📸 写真収集ミッション</span>
+                              <span>{Math.floor((wireStats.complete / wireStats.total) * 100)}% 完成</span>
+                          </h4>
+                          <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1.5 overflow-hidden">
+                              <div className="bg-blue-600 h-full rounded-full transition-all duration-1000" style={{ width: `${(wireStats.complete / wireStats.total) * 100}%` }}></div>
                           </div>
                       </div>
-                      <div className="flex gap-1.5 overflow-x-auto w-full lg:w-auto pb-1 [&::-webkit-scrollbar]:hidden">
-                          <button onClick={() => setImageStatusFilter('ALL')} className={`px-3 py-1.5 rounded-sm text-xs font-bold transition whitespace-nowrap ${imageStatusFilter === 'ALL' ? 'bg-gray-800 text-white shadow-inner' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200'}`}>
-                              全 {wireStats.total}件
-                          </button>
-                          <button onClick={() => setImageStatusFilter('COMPLETE')} className={`px-3 py-1.5 rounded-sm text-xs font-bold transition flex items-center gap-1 whitespace-nowrap ${imageStatusFilter === 'COMPLETE' ? 'bg-green-600 text-white shadow-inner' : 'bg-green-50 text-green-700 border border-green-200 hover:bg-green-100'}`}>
-                              ✨ 完備 ({wireStats.complete})
-                          </button>
-                          <button onClick={() => setImageStatusFilter('PARTIAL')} className={`px-3 py-1.5 rounded-sm text-xs font-bold transition flex items-center gap-1 whitespace-nowrap ${imageStatusFilter === 'PARTIAL' ? 'bg-yellow-500 text-white shadow-inner' : 'bg-yellow-50 text-yellow-700 border border-yellow-200 hover:bg-yellow-100'}`}>
-                              🔄 一部不足 ({wireStats.partial})
-                          </button>
-                          <button onClick={() => setImageStatusFilter('NONE')} className={`px-3 py-1.5 rounded-sm text-xs font-bold transition flex items-center gap-1 whitespace-nowrap ${imageStatusFilter === 'NONE' ? 'bg-red-500 text-white shadow-inner' : 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100'}`}>
-                              ❌ 未登録 ({wireStats.none})
-                          </button>
-                      </div>
                   </div>
-              )}
-              
-              <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center">
-                  <div className="flex flex-1 gap-2 w-full flex-wrap">
-                      <div className="relative flex-1 min-w-[200px]">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Icons.Search /></div>
-                        <input type="text" placeholder="AND検索 (例: 1C VV)..." className="w-full border border-gray-300 rounded-sm pl-10 pr-4 py-2 text-sm focus:border-blue-500 outline-none shadow-inner" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-                      </div>
-
-                      {activeTab === 'WIRES' && uniqueMakers.length > 0 && (
-                          <select className="border border-gray-300 rounded-sm px-3 py-2 text-sm outline-none focus:border-blue-500 bg-white cursor-pointer font-bold text-gray-700 shadow-sm max-w-[140px]" value={filterMaker} onChange={e => setFilterMaker(e.target.value)}>
-                              <option value="">全メーカー</option>
-                              {uniqueMakers.map((m: any) => <option key={m} value={m}>{m}</option>)}
-                          </select>
-                      )}
-
-                      {activeTab === 'CASTINGS' && uniqueTypes.length > 0 && (
-                          <select className="border border-gray-300 rounded-sm px-3 py-2 text-sm outline-none focus:border-blue-500 bg-white cursor-pointer font-bold text-gray-700 shadow-sm max-w-[140px]" value={filterType} onChange={e => setFilterType(e.target.value)}>
-                              <option value="">すべての種別</option>
-                              {uniqueTypes.map((t: any) => <option key={t} value={t}>{t === 'BRASS' ? '真鍮' : t === 'ZINC' ? '亜鉛' : t === 'LEAD' ? '鉛' : t}</option>)}
-                          </select>
-                      )}
-
-                      <button onClick={toggleVoiceInput} className={`px-3 py-2 border rounded-sm flex items-center justify-center transition-all shadow-sm ${isListening ? 'bg-red-500 border-red-600 text-white animate-pulse' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-100 hover:text-blue-600'}`} title="音声で検索キーワード入力">
-                          <Icons.Mic />
+                  <div className="flex gap-1.5 overflow-x-auto w-full lg:w-auto pb-1 [&::-webkit-scrollbar]:hidden">
+                      <button onClick={() => setImageStatusFilter('ALL')} className={`px-3 py-1.5 rounded-sm text-xs font-bold transition whitespace-nowrap ${imageStatusFilter === 'ALL' ? 'bg-gray-800 text-white shadow-inner' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200'}`}>
+                          全 {wireStats.total}件
+                      </button>
+                      <button onClick={() => setImageStatusFilter('COMPLETE')} className={`px-3 py-1.5 rounded-sm text-xs font-bold transition flex items-center gap-1 whitespace-nowrap ${imageStatusFilter === 'COMPLETE' ? 'bg-green-600 text-white shadow-inner' : 'bg-green-50 text-green-700 border border-green-200 hover:bg-green-100'}`}>
+                          ✨ 完備 ({wireStats.complete})
+                      </button>
+                      <button onClick={() => setImageStatusFilter('PARTIAL')} className={`px-3 py-1.5 rounded-sm text-xs font-bold transition flex items-center gap-1 whitespace-nowrap ${imageStatusFilter === 'PARTIAL' ? 'bg-yellow-500 text-white shadow-inner' : 'bg-yellow-50 text-yellow-700 border border-yellow-200 hover:bg-yellow-100'}`}>
+                          🔄 一部不足 ({wireStats.partial})
+                      </button>
+                      <button onClick={() => setImageStatusFilter('NONE')} className={`px-3 py-1.5 rounded-sm text-xs font-bold transition flex items-center gap-1 whitespace-nowrap ${imageStatusFilter === 'NONE' ? 'bg-red-500 text-white shadow-inner' : 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100'}`}>
+                          ❌ 未登録 ({wireStats.none})
                       </button>
                   </div>
+              </div>
+          )}
+          
+          <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center">
+              <div className="flex flex-1 gap-2 w-full flex-wrap">
+                  <div className="relative flex-1 min-w-[200px]">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Icons.Search /></div>
+                    <input type="text" placeholder="AND検索 (例: 1C VV)..." className="w-full border border-gray-300 rounded-sm pl-10 pr-4 py-2 text-sm focus:border-blue-500 outline-none shadow-inner" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                  </div>
 
-                  {activeTab !== 'UNKNOWN' && (
-                      <div className="flex gap-2 w-full lg:w-auto shrink-0 mt-2 lg:mt-0">
-                        {activeTab === 'WIRES' && (
-                            <button onClick={() => setIsAiModalOpen(true)} className="flex-1 lg:flex-none bg-blue-50 text-blue-700 border border-blue-200 px-4 py-2 rounded-sm text-sm font-bold hover:bg-blue-100 transition flex items-center justify-center gap-2 whitespace-nowrap shadow-sm">
-                                <Icons.Sparkles /> AIアシスト登録
-                            </button>
-                        )}
-                        <button onClick={() => handleOpenModal()} className="flex-1 lg:flex-none bg-gray-900 text-white px-5 py-2 rounded-sm text-sm font-bold hover:bg-gray-800 transition flex items-center justify-center gap-2 whitespace-nowrap active:scale-95 shadow-sm">
-                            <Icons.Plus /> 手動登録
-                        </button>
-                      </div>
+                  {activeTab === 'WIRES' && uniqueMakers.length > 0 && (
+                      <select className="border border-gray-300 rounded-sm px-3 py-2 text-sm outline-none focus:border-blue-500 bg-white cursor-pointer font-bold text-gray-700 shadow-sm max-w-[140px]" value={filterMaker} onChange={e => setFilterMaker(e.target.value)}>
+                          <option value="">全メーカー</option>
+                          {uniqueMakers.map((m: any) => <option key={m} value={m}>{m}</option>)}
+                      </select>
                   )}
+
+                  {activeTab === 'CASTINGS' && uniqueTypes.length > 0 && (
+                      <select className="border border-gray-300 rounded-sm px-3 py-2 text-sm outline-none focus:border-blue-500 bg-white cursor-pointer font-bold text-gray-700 shadow-sm max-w-[140px]" value={filterType} onChange={e => setFilterType(e.target.value)}>
+                          <option value="">すべての種別</option>
+                          {uniqueTypes.map((t: any) => <option key={t} value={t}>{t === 'BRASS' ? '真鍮' : t === 'ZINC' ? '亜鉛' : t === 'LEAD' ? '鉛' : t}</option>)}
+                      </select>
+                  )}
+
+                  <button onClick={toggleVoiceInput} className={`px-3 py-2 border rounded-sm flex items-center justify-center transition-all shadow-sm ${isListening ? 'bg-red-500 border-red-600 text-white animate-pulse' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-100 hover:text-blue-600'}`} title="音声で検索キーワード入力">
+                      <Icons.Mic />
+                  </button>
               </div>
 
-              {activeTab === 'WIRES' && (
-                  <div className="flex gap-1.5 overflow-x-auto pb-1 mt-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                      {CATEGORIES.map(cat => (
-                          <button 
-                              key={cat} 
-                              onClick={() => setSelectedCategory(cat)} 
-                              className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors border shadow-sm ${selectedCategory === cat ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-500 border-gray-300 hover:bg-gray-100'}`}
-                          >
-                              {cat}
-                          </button>
-                      ))}
+              {activeTab !== 'UNKNOWN' && (
+                  <div className="flex gap-2 w-full lg:w-auto shrink-0 mt-2 lg:mt-0">
+                    {activeTab === 'WIRES' && (
+                        <button onClick={() => setIsAiModalOpen(true)} className="flex-1 lg:flex-none bg-blue-50 text-blue-700 border border-blue-200 px-4 py-2 rounded-sm text-sm font-bold hover:bg-blue-100 transition flex items-center justify-center gap-2 whitespace-nowrap shadow-sm">
+                            <Icons.Sparkles /> AIアシスト登録
+                        </button>
+                    )}
+                    <button onClick={() => handleOpenModal()} className="flex-1 lg:flex-none bg-gray-900 text-white px-5 py-2 rounded-sm text-sm font-bold hover:bg-gray-800 transition flex items-center justify-center gap-2 whitespace-nowrap active:scale-95 shadow-sm">
+                        <Icons.Plus /> 手動登録
+                    </button>
                   </div>
               )}
-            </div>
-        )}
+          </div>
+
+          {activeTab === 'WIRES' && (
+              <div className="flex gap-1.5 overflow-x-auto pb-1 mt-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                  {CATEGORIES.map(cat => (
+                      <button 
+                          key={cat} 
+                          onClick={() => setSelectedCategory(cat)} 
+                          className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors border shadow-sm ${selectedCategory === cat ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-500 border-gray-300 hover:bg-gray-100'}`}
+                      >
+                          {cat}
+                      </button>
+                  ))}
+              </div>
+          )}
+        </div>
         
         <div className="flex-1 overflow-hidden relative">
-            {renderTable()}
+            <div className="h-full overflow-y-auto relative">
+              <table className="w-full text-left border-collapse text-sm whitespace-nowrap md:whitespace-normal">
+                <thead className="bg-gray-100 text-gray-500 uppercase tracking-wider text-xs sticky top-0 z-20 shadow-sm">
+                  <tr>
+                    {activeTab === 'WIRES' && (
+                        <>
+                            <th className="p-3 w-10 text-center" title="Web(LP)の価格表に表示するかどうか"><Icons.Globe /></th>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('maker')}>メーカー <SortIcon columnKey="maker" /></th>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('name')}>品名 <SortIcon columnKey="name" /></th>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('year')}>製造年 <SortIcon columnKey="year" /></th>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('sq')}>SQ/芯数 <SortIcon columnKey="sq" /></th>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('ratio')}>歩留まり <SortIcon columnKey="ratio" /></th>
+                            <th className="p-3 text-center"><Icons.Camera /> 画像データ</th>
+                        </>
+                    )}
+                    {activeTab === 'UNKNOWN' && (
+                        <>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('createdAt')}>登録日時 <SortIcon columnKey="createdAt" /></th>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('name')}>AI推定品名 <SortIcon columnKey="name" /></th>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('ratio')}>歩留まり <SortIcon columnKey="ratio" /></th>
+                            <th className="p-3 w-1/3">推論の根拠</th>
+                        </>
+                    )}
+                    {activeTab === 'CASTINGS' && (
+                        <>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('name')}>品目名 <SortIcon columnKey="name" /></th>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('type')}>種別 <SortIcon columnKey="type" /></th>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('ratio')}>歩留まり <SortIcon columnKey="ratio" /></th>
+                        </>
+                    )}
+                    {activeTab === 'CLIENTS' && (
+                        <>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('name')}>業者名 <SortIcon columnKey="name" /></th>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('rank')}>ランク <SortIcon columnKey="rank" /></th>
+                            <th className="p-3">電話番号</th>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('points')}>ポイント <SortIcon columnKey="points" /></th>
+                        </>
+                    )}
+                    {activeTab === 'STAFF' && (
+                        <>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('name')}>スタッフ名 <SortIcon columnKey="name" /></th>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('role')}>権限 <SortIcon columnKey="role" /></th>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('status')}>ステータス <SortIcon columnKey="status" /></th>
+                        </>
+                    )}
+                    {activeTab !== 'UNKNOWN' && (
+                      <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('updatedAt')}>登録/更新 <SortIcon columnKey="updatedAt" /></th>
+                    )}
+                    <th className="p-3 text-right">操作</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 bg-white">
+                  {sortedData.map((item: any, idx: number) => (
+                    <tr key={item.id || idx} className={`hover:bg-gray-50 transition ${activeTab === 'WIRES' && String(item.showOnWeb) === 'false' ? 'opacity-50 bg-gray-100' : ''}`}>
+                      {activeTab === 'WIRES' && (
+                        <>
+                          <td className="p-3 text-center">
+                              {String(item.showOnWeb) === 'false' ? <span className="text-gray-400" title="Web非表示"><Icons.EyeOff /></span> : <span className="text-blue-500" title="Web表示中"><Icons.Globe /></span>}
+                          </td>
+                          <td className="p-3 font-bold text-gray-700">{item.maker || '-'}</td>
+                          <td className="p-3 font-bold text-gray-900">
+                              {item.name}
+                              {item.material === '錫メッキ' && <span className="ml-2 inline-flex items-center gap-0.5 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm whitespace-nowrap shadow-sm"><Icons.AlertTriangle /> 錫</span>}
+                              {item.material === 'アルミ' && <span className="ml-2 inline-flex items-center gap-0.5 bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm whitespace-nowrap shadow-sm">アルミ</span>}
+                          </td>
+                          <td className="p-3 text-gray-600">{item.year || '-'}</td>
+                          <td className="p-3 text-gray-600 font-mono text-xs">{formatSqDisplay(item.sq)} / {formatCoreDisplay(item.core)}</td>
+                          <td className="p-3 font-mono font-bold text-blue-600 text-base">{item.ratio}%</td>
+                          <td className="p-3">
+                              <div className="flex gap-2 justify-center">
+                                  {[11, 12, 13, 14, 15].map(colIdx => {
+                                      const hasImage = !!item[`image${colIdx-10}`];
+                                      return (
+                                          <div key={colIdx} className="flex flex-col gap-1 items-center w-10">
+                                              <div className={`relative w-full h-8 border ${hasImage ? 'border-gray-300' : 'border-gray-200 border-dashed'} rounded-sm overflow-hidden bg-gray-100 flex items-center justify-center group shadow-sm`}>
+                                                  {hasImage ? (
+                                                      <a href={getDriveViewUrl(item[`image${colIdx-10}`])} target="_blank" rel="noopener noreferrer" className="w-full h-full block">
+                                                          <img src={getDriveImageUrl(item[`image${colIdx-10}`])} referrerPolicy="no-referrer" className="w-full h-full object-cover group-hover:scale-110 transition-transform cursor-zoom-in" />
+                                                      </a>
+                                                  ) : ( <span className="text-[8px] text-gray-300 font-bold">空</span> )}
+                                              </div>
+                                          </div>
+                                      );
+                                  })}
+                              </div>
+                          </td>
+                        </>
+                      )}
+
+                      {activeTab === 'UNKNOWN' && (
+                        <>
+                          <td className="p-3 text-xs text-gray-500 font-mono">{formatTimeShort(item.createdAt)}</td>
+                          <td className="p-3 font-bold text-orange-700 flex items-center gap-1"><Icons.Sparkles /> {item.name}</td>
+                          <td className="p-3 font-mono font-black text-orange-600 text-lg">{item.ratio}%</td>
+                          <td className="p-3 text-xs text-gray-600 leading-relaxed bg-orange-50/50 rounded-sm m-1 whitespace-normal">{item.reason}</td>
+                        </>
+                      )}
+                      {activeTab === 'CASTINGS' && (
+                        <>
+                          <td className="p-3 font-bold text-gray-900">{item.name}</td>
+                          <td className="p-3 text-gray-600">{item.type}</td>
+                          <td className="p-3 font-mono font-bold text-blue-600 text-base">{item.ratio}%</td>
+                        </>
+                      )}
+                      {activeTab === 'CLIENTS' && (
+                        <>
+                          <td className="p-3 font-bold text-gray-900">{item.name}</td>
+                          <td className="p-3"><span className="bg-gray-200 px-2 py-1 rounded-sm text-xs font-bold">{item.rank}</span></td>
+                          <td className="p-3 font-mono">{item.phone}</td>
+                          <td className="p-3 font-mono text-orange-600 font-bold">{item.points} pt</td>
+                        </>
+                      )}
+                      {activeTab === 'STAFF' && (
+                        <>
+                          <td className="p-3 font-bold text-gray-900">{item.name}</td>
+                          <td className="p-3 text-gray-600">{item.role}</td>
+                          <td className="p-3"><span className={`px-2 py-1 rounded-sm text-xs font-bold text-white ${item.status === 'ACTIVE' ? 'bg-green-500' : 'bg-red-500'}`}>{item.status}</span></td>
+                        </>
+                      )}
+                      {activeTab !== 'UNKNOWN' && (
+                          <td className="p-3 text-[10px] text-gray-400 font-mono align-top">
+                              <div className="flex flex-col gap-1"><span title="登録日">➕ {formatTimeShort(item.createdAt)}</span><span title="更新日">🔄 {formatTimeShort(item.updatedAt)}</span></div>
+                          </td>
+                      )}
+
+                      <td className="p-3 text-right align-top">
+                        <div className="flex justify-end gap-2">
+                          {activeTab === 'UNKNOWN' && (
+                              <button onClick={() => handlePromoteToWire(item)} className="p-2 text-white bg-blue-600 hover:bg-blue-700 rounded-sm flex items-center gap-1 text-xs font-bold transition shadow-sm"><Icons.ArrowUp /> マスターへ</button>
+                          )}
+                          <button onClick={() => handleOpenModal(item)} className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-sm transition"><Icons.Edit /></button>
+                          <button onClick={() => handleDelete(item.id)} className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-sm transition"><Icons.Trash /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
         </div>
       </div>
 
