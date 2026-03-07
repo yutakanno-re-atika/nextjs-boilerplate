@@ -80,18 +80,40 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
 
   const uniqueMakers = useMemo(() => Array.from(new Set((data?.wires || []).map((w:any) => w.maker).filter((m:any) => m && m !== '-'))), [data]);
 
-  useEffect(() => {
+useEffect(() => {
     if (editingResId && localReservations) {
       const res = localReservations.find(r => r.id === editingResId);
       if (res) {
+        // ★ JSONのパース強化と、BULKモード時の総重量復元処理を追加
         try { 
-            const items = typeof res.items === 'string' ? JSON.parse(res.items) : res.items;
+            let items = res.items;
+            if (typeof items === 'string') {
+                items = items.replace(/""/g, '"').replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/\t/g, "\\t");
+                items = JSON.parse(items);
+            }
+            if (typeof items === 'string') items = JSON.parse(items);
+            if (!Array.isArray(items)) items = [];
+            
             setCart(items); 
-            if (items.some((i:any) => i.percentage !== undefined)) setPosMode('BULK');
-        } catch(e){}
+            
+            if (items.some((i:any) => i.percentage !== undefined && i.percentage > 0)) {
+                setPosMode('BULK');
+                // ★ カート内の各重量を合計してフレコン総重量にセット（これがないと0kg扱いでエラーになる）
+                const totalW = items.reduce((sum: number, i: any) => sum + Number(i.weight || 0), 0);
+                setBulkTotalWeight(totalW);
+            } else {
+                setPosMode('INDIVIDUAL');
+                setBulkTotalWeight('');
+            }
+        } catch(e) {
+            console.error("Cart load error", e);
+        }
+        
         if (res.memberId !== 'GUEST' && data?.clients) {
           const client = data.clients.find((c:any) => c.id === res.memberId);
           if (client) setSelectedClient(client);
+        } else {
+          setSelectedClient(null); // ゲストの場合は確実に選択を解除する
         }
       }
     } else {
