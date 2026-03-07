@@ -7,7 +7,6 @@ const CATEGORIES = ['すべて', 'IV線', 'CV・電力線', 'VVF / VV (ネズミ
 export const PriceList = ({ data, marketPrice }: { data: any, marketPrice: number }) => {
   const [activeCat, setActiveCat] = useState('すべて');
 
-  // ★ ここが超重要：文字列の 'false' と 真偽値の false の両方を除外する
   const validWires = (data?.wires || []).filter((w: any) => String(w.showOnWeb) !== 'false');
 
   const getCategory = (name: string) => {
@@ -23,15 +22,45 @@ export const PriceList = ({ data, marketPrice }: { data: any, marketPrice: numbe
 
   const filteredWires = validWires.filter((w: any) => activeCat === 'すべて' || getCategory(w.name) === activeCat);
 
+  // ★ 建値指標のON/OFFフラグとデータ
+  const showMarketRates = String(data?.config?.show_market_rates) !== 'false';
+  const market = data?.market || {};
+
   return (
     <section id="price-list" className="py-20 bg-white">
       <div className="max-w-[1200px] mx-auto px-6">
-        <div className="text-center mb-12 animate-in slide-in-from-bottom-10 fade-in duration-1000">
+        <div className="text-center mb-10 animate-in slide-in-from-bottom-10 fade-in duration-1000">
           <h2 className="text-3xl md:text-5xl font-black font-serif tracking-tight text-gray-900 mb-4">
-            本日の買取価格表
+            本日の買取価格
           </h2>
           <p className="text-gray-500 font-bold">国内建値とリアルタイム連動。透明性の高い価格を提示します。</p>
         </div>
+
+        {/* ★ 各種建値（指標）パネルの表示 */}
+        {showMarketRates && market && (
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-10 animate-in fade-in slide-in-from-bottom-5">
+              <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg text-center shadow-sm">
+                  <p className="text-[10px] font-bold text-gray-500 mb-1 tracking-widest">銅建値 (JX)</p>
+                  <p className="text-2xl font-black text-[#D32F2F] font-mono">¥{market.copper?.price?.toLocaleString() || '---'}</p>
+              </div>
+              <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg text-center shadow-sm">
+                  <p className="text-[10px] font-bold text-gray-500 mb-1 tracking-widest">黄銅建値</p>
+                  <p className="text-2xl font-black text-gray-800 font-mono">¥{market.brass?.price?.toLocaleString() || '---'}</p>
+              </div>
+              <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg text-center shadow-sm">
+                  <p className="text-[10px] font-bold text-gray-500 mb-1 tracking-widest">亜鉛建値</p>
+                  <p className="text-2xl font-black text-gray-800 font-mono">¥{market.zinc?.price?.toLocaleString() || '---'}</p>
+              </div>
+              <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg text-center shadow-sm">
+                  <p className="text-[10px] font-bold text-gray-500 mb-1 tracking-widest">鉛建値</p>
+                  <p className="text-2xl font-black text-gray-800 font-mono">¥{market.lead?.price?.toLocaleString() || '---'}</p>
+              </div>
+              <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg text-center shadow-sm col-span-2 md:col-span-1">
+                  <p className="text-[10px] font-bold text-gray-500 mb-1 tracking-widest">錫建値</p>
+                  <p className="text-2xl font-black text-gray-800 font-mono">¥{market.tin?.price?.toLocaleString() || '---'}</p>
+              </div>
+          </div>
+        )}
 
         <div className="flex flex-wrap justify-center gap-2 mb-8">
           {CATEGORIES.map(cat => {
