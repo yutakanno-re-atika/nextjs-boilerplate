@@ -20,10 +20,10 @@ const Icons = {
   Globe: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>,
   EyeOff: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>,
   SortAsc: () => <svg className="w-3 h-3 inline-block ml-1 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 15l7-7 7 7" /></svg>,
-SortDesc: () => <svg className="w-3 h-3 inline-block ml-1 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" /></svg>,
+  SortDesc: () => <svg className="w-3 h-3 inline-block ml-1 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" /></svg>,
   SortNone: () => <svg className="w-3 h-3 inline-block ml-1 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" /></svg>,
   Mic: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>,
-  AlertTriangle: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+  AlertTriangle: () => <svg className="w-4 h-4 inline-block text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
 };
 
 const formatTimeShort = (timeStr: string) => {
@@ -114,6 +114,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadingImageId, setUploadingImageId] = useState<string | null>(null);
 
+  // ★ AIモーダル用のステート群
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [aiStatus, setAiStatus] = useState<'IDLE' | 'ANALYZING'>('IDLE');
   const [aiProgressStep, setAiProgressStep] = useState(0); 
@@ -127,7 +128,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   
   const [isRunningBatch, setIsRunningBatch] = useState<'NONE' | 'MARKET' | 'LEAD' | 'BACKUP'>('NONE');
 
-  // ★ 追加：LP設定用のステート
   const [lpConfig, setLpConfig] = useState({
       autoMarketSync: data?.config?.auto_market_sync !== 'false',
       showSimulator: data?.config?.show_simulator !== 'false',
@@ -170,7 +170,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         setEditingItem({
             maker: '', name: pendingData.name || '', year: '', _sqValue: '', _sqUnit: 'sq', _coreValue: '',
             conductor: pendingData.conductor || '', material: pendingData.material || '純銅',
-            ratio: pendingData.ratio || '', aiEstimatedRatio: pendingData.ratio || '', showOnWeb: true, // ★新規登録時はデフォルト表示
+            ratio: pendingData.ratio || '', aiEstimatedRatio: pendingData.ratio || '', showOnWeb: true,
             memo: `【POSからのAIアシスト引継ぎ】\nAI推論根拠: ${pendingData.reason || ''}\n※実測を行って歩留まりを上書きしてください。`,
             _pendingImageData1: pendingData.image1 || null, 
             _pendingImageData2: pendingData.image2 || null,
@@ -295,7 +295,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
   const getUpdatesMap = (item: any, tab: string) => {
     if (tab === 'WIRES') {
-        // ★ U列(20番目)に showOnWeb フラグを保存するように更新
         const updates: any = { 1: item.maker, 2: item.name, 3: item.year, 4: item.sq, 5: item.sampleTotal, 6: item.sampleCopper, 7: item.core, 8: item.conductor, 9: item.ratio, 10: item.memo, 18: item.material, 19: item.sampleCover, 20: item.showOnWeb };
         if (item.image1 !== undefined) updates[11] = item.image1;
         if (item.image2 !== undefined) updates[12] = item.image2;
@@ -454,7 +453,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     return sortConfig.direction === 'asc' ? <Icons.SortAsc /> : <Icons.SortDesc />;
   };
 
-  // ★ 追加：LP設定の保存処理
   const saveLpConfig = async (key: string, value: boolean) => {
     setLpConfig(prev => ({ ...prev, [key]: value }));
     const dbKey = key === 'showSimulator' ? 'show_simulator' : key === 'showFaq' ? 'show_faq' : key === 'showConcierge' ? 'show_concierge' : 'auto_market_sync';
@@ -558,22 +556,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
           return dateB - dateA;
       });
   }
-
-  const handleRunBatchSettings = async (type: 'MARKET' | 'LEAD' | 'BACKUP') => {
-      const typeLabel = type === 'MARKET' ? '市況データ（建値）' : type === 'LEAD' ? '営業リード' : 'データベースのバックアップ';
-      if (!confirm(`${typeLabel} の処理を今すぐ実行します。よろしいですか？`)) return;
-      setIsRunningBatch(type);
-      try {
-          const action = type === 'MARKET' ? 'RUN_MARKET_SYNC' : type === 'LEAD' ? 'RUN_LEAD_GEN' : 'CREATE_BACKUP';
-          const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }) });
-          const result = await res.json();
-          if (result.status === 'success') {
-              alert('✅ ' + result.message);
-              if (result.url) window.open(result.url, '_blank'); 
-          } else { alert('エラーが発生しました: ' + result.message); }
-      } catch (e) { alert('通信エラーが発生しました。'); }
-      setIsRunningBatch('NONE');
-  };
 
   const ImageSlot = ({ title, imageKey, colIdx, pendingKey }: { title: string, imageKey: string, colIdx: number, pendingKey: string }) => {
     const savedImage = editingItem[imageKey];
@@ -704,7 +686,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                       <th className="p-3 text-center"><Icons.Camera /> 画像データ</th>
                   </>
               )}
-              {/* 他のタブのヘッダーは省略（変更なし） */}
               {activeTab === 'UNKNOWN' && (
                   <>
                       <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none" onClick={() => handleSort('createdAt')}>登録日時 <SortIcon columnKey="createdAt" /></th>
@@ -779,7 +760,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                   </>
                 )}
 
-                {/* 他のタブは省略 */}
                 {activeTab === 'UNKNOWN' && (
                   <>
                     <td className="p-3 text-xs text-gray-500 font-mono">{formatTimeShort(item.createdAt)}</td>
@@ -852,17 +832,70 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       <div className="bg-white border border-gray-200 shadow-sm rounded-sm flex-1 flex flex-col overflow-hidden relative">
         {activeTab !== 'SETTINGS' && (
             <div className="p-4 border-b border-gray-200 bg-gray-50 flex flex-col gap-3 z-30 relative">
-              {/* 検索バー等は省略（変更なし） */}
+              
+              {(isListening || voiceText) && (
+                  <div className="absolute top-full left-0 w-full z-40 bg-blue-900 text-white p-2 text-center text-sm font-bold shadow-md animate-in slide-in-from-top-2">
+                      {isListening ? <span className="animate-pulse">{voiceText}</span> : <span>{voiceText}</span>}
+                  </div>
+              )}
+
+              {activeTab === 'WIRES' && (
+                  <div className="bg-white border border-blue-200 rounded-sm shadow-sm flex flex-col lg:flex-row items-start lg:items-center justify-between p-3 gap-4">
+                      <div className="flex items-center gap-3 w-full lg:w-1/3">
+                          <div className="bg-blue-100 text-blue-800 p-2 rounded-full hidden sm:block"><Icons.Camera /></div>
+                          <div className="flex-1">
+                              <h4 className="text-xs font-bold text-blue-900 tracking-widest flex justify-between">
+                                  <span>📸 写真収集ミッション</span>
+                                  <span>{Math.floor((wireStats.complete / wireStats.total) * 100)}% 完成</span>
+                              </h4>
+                              <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1.5 overflow-hidden">
+                                  <div className="bg-blue-600 h-full rounded-full transition-all duration-1000" style={{ width: `${(wireStats.complete / wireStats.total) * 100}%` }}></div>
+                              </div>
+                          </div>
+                      </div>
+                      <div className="flex gap-1.5 overflow-x-auto w-full lg:w-auto pb-1 [&::-webkit-scrollbar]:hidden">
+                          <button onClick={() => setImageStatusFilter('ALL')} className={`px-3 py-1.5 rounded-sm text-xs font-bold transition whitespace-nowrap ${imageStatusFilter === 'ALL' ? 'bg-gray-800 text-white shadow-inner' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200'}`}>
+                              全 {wireStats.total}件
+                          </button>
+                          <button onClick={() => setImageStatusFilter('COMPLETE')} className={`px-3 py-1.5 rounded-sm text-xs font-bold transition flex items-center gap-1 whitespace-nowrap ${imageStatusFilter === 'COMPLETE' ? 'bg-green-600 text-white shadow-inner' : 'bg-green-50 text-green-700 border border-green-200 hover:bg-green-100'}`}>
+                              ✨ 完備 ({wireStats.complete})
+                          </button>
+                          <button onClick={() => setImageStatusFilter('PARTIAL')} className={`px-3 py-1.5 rounded-sm text-xs font-bold transition flex items-center gap-1 whitespace-nowrap ${imageStatusFilter === 'PARTIAL' ? 'bg-yellow-500 text-white shadow-inner' : 'bg-yellow-50 text-yellow-700 border border-yellow-200 hover:bg-yellow-100'}`}>
+                              🔄 一部不足 ({wireStats.partial})
+                          </button>
+                          <button onClick={() => setImageStatusFilter('NONE')} className={`px-3 py-1.5 rounded-sm text-xs font-bold transition flex items-center gap-1 whitespace-nowrap ${imageStatusFilter === 'NONE' ? 'bg-red-500 text-white shadow-inner' : 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100'}`}>
+                              ❌ 未登録 ({wireStats.none})
+                          </button>
+                      </div>
+                  </div>
+              )}
+              
               <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center">
                   <div className="flex flex-1 gap-2 w-full flex-wrap">
                       <div className="relative flex-1 min-w-[200px]">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Icons.Search /></div>
                         <input type="text" placeholder="AND検索 (例: 1C VV)..." className="w-full border border-gray-300 rounded-sm pl-10 pr-4 py-2 text-sm focus:border-blue-500 outline-none shadow-inner" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
                       </div>
+
+                      {activeTab === 'WIRES' && uniqueMakers.length > 0 && (
+                          <select className="border border-gray-300 rounded-sm px-3 py-2 text-sm outline-none focus:border-blue-500 bg-white cursor-pointer font-bold text-gray-700 shadow-sm max-w-[140px]" value={filterMaker} onChange={e => setFilterMaker(e.target.value)}>
+                              <option value="">全メーカー</option>
+                              {uniqueMakers.map((m: any) => <option key={m} value={m}>{m}</option>)}
+                          </select>
+                      )}
+
+                      {activeTab === 'CASTINGS' && uniqueTypes.length > 0 && (
+                          <select className="border border-gray-300 rounded-sm px-3 py-2 text-sm outline-none focus:border-blue-500 bg-white cursor-pointer font-bold text-gray-700 shadow-sm max-w-[140px]" value={filterType} onChange={e => setFilterType(e.target.value)}>
+                              <option value="">すべての種別</option>
+                              {uniqueTypes.map((t: any) => <option key={t} value={t}>{t === 'BRASS' ? '真鍮' : t === 'ZINC' ? '亜鉛' : t === 'LEAD' ? '鉛' : t}</option>)}
+                          </select>
+                      )}
+
                       <button onClick={toggleVoiceInput} className={`px-3 py-2 border rounded-sm flex items-center justify-center transition-all shadow-sm ${isListening ? 'bg-red-500 border-red-600 text-white animate-pulse' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-100 hover:text-blue-600'}`} title="音声で検索キーワード入力">
                           <Icons.Mic />
                       </button>
                   </div>
+
                   {activeTab !== 'UNKNOWN' && (
                       <div className="flex gap-2 w-full lg:w-auto shrink-0 mt-2 lg:mt-0">
                         {activeTab === 'WIRES' && (
@@ -876,6 +909,20 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                       </div>
                   )}
               </div>
+
+              {activeTab === 'WIRES' && (
+                  <div className="flex gap-1.5 overflow-x-auto pb-1 mt-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                      {CATEGORIES.map(cat => (
+                          <button 
+                              key={cat} 
+                              onClick={() => setSelectedCategory(cat)} 
+                              className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors border shadow-sm ${selectedCategory === cat ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-500 border-gray-300 hover:bg-gray-100'}`}
+                          >
+                              {cat}
+                          </button>
+                      ))}
+                  </div>
+              )}
             </div>
         )}
         
@@ -884,7 +931,87 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         </div>
       </div>
 
-      {/* 編集モーダル */}
+      {/* ★ AIアシスト登録モーダル */}
+      {isAiModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="bg-gray-900 w-full max-w-4xl rounded-md shadow-2xl animate-in zoom-in-95 border border-gray-700 overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-black/50">
+              <h3 className="font-black text-white flex items-center gap-2">
+                <Icons.Sparkles /> AI マスター登録アシスタント
+              </h3>
+              {aiStatus !== 'ANALYZING' && <button onClick={() => setIsAiModalOpen(false)} className="text-gray-400 hover:text-white"><Icons.Close /></button>}
+            </div>
+            
+            <div className="p-6 overflow-y-auto">
+              {aiStatus === 'ANALYZING' ? (
+                <div className="py-8 flex flex-col items-center animate-in fade-in zoom-in duration-500">
+                    <div className="relative w-20 h-20 mb-8">
+                        <div className="absolute inset-0 border-4 border-blue-500/20 rounded-full"></div>
+                        <div className="absolute inset-0 border-4 border-blue-500 rounded-full border-t-transparent animate-spin"></div>
+                        <div className="absolute inset-0 flex items-center justify-center text-blue-400"><Icons.Sparkles /></div>
+                    </div>
+                    <div className="space-y-5 w-full max-w-xs font-bold text-sm">
+                        <div className={`flex items-center gap-4 transition-all duration-500 ${aiProgressStep >= 1 ? 'text-blue-400 translate-x-0 opacity-100' : 'text-gray-700 -translate-x-4 opacity-0'}`}>
+                            <span className="w-6 text-center text-xl">{aiProgressStep >= 2 ? '✅' : aiProgressStep === 1 ? '🔄' : '・'}</span>
+                            <span>画像をサーバーへ送信中...</span>
+                        </div>
+                        <div className={`flex items-center gap-4 transition-all duration-500 delay-300 ${aiProgressStep >= 2 ? 'text-blue-400 translate-x-0 opacity-100' : 'text-gray-700 -translate-x-4 opacity-0'}`}>
+                            <span className="w-6 text-center text-xl">{aiProgressStep >= 3 ? '✅' : aiProgressStep === 2 ? '🔄' : '・'}</span>
+                            <span>AIが画像を解析・特徴抽出中...</span>
+                        </div>
+                        <div className={`flex items-center gap-4 transition-all duration-500 delay-300 ${aiProgressStep >= 3 ? 'text-blue-400 translate-x-0 opacity-100' : 'text-gray-700 -translate-x-4 opacity-0'}`}>
+                            <span className="w-6 text-center text-xl">{aiProgressStep >= 4 ? '✅' : aiProgressStep === 3 ? '🔄' : '・'}</span>
+                            <span>マスターデータと照合・推論中...</span>
+                        </div>
+                        <div className={`flex items-center gap-4 transition-all duration-500 delay-300 ${aiProgressStep >= 4 ? 'text-green-400 scale-110 translate-x-0 opacity-100' : 'text-gray-700 -translate-x-4 opacity-0'}`}>
+                            <span className="w-6 text-center text-xl">{aiProgressStep >= 4 ? '✨' : '・'}</span>
+                            <span>解析完了！結果を出力します</span>
+                        </div>
+                    </div>
+                </div>
+              ) : (
+                <div className="animate-in fade-in">
+                    <p className="text-sm text-gray-300 mb-4 leading-relaxed">
+                        未知の線種をマスターに登録します。<br/>
+                        最大4枚の画像をアップロードしてAIに解析させてください。<br/>
+                    </p>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                        <div className="flex flex-col p-2 border-2 border-dashed border-gray-600 bg-gray-800/50 rounded-md h-28">
+                            {imgData1 ? ( <div className="relative w-full h-full"><img src={`data:image/jpeg;base64,${imgData1}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData1('')} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm shadow-md"><Icons.Trash/></button><span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">①断面</span></div> ) : ( <><p className="text-[10px] font-bold text-blue-400 mb-1.5 text-center">① 断面 (必須)</p><div className="flex gap-1.5 h-full"><label className="flex-1 bg-gray-700 hover:bg-gray-600 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-300 hover:text-white shadow-sm"><Icons.Camera /><span className="text-[8px] mt-1 font-bold">カメラ</span><input type="file" onChange={e=>handleAiImageUpload(e,1)} className="hidden" accept="image/*" capture="environment"/></label><label className="flex-1 bg-gray-700 hover:bg-gray-600 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-300 hover:text-white shadow-sm"><Icons.UploadCloud /><span className="text-[8px] mt-1 font-bold">フォルダ</span><input type="file" onChange={e=>handleAiImageUpload(e,1)} className="hidden" accept="image/*"/></label></div></> )}
+                        </div>
+                        <div className="flex flex-col p-2 border-2 border-dashed border-gray-600 bg-gray-800/50 rounded-md h-28">
+                            {imgData2 ? ( <div className="relative w-full h-full"><img src={`data:image/jpeg;base64,${imgData2}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData2('')} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm shadow-md"><Icons.Trash/></button><span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">②全体</span></div> ) : ( <><p className="text-[10px] font-bold text-gray-300 mb-1.5 text-center">② 全体・被覆</p><div className="flex gap-1.5 h-full"><label className="flex-1 bg-gray-700 hover:bg-gray-600 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-300 hover:text-white shadow-sm"><Icons.Camera /><span className="text-[8px] mt-1 font-bold">カメラ</span><input type="file" onChange={e=>handleAiImageUpload(e,2)} className="hidden" accept="image/*" capture="environment"/></label><label className="flex-1 bg-gray-700 hover:bg-gray-600 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-300 hover:text-white shadow-sm"><Icons.UploadCloud /><span className="text-[8px] mt-1 font-bold">フォルダ</span><input type="file" onChange={e=>handleAiImageUpload(e,2)} className="hidden" accept="image/*"/></label></div></> )}
+                        </div>
+                        <div className="flex flex-col p-2 border-2 border-dashed border-gray-600 bg-gray-800/50 rounded-md h-28">
+                            {imgData3 ? ( <div className="relative w-full h-full"><img src={`data:image/jpeg;base64,${imgData3}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData3('')} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm shadow-md"><Icons.Trash/></button><span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">③印字1</span></div> ) : ( <><p className="text-[10px] font-bold text-gray-300 mb-1.5 text-center">③ 印字アップ1</p><div className="flex gap-1.5 h-full"><label className="flex-1 bg-gray-700 hover:bg-gray-600 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-300 hover:text-white shadow-sm"><Icons.Camera /><span className="text-[8px] mt-1 font-bold">カメラ</span><input type="file" onChange={e=>handleAiImageUpload(e,3)} className="hidden" accept="image/*" capture="environment"/></label><label className="flex-1 bg-gray-700 hover:bg-gray-600 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-300 hover:text-white shadow-sm"><Icons.UploadCloud /><span className="text-[8px] mt-1 font-bold">フォルダ</span><input type="file" onChange={e=>handleAiImageUpload(e,3)} className="hidden" accept="image/*"/></label></div></> )}
+                        </div>
+                        <div className="flex flex-col p-2 border-2 border-dashed border-gray-600 bg-gray-800/50 rounded-md h-28">
+                            {imgData4 ? ( <div className="relative w-full h-full"><img src={`data:image/jpeg;base64,${imgData4}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData4('')} className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-sm shadow-md"><Icons.Trash/></button><span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">③印字2</span></div> ) : ( <><p className="text-[10px] font-bold text-gray-300 mb-1.5 text-center">③ 印字アップ2</p><div className="flex gap-1.5 h-full"><label className="flex-1 bg-gray-700 hover:bg-gray-600 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-300 hover:text-white shadow-sm"><Icons.Camera /><span className="text-[8px] mt-1 font-bold">カメラ</span><input type="file" onChange={e=>handleAiImageUpload(e,4)} className="hidden" accept="image/*" capture="environment"/></label><label className="flex-1 bg-gray-700 hover:bg-gray-600 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-300 hover:text-white shadow-sm"><Icons.UploadCloud /><span className="text-[8px] mt-1 font-bold">フォルダ</span><input type="file" onChange={e=>handleAiImageUpload(e,4)} className="hidden" accept="image/*"/></label></div></> )}
+                        </div>
+                    </div>
+
+                    <div className="mb-6 bg-gray-800/50 border border-gray-700 p-3 rounded-md relative">
+                        <label className="block text-xs font-bold text-gray-400 mb-2 flex items-center justify-between">
+                            <span>🗣️ AIへのヒント・補足（任意）</span>
+                            <button onClick={toggleHintVoiceInput} className={`p-1.5 rounded transition ${isListeningHint ? 'bg-red-500 text-white animate-pulse' : 'bg-gray-700 text-gray-300 hover:bg-blue-600'}`}>
+                                <Icons.Mic />
+                            </button>
+                        </label>
+                        <textarea className="w-full bg-gray-900 border border-gray-600 rounded text-sm text-white p-2 outline-none focus:border-blue-500 min-h-[60px]" placeholder="例: 中身は細線の束、かなり重い、雑線は入っていない等..." value={aiHint} onChange={e => setAiHint(e.target.value)} />
+                    </div>
+
+                    <button onClick={runAiExtraction} disabled={!imgData1 && !aiHint} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-md flex justify-center items-center gap-2 disabled:bg-gray-700 transition shadow-lg text-lg">
+                        <Icons.Sparkles />解析してデータを埋める
+                    </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ★ 編集・新規登録モーダル */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4 md:p-0">
           <div className="bg-white w-full max-w-4xl rounded-sm shadow-2xl animate-in zoom-in-95 duration-200">
@@ -898,7 +1025,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
             
             <div className="p-4 md:p-6 max-h-[75vh] overflow-y-auto space-y-4 bg-white">
                 
-                {/* ★ 追加：Web表示フラグのトグルスイッチ */}
                 {activeTab === 'WIRES' && (
                     <div className="bg-blue-50/50 border border-blue-200 p-4 rounded-sm flex justify-between items-center shadow-sm mb-2">
                         <div>
@@ -927,7 +1053,13 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                     </div>
                 )}
 
-                {/* 以降の入力フォームは省略（変更なし） */}
+                {activeTab === 'WIRES' && (editingItem._pendingImageData1 || editingItem._pendingImageData4) && (
+                    <div className="bg-blue-50 border border-blue-200 p-3 rounded-sm text-xs text-blue-800 font-bold flex flex-col gap-1 shadow-sm">
+                        <div className="flex items-center gap-2"><Icons.Sparkles /> 画像からAIが推論結果を自動入力しました。</div>
+                        <div className="text-gray-600 ml-6 font-normal">※ 下の「確定してマスターに登録」を押すと、アップロードした画像も同時に保存されます。</div>
+                    </div>
+                )}
+
                 {activeTab === 'WIRES' && (
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
@@ -975,6 +1107,54 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                         <div className="mt-4"><label className="block text-xs font-bold text-gray-500 mb-1">メモ / 特記事項</label><textarea className="w-full border p-3 rounded-sm h-28 text-sm outline-none focus:border-gray-500 leading-relaxed shadow-sm bg-gray-50 whitespace-pre-wrap" value={editingItem.memo || editingItem.reason || ''} onChange={e => setEditingItem({...editingItem, memo: e.target.value, reason: e.target.value})} /></div>
                     </>
                 )}
+
+                {activeTab === 'CASTINGS' && (
+                  <>
+                    <div><label className="block text-xs font-bold text-gray-500 mb-1">品目名</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.name || ''} onChange={e => setEditingItem({...editingItem, name: e.target.value})} /></div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div><label className="block text-xs font-bold text-gray-500 mb-1">種別</label><select className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.type || 'BRASS'} onChange={e => setEditingItem({...editingItem, type: e.target.value})}><option value="BRASS">真鍮 (Brass)</option><option value="ZINC">亜鉛 (Zinc)</option><option value="LEAD">鉛 (Lead)</option></select></div>
+                        <div><label className="block text-xs font-bold text-gray-500 mb-1">歩留まり (%)</label><input type="number" step="0.1" className="w-full border p-2 rounded-sm font-bold text-blue-600 outline-none focus:border-blue-500" value={editingItem.ratio || ''} onChange={e => setEditingItem({...editingItem, ratio: e.target.value})} /></div>
+                    </div>
+                  </>
+                )}
+
+                {activeTab === 'CLIENTS' && (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div><label className="block text-xs font-bold text-gray-500 mb-1">業者名</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.name || ''} onChange={e => setEditingItem({...editingItem, name: e.target.value})} /></div>
+                        <div><label className="block text-xs font-bold text-gray-500 mb-1">ランク</label><select className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.rank || 'NORMAL'} onChange={e => setEditingItem({...editingItem, rank: e.target.value})}><option value="NORMAL">一般 (NORMAL)</option><option value="BRONZE">ブロンズ (BRONZE)</option><option value="SILVER">シルバー (SILVER)</option><option value="GOLD">ゴールド (GOLD)</option><option value="VIP">VIP</option></select></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div><label className="block text-xs font-bold text-gray-500 mb-1">電話番号</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.phone || ''} onChange={e => setEditingItem({...editingItem, phone: e.target.value})} /></div>
+                        <div><label className="block text-xs font-bold text-gray-500 mb-1">保有ポイント</label><input type="number" className="w-full border p-2 rounded-sm font-bold text-orange-600 outline-none focus:border-orange-500" value={editingItem.points || 0} onChange={e => setEditingItem({...editingItem, points: e.target.value})} /></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div><label className="block text-xs font-bold text-gray-500 mb-1">ログインID</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-gray-500 font-mono" value={editingItem.loginId || ''} onChange={e => setEditingItem({...editingItem, loginId: e.target.value})} /></div>
+                        <div><label className="block text-xs font-bold text-gray-500 mb-1">パスワード</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-gray-500 font-mono" value={editingItem.password || ''} onChange={e => setEditingItem({...editingItem, password: e.target.value})} /></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div><label className="block text-xs font-bold text-gray-500 mb-1">業種</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.industry || ''} onChange={e => setEditingItem({...editingItem, industry: e.target.value})} /></div>
+                        <div><label className="block text-xs font-bold text-gray-500 mb-1">所在地</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.address || ''} onChange={e => setEditingItem({...editingItem, address: e.target.value})} /></div>
+                    </div>
+                  </>
+                )}
+
+                {activeTab === 'STAFF' && (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div><label className="block text-xs font-bold text-gray-500 mb-1">スタッフ名</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.name || ''} onChange={e => setEditingItem({...editingItem, name: e.target.value})} /></div>
+                        <div><label className="block text-xs font-bold text-gray-500 mb-1">ステータス</label><select className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.status || 'ACTIVE'} onChange={e => setEditingItem({...editingItem, status: e.target.value})}><option value="ACTIVE">有効 (ACTIVE)</option><option value="INACTIVE">停止 (INACTIVE)</option></select></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div><label className="block text-xs font-bold text-gray-500 mb-1">権限 (Role)</label><select className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.role || 'FRONT'} onChange={e => setEditingItem({...editingItem, role: e.target.value})}><option value="FRONT">受付 (FRONT)</option><option value="INSPECTION">検収 (INSPECTION)</option><option value="PLANT">工場 (PLANT)</option><option value="MANAGER">工場長 (MANAGER)</option><option value="ALL">管理者 (ALL)</option></select></div>
+                        <div><label className="block text-xs font-bold text-gray-500 mb-1">時給/単価</label><input type="number" className="w-full border p-2 rounded-sm outline-none focus:border-gray-500" value={editingItem.rate || 0} onChange={e => setEditingItem({...editingItem, rate: e.target.value})} /></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div><label className="block text-xs font-bold text-gray-500 mb-1">ログインID</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-gray-500 font-mono" value={editingItem.loginId || ''} onChange={e => setEditingItem({...editingItem, loginId: e.target.value})} /></div>
+                        <div><label className="block text-xs font-bold text-gray-500 mb-1">パスワード</label><input type="text" className="w-full border p-2 rounded-sm outline-none focus:border-gray-500 font-mono" value={editingItem.password || ''} onChange={e => setEditingItem({...editingItem, password: e.target.value})} /></div>
+                    </div>
+                  </>
+                )}
             </div>
             
             <div className="p-5 border-t border-gray-200 flex justify-end gap-3 bg-gray-50">
@@ -986,7 +1166,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
           </div>
         </div>
       )}
-      {/* 他モーダル群は省略 */}
     </div>
   );
 };
