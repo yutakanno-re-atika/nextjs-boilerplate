@@ -25,8 +25,11 @@ export const AdminKanban = ({ localReservations = [], onUpdateStatus, onEditRese
       let items = [];
       try { 
           let temp = res.items;
-          if (typeof temp === 'string') temp = temp.replace(/""/g, '"');
-          if (typeof temp === 'string') temp = JSON.parse(temp);
+          if (typeof temp === 'string') {
+              temp = temp.replace(/""/g, '"');
+              temp = temp.replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/\t/g, "\\t");
+              temp = JSON.parse(temp);
+          }
           if (typeof temp === 'string') temp = JSON.parse(temp);
           if (Array.isArray(temp)) items = temp;
       } catch (e) {}
@@ -124,7 +127,6 @@ export const AdminKanban = ({ localReservations = [], onUpdateStatus, onEditRese
   const handleDrop = (e: React.DragEvent, status: string) => { e.preventDefault(); const id = e.dataTransfer.getData('resId'); if (id) onUpdateStatus(id, status); };
   const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); };
 
-  // ★ 部署フローの役割と説明を明確化
   const columns = [
     { 
       id: 'RESERVED', 
@@ -199,15 +201,19 @@ export const AdminKanban = ({ localReservations = [], onUpdateStatus, onEditRese
               <div className="flex-1 p-3 overflow-y-auto space-y-3">
                 {colData.map(res => {
                   let items = [];
-                  // ★ 二重エスケープなどのパースエラーを完全に防ぐ処理
+                  // ★ 二重エスケープや改行文字によるパースエラーを防ぐ堅牢な処理
                   try { 
                       let temp = res.items;
-                      if (typeof temp === 'string') temp = temp.replace(/""/g, '"');
-                      if (typeof temp === 'string') temp = JSON.parse(temp);
+                      if (typeof temp === 'string') {
+                          temp = temp.replace(/""/g, '"');
+                          // AIの理由などに含まれる改行をエスケープ
+                          temp = temp.replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/\t/g, "\\t");
+                          temp = JSON.parse(temp);
+                      }
                       if (typeof temp === 'string') temp = JSON.parse(temp);
                       if (Array.isArray(temp)) items = temp;
                   } catch(e) {
-                      console.error("Item parse failed for", res.id);
+                      console.error("Item parse failed for", res.id, e);
                   }
                   
                   const totalW = items.reduce((sum: number, i: any) => sum + Number(i.weight || 0), 0);
