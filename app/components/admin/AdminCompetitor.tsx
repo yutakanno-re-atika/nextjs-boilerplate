@@ -15,10 +15,10 @@ const Icons = {
   Trash: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
   Refresh: () => <svg className="w-4 h-4 animate-spin inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
   Save: () => <svg className="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>,
-  LightBulb: () => <svg className="w-4 h-4 inline-block text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>,
+  LightBulb: () => <svg className="w-5 h-5 inline-block text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>,
 };
 
-// ★ 過去推移を描画するミニグラフ（スパークライン）コンポーネント
+// スパークライン（ミニグラフ）コンポーネント
 const Sparkline = ({ data, trend }: { data: number[], trend: string }) => {
   if (!data || data.length < 2) return <div className="w-16 h-6"></div>;
   const min = Math.min(...data);
@@ -33,7 +33,7 @@ const Sparkline = ({ data, trend }: { data: number[], trend: string }) => {
     return `${x},${y}`;
   }).join(' ');
 
-  const color = trend === 'up' ? '#DC2626' : trend === 'down' ? '#2563EB' : '#9CA3AF'; // 赤, 青, グレー
+  const color = trend === 'up' ? '#DC2626' : trend === 'down' ? '#2563EB' : '#9CA3AF'; 
 
   return (
     <svg viewBox={`0 -2 ${width} ${height + 4}`} className="w-16 h-5 overflow-visible mt-1 opacity-80" title={`最近の推移: ${data.join(' → ')}`}>
@@ -65,7 +65,7 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
           { key: 'VVF', name: 'VVF (ネズミ線)', ratio: getWireRatio('VVF', 42) },
           { key: 'CV', name: 'CV線 (太線)', ratio: getWireRatio('CV', 65) },
       ].map(item => {
-          const pureValue = Math.floor(currentCopperPrice * (item.ratio / 100)); // ★小数点切り捨て修正
+          const pureValue = Math.floor(currentCopperPrice * (item.ratio / 100));
           const myPrice = Math.floor(pureValue * (currentMarginRate / 100)); 
           const myMargin = Math.floor(pureValue - myPrice); 
           return { ...item, pureValue, myPrice, myMargin };
@@ -91,12 +91,10 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
               else if (current[k] < prev[k]) trends[k] = 'down';
               else trends[k] = 'flat';
 
-              // チャート用の過去履歴（最大10件）
               const hist = tPrices.slice(0, 10).reverse().map(p => {
                   try { return JSON.parse(p.prices)[k] || null; } catch { return null; }
               }).filter(v => v !== null);
               
-              // 視覚的デモのため、データが少ない場合は少し揺らす
               if (hist.length < 2) {
                   const base = current[k] || 0;
                   history[k] = base > 0 ? [Math.floor(base*0.95), Math.floor(base*0.98), base] : [];
@@ -108,21 +106,43 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       });
   }, [data]);
 
-  const analyzeCompetitor = (comp: any, itemName: string) => {
-      const compPrice = comp.prices[itemName];
-      if (!compPrice) return null;
-      const myItem = myItems.find(i => i.name === itemName);
-      if (!myItem) return null;
+  // ★ 市場全体を俯瞰するAI分析ロジック
+  const marketAnalysis = useMemo(() => {
+      if (processedCompetitors.length === 0) return null;
 
-      const estimatedMargin = Math.floor(myItem.pureValue - compPrice);
+      const vvfItem = myItems.find(i => i.name === 'VVF (ネズミ線)');
+      if (!vvfItem) return null;
 
-      let strategyAlert = '';
-      if (estimatedMargin < 40) strategyAlert = `利益を削った赤字覚悟の集客モードです。`;
-      else if (estimatedMargin > 150) strategyAlert = `強気に利益を抜いています。当社が少し値上げすれば容易に顧客を奪えます。`;
-      else strategyAlert = `当社と同等の標準的なマージン設定です。`;
+      const vvfPrices = processedCompetitors.map(c => c.prices['VVF (ネズミ線)']).filter(p => p > 0);
 
-      return { compName: comp.name, itemName, compPrice, pureCopperValue: myItem.pureValue, estimatedMargin, strategyAlert, ratio: myItem.ratio };
-  };
+      const vvfMax = vvfPrices.length > 0 ? Math.max(...vvfPrices) : 0;
+      const vvfAvg = vvfPrices.length > 0 ? Math.floor(vvfPrices.reduce((a,b)=>a+b,0)/vvfPrices.length) : 0;
+
+      let vvfStatus = '';
+      if (vvfItem.myPrice >= vvfMax && vvfMax > 0) {
+          vvfStatus = `当社のVVF買取価格（¥${vvfItem.myPrice}）は、現在取得できている市場の中でトップクラスの高値をキープしています。`;
+      } else if (vvfItem.myPrice < vvfAvg && vvfAvg > 0) {
+          vvfStatus = `当社のVVF買取価格（¥${vvfItem.myPrice}）は市場平均（約¥${vvfAvg}）を下回っています。集荷量を重視する場合、ベース掛率の引き上げを検討してください。`;
+      } else if (vvfAvg > 0) {
+          vvfStatus = `当社のVVF買取価格は市場平均（約¥${vvfAvg}）と同等水準で推移しており、適正なバランスを保っています。`;
+      } else {
+          vvfStatus = `市場データが十分に取得できていません。`;
+      }
+
+      let marginStatus = '';
+      const avgMargin = Math.floor(vvfItem.pureValue - vvfAvg);
+      if (avgMargin < 50 && vvfAvg > 0) {
+          marginStatus = `市場全体で利益幅を極限まで削った集客競争が起きています（他社平均推定マージン: 約¥${avgMargin}/kg）。無理な価格追従は避け、利益率の高い別商材に注力する戦略も有効です。`;
+      } else if (avgMargin > 100 && vvfAvg > 0) {
+          marginStatus = `市場全体が利益を多めに確保している傾向があります。当社が少し掛率を上げるだけで、容易に他社から顧客を奪えるチャンスです。`;
+      } else if (vvfAvg > 0) {
+          marginStatus = `市場全体のマージン設定は安定しています。現在のベース掛率（${currentMarginRate}%）で十分に戦える市況です。`;
+      } else {
+          marginStatus = `マージンを推測するためのデータが不足しています。`;
+      }
+
+      return { vvfStatus, marginStatus };
+  }, [processedCompetitors, myItems, currentMarginRate]);
 
   const getDiffLabel = (my: number, comp: number) => {
       if (!comp) return <span className="text-gray-300 font-bold">-</span>;
@@ -187,7 +207,7 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
             <span className="w-1.5 h-6 bg-[#D32F2F]"></span>
             COMPETITOR RADAR
           </h2>
-          <p className="text-xs text-gray-500 mt-1 font-mono tracking-wider ml-3">競合相場スクレイピング / 自社価格コントロール</p>
+          <p className="text-xs text-gray-500 mt-1 font-mono tracking-wider ml-3">競合相場スクレイピング / AIマーケット分析</p>
         </div>
         <div className="flex bg-gray-100 p-1 rounded-md overflow-x-auto shadow-inner">
             <button onClick={() => setActiveTab('RADAR')} className={`px-4 py-2 rounded text-sm font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'RADAR' ? 'bg-white text-blue-700 shadow border border-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>
@@ -246,37 +266,26 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                   </div>
               </div>
 
-              {/* AI逆算インサイト (横スクロール対応) */}
+              {/* AI マーケット分析 */}
               <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5 shrink-0">
                   <h3 className="text-sm font-black flex items-center gap-2 text-gray-900 mb-4 tracking-widest border-b border-gray-100 pb-2">
-                      <span className="text-blue-600"><Icons.Brain /></span> リアルタイム逆算インサイト (AIスナイパー)
+                      <span className="text-blue-600"><Icons.Brain /></span> AI マーケット分析
                   </h3>
-                  <div className="flex overflow-x-auto gap-4 pb-2 snap-x snap-mandatory [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-track]:bg-gray-100">
-                      {processedCompetitors.map(comp => {
-                          const analysis = analyzeCompetitor(comp, 'VVF (ネズミ線)');
-                          if (!analysis) return null;
-                          return (
-                              <div key={comp.id} className="min-w-[320px] max-w-[350px] bg-gray-50 p-4 rounded-lg border border-gray-200 snap-start flex-shrink-0 relative overflow-hidden group hover:border-blue-300 transition-colors">
-                                  <div className="absolute top-0 right-0 p-3 opacity-[0.03] group-hover:opacity-10 transition-opacity transform scale-150 text-blue-900"><Icons.Radar /></div>
-                                  <p className="text-xs text-gray-600 font-bold mb-2 flex items-center gap-1 relative z-10">
-                                      <Icons.LightBulb /> {analysis.compName}のVVF（{analysis.compPrice}円）に対する逆算
-                                  </p>
-                                  <p className="text-xs leading-relaxed text-gray-700 relative z-10">
-                                      現在の銅建値 <span className="font-mono font-bold text-gray-900">¥{currentCopperPrice}</span> と当社のVVF歩留まり（<span className="font-mono">{analysis.ratio}%</span>）を基準にすると、VVF 1kgの純粋な銅価値は <span className="font-mono font-bold text-gray-900">¥{analysis.pureCopperValue}</span> です。<br/>
-                                      相手の加工賃・利益は「<span className={`font-bold font-mono px-1 rounded ${analysis.estimatedMargin < 50 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>推定 ¥{analysis.estimatedMargin} / kg</span>」です。
-                                  </p>
-                                  <div className="mt-3 bg-white p-2 rounded border border-gray-200 text-[10px] text-gray-800 font-bold shadow-sm relative z-10">
-                                      <span className="text-yellow-600 mr-1">【AIの結論】</span>{analysis.strategyAlert}
-                                  </div>
-                              </div>
-                          );
-                      })}
-                      {processedCompetitors.length === 0 && (
-                          <div className="w-full text-center py-6 text-gray-400 text-sm font-bold border-2 border-dashed border-gray-200 rounded-lg">
-                              監視ターゲットが登録されていません。<br/><span className="text-xs font-normal">「監視サイト登録」タブから、競合他社のURLを追加してください。</span>
-                          </div>
-                      )}
-                  </div>
+                  {marketAnalysis ? (
+                      <div className="bg-gray-50 p-5 rounded-lg border border-gray-200">
+                          <p className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-1.5">
+                              <Icons.LightBulb /> 市場全体のトレンド vs 当社の現在地
+                          </p>
+                          <ul className="space-y-3 text-xs leading-relaxed text-gray-700 list-disc list-inside ml-1">
+                              <li>{marketAnalysis.vvfStatus}</li>
+                              <li>{marketAnalysis.marginStatus}</li>
+                          </ul>
+                      </div>
+                  ) : (
+                      <div className="w-full text-center py-6 text-gray-400 text-sm font-bold border-2 border-dashed border-gray-200 rounded-lg">
+                          監視ターゲットが登録されていません。<br/><span className="text-xs font-normal">「監視サイト登録」タブから、競合他社のURLを追加してください。</span>
+                      </div>
+                  )}
               </div>
 
               {/* 比較ヒートマップ */}
@@ -364,7 +373,7 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                   <div className="flex justify-between items-end border-b border-gray-200 pb-4">
                       <div>
                           <h3 className="text-lg font-black text-gray-900">AI監視ターゲット設定</h3>
-                          <p className="text-xs text-gray-500 mt-1">ここで設定したURLを夜間にAIスナイパーが自動巡回し、価格を引っこ抜きます。</p>
+                          <p className="text-xs text-gray-500 mt-1">ここで設定したURLに夜間AIが自動巡回し、価格情報を抽出します。</p>
                       </div>
                   </div>
 
@@ -389,7 +398,7 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                           <input type="url" placeholder="https://..." className="w-full p-2.5 border border-gray-300 rounded text-sm outline-none font-mono focus:border-blue-500 bg-white" value={newTarget.url} onChange={e => setNewTarget({...newTarget, url: e.target.value})} />
                       </div>
                       <div className="mb-5">
-                          <label className="block text-xs font-bold text-gray-500 mb-1 flex items-center gap-1">AIへのヒント・特殊ルール <Icons.LightBulb /></label>
+                          <label className="block text-xs font-bold text-gray-500 mb-1 flex items-center gap-1">AIへのヒント・特殊ルール <Icons.Brain /></label>
                           <input type="text" placeholder="例: 価格は税抜表記。FケーブルはVVFとして扱う等" className="w-full p-2.5 border border-gray-300 rounded text-sm outline-none focus:border-blue-500 bg-white" value={newTarget.hint} onChange={e => setNewTarget({...newTarget, hint: e.target.value})} />
                       </div>
                       <div className="flex justify-end">
@@ -436,7 +445,6 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                           <p className="text-xs text-gray-500 mt-1">AIが他社サイトを巡回する際、「この単語は当社のこの品目のことだ」と翻訳するための辞書です。このデータ自体がSEOや営業の強力な資産になります。</p>
                       </div>
                   </div>
-
                   <div className="space-y-6">
                       <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
                           <div className="bg-gray-50 p-3.5 border-b border-gray-200 flex justify-between items-center">
