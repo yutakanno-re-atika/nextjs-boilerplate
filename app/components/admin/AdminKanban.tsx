@@ -19,28 +19,22 @@ const formatTime = (timeStr: string) => {
   return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 };
 
-// ★ どんなに汚いJSONでも確実にパースする最強の解読関数
-const parseItemsData = (rawItems: any) => {
+// ★ あらゆる汚れ・改行を乗り越える最強のJSONパース関数
+export const parseItemsData = (rawItems: any) => {
     if (!rawItems) return [];
     if (Array.isArray(rawItems)) return rawItems;
-    let temp = rawItems;
     try {
-        if (typeof temp === 'string') {
-            if (temp.startsWith('"') && temp.endsWith('"') && temp.includes('""')) {
-                temp = temp.substring(1, temp.length - 1).replace(/""/g, '"');
-            }
-            temp = temp.replace(/[\n\r\t]/g, (match) => {
-                if (match === '\n') return '\\n';
-                if (match === '\r') return '\\r';
-                if (match === '\t') return '\\t';
-                return match;
-            });
-            let parsed = JSON.parse(temp);
-            if (typeof parsed === 'string') parsed = JSON.parse(parsed);
-            if (Array.isArray(parsed)) return parsed;
-        }
-    } catch(e) {
-        console.error("JSON parse error:", e);
+        let temp = String(rawItems);
+        if (temp.startsWith('"') && temp.endsWith('"')) temp = temp.slice(1, -1);
+        temp = temp.replace(/""/g, '"');
+        temp = temp.replace(/\\n/g, "\\n").replace(/\\r/g, "\\r").replace(/\\t/g, "\\t");
+        temp = temp.replace(/\n/g, "\\n").replace(/\r/g, "");
+        
+        let parsed = JSON.parse(temp);
+        if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+        if (Array.isArray(parsed)) return parsed;
+    } catch (e) {
+        console.error("JSON parse failed. Raw data:", rawItems);
     }
     return [];
 };
@@ -215,7 +209,6 @@ export const AdminKanban = ({ localReservations = [], onUpdateStatus, onEditRese
               
               <div className="flex-1 p-3 overflow-y-auto space-y-3">
                 {colData.map(res => {
-                  // ★ 改良版パース関数を使用
                   const items = parseItemsData(res.items);
                   const totalW = items.reduce((sum: number, i: any) => sum + Number(i.weight || 0), 0);
                   const hasTin = items.some((i: any) => i.material === '錫メッキ' || (i.product || i.name || '').includes('錫'));
