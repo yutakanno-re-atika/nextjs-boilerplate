@@ -154,7 +154,12 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
       handleNavigate(target);
   };
 
-  const handlePosSuccess = () => { setEditingResId(null); handleNavigate('OPERATIONS'); window.location.reload(); };
+const handlePosSuccess = () => { 
+      setEditingResId(null); 
+      handleNavigate('OPERATIONS'); 
+      // 画面遷移（ハッシュ変更）が終わってから確実にリロードして最新データを引く
+      setTimeout(() => window.location.reload(), 100); 
+  };
 
   const handleUpdateStatus = async (id: string, status: string) => {
       setLocalReservations(prev => prev.map(r => r.id === id ? { ...r, status } : r));
