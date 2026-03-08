@@ -19,13 +19,21 @@ const Icons = {
   Filter: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>,
 };
 
+// スパークライン（ミニグラフ）コンポーネント
 const Sparkline = ({ data, trend }: { data: number[], trend: string }) => {
   if (!data || data.length < 2) return <div className="w-12 h-5"></div>;
   const min = Math.min(...data);
   const max = Math.max(...data);
   const range = max - min || 1;
-  const width = 48; const height = 16;
-  const points = data.map((val, i) => `${(i / (data.length - 1)) * width},${height - ((val - min) / range) * height}`).join(' ');
+  const width = 48;
+  const height = 16;
+  
+  const points = data.map((val, i) => {
+    const x = (i / (data.length - 1)) * width;
+    const y = height - ((val - min) / range) * height;
+    return `${x},${y}`;
+  }).join(' ');
+
   const color = trend === 'up' ? '#DC2626' : trend === 'down' ? '#2563EB' : '#9CA3AF'; 
 
   return (
@@ -38,12 +46,13 @@ const Sparkline = ({ data, trend }: { data: number[], trend: string }) => {
 export const AdminCompetitor = ({ data }: { data: any }) => {
   const [activeTab, setActiveTab] = useState<'RADAR' | 'TARGETS' | 'DICTIONARY'>('RADAR');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [scrapeProgress, setScrapeProgress] = useState({ current: 0, total: 0, targetName: '' });
 
   const savedMarginRate = Number(data?.config?.target_margin_rate) || 85;
   const [currentMarginRate, setCurrentMarginRate] = useState(savedMarginRate);
   const [newTarget, setNewTarget] = useState({ name: '', type: '同業(競合)', url: '', hint: '' });
 
-  // ★ レーダー上で表示したい「標準カテゴリ」のマスターリスト
+  // レーダー上で表示したい「標準カテゴリ」のマスターリスト
   const ALL_RADAR_ITEMS = [
       { key: 'ピカ銅', type: 'copper' },
       { key: '込銅', type: 'copper' },
@@ -54,32 +63,28 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       { key: '込真鍮', type: 'brass' }
   ];
 
-  // 表示する項目をローカルステートで管理（初期値は全てON）
   const [visibleItems, setVisibleItems] = useState<string[]>(ALL_RADAR_ITEMS.map(i => i.key));
 
   const currentCopperPrice = data?.market?.copper?.price || 1450;
-  const currentBrassPrice = data?.market?.brass?.price || 980; // 黄銅系のベース
+  const currentBrassPrice = data?.market?.brass?.price || 980; 
   
   const getWireRatio = (keyword: string, fallback: number) => {
       const found = (data?.wires || []).find((w:any) => w.name.includes(keyword));
       return found ? Number(found.ratio) : fallback;
   };
 
-  // ★ 自社の表示価格（標準カテゴリに対してマッピングして計算）
   const myItems = useMemo(() => {
       return ALL_RADAR_ITEMS.map(item => {
-          let ratio = 0;
-          let basePrice = 0;
-
+          let ratio = 0; let basePrice = 0;
           if (item.key === 'ピカ銅') { ratio = getWireRatio('ピカ', 98); basePrice = currentCopperPrice; }
           else if (item.key === '込銅') { ratio = getWireRatio('込銅', 93); basePrice = currentCopperPrice; }
           else if (item.key === 'VVF') { ratio = getWireRatio('VVF', 42); basePrice = currentCopperPrice; }
           else if (item.key === 'CV線') { ratio = getWireRatio('CV', 65); basePrice = currentCopperPrice; }
           else if (item.key === '雑線') { ratio = getWireRatio('雑線', 40); basePrice = currentCopperPrice; }
-          else if (item.key === '砲金') { ratio = 90; basePrice = currentBrassPrice; } // 砲金はとりあえず黄銅ベース+αとするか固定
+          else if (item.key === '砲金') { ratio = 90; basePrice = currentBrassPrice; } 
           else if (item.key === '込真鍮') { ratio = 95; basePrice = currentBrassPrice; } 
 
-          const pureValue = Math.floor(basePrice * (ratio / 100));
+          const pureValue = Math.floor(basePrice * (ratio / 100)); // ★小数点切り捨て
           const myPrice = Math.floor(pureValue * (currentMarginRate / 100)); 
           const myMargin = Math.floor(pureValue - myPrice); 
           
@@ -87,7 +92,6 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       });
   }, [data, currentCopperPrice, currentBrassPrice, currentMarginRate]);
 
-  // ★ 競合データにAIが抽出した全品目データを取り込む
   const processedCompetitors = useMemo(() => {
       const targets = data?.competitorTargets || [];
       const pricesLog = [...(data?.competitorPrices || [])].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -170,7 +174,7 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       setIsProcessing(true);
       try {
           await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'ADD_COMPETITOR_TARGET', data: newTarget }) });
-          setNewTarget({ name: '', type: '同業(競合)', url: '', hint: '' }); alert('監視ターゲットを追加しました！画面を更新します。'); window.location.reload();
+          window.location.reload();
       } catch(e) { alert('エラーが発生しました'); setIsProcessing(false); }
   };
 
@@ -183,14 +187,35 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       } catch(e) { alert('エラーが発生しました'); setIsProcessing(false); }
   };
 
+  // ★ タイムアウトを回避するため、フロントから1社ずつ順番に処理を実行する
   const handleRunScrape = async () => {
-      if (!confirm('全URLをAIが巡回して価格を抽出します。\n※数分かかる場合がありますが実行しますか？')) return;
+      if (processedCompetitors.length === 0) return;
+      if (!confirm(`登録されているすべてのURLをAIが順番に巡回して価格を抽出します。\n（1社につき数秒かかります）\n実行しますか？`)) return;
+      
       setIsProcessing(true);
-      try {
-          const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'RUN_COMPETITOR_SCRAPE' }) });
-          const json = await res.json();
-          if (json.status === 'success') { alert(json.message); window.location.reload(); } else { alert('エラー: ' + json.message); setIsProcessing(false); }
-      } catch(e) { alert('通信エラー'); setIsProcessing(false); }
+      let successCount = 0;
+      
+      for (let i = 0; i < processedCompetitors.length; i++) {
+          const target = processedCompetitors[i];
+          setScrapeProgress({ current: i + 1, total: processedCompetitors.length, targetName: target.name });
+          
+          try {
+              const res = await fetch('/api/gas', { 
+                  method: 'POST', 
+                  headers: { 'Content-Type': 'application/json' }, 
+                  body: JSON.stringify({ action: 'RUN_COMPETITOR_SCRAPE', targetId: target.id }) 
+              });
+              const json = await res.json();
+              if (json.status === 'success') successCount++;
+          } catch(e) {
+              console.error(target.name + ' の取得エラー');
+          }
+      }
+      
+      alert(`${successCount}社の最新価格データを取得しました！画面を更新します。`);
+      setIsProcessing(false);
+      setScrapeProgress({ current: 0, total: 0, targetName: '' });
+      window.location.reload();
   };
 
   const toggleVisibleItem = (key: string) => {
@@ -208,13 +233,13 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
           <p className="text-sm text-gray-500 mt-1 font-mono tracking-wider ml-3">競合相場スクレイピング / AIマーケット分析</p>
         </div>
         <div className="flex bg-gray-100 p-1 rounded-md overflow-x-auto shadow-inner">
-            <button onClick={() => setActiveTab('RADAR')} className={`px-4 py-2 rounded text-sm font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'RADAR' ? 'bg-white text-blue-700 shadow border border-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>
+            <button onClick={() => setActiveTab('RADAR')} className={`px-3 py-1.5 rounded-sm text-sm font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'RADAR' ? 'bg-white text-blue-700 shadow-sm border border-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>
               <Icons.Radar /> ヒートマップ
             </button>
-            <button onClick={() => setActiveTab('TARGETS')} className={`px-4 py-2 rounded text-sm font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'TARGETS' ? 'bg-white text-blue-700 shadow border border-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>
+            <button onClick={() => setActiveTab('TARGETS')} className={`px-3 py-1.5 rounded-sm text-sm font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'TARGETS' ? 'bg-white text-blue-700 shadow-sm border border-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>
               <Icons.Globe /> 監視サイト登録
             </button>
-            <button onClick={() => setActiveTab('DICTIONARY')} className={`px-4 py-2 rounded text-sm font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'DICTIONARY' ? 'bg-white text-blue-700 shadow border border-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>
+            <button onClick={() => setActiveTab('DICTIONARY')} className={`px-3 py-1.5 rounded-sm text-sm font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'DICTIONARY' ? 'bg-white text-blue-700 shadow-sm border border-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>
               <Icons.Book /> 呼称辞書
             </button>
         </div>
@@ -223,10 +248,9 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       {activeTab === 'RADAR' && (
           <div className="flex-1 flex flex-col gap-4 overflow-hidden">
               
-              {/* 上部: 2カラム (コントロールパネル & AI分析) */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 shrink-0">
                   <div className="bg-white border border-blue-200 rounded-lg shadow-sm p-5 relative flex flex-col justify-between">
-                      <div className="absolute top-0 right-0 bg-blue-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg tracking-widest">PRICING CONTROL</div>
+                      <div className="absolute top-0 right-0 bg-blue-600 text-white text-[9px] font-bold px-3 py-1 rounded-bl-lg tracking-widest">PRICING CONTROL</div>
                       <div>
                           <label className="font-bold text-gray-900 text-base flex items-center gap-1.5">
                               ベース買取掛率（％）
@@ -274,15 +298,13 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                   </div>
               </div>
 
-              {/* 下部: 比較ヒートマップ */}
               <div className="bg-white border border-gray-200 rounded-lg shadow-sm flex-1 flex flex-col overflow-hidden">
-                  <div className="p-4 border-b border-gray-200 bg-gray-50 flex flex-col md:flex-row justify-between md:items-center shrink-0 gap-3">
+                  <div className="p-4 border-b border-gray-200 bg-gray-50 flex flex-col md:flex-row justify-between md:items-center shrink-0 gap-3 relative">
                       <div className="flex items-center gap-3">
                           <h3 className="font-bold text-gray-900 text-base">自社 vs 競合 価格差額ヒートマップ</h3>
                           <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-bold">銅建値: ¥{currentCopperPrice}</span>
                       </div>
                       
-                      {/* 表示項目のカスタマイズUI */}
                       <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-xs font-bold text-gray-500 flex items-center gap-1"><Icons.Filter /> 表示:</span>
                           {ALL_RADAR_ITEMS.map(item => (
@@ -292,13 +314,23 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                               </label>
                           ))}
                           <button onClick={handleRunScrape} disabled={isProcessing || processedCompetitors.length === 0} className="ml-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded text-sm font-bold flex items-center gap-1.5 shadow-sm disabled:opacity-50 transition active:scale-95">
-                              {isProcessing ? <Icons.Refresh /> : <Icons.Sparkles />} 手動巡回
+                              {isProcessing ? <Icons.Refresh /> : <Icons.Sparkles />} AI手動巡回
                           </button>
                       </div>
+
+                      {/* ★ プログレス表示（AI巡回中） */}
+                      {isProcessing && scrapeProgress.total > 0 && (
+                          <div className="absolute inset-0 bg-white/90 backdrop-blur-sm z-50 flex items-center justify-center gap-3 animate-in fade-in">
+                              <span className="text-blue-600"><Icons.Refresh /></span>
+                              <span className="font-bold text-sm text-gray-800">
+                                  AI巡回中 ({scrapeProgress.current}/{scrapeProgress.total}) : <span className="text-blue-600">{scrapeProgress.targetName}</span> を分析しています...
+                              </span>
+                          </div>
+                      )}
                   </div>
 
                   <div className="overflow-x-auto overflow-y-auto flex-1 p-0">
-                      <table className="w-full text-left border-collapse text-sm whitespace-nowrap min-w-[800px]">
+                      <table className="w-full text-left border-collapse text-base whitespace-nowrap min-w-[800px]">
                           <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-20">
                               <tr>
                                   <th className="p-3 text-xs font-bold text-gray-500 uppercase tracking-widest bg-gray-100 border-r border-gray-200 sticky left-0 z-30 shadow-[1px_0_0_rgba(0,0,0,0.1)]">品目 / 歩留</th>
@@ -339,7 +371,7 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                                               <td key={comp.id} className="p-3 bg-white border-r border-gray-100">
                                                   <div className="flex flex-col">
                                                       <div className="flex items-center justify-between">
-                                                          <div className="flex items-center gap-1.5">
+                                                          <div className="flex items-center gap-1">
                                                               <span className={`font-mono text-xl font-bold ${compPrice ? 'text-gray-800' : 'text-gray-300'}`}>
                                                                   {compPrice ? `¥${compPrice.toLocaleString()}` : '---'}
                                                               </span>
@@ -368,12 +400,11 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
           </div>
       )}
 
-      {/* TARGETS タブと DICTIONARY タブの表示は変更なしのため省略せずに残します */}
       {activeTab === 'TARGETS' && (
           <div className="flex-1 bg-white border border-gray-200 rounded-lg shadow-sm p-4 md:p-6 overflow-y-auto animate-in fade-in">
               <div className="max-w-4xl mx-auto space-y-6">
                   <div className="bg-gray-50 border border-gray-200 p-5 rounded-lg shadow-sm">
-                      <h4 className="font-bold text-base mb-4 flex items-center gap-2"><Icons.Plus /> 新規ターゲットの追加</h4>
+                      <h4 className="font-bold text-base mb-4 flex items-center gap-2"><Icons.Plus /> 新規ターゲット追加</h4>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                           <input type="text" placeholder="企業名 (例: 札幌 A社)" className="w-full p-3 border border-gray-300 rounded-md text-sm outline-none focus:border-blue-500 bg-white" value={newTarget.name} onChange={e => setNewTarget({...newTarget, name: e.target.value})} />
                           <select className="w-full p-3 border border-gray-300 rounded-md text-sm outline-none focus:border-blue-500 bg-white" value={newTarget.type} onChange={e => setNewTarget({...newTarget, type: e.target.value})}>
@@ -397,11 +428,12 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                           <div key={target.id} className="border border-gray-200 rounded-lg p-4 flex flex-col md:flex-row md:items-center gap-4 bg-white shadow-sm hover:border-blue-300 transition-colors group">
                               <div className="flex-1">
                                   <h4 className="font-bold text-gray-900 text-lg">{target.name} <span className="text-[10px] bg-gray-100 px-2 py-0.5 rounded-sm text-gray-500 font-normal ml-2 border border-gray-200">{target.type}</span></h4>
-                                  <a href={target.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 font-mono mt-1 hover:underline truncate block max-w-[300px] md:max-w-md">{target.url}</a>
+                                  <a href={target.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 font-mono mt-1.5 hover:underline truncate block max-w-[300px] md:max-w-md">{target.url}</a>
+                                  {target.hint && <p className="text-[10px] text-gray-500 mt-1.5 bg-gray-50 p-1.5 rounded inline-block border border-gray-100">💡 ヒント: {target.hint}</p>}
                               </div>
                               <div className="flex items-center gap-6 shrink-0 border-t md:border-t-0 md:border-l border-gray-100 pt-3 md:pt-0 md:pl-6">
                                   <div className="text-right">
-                                      <p className="text-[10px] text-gray-400 font-bold tracking-widest">最終AIクロール</p>
+                                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">最終AIクロール</p>
                                       <p className="text-xs font-mono text-gray-900 mt-1">
                                           {target.lastCrawled || '未実行'} 
                                           {target.status === '成功' && <span className="text-green-600 font-bold ml-2 bg-green-50 px-2 py-0.5 rounded-sm">● 成功</span>}
@@ -427,17 +459,18 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                       </div>
                   </div>
                   <div className="space-y-4">
-                      <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-                          <div className="bg-gray-50 p-3 border-b border-gray-200">
-                              <h4 className="font-bold text-gray-900 text-sm flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-orange-500"></span> ピカ銅</h4>
+                      {ALL_RADAR_ITEMS.map(item => (
+                          <div key={item.key} className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                              <div className="bg-gray-50 p-3 border-b border-gray-200">
+                                  <h4 className="font-bold text-gray-900 text-sm flex items-center gap-1.5">
+                                      <span className={`w-2.5 h-2.5 rounded-full ${item.type === 'copper' ? 'bg-orange-500' : 'bg-yellow-500'}`}></span> {item.key}
+                                  </h4>
+                              </div>
+                              <div className="p-4 flex flex-wrap gap-2.5 bg-white">
+                                  <span className="bg-blue-50 border border-blue-200 text-blue-700 px-3 py-1.5 rounded-sm text-xs font-bold flex items-center gap-1"><Icons.Sparkles /> AIが動的に解釈・抽出します</span>
+                              </div>
                           </div>
-                          <div className="p-4 flex flex-wrap gap-2.5 bg-white">
-                              <span className="bg-gray-50 border border-gray-200 text-gray-600 px-3 py-1.5 rounded-sm text-xs font-bold">1号銅線</span>
-                              <span className="bg-gray-50 border border-gray-200 text-gray-600 px-3 py-1.5 rounded-sm text-xs font-bold">光線</span>
-                              <span className="bg-blue-50 border border-blue-200 text-blue-700 px-3 py-1.5 rounded-sm text-xs font-bold flex items-center gap-1"><Icons.Sparkles /> 特号銅 (自動学習)</span>
-                          </div>
-                      </div>
-                      {/* VVFやその他の辞書データ... */}
+                      ))}
                   </div>
               </div>
           </div>
