@@ -1,21 +1,20 @@
 // app/components/admin/AdminCompetitor.tsx
 // @ts-nocheck
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 
 const Icons = {
   Radar: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>,
   Sparkles: () => <svg className="w-4 h-4 inline-block" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 8.134a1 1 0 010 1.932l-3.354.933-1.179 4.456a1 1 0 01-1.934 0l-1.179-4.456-3.354-.933a1 1 0 010-1.932l3.354-.933 1.179-4.456A1 1 0 0112 2z" clipRule="evenodd" /></svg>,
   TrendingUp: () => <svg className="w-3 h-3 inline-block text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>,
   TrendingDown: () => <svg className="w-3 h-3 inline-block text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>,
-  Minus: () => <svg className="w-3 h-3 inline-block text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M20 12H4" /></svg>,
+  Minus: () => <svg className="w-4 h-4 inline-block text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M20 12H4" /></svg>,
   Brain: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>,
   Globe: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>,
   Plus: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>,
-  Book: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>,
   Trash: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
   Refresh: () => <svg className="w-4 h-4 animate-spin inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
   Save: () => <svg className="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>,
-  LightBulb: () => <svg className="w-5 h-5 inline-block text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>,
+  LightBulb: () => <svg className="w-4 h-4 inline-block text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>,
   Filter: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>,
   Info: () => <svg className="w-3 h-3 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
 };
@@ -37,15 +36,19 @@ const Sparkline = ({ data, trend }: { data: number[], trend: string }) => {
 };
 
 export const AdminCompetitor = ({ data }: { data: any }) => {
-  const [activeTab, setActiveTab] = useState<'RADAR' | 'TARGETS' | 'DICTIONARY'>('RADAR');
+  const [activeTab, setActiveTab] = useState<'RADAR' | 'TARGETS'>('RADAR');
   const [isProcessing, setIsProcessing] = useState(false);
   const [scrapeProgress, setScrapeProgress] = useState({ current: 0, total: 0, targetName: '' });
 
   const savedMarginRate = Number(data?.config?.target_margin_rate) || 85;
   const [currentMarginRate, setCurrentMarginRate] = useState(savedMarginRate);
+
+  // ★ 追加：グローバルプロンプトのステート
+  const savedGlobalPrompt = data?.config?.global_scrape_prompt || "";
+  const [globalPrompt, setGlobalPrompt] = useState(savedGlobalPrompt);
+
   const [newTarget, setNewTarget] = useState({ name: '', type: '同業(競合)', url: '', hint: '' });
 
-  // ★ ボス指定の当社の【確定12品目】
   const ALL_RADAR_ITEMS = [
       { key: '光線', type: 'copper', searchKey: 'ピカ', defaultRatio: 98 },
       { key: '下銅', type: 'copper', searchKey: '込銅', defaultRatio: 93 },
@@ -61,7 +64,6 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       { key: '雑線（ハーネスや家電線など）', type: 'copper', searchKey: '雑線', defaultRatio: 35 }
   ];
 
-  // デフォルトは主要なものだけONにし、見やすさを確保（設定で変更可能）
   const initialVisible = ['光線', '下銅', '砲金', '込真鍮', '被覆線（80%）', 'ネズミ線（VA・VVFなど）', '雑線（ハーネスや家電線など）'];
   const [visibleItems, setVisibleItems] = useState<string[]>(initialVisible);
 
@@ -86,7 +88,6 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       });
   }, [data, currentCopperPrice, currentBrassPrice, currentMarginRate]);
 
-  // ★ 新フォーマット（pricesとevidenceの分離）に対応した競合データパース
   const processedCompetitors = useMemo(() => {
       const targets = data?.competitorTargets || [];
       const pricesLog = [...(data?.competitorPrices || [])].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -98,7 +99,6 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
           try { currentObj = tPrices[0] ? JSON.parse(tPrices[0].prices) : {}; } catch(e){}
           try { prevObj = tPrices[1] ? JSON.parse(tPrices[1].prices) : {}; } catch(e){}
           
-          // 新フォーマット { prices: {...}, evidence: {...} } と旧フォーマットの両方に対応
           const currentPrices = currentObj.prices || currentObj;
           const currentEvidence = currentObj.evidence || {};
           const prevPrices = prevObj.prices || prevObj;
@@ -173,6 +173,20 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       } catch(e) { alert("設定の保存に失敗しました。"); setIsProcessing(false); }
   };
 
+  // ★ 全体プロンプトを保存する関数
+  const handleSaveGlobalPrompt = async () => {
+      setIsProcessing(true);
+      try {
+          await fetch('/api/gas', { 
+              method: 'POST', headers: { 'Content-Type': 'application/json' }, 
+              body: JSON.stringify({ action: 'UPDATE_CONFIG', key: 'global_scrape_prompt', value: globalPrompt }) 
+          });
+          localStorage.removeItem('factoryOS_masterData'); 
+          alert('全体共通ルール（プロンプト）を保存しました。次回のAI巡回から全企業に適用されます。');
+          setIsProcessing(false);
+      } catch(e) { alert("エラーが発生しました。"); setIsProcessing(false); }
+  };
+
   const handleAddTarget = async () => {
       if (!newTarget.name || !newTarget.url) return alert('企業名とURLは必須です');
       setIsProcessing(true);
@@ -235,10 +249,7 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
               <Icons.Radar /> ヒートマップ
             </button>
             <button onClick={() => setActiveTab('TARGETS')} className={`px-4 py-2 rounded text-sm font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'TARGETS' ? 'bg-white text-blue-700 shadow-sm border border-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>
-              <Icons.Globe /> 監視サイト登録
-            </button>
-            <button onClick={() => setActiveTab('DICTIONARY')} className={`px-4 py-2 rounded text-sm font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'DICTIONARY' ? 'bg-white text-blue-700 shadow-sm border border-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>
-              <Icons.Book /> 呼称辞書
+              <Icons.Globe /> AI巡回設定 (ターゲット & 全体指示)
             </button>
         </div>
       </header>
@@ -363,7 +374,7 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
 
                                       {processedCompetitors.map(comp => {
                                           const compPrice = comp.prices[item.name];
-                                          const compEvidence = comp.evidence[item.name]; // ★ AIがどの文字から引っ張ったか
+                                          const compEvidence = comp.evidence[item.name];
                                           const trend = comp.trends[item.name];
                                           const historyData = comp.history[item.name] || [];
                                           
@@ -385,7 +396,6 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                                                           </div>
                                                       </div>
                                                       
-                                                      {/* ★ エビデンス（証拠）の表示 */}
                                                       {compEvidence && (
                                                           <div className="mt-2 pt-2 border-t border-dashed border-gray-200">
                                                               <p className="text-[10px] text-gray-500 leading-tight flex items-start gap-1">
@@ -415,15 +425,34 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       {activeTab === 'TARGETS' && (
           <div className="flex-1 bg-white border border-gray-200 rounded-lg shadow-sm p-4 md:p-6 overflow-y-auto animate-in fade-in">
               <div className="max-w-4xl mx-auto space-y-6">
-                  <div className="flex justify-between items-end border-b border-gray-200 pb-4">
-                      <div>
-                          <h3 className="text-lg font-black text-gray-900">AI監視ターゲット設定</h3>
-                          <p className="text-xs text-gray-500 mt-1">ここで設定したURLを夜間にAIスナイパーが自動巡回し、学習しながら価格を抽出します。</p>
+                  
+                  {/* ★ AI全体プロンプト（グローバルルール）設定エリア */}
+                  <div className="bg-blue-50/50 border border-blue-200 p-5 rounded-lg shadow-sm relative overflow-hidden">
+                      <div className="absolute top-0 right-0 bg-blue-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg tracking-widest">GLOBAL AI PROMPT</div>
+                      <h4 className="font-bold text-base text-blue-900 mb-2 flex items-center gap-2"><Icons.Brain /> 全体共通ルール（ボスからの特別指示）</h4>
+                      <p className="text-xs text-gray-600 mb-3 leading-relaxed">
+                          すべてのターゲット企業を巡回する際、AIが<span className="font-bold text-red-600">最優先で守るべき絶対ルール</span>を設定できます。<br/>
+                          （例: 「価格は税込で計算して」「建値ベースという表記があれば1450を足して」など）
+                      </p>
+                      <textarea 
+                          className="w-full p-3 border border-blue-200 rounded-md text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white min-h-[80px]" 
+                          placeholder="例: 価格は必ず税込で取得すること。"
+                          value={globalPrompt} 
+                          onChange={(e) => setGlobalPrompt(e.target.value)}
+                      />
+                      <div className="flex justify-end mt-3">
+                          <button 
+                              onClick={handleSaveGlobalPrompt} 
+                              disabled={isProcessing || globalPrompt === savedGlobalPrompt} 
+                              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md text-sm font-bold shadow-sm transition disabled:opacity-50"
+                          >
+                              {isProcessing ? '保存中...' : 'ルールを保存'}
+                          </button>
                       </div>
                   </div>
 
-                  <div className="bg-gray-50 border border-gray-200 p-5 rounded-lg shadow-sm">
-                      <h4 className="font-bold text-base mb-4 flex items-center gap-2"><Icons.Plus /> 新規ターゲットの追加</h4>
+                  <div className="bg-gray-50 border border-gray-200 p-5 rounded-lg shadow-sm mt-8">
+                      <h4 className="font-bold text-base mb-4 flex items-center gap-2"><Icons.Plus /> 個別ターゲットの追加</h4>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                           <input type="text" placeholder="企業名 (例: 札幌 A社)" className="w-full p-3 border border-gray-300 rounded-md text-sm outline-none focus:border-blue-500 bg-white" value={newTarget.name} onChange={e => setNewTarget({...newTarget, name: e.target.value})} />
                           <select className="w-full p-3 border border-gray-300 rounded-md text-sm outline-none focus:border-blue-500 bg-white" value={newTarget.type} onChange={e => setNewTarget({...newTarget, type: e.target.value})}>
@@ -434,7 +463,7 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                           <input type="url" placeholder="トップページのURL" className="w-full p-3 border border-gray-300 rounded-md text-sm outline-none font-mono focus:border-blue-500 bg-white" value={newTarget.url} onChange={e => setNewTarget({...newTarget, url: e.target.value})} />
                       </div>
                       <div className="flex flex-col md:flex-row gap-4">
-                          <input type="text" placeholder="AIへの初回ヒント (例: FケーブルはVVF。価格は税抜等。以後はAIが自己更新します)" className="w-full p-3 border border-gray-300 rounded-md text-sm outline-none focus:border-blue-500 bg-white flex-1" value={newTarget.hint} onChange={e => setNewTarget({...newTarget, hint: e.target.value})} />
+                          <input type="text" placeholder="AIへの初回ヒント (例: FケーブルはVVF。以後はAIが自己更新します)" className="w-full p-3 border border-gray-300 rounded-md text-sm outline-none focus:border-blue-500 bg-white flex-1" value={newTarget.hint} onChange={e => setNewTarget({...newTarget, hint: e.target.value})} />
                           <button onClick={handleAddTarget} disabled={isProcessing || !newTarget.name || !newTarget.url} className="bg-gray-900 hover:bg-gray-800 text-white px-8 py-3 rounded-md text-sm font-bold shadow-md transition disabled:opacity-50 whitespace-nowrap">
                               {isProcessing ? '処理中...' : '登録する'}
                           </button>
@@ -452,7 +481,6 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                                   </div>
                                   <a href={target.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 font-mono mb-3 hover:underline truncate block max-w-[300px] md:max-w-md">{target.url}</a>
                                   
-                                  {/* ★ AIが自己学習して書き換えたヒントの表示 */}
                                   <div className="bg-blue-50/50 border border-blue-100 p-2.5 rounded-md">
                                       <p className="text-[10px] font-bold text-blue-800 mb-1 flex items-center gap-1"><Icons.Sparkles /> AIが生成した抽出ルール (次回以降適用)</p>
                                       <p className="text-xs text-gray-700 leading-relaxed">{target.hint || 'まだルールは生成されていません。巡回を実行してください。'}</p>
@@ -474,16 +502,6 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                           </div>
                       ))}
                   </div>
-              </div>
-          </div>
-      )}
-
-      {activeTab === 'DICTIONARY' && (
-          <div className="flex-1 bg-white border border-gray-200 rounded-lg shadow-sm p-6 overflow-y-auto animate-in fade-in">
-              <div className="max-w-4xl mx-auto text-center py-20">
-                  <Icons.Book />
-                  <h3 className="text-lg font-black text-gray-900 mt-4">辞書機能は「ターゲット設定」のAI自己学習に統合されました</h3>
-                  <p className="text-sm text-gray-500 mt-2">各ターゲットの「AI抽出ルール」を直接確認・編集することで、より高度な抽出が可能になります。</p>
               </div>
           </div>
       )}
