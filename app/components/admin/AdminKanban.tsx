@@ -11,7 +11,8 @@ const Icons = {
   Inspection: () => <svg className="w-4 h-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   Plant: () => <svg className="w-4 h-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>,
   Check: () => <svg className="w-4 h-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>,
-  Database: () => <svg className="w-3 h-3 inline-block mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" /></svg>
+  Database: () => <svg className="w-3 h-3 inline-block mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" /></svg>,
+  RefreshSync: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
 };
 
 const formatTime = (timeStr: string) => {
@@ -20,7 +21,6 @@ const formatTime = (timeStr: string) => {
   return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 };
 
-// ★ 修正版：最強のJSONパース関数（改行コードで破壊されないよう保護）
 export const parseItemsData = (rawItems: any) => {
     if (!rawItems) return [];
     if (Array.isArray(rawItems)) return rawItems;
@@ -38,7 +38,6 @@ export const parseItemsData = (rawItems: any) => {
                 temp = temp.slice(1, -1);
             }
             temp = temp.replace(/""/g, '"');
-            // ★ AIの出力する改行コードをスペースに置換してJSONの構造破壊を防ぐ
             temp = temp.replace(/\n/g, " ").replace(/\r/g, "");
             let parsed = JSON.parse(temp);
             if (typeof parsed === 'string') parsed = JSON.parse(parsed);
@@ -52,19 +51,47 @@ export const parseItemsData = (rawItems: any) => {
 
 export const AdminKanban = ({ data, localReservations = [], onUpdateStatus, onEditReservation }: { data: any, localReservations: any[], onUpdateStatus: (id: string, status: string) => void, onEditReservation: (id: string) => void }) => {
   
-  // ★ 「リロードで消える問題」の特効薬：DBデータとローカルデータを賢くマージする
+  // ★ 最強の同期ロジック（ゾンビデータの自動排除）
   const effectiveReservations = useMemo(() => {
       const dbRes = data?.reservations || [];
       const locRes = localReservations || [];
       const map = new Map();
       
-      // DBデータを先にセット
+      // 1. DBの確定データをセット
       dbRes.forEach((r: any) => map.set(r.id, r));
-      // Localのデータ（追加・更新されたもの）で上書き
-      locRes.forEach((r: any) => map.set(r.id, r));
+      
+      // 2. Local（ブラウザの一時データ）で上書き
+      const now = new Date().getTime();
+      locRes.forEach((r: any) => {
+          if (map.has(r.id)) {
+              // DBにも存在する場合は、ステータス変更などを反映するため上書き
+              map.set(r.id, r);
+          } else {
+              // DBに存在しない場合（新規追加直後、またはDBから手動削除されたゾンビ）
+              const createdTime = new Date(r.createdAt || Date.now()).getTime();
+              // 受付から10分以上経っているのにDBに無いものは「ゾンビ」として排除（無視）
+              if (now - createdTime < 10 * 60 * 1000) {
+                  map.set(r.id, r);
+              }
+          }
+      });
       
       return Array.from(map.values());
   }, [data?.reservations, localReservations]);
+
+  // ★ スマホ用：強制同期（キャッシュクリア）機能
+  const handleForceSync = () => {
+      if (confirm("画面の表示を最新のデータベース状態に同期しますか？\n（保存されていない一時データはクリアされます）")) {
+          // localStorage内に「factoryOS」と名前のつくキャッシュを全消去
+          Object.keys(localStorage).forEach(key => {
+              if (key.includes('factoryOS') || key.includes('Reservations') || key.includes('lots') || key.includes('consumed')) {
+                  localStorage.removeItem(key);
+              }
+          });
+          sessionStorage.clear();
+          window.location.reload();
+      }
+  };
 
   const handlePrint = (res: any) => {
       const items = parseItemsData(res.items);
@@ -161,7 +188,6 @@ export const AdminKanban = ({ data, localReservations = [], onUpdateStatus, onEd
   const handleDrop = (e: React.DragEvent, status: string) => { e.preventDefault(); const id = e.dataTransfer.getData('resId'); if (id) onUpdateStatus(id, status); };
   const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); };
 
-  // ★ デザインを白・黒・赤に完全統一
   const columns = [
     { 
       id: 'RESERVED', 
@@ -207,12 +233,19 @@ export const AdminKanban = ({ data, localReservations = [], onUpdateStatus, onEd
 
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-500 font-sans">
-      <header className="mb-4 flex items-center gap-2 shrink-0">
-        <span className="w-1.5 h-6 bg-[#D32F2F] block"></span>
-        <div>
-            <h2 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight">現場状況管理 (カンバン)</h2>
-            <p className="text-xs text-gray-500 mt-1 font-bold">受付から製造までの全体ワークフロー管理</p>
+      <header className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4 shrink-0">
+        <div className="flex items-center gap-2">
+            <span className="w-1.5 h-6 bg-[#D32F2F] block"></span>
+            <div>
+                <h2 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight">現場状況管理 (カンバン)</h2>
+                <p className="text-xs text-gray-500 mt-1 font-bold">受付から製造までの全体ワークフロー管理</p>
+            </div>
         </div>
+        
+        {/* ★ 強制同期（キャッシュクリア）ボタン */}
+        <button onClick={handleForceSync} className="text-xs bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 hover:text-gray-900 px-4 py-2 rounded-sm shadow-sm flex items-center justify-center transition font-bold">
+            <Icons.RefreshSync /> 最新データに強制同期
+        </button>
       </header>
 
       <div className="flex gap-4 overflow-x-auto pb-4 h-full items-stretch">
@@ -237,7 +270,6 @@ export const AdminKanban = ({ data, localReservations = [], onUpdateStatus, onEd
                   const totalW = items.reduce((sum: number, i: any) => sum + Number(i.weight || 0), 0);
                   const hasTin = items.some((i: any) => i.material === '錫メッキ' || (i.product || i.name || '').includes('錫'));
 
-                  // ★ 製造実績（Productions）からこの受付IDに紐づくデータを取得
                   const relatedProductions = (data?.productions || []).filter((p: any) => p.reservationId && String(p.reservationId).includes(res.id));
                   const totalRed = relatedProductions.reduce((sum: number, p: any) => sum + Number(p.outputRed || p.outputCopper || 0), 0);
                   const totalMixed = relatedProductions.reduce((sum: number, p: any) => sum + Number(p.outputMixed || 0), 0);
@@ -247,7 +279,6 @@ export const AdminKanban = ({ data, localReservations = [], onUpdateStatus, onEd
                   return (
                     <div key={res.id} draggable onDragStart={(e) => handleDragStart(e, res.id)} className={`bg-white p-3 rounded-sm shadow-sm border cursor-grab active:cursor-grabbing hover:shadow-md hover:border-gray-400 transition relative group ${hasTin ? 'border-red-400' : 'border-gray-300'}`}>
                       
-                      {/* 左端のハイライト線 */}
                       <div className={`absolute left-0 top-0 bottom-0 w-1 ${hasTin ? 'bg-[#D32F2F]' : col.id === 'IN_PROGRESS' ? 'bg-[#D32F2F]' : 'bg-transparent'}`}></div>
                       
                       <div className="flex justify-between items-start mb-2 pl-1">
@@ -303,7 +334,6 @@ export const AdminKanban = ({ data, localReservations = [], onUpdateStatus, onEd
                           )}
                       </div>
 
-                      {/* ★ 新規追加：製造・加工実績の表示枠（データがある場合のみ出現） */}
                       {relatedProductions.length > 0 && (
                           <div className="bg-gray-900 rounded-sm p-2 mt-3 border-t-2 border-[#D32F2F] shadow-inner text-white ml-1">
                               <div className="text-[9px] font-bold text-gray-400 mb-1.5 flex items-center justify-between">
