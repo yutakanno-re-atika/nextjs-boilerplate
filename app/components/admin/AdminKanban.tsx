@@ -6,11 +6,12 @@ const Icons = {
   Printer: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>,
   Clock: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   User: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>,
-  Alert: () => <svg className="w-4 h-4 inline-block text-[#D32F2F]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
+  Alert: () => <svg className="w-4 h-4 inline-block text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
   FrontDesk: () => <svg className="w-4 h-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
   Inspection: () => <svg className="w-4 h-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   Plant: () => <svg className="w-4 h-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>,
-  Check: () => <svg className="w-4 h-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
+  Check: () => <svg className="w-4 h-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>,
+  Database: () => <svg className="w-3 h-3 inline-block mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" /></svg>
 };
 
 const formatTime = (timeStr: string) => {
@@ -19,12 +20,11 @@ const formatTime = (timeStr: string) => {
   return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 };
 
-// ★ 修正版：最強のJSONパース関数（改行コードで破壊されないよう保護）
+// ★ コンソールエラーを完全に防ぐ、強化版パース関数
 export const parseItemsData = (rawItems: any) => {
     if (!rawItems) return [];
     if (Array.isArray(rawItems)) return rawItems;
     try {
-        // 余計な置換をせず、まずは素直にパースを試みる
         const parsed = JSON.parse(rawItems);
         if (Array.isArray(parsed)) return parsed;
         if (typeof parsed === 'string') {
@@ -32,12 +32,11 @@ export const parseItemsData = (rawItems: any) => {
             if (Array.isArray(doubleParsed)) return doubleParsed;
         }
     } catch (e1) {
-        // パース失敗時のみ、安全なエスケープ置換を行う
         try {
             let temp = String(rawItems);
             if (temp.startsWith('"') && temp.endsWith('"')) temp = temp.slice(1, -1);
             temp = temp.replace(/""/g, '"');
-            // 改行コードはスペースに置換してJSONの破壊を防ぐ
+            // 改行コードをスペースに置換してJSONの構造破壊を防ぐ
             temp = temp.replace(/\n/g, " ").replace(/\r/g, "");
             let parsed = JSON.parse(temp);
             if (typeof parsed === 'string') parsed = JSON.parse(parsed);
@@ -49,7 +48,8 @@ export const parseItemsData = (rawItems: any) => {
     return [];
 };
 
-export const AdminKanban = ({ localReservations = [], onUpdateStatus, onEditReservation }: { localReservations: any[], onUpdateStatus: (id: string, status: string) => void, onEditReservation: (id: string) => void }) => {
+// ★ props に data を追加し、製造実績（Productions）を読み込めるようにする
+export const AdminKanban = ({ data, localReservations = [], onUpdateStatus, onEditReservation }: { data: any, localReservations: any[], onUpdateStatus: (id: string, status: string) => void, onEditReservation: (id: string) => void }) => {
   
   const handlePrint = (res: any) => {
       const items = parseItemsData(res.items);
@@ -223,6 +223,13 @@ export const AdminKanban = ({ localReservations = [], onUpdateStatus, onEditRese
                   const totalW = items.reduce((sum: number, i: any) => sum + Number(i.weight || 0), 0);
                   const hasTin = items.some((i: any) => i.material === '錫メッキ' || (i.product || i.name || '').includes('錫'));
 
+                  // ★ 製造実績（Productions）からこの受付IDに紐づくデータを取得
+                  const relatedProductions = (data?.productions || []).filter((p: any) => p.reservationId && String(p.reservationId).includes(res.id));
+                  const totalRed = relatedProductions.reduce((sum: number, p: any) => sum + Number(p.outputRed || p.outputCopper || 0), 0);
+                  const totalMixed = relatedProductions.reduce((sum: number, p: any) => sum + Number(p.outputMixed || 0), 0);
+                  const totalChips = relatedProductions.reduce((sum: number, p: any) => sum + Number(p.outputChips || 0), 0);
+                  const totalJute = relatedProductions.reduce((sum: number, p: any) => sum + Number(p.outputJute || 0), 0);
+
                   return (
                     <div key={res.id} draggable onDragStart={(e) => handleDragStart(e, res.id)} className={`bg-white p-3 rounded-sm shadow-sm border cursor-grab active:cursor-grabbing hover:shadow-md hover:border-gray-400 transition relative group ${hasTin ? 'border-red-400' : 'border-gray-300'}`}>
                       
@@ -272,15 +279,38 @@ export const AdminKanban = ({ localReservations = [], onUpdateStatus, onEditRese
 
                       <div className="flex justify-between items-end mt-3 ml-1">
                           <div className="text-[10px] text-gray-600 font-bold bg-gray-100 border border-gray-200 px-2 py-1 rounded-sm">
-                              総重量: <span className="text-sm font-black text-gray-900 font-mono tabular-nums">{totalW.toFixed(1)}</span> kg
+                              受付総重量: <span className="text-sm font-black text-gray-900 font-mono tabular-nums">{totalW.toFixed(1)}</span> kg
                           </div>
                           
                           {col.id === 'RESERVED' && (
-                              <button onClick={() => onEditReservation(res.id)} className="text-[10px] text-gray-500 hover:text-gray-900 underline font-bold transition">
+                              <button onClick={() => onEditReservation(res.id)} className="text-[10px] text-blue-600 hover:text-blue-800 underline font-bold transition">
                                   POSで再編集
                               </button>
                           )}
                       </div>
+
+                      {/* ★ 新規追加：製造・加工実績の表示枠（データがある場合のみ出現） */}
+                      {relatedProductions.length > 0 && (
+                          <div className="bg-gray-900 rounded-sm p-2 mt-3 border-t-2 border-[#D32F2F] shadow-inner text-white ml-1">
+                              <div className="text-[9px] font-bold text-gray-400 mb-1.5 flex items-center justify-between">
+                                  <span><Icons.Database /> 製造・加工実績</span>
+                                  <span className="bg-gray-700 text-white px-1.5 py-0.5 rounded-sm">{relatedProductions.length} バッチ</span>
+                              </div>
+                              <div className="flex justify-between items-center text-xs mb-1">
+                                  <span className="text-gray-300">上ナゲット (赤):</span>
+                                  <span className="font-mono font-black text-[#D32F2F] text-sm tabular-nums">{totalRed.toFixed(1)}kg</span>
+                              </div>
+                              <div className="flex justify-between items-center text-xs">
+                                  <span className="text-gray-300">雑ナゲット:</span>
+                                  <span className="font-mono font-black text-white text-sm tabular-nums">{totalMixed.toFixed(1)}kg</span>
+                              </div>
+                              <div className="flex justify-between items-center text-[9px] mt-1.5 border-t border-gray-700 pt-1.5">
+                                  <span className="text-gray-400 tabular-nums">被覆: {totalChips.toFixed(1)}kg</span>
+                                  <span className="text-gray-400 tabular-nums">ダスト: {totalJute.toFixed(1)}kg</span>
+                              </div>
+                          </div>
+                      )}
+
                     </div>
                   );
                 })}
