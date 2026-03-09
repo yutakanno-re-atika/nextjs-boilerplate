@@ -15,7 +15,8 @@ const Icons = {
   FastForward: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>,
   Print: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>,
   Refresh: () => <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
-  Brain: () => <svg className="w-5 h-5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+  Brain: () => <svg className="w-5 h-5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>,
+  Archive: () => <svg className="w-5 h-5 inline-block md:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg> // 在庫用アイコン
 };
 
 const ProvenanceBadge = ({ type }: { type: 'HUMAN' | 'AI_AUTO' | 'CO_OP' }) => {
@@ -46,7 +47,8 @@ const parseItemsData = (rawItems: any) => {
 };
 
 export const AdminProduction = ({ data, localReservations }: { data: any, localReservations: any[] }) => {
-  const [activeTab, setActiveTab] = useState<'SORT' | 'PROCESS' | 'LOG'>('SORT');
+  // ★ タブに 'STOCK' を追加
+  const [activeTab, setActiveTab] = useState<'SORT' | 'PROCESS' | 'STOCK' | 'LOG'>('SORT');
   const [showAiData, setShowAiData] = useState(true);
 
   const [sortingLot, setSortingLot] = useState<any>(null); 
@@ -56,7 +58,6 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
   const [localSortedLots, setLocalSortedLots] = useState<any[]>([]); 
   const [localConsumedIds, setLocalConsumedIds] = useState<string[]>([]); 
 
-  // ★ 選別出力用ステート
   const [sortOutputs, setSortOutputs] = useState([{ category: '被覆B', ratio: '', weight: '' }]);
   const [sortTime, setSortTime] = useState('');
   const [sortWorker, setSortWorker] = useState('未選択');
@@ -120,7 +121,8 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
       } catch(e) {}
   };
 
-  const { toSortLots, readyLots } = useMemo(() => {
+  // ★ データの振り分け： 選別待ち、加工ヤード(被覆Bのみ)、保管在庫(それ以外) に分割
+  const { toSortLots, readyLots, stockLots } = useMemo(() => {
       let rawLots: any[] = [];
       
       localReservations.filter(r => r.status === 'RECEIVED' || r.status === 'IN_PROGRESS').forEach(res => {
@@ -135,7 +137,6 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                   const remainingWeight = initialWeight - processedWeight;
                   
                   if (remainingWeight > 0) {
-                      // ★ POSからの歩留まりデータ (it.ratio) を最優先で取得するロジック
                       let expectedRatio = 0;
                       if (it.ratio && Number(it.ratio) > 0) {
                           expectedRatio = Number(it.ratio);
@@ -159,13 +160,22 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
 
       const sortList: any[] = [];
       const processList: any[] = [];
+      const stockList: any[] = [];
 
       rawLots.forEach(lot => {
-          if (!lot.isSorted) sortList.push(lot);
-          else processList.push(lot);
+          if (!lot.isSorted) {
+              sortList.push(lot);
+          } else {
+              // ★ 被覆B（歩留まり表記含む）は加工ヤードへ、それ以外は在庫ヤードへ
+              if (lot.product.startsWith('被覆B')) {
+                  processList.push(lot);
+              } else {
+                  stockList.push(lot);
+              }
+          }
       });
 
-      return { toSortLots: sortList, readyLots: processList };
+      return { toSortLots: sortList, readyLots: processList, stockLots: stockList };
   }, [localReservations, productions, wiresMaster, localSortedLots, localConsumedIds]);
 
   const totalRedNugget = productions.reduce((sum: number, p: any) => sum + (Number(p.outputRed) || Number(p.outputCopper) || 0), 0);
@@ -175,7 +185,6 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
     setIsSubmitting(true);
     const newSortedLots = [...localSortedLots];
     
-    // ★ 直行の場合、POSの歩留まりを引き継いだ「被覆B」としてヤードに送る
     let productName = '被覆B';
     if (lot.expectedRatio > 0) productName = `被覆B (${lot.expectedRatio}%)`;
 
@@ -295,6 +304,14 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
     setIsSubmitting(false);
   };
 
+  // 在庫を消費（出庫・廃棄・再加工など）する処理（モックアップ）
+  const handleConsumeStock = async (lotId: string, productName: string) => {
+      if(!confirm(`「${productName}」を在庫から消費（出庫/廃棄）しますか？`)) return;
+      const newConsumedIds = [...localConsumedIds, lotId];
+      setLocalConsumedIds(newConsumedIds);
+      await syncStateToServer(localSortedLots, newConsumedIds);
+  };
+
   const handlePrintReport = async () => {
     setIsGeneratingReport(true);
     const recentLogs = productions.slice(-10).map((p:any) => `${p.materialName}: 歩留${p.actualRatio}% (投入${p.inputWeight}kg)`).join('\n');
@@ -302,7 +319,8 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
     ・データモード: ${showAiData ? 'AI予測データ含む' : '実測確定データのみ'}
     ・累計 上ナゲット生産量: ${totalRedNugget.toLocaleString()} kg
     ・現在の選別待ちロット: ${toSortLots.length} 件
-    ・現在の加工待ちヤード在庫: ${readyLots.length} 件
+    ・現在の加工待ちヤード在庫(被覆B): ${readyLots.length} 件
+    ・現在の保管/産廃在庫: ${stockLots.length} 件
     ・直近10件の加工ログ:
     ${recentLogs}
     ※工場長へ提出する本日のナゲット製造管理レポートです。稼働状況から読み取れる現場の課題や、明日への改善アドバイスを鋭く記載してください。
@@ -400,13 +418,17 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
               <button onClick={() => setActiveTab('PROCESS')} className={`px-4 py-3 md:py-4 text-xs md:text-sm font-bold tracking-widest whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'PROCESS' ? 'bg-white border-t-2 border-t-[#D32F2F] text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>
                   <Icons.Blend /> 2. 加工ヤード ({readyLots.length})
               </button>
+              <button onClick={() => setActiveTab('STOCK')} className={`px-4 py-3 md:py-4 text-xs md:text-sm font-bold tracking-widest whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'STOCK' ? 'bg-white border-t-2 border-t-blue-600 text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>
+                  <Icons.Archive /> 3. 保管・産廃在庫 ({stockLots.length})
+              </button>
               <button onClick={() => setActiveTab('LOG')} className={`px-4 py-3 md:py-4 text-xs md:text-sm font-bold tracking-widest whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'LOG' ? 'bg-white border-t-2 border-t-gray-900 text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>
-                  <Icons.Check /> 3. 製造ログ
+                  <Icons.Check /> 4. 製造ログ
               </button>
           </div>
 
           <div className="flex-1 bg-white border-x border-b border-gray-200 shadow-sm flex flex-col min-h-[400px] overflow-hidden">
               
+              {/* === 1. 選別待ち === */}
               {activeTab === 'SORT' && (
                   <div className="p-4 md:p-6 overflow-y-auto bg-gray-50 flex-1">
                       {toSortLots.length === 0 ? (
@@ -434,8 +456,6 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                                               <button onClick={() => handleSkipSort(lot)} disabled={isSubmitting} className="bg-gray-100 text-gray-600 border border-gray-300 text-xs font-bold px-3 py-2.5 rounded-sm hover:bg-gray-200 transition flex items-center gap-1 disabled:opacity-50">
                                                   直行 <Icons.FastForward />
                                               </button>
-                                              
-                                              {/* ★ 選別ボタン：初期状態でベースとなる被覆Bをセット */}
                                               <button onClick={() => {
                                                   setSortingLot(lot);
                                                   setSortOutputs([{ 
@@ -455,6 +475,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                   </div>
               )}
 
+              {/* === 2. 加工ヤード (被覆Bのみ) === */}
               {activeTab === 'PROCESS' && (
                   <div className="flex flex-col h-full relative">
                       <div className="p-0 overflow-y-auto overflow-x-auto flex-1 pb-20">
@@ -507,6 +528,48 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                   </div>
               )}
 
+              {/* === 3. 保管・産廃在庫 (被覆C・鉄・ゴミ) === */}
+              {activeTab === 'STOCK' && (
+                  <div className="flex flex-col h-full relative">
+                      <div className="p-0 overflow-y-auto overflow-x-auto flex-1">
+                          <table className="w-full text-left border-collapse min-w-[600px]">
+                              <thead className="sticky top-0 bg-gray-100 border-b border-gray-200 z-10">
+                                  <tr>
+                                      <th className="p-3 text-xs font-bold text-gray-600 uppercase tracking-widest whitespace-nowrap">保管日 / 元ロット</th>
+                                      <th className="p-3 text-xs font-bold text-gray-600 uppercase tracking-widest whitespace-nowrap">品目・状態 <ProvenanceBadge type="HUMAN" /></th>
+                                      <th className="p-3 text-xs font-bold text-gray-600 uppercase tracking-widest whitespace-nowrap">担当業者</th>
+                                      <th className="p-3 text-xs font-bold text-gray-900 uppercase tracking-widest text-right whitespace-nowrap">重量 <ProvenanceBadge type="HUMAN" /></th>
+                                      <th className="p-3 text-xs font-bold text-gray-600 uppercase tracking-widest text-center whitespace-nowrap">操作</th>
+                                  </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-100">
+                                  {stockLots.length === 0 && <tr><td colSpan={5} className="py-16 text-center text-sm font-bold text-gray-400">保管されている在庫や産廃はありません</td></tr>}
+                                  {stockLots.map(lot => (
+                                      <tr key={lot.lotId} className="hover:bg-blue-50/30 transition">
+                                          <td className="p-3">
+                                              <span className="text-xs text-gray-500 tabular-nums">{lot.date}</span>
+                                          </td>
+                                          <td className="p-3 font-bold text-base text-gray-900">
+                                              <span className={`px-2 py-1 text-[11px] rounded-sm mr-2 border ${lot.product === '鉄' ? 'bg-gray-100 text-gray-700 border-gray-300' : lot.product === 'ゴミ' ? 'bg-yellow-50 text-yellow-800 border-yellow-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
+                                                  {lot.product}
+                                              </span>
+                                          </td>
+                                          <td className="p-3 text-sm text-gray-600">{lot.memberName}</td>
+                                          <td className="p-3 text-right font-black tabular-nums text-xl text-gray-900 tracking-tighter">{lot.remainingWeight.toFixed(1)}<span className="text-xs text-gray-500 font-normal ml-1">kg</span></td>
+                                          <td className="p-3 text-center">
+                                              <button onClick={() => handleConsumeStock(lot.lotId, lot.product)} className="text-xs font-bold text-gray-500 hover:text-[#D32F2F] bg-white border border-gray-300 hover:border-red-300 px-3 py-1.5 rounded-sm transition">
+                                                  消費 / 出庫
+                                              </button>
+                                          </td>
+                                      </tr>
+                                  ))}
+                              </tbody>
+                          </table>
+                      </div>
+                  </div>
+              )}
+
+              {/* === 4. 製造ログ === */}
               {activeTab === 'LOG' && (
                   <div className="flex flex-col flex-1 overflow-hidden relative">
                       <div className={`transition-all duration-500 flex-shrink-0 ${showAiData ? 'max-h-40 opacity-100 border-b border-gray-200' : 'max-h-0 opacity-0 overflow-hidden'}`}>
@@ -791,7 +854,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                           <div className="bg-gray-50 border border-gray-200 p-4 rounded-sm">
                               <label className="block text-xs font-bold text-gray-700 mb-1">回収 被覆重量 (kg) <span className="text-gray-400 font-normal ml-1">※任意</span></label>
                               <p className="text-[10px] text-gray-500 mb-2 leading-relaxed">
-                                介在物（紙・糸など）が含まれる場合のみ入力してください。<br/>未入力の場合は「総重量 − ナゲット ＝ すべて被覆チップ（ダスト0）」として自動計算されます。
+                                CV線などで紙や介在物（ゴミ）が含まれる場合のみ入力してください。<br/>未入力の場合は「総重量 − ナゲット ＝ すべて被覆（ダスト0）」として自動計算されます。
                               </p>
                               <div className="relative md:w-1/2">
                                   <input type="number" step="0.1" placeholder="入力なしで自動計算" className="w-full p-3 pr-10 border border-gray-300 rounded-sm text-sm tabular-nums outline-none focus:border-gray-900 bg-white text-right" value={processOutputCover} onChange={e => setProcessOutputCover(e.target.value)} />
