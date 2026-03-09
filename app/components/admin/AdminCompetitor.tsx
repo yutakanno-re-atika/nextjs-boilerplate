@@ -43,7 +43,6 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
   const savedMarginRate = Number(data?.config?.target_margin_rate) || 85;
   const [currentMarginRate, setCurrentMarginRate] = useState(savedMarginRate);
 
-  // ★ 追加：グローバルプロンプトのステート
   const savedGlobalPrompt = data?.config?.global_scrape_prompt || "";
   const [globalPrompt, setGlobalPrompt] = useState(savedGlobalPrompt);
 
@@ -173,7 +172,6 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       } catch(e) { alert("設定の保存に失敗しました。"); setIsProcessing(false); }
   };
 
-  // ★ 全体プロンプトを保存する関数
   const handleSaveGlobalPrompt = async () => {
       setIsProcessing(true);
       try {
@@ -238,28 +236,29 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
     <div className="flex flex-col h-full animate-in fade-in duration-500 w-full font-sans">
       <header className="mb-4 flex flex-col md:flex-row md:justify-between md:items-end gap-3 border-b border-gray-200 pb-3 shrink-0">
         <div>
-          <h2 className="text-xl md:text-2xl font-black text-gray-900 flex items-center gap-2 font-serif">
+          <h2 className="text-xl md:text-2xl font-black text-gray-900 flex items-center gap-2 font-serif tracking-tight">
             <span className="w-1.5 h-6 bg-[#D32F2F]"></span>
-            COMPETITOR RADAR
+            相場レーダー
           </h2>
-          <p className="text-sm text-gray-500 mt-1 font-mono tracking-wider ml-3">自己学習型クローラー / AIマーケット分析</p>
+          <p className="text-sm text-gray-500 mt-1 font-bold ml-3">自己学習型クローラー / AIマーケット分析</p>
         </div>
-        <div className="flex bg-gray-100 p-1 rounded-md overflow-x-auto shadow-inner">
-            <button onClick={() => setActiveTab('RADAR')} className={`px-4 py-2 rounded text-sm font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'RADAR' ? 'bg-white text-blue-700 shadow-sm border border-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>
-              <Icons.Radar /> ヒートマップ
+        <div className="flex bg-gray-100 p-1 rounded-sm overflow-x-auto shadow-inner border border-gray-200">
+            <button onClick={() => setActiveTab('RADAR')} className={`px-4 py-2 rounded-sm text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'RADAR' ? 'bg-white text-gray-900 shadow-sm border border-gray-300' : 'text-gray-500 hover:text-gray-900'}`}>
+              <Icons.Radar /> 競合価格ヒートマップ
             </button>
-            <button onClick={() => setActiveTab('TARGETS')} className={`px-4 py-2 rounded text-sm font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'TARGETS' ? 'bg-white text-blue-700 shadow-sm border border-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>
-              <Icons.Globe /> AI巡回設定 (ターゲット & 全体指示)
+            <button onClick={() => setActiveTab('TARGETS')} className={`px-4 py-2 rounded-sm text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'TARGETS' ? 'bg-white text-gray-900 shadow-sm border border-gray-300' : 'text-gray-500 hover:text-gray-900'}`}>
+              <Icons.Globe /> ターゲット管理 & ルール設定
             </button>
         </div>
       </header>
 
       {activeTab === 'RADAR' && (
-          <div className="flex-1 flex flex-col gap-4 overflow-hidden">
+          // ★ 修正: スマホ表示時に表が潰れないよう、親の overflow-hidden を外し、縦スクロール可能（overflow-y-auto）にしました
+          <div className="flex-1 flex flex-col gap-4 overflow-y-auto pb-10">
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 shrink-0">
-                  <div className="bg-white border border-blue-200 rounded-lg shadow-sm p-5 relative flex flex-col justify-between">
-                      <div className="absolute top-0 right-0 bg-blue-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg tracking-widest">PRICING CONTROL</div>
+                  <div className="bg-white border border-gray-200 rounded-sm shadow-sm p-5 relative flex flex-col justify-between">
+                      <div className="absolute top-0 right-0 bg-[#D32F2F] text-white text-[9px] font-bold px-3 py-1 rounded-bl-sm tracking-widest uppercase">利益コントロール</div>
                       <div>
                           <label className="font-bold text-gray-900 text-base flex items-center gap-1.5">
                               ベース買取掛率（％）
@@ -269,9 +268,9 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                               <input 
                                   type="range" min="60" max="95" step="1" 
                                   value={currentMarginRate} onChange={(e) => setCurrentMarginRate(Number(e.target.value))} 
-                                  className="w-full accent-blue-600 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" 
+                                  className="w-full accent-[#D32F2F] h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" 
                               />
-                              <span className="text-4xl font-black text-blue-600 font-mono w-24 text-right tracking-tighter">{currentMarginRate}%</span>
+                              <span className="text-4xl font-black text-gray-900 font-mono w-24 text-right tracking-tighter tabular-nums">{currentMarginRate}%</span>
                           </div>
                       </div>
                       
@@ -281,25 +280,25 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                               <span>▶ 薄利多売 (95%)</span>
                           </div>
                           {hasChanges && (
-                              <button onClick={handleSaveMarginRate} disabled={isProcessing} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-md text-sm font-bold shadow-md flex items-center gap-2 transition animate-pulse">
+                              <button onClick={handleSaveMarginRate} disabled={isProcessing} className="bg-gray-900 hover:bg-black text-white px-5 py-2.5 rounded-sm text-sm font-bold shadow-md flex items-center gap-2 transition animate-pulse">
                                   {isProcessing ? <Icons.Refresh /> : <Icons.Save />} 保存して反映
                               </button>
                           )}
                       </div>
                   </div>
 
-                  <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5 flex flex-col justify-between">
+                  <div className="bg-white border border-gray-200 rounded-sm shadow-sm p-5 flex flex-col justify-between">
                       <div>
                           <h3 className="text-sm font-black flex items-center gap-2 text-gray-900 mb-3 tracking-widest border-b border-gray-100 pb-2">
-                              <span className="text-blue-600"><Icons.Brain /></span> AI マーケット全体分析
+                              <span className="text-gray-900"><Icons.Brain /></span> AI マーケット全体分析
                           </h3>
                           {marketAnalysis ? (
-                              <ul className="space-y-3 text-sm leading-relaxed text-gray-700 list-disc list-inside mt-2">
+                              <ul className="space-y-3 text-sm leading-relaxed text-gray-700 list-disc list-inside mt-2 font-bold">
                                   <li>{marketAnalysis.vvfStatus}</li>
                                   <li>{marketAnalysis.marginStatus}</li>
                               </ul>
                           ) : (
-                              <div className="w-full text-center py-6 text-gray-400 text-sm font-bold border border-dashed border-gray-200 rounded-md mt-2">
+                              <div className="w-full text-center py-6 text-gray-400 text-sm font-bold border border-dashed border-gray-200 rounded-sm mt-2">
                                   監視ターゲットが登録されていません。
                               </div>
                           )}
@@ -307,33 +306,34 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                   </div>
               </div>
 
-              <div className="bg-white border border-gray-200 rounded-lg shadow-sm flex-1 flex flex-col overflow-hidden">
+              {/* ★ 修正: min-h を持たせることで、スマホでも表領域が潰れずに表示されます */}
+              <div className="bg-white border border-gray-200 rounded-sm shadow-sm flex-1 flex flex-col min-h-[500px] overflow-hidden">
                   <div className="p-4 border-b border-gray-200 bg-gray-50 flex flex-col xl:flex-row justify-between xl:items-center shrink-0 gap-4 relative">
                       <div className="flex items-center gap-3">
                           <h3 className="font-bold text-gray-900 text-base">自社 vs 競合 価格差額ヒートマップ</h3>
-                          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-bold">銅建値: ¥{currentCopperPrice} / 黄銅: ¥{currentBrassPrice}</span>
+                          <span className="text-xs bg-white border border-gray-300 text-gray-700 px-2 py-0.5 rounded-sm font-bold shadow-sm">銅建値: ¥{currentCopperPrice} / 黄銅: ¥{currentBrassPrice}</span>
                       </div>
                       
-                      <div className="flex items-center gap-2 flex-wrap bg-white p-2 rounded-md border border-gray-200">
+                      <div className="flex items-center gap-2 flex-wrap bg-white p-2 rounded-sm border border-gray-200 shadow-sm">
                           <span className="text-xs font-bold text-gray-500 flex items-center gap-1 pl-1"><Icons.Filter /> 表示:</span>
                           <div className="flex flex-wrap gap-1.5 flex-1">
                             {ALL_RADAR_ITEMS.map(item => (
-                                <label key={item.key} className={`flex items-center gap-1 text-[11px] font-bold cursor-pointer px-2 py-1 rounded transition-colors ${visibleItems.includes(item.key) ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-gray-50 text-gray-500 border border-gray-200 hover:bg-gray-100'}`}>
+                                <label key={item.key} className={`flex items-center gap-1 text-[11px] font-bold cursor-pointer px-2 py-1 rounded-sm transition-colors border ${visibleItems.includes(item.key) ? 'bg-gray-900 text-white border-gray-900 shadow-inner' : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'}`}>
                                     <input type="checkbox" checked={visibleItems.includes(item.key)} onChange={() => toggleVisibleItem(item.key)} className="hidden" />
                                     {item.key}
                                 </label>
                             ))}
                           </div>
-                          <button onClick={handleRunScrape} disabled={isProcessing || processedCompetitors.length === 0} className="ml-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded text-sm font-bold flex items-center gap-1.5 shadow-sm disabled:opacity-50 transition active:scale-95 shrink-0">
+                          <button onClick={handleRunScrape} disabled={isProcessing || processedCompetitors.length === 0} className="ml-2 bg-white border border-gray-300 hover:border-gray-900 hover:text-gray-900 text-gray-600 px-4 py-1.5 rounded-sm text-sm font-bold flex items-center gap-1.5 shadow-sm disabled:opacity-50 transition active:scale-95 shrink-0">
                               {isProcessing ? <Icons.Refresh /> : <Icons.Sparkles />} 手動巡回
                           </button>
                       </div>
 
                       {isProcessing && scrapeProgress.total > 0 && (
                           <div className="absolute inset-0 bg-white/90 backdrop-blur-sm z-50 flex items-center justify-center gap-3 animate-in fade-in">
-                              <span className="text-blue-600"><Icons.Refresh /></span>
+                              <span className="text-[#D32F2F]"><Icons.Refresh /></span>
                               <span className="font-bold text-sm text-gray-800">
-                                  AI自動学習・巡回中 ({scrapeProgress.current}/{scrapeProgress.total}) : <span className="text-blue-600">{scrapeProgress.targetName}</span> を分析しています...
+                                  AI自動学習・巡回中 ({scrapeProgress.current}/{scrapeProgress.total}) : <span className="text-[#D32F2F]">{scrapeProgress.targetName}</span> を分析しています...
                               </span>
                           </div>
                       )}
@@ -343,31 +343,31 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                       <table className="w-full text-left border-collapse text-base whitespace-nowrap min-w-[800px]">
                           <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-20">
                               <tr>
-                                  <th className="p-3 text-xs font-bold text-gray-500 uppercase tracking-widest bg-gray-100 border-r border-gray-200 sticky left-0 z-30 shadow-[1px_0_0_rgba(0,0,0,0.1)] w-56">標準品目 / 基準歩留</th>
-                                  <th className="p-3 text-xs font-black text-gray-900 uppercase tracking-widest bg-blue-50 border-r border-blue-200 min-w-[140px] shadow-[inset_0_-2px_0_rgba(59,130,246,0.3)]">
+                                  <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest bg-gray-100 border-r border-gray-200 sticky left-0 z-30 shadow-[1px_0_0_rgba(0,0,0,0.1)] w-56">標準品目 / 基準歩留</th>
+                                  <th className="p-3 text-[10px] font-black text-white uppercase tracking-widest bg-gray-900 border-r border-gray-800 min-w-[140px]">
                                       月寒製作所 (自社)
                                   </th>
                                   {processedCompetitors.map(comp => (
-                                      <th key={comp.id} className="p-3 text-xs font-bold text-gray-600 uppercase tracking-widest min-w-[160px] bg-gray-50 border-r border-gray-200">
-                                          {comp.name}<br/><span className="text-[10px] text-gray-400 font-normal">{comp.type}</span>
+                                      <th key={comp.id} className="p-3 text-[10px] font-bold text-gray-600 uppercase tracking-widest min-w-[160px] bg-white border-r border-gray-200">
+                                          {comp.name}<br/><span className="text-[9px] text-gray-400 font-normal">{comp.type}</span>
                                       </th>
                                   ))}
                               </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-100">
                               {myItems.filter(item => visibleItems.includes(item.name)).map(item => (
-                                  <tr key={item.name} className="hover:bg-blue-50/20 transition group">
+                                  <tr key={item.name} className="hover:bg-red-50/20 transition group">
                                       <td className="p-3 bg-white border-r border-gray-200 sticky left-0 z-10 shadow-[1px_0_0_rgba(0,0,0,0.1)] group-hover:bg-gray-50">
                                           <div className="font-bold text-gray-900 text-sm mb-1">{item.name}</div>
-                                          <div className="text-xs text-gray-500 font-mono flex items-center gap-2">
-                                              <span className="bg-gray-100 px-1.5 py-0.5 rounded">歩留:{item.ratio}%</span> 
+                                          <div className="text-[10px] text-gray-500 font-mono flex items-center gap-2">
+                                              <span className="bg-gray-100 px-1.5 py-0.5 rounded-sm border border-gray-200 font-bold">歩留:{item.ratio}%</span> 
                                               <span>価値:¥{item.pureValue}</span>
                                           </div>
                                       </td>
                                       
-                                      <td className="p-3 bg-blue-50/30 border-r border-blue-100 relative">
-                                          <div className="font-mono font-black text-2xl text-blue-700 tracking-tighter">¥{item.myPrice.toLocaleString()}</div>
-                                          <div className="text-xs font-bold text-blue-600 mt-1">
+                                      <td className="p-3 bg-gray-50 border-r border-gray-200 relative">
+                                          <div className="font-mono font-black text-2xl text-gray-900 tracking-tighter">¥{item.myPrice.toLocaleString()}</div>
+                                          <div className="text-[10px] font-bold text-gray-500 mt-1 uppercase tracking-widest">
                                               粗利: ¥{item.myMargin}
                                           </div>
                                       </td>
@@ -384,7 +384,7 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                                                       <div>
                                                           <div className="flex items-center justify-between mb-1">
                                                               <div className="flex items-center gap-1.5">
-                                                                  <span className={`font-mono text-xl font-bold ${compPrice ? 'text-gray-800' : 'text-gray-300'}`}>
+                                                                  <span className={`font-mono text-xl font-bold tabular-nums ${compPrice ? 'text-gray-800' : 'text-gray-300'}`}>
                                                                       {compPrice ? `¥${compPrice.toLocaleString()}` : '---'}
                                                                   </span>
                                                                   {compPrice && trend === 'up' ? <Icons.TrendingUp /> : compPrice && trend === 'down' ? <Icons.TrendingDown /> : null}
@@ -398,8 +398,8 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                                                       
                                                       {compEvidence && (
                                                           <div className="mt-2 pt-2 border-t border-dashed border-gray-200">
-                                                              <p className="text-[10px] text-gray-500 leading-tight flex items-start gap-1">
-                                                                  <span className="text-blue-500 mt-0.5"><Icons.Info /></span>
+                                                              <p className="text-[9px] text-gray-500 leading-tight flex items-start gap-1">
+                                                                  <span className="text-gray-400 mt-0.5"><Icons.Info /></span>
                                                                   <span>AI抽出元: 「{compEvidence}」</span>
                                                               </p>
                                                           </div>
@@ -423,19 +423,19 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       )}
 
       {activeTab === 'TARGETS' && (
-          <div className="flex-1 bg-white border border-gray-200 rounded-lg shadow-sm p-4 md:p-6 overflow-y-auto animate-in fade-in">
+          <div className="flex-1 bg-white border border-gray-200 rounded-sm shadow-sm p-4 md:p-6 overflow-y-auto animate-in fade-in">
               <div className="max-w-4xl mx-auto space-y-6">
                   
                   {/* ★ AI全体プロンプト（グローバルルール）設定エリア */}
-                  <div className="bg-blue-50/50 border border-blue-200 p-5 rounded-lg shadow-sm relative overflow-hidden">
-                      <div className="absolute top-0 right-0 bg-blue-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg tracking-widest">GLOBAL AI PROMPT</div>
-                      <h4 className="font-bold text-base text-blue-900 mb-2 flex items-center gap-2"><Icons.Brain /> 全体共通ルール（ボスからの特別指示）</h4>
-                      <p className="text-xs text-gray-600 mb-3 leading-relaxed">
-                          すべてのターゲット企業を巡回する際、AIが<span className="font-bold text-red-600">最優先で守るべき絶対ルール</span>を設定できます。<br/>
+                  <div className="bg-gray-50 border border-gray-200 p-5 rounded-sm shadow-sm relative overflow-hidden">
+                      <div className="absolute top-0 right-0 bg-gray-900 text-white text-[10px] font-bold px-3 py-1 rounded-bl-sm tracking-widest uppercase">GLOBAL AI PROMPT</div>
+                      <h4 className="font-bold text-base text-gray-900 mb-2 flex items-center gap-2"><Icons.Brain /> AI共通ルール設定（ボスからの特別指示）</h4>
+                      <p className="text-xs text-gray-600 mb-3 leading-relaxed font-bold">
+                          すべてのターゲット企業を巡回する際、AIが<span className="text-[#D32F2F]">最優先で守るべき絶対ルール</span>を設定できます。<br/>
                           （例: 「価格は税込で計算して」「建値ベースという表記があれば1450を足して」など）
                       </p>
                       <textarea 
-                          className="w-full p-3 border border-blue-200 rounded-md text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white min-h-[80px]" 
+                          className="w-full p-3 border border-gray-300 rounded-sm text-sm outline-none focus:border-gray-900 bg-white min-h-[80px] shadow-inner" 
                           placeholder="例: 価格は必ず税込で取得すること。"
                           value={globalPrompt} 
                           onChange={(e) => setGlobalPrompt(e.target.value)}
@@ -444,60 +444,60 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                           <button 
                               onClick={handleSaveGlobalPrompt} 
                               disabled={isProcessing || globalPrompt === savedGlobalPrompt} 
-                              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md text-sm font-bold shadow-sm transition disabled:opacity-50"
+                              className="bg-gray-900 hover:bg-black text-white px-6 py-2 rounded-sm text-sm font-bold shadow-sm transition disabled:opacity-50"
                           >
                               {isProcessing ? '保存中...' : 'ルールを保存'}
                           </button>
                       </div>
                   </div>
 
-                  <div className="bg-gray-50 border border-gray-200 p-5 rounded-lg shadow-sm mt-8">
+                  <div className="bg-white border border-gray-200 p-5 rounded-sm shadow-sm mt-8">
                       <h4 className="font-bold text-base mb-4 flex items-center gap-2"><Icons.Plus /> 個別ターゲットの追加</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                          <input type="text" placeholder="企業名 (例: 札幌 A社)" className="w-full p-3 border border-gray-300 rounded-md text-sm outline-none focus:border-blue-500 bg-white" value={newTarget.name} onChange={e => setNewTarget({...newTarget, name: e.target.value})} />
-                          <select className="w-full p-3 border border-gray-300 rounded-md text-sm outline-none focus:border-blue-500 bg-white" value={newTarget.type} onChange={e => setNewTarget({...newTarget, type: e.target.value})}>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                          <input type="text" placeholder="企業名 (例: 札幌 A社)" className="w-full p-3 border border-gray-300 rounded-sm text-sm outline-none focus:border-gray-900 bg-white shadow-sm" value={newTarget.name} onChange={e => setNewTarget({...newTarget, name: e.target.value})} />
+                          <select className="w-full p-3 border border-gray-300 rounded-sm text-sm outline-none focus:border-gray-900 bg-white shadow-sm font-bold text-gray-700" value={newTarget.type} onChange={e => setNewTarget({...newTarget, type: e.target.value})}>
                               <option value="同業(競合)">同業(競合)</option>
                               <option value="メーカー直系">メーカー直系</option>
                               <option value="輸出ヤード">輸出ヤード</option>
                           </select>
-                          <input type="url" placeholder="トップページのURL" className="w-full p-3 border border-gray-300 rounded-md text-sm outline-none font-mono focus:border-blue-500 bg-white" value={newTarget.url} onChange={e => setNewTarget({...newTarget, url: e.target.value})} />
+                          <input type="url" placeholder="トップページのURL" className="w-full p-3 border border-gray-300 rounded-sm text-sm outline-none font-mono focus:border-gray-900 bg-white shadow-sm" value={newTarget.url} onChange={e => setNewTarget({...newTarget, url: e.target.value})} />
                       </div>
-                      <div className="flex flex-col md:flex-row gap-4">
-                          <input type="text" placeholder="AIへの初回ヒント (例: FケーブルはVVF。以後はAIが自己更新します)" className="w-full p-3 border border-gray-300 rounded-md text-sm outline-none focus:border-blue-500 bg-white flex-1" value={newTarget.hint} onChange={e => setNewTarget({...newTarget, hint: e.target.value})} />
-                          <button onClick={handleAddTarget} disabled={isProcessing || !newTarget.name || !newTarget.url} className="bg-gray-900 hover:bg-gray-800 text-white px-8 py-3 rounded-md text-sm font-bold shadow-md transition disabled:opacity-50 whitespace-nowrap">
+                      <div className="flex flex-col md:flex-row gap-3">
+                          <input type="text" placeholder="AIへの初回ヒント (例: FケーブルはVVF。以後はAIが自己更新します)" className="w-full p-3 border border-gray-300 rounded-sm text-sm outline-none focus:border-gray-900 bg-white flex-1 shadow-sm" value={newTarget.hint} onChange={e => setNewTarget({...newTarget, hint: e.target.value})} />
+                          <button onClick={handleAddTarget} disabled={isProcessing || !newTarget.name || !newTarget.url} className="bg-[#D32F2F] hover:bg-red-800 text-white px-8 py-3 rounded-sm text-sm font-bold shadow-md transition disabled:opacity-50 whitespace-nowrap">
                               {isProcessing ? '処理中...' : '登録する'}
                           </button>
                       </div>
                   </div>
 
                   <div className="space-y-3 mt-8">
-                      <h4 className="font-bold text-sm text-gray-500 uppercase tracking-widest">登録済みターゲット（AI自己学習状況）</h4>
+                      <h4 className="font-bold text-xs text-gray-500 uppercase tracking-widest border-b border-gray-200 pb-2">登録済みターゲット（AI自己学習状況）</h4>
                       {processedCompetitors.map(target => (
-                          <div key={target.id} className="border border-gray-200 rounded-lg p-4 flex flex-col md:flex-row gap-4 bg-white shadow-sm hover:border-blue-300 transition-colors group">
+                          <div key={target.id} className="border border-gray-200 rounded-sm p-4 flex flex-col md:flex-row gap-4 bg-white shadow-sm hover:border-gray-400 transition-colors group">
                               <div className="flex-1">
                                   <div className="flex items-center gap-2 mb-1">
-                                      <h4 className="font-bold text-gray-900 text-lg">{target.name}</h4>
-                                      <span className="text-[10px] bg-gray-100 px-2 py-0.5 rounded-sm text-gray-500 font-normal border border-gray-200">{target.type}</span>
+                                      <h4 className="font-bold text-gray-900 text-base">{target.name}</h4>
+                                      <span className="text-[9px] bg-gray-100 px-1.5 py-0.5 rounded-sm text-gray-600 font-bold border border-gray-200">{target.type}</span>
                                   </div>
-                                  <a href={target.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 font-mono mb-3 hover:underline truncate block max-w-[300px] md:max-w-md">{target.url}</a>
+                                  <a href={target.url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-gray-500 font-mono mb-3 hover:text-gray-900 hover:underline truncate block max-w-[300px] md:max-w-md">{target.url}</a>
                                   
-                                  <div className="bg-blue-50/50 border border-blue-100 p-2.5 rounded-md">
-                                      <p className="text-[10px] font-bold text-blue-800 mb-1 flex items-center gap-1"><Icons.Sparkles /> AIが生成した抽出ルール (次回以降適用)</p>
-                                      <p className="text-xs text-gray-700 leading-relaxed">{target.hint || 'まだルールは生成されていません。巡回を実行してください。'}</p>
+                                  <div className="bg-gray-50 border border-gray-200 p-2.5 rounded-sm shadow-inner">
+                                      <p className="text-[9px] font-bold text-gray-500 mb-1 flex items-center gap-1 uppercase tracking-widest"><Icons.Sparkles /> AIが生成した抽出ルール (次回以降適用)</p>
+                                      <p className="text-[11px] text-gray-800 font-bold leading-relaxed">{target.hint || 'まだルールは生成されていません。巡回を実行してください。'}</p>
                                   </div>
                               </div>
                               <div className="flex items-center justify-end gap-6 shrink-0 border-t md:border-t-0 md:border-l border-gray-100 pt-3 md:pt-0 md:pl-6 min-w-[150px]">
                                   <div className="text-right">
-                                      <p className="text-[10px] text-gray-400 font-bold tracking-widest">最終AIクロール</p>
-                                      <p className="text-xs font-mono text-gray-900 mt-1">
+                                      <p className="text-[9px] text-gray-400 font-bold tracking-widest uppercase">最終AIクロール</p>
+                                      <p className="text-xs font-mono font-bold text-gray-900 mt-1">
                                           {target.lastCrawled || '未実行'} 
                                       </p>
                                       <p className="mt-1">
-                                          {target.status && target.status.includes('成功') && <span className="text-[10px] text-green-700 font-bold bg-green-50 border border-green-200 px-2 py-0.5 rounded-sm">● {target.status}</span>}
-                                          {target.status && !target.status.includes('成功') && target.status !== '未実行' && <span className="text-[10px] text-red-700 font-bold bg-red-50 border border-red-200 px-2 py-0.5 rounded-sm">❌ {target.status}</span>}
+                                          {target.status && target.status.includes('成功') && <span className="text-[9px] text-green-700 font-bold bg-green-50 border border-green-200 px-1.5 py-0.5 rounded-sm">● {target.status}</span>}
+                                          {target.status && !target.status.includes('成功') && target.status !== '未実行' && <span className="text-[9px] text-[#D32F2F] font-bold bg-red-50 border border-red-200 px-1.5 py-0.5 rounded-sm">❌ {target.status}</span>}
                                       </p>
                                   </div>
-                                  <button onClick={() => handleDeleteTarget(target.id)} disabled={isProcessing} className="text-gray-400 hover:text-red-600 p-2 hover:bg-red-50 rounded-sm transition opacity-50 group-hover:opacity-100"><Icons.Trash /></button>
+                                  <button onClick={() => handleDeleteTarget(target.id)} disabled={isProcessing} className="text-gray-400 hover:text-[#D32F2F] p-2 hover:bg-red-50 rounded-sm transition opacity-50 group-hover:opacity-100"><Icons.Trash /></button>
                               </div>
                           </div>
                       ))}
