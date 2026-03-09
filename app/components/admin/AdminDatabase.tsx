@@ -6,22 +6,22 @@ const Icons = {
   Plus: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>,
   Edit: () => <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>,
   Trash: () => <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
-  Search: () => <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
+  Search: () => <svg className="w-4 h-4 md:w-5 md:h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
   Image: () => <svg className="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2-2v12a2 2 0 002 2z" /></svg>,
   Sparkles: () => <svg className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 8.134a1 1 0 010 1.932l-3.354.933-1.179 4.456a1 1 0 01-1.934 0l-1.179-4.456-3.354-.933a1 1 0 010-1.932l3.354-.933 1.179-4.456A1 1 0 0112 2z" clipRule="evenodd" /></svg>,
   ArrowUp: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>,
   Close: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>,
-  Refresh: () => <svg className="w-5 h-5 animate-spin inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
-  Camera: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+  Refresh: () => <svg className="w-4 h-4 md:w-5 md:h-5 animate-spin inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
+  Camera: () => <svg className="w-3 h-3 md:w-4 md:h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
   UploadCloud: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>,
   Ruler: () => <svg className="w-4 h-4 inline-block text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M3 14h18m-9-4v8m-4-8v8m8-8v8M4 6h16a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2z" /></svg>,
-  Globe: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>,
-  EyeOff: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>,
+  Globe: () => <svg className="w-3 h-3 md:w-4 md:h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>,
+  EyeOff: () => <svg className="w-3 h-3 md:w-4 md:h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>,
   SortAsc: () => <svg className="w-3 h-3 inline-block ml-1 text-[#D32F2F]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 15l7-7 7 7" /></svg>,
   SortDesc: () => <svg className="w-3 h-3 inline-block ml-1 text-[#D32F2F]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" /></svg>,
   SortNone: () => <svg className="w-3 h-3 inline-block ml-1 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" /></svg>,
-  Mic: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>,
-  AlertTriangle: () => <svg className="w-4 h-4 inline-block text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+  Mic: () => <svg className="w-4 h-4 md:w-5 md:h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>,
+  AlertTriangle: () => <svg className="w-3 h-3 md:w-4 md:h-4 inline-block text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
 };
 
 const formatTimeShort = (timeStr: string) => {
@@ -244,7 +244,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     if (activeTab === 'CLIENTS') sheetName = 'Clients';
     if (activeTab === 'STAFF') sheetName = 'Staff';
 
-    // 未保存のBase64画像をGoogle DriveにアップロードしてURLに変換する処理
     const uploadPendingImage = async (pendingKey: string, dbKey: string, suffix: string) => {
         if (finalItem[pendingKey]) {
             try {
@@ -540,12 +539,12 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     const hasImage = !!savedImage || !!pendingImage;
 
     return (
-        <div className="flex flex-col items-center border border-gray-300 p-2 rounded-sm bg-white h-[90px] justify-center relative overflow-hidden group shadow-sm w-full">
-            <span className="absolute top-0 left-0 bg-gray-100 text-gray-600 text-[9px] font-bold px-1.5 py-0.5 rounded-br-sm z-10">{title}</span>
+        <div className="flex flex-col items-center border border-gray-300 p-1.5 md:p-2 rounded-sm bg-white h-[70px] md:h-[90px] justify-center relative overflow-hidden group shadow-sm w-full">
+            <span className="absolute top-0 left-0 bg-gray-100 text-gray-600 text-[8px] md:text-[9px] font-bold px-1.5 py-0.5 rounded-br-sm z-10">{title}</span>
             {pendingImage ? (
                 <>
                     <img src={`data:image/jpeg;base64,${pendingImage}`} className="absolute inset-0 w-full h-full object-cover opacity-60" />
-                    <span className="relative z-10 text-[10px] font-bold text-gray-900 bg-white/80 px-1.5 py-0.5 rounded-sm backdrop-blur-sm shadow-sm border border-gray-300">未保存</span>
+                    <span className="relative z-10 text-[9px] md:text-[10px] font-bold text-gray-900 bg-white/80 px-1.5 py-0.5 rounded-sm backdrop-blur-sm shadow-sm border border-gray-300">未保存</span>
                     <button onClick={() => setEditingItem({...editingItem, [pendingKey]: null})} className="absolute top-1 right-1 bg-[#D32F2F] text-white p-1 rounded-sm shadow-md z-20 hover:bg-red-800"><Icons.Trash /></button>
                 </>
             ) : savedImage ? (
@@ -555,7 +554,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                     </a>
                 </>
             ) : ( 
-                <div className="flex gap-1 w-full h-full mt-4">
+                <div className="flex gap-1 w-full h-full mt-3 md:mt-4">
                     <label className="flex-1 cursor-pointer flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-200 text-gray-500 hover:text-gray-900 transition border border-gray-300 rounded-sm" title="カメラ"><Icons.Camera /><input type="file" onChange={(e) => handleImageUploadLocal(e, pendingKey)} className="hidden" accept="image/*" capture="environment" /></label>
                     <label className="flex-1 cursor-pointer flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-200 text-gray-500 hover:text-gray-900 transition border border-gray-300 rounded-sm" title="フォルダ"><Icons.UploadCloud /><input type="file" onChange={(e) => handleImageUploadLocal(e, pendingKey)} className="hidden" accept="image/*" /></label>
                 </div> 
@@ -566,25 +565,25 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-500 font-sans">
-      <header className="mb-4 flex flex-col md:flex-row md:justify-between md:items-end gap-4 shrink-0">
+      <header className="mb-2 md:mb-4 flex flex-col md:flex-row md:justify-between md:items-end gap-3 shrink-0">
         <div className="flex items-center gap-2">
-          <span className="w-1.5 h-6 bg-[#D32F2F] block"></span>
+          <span className="w-1.5 h-5 md:h-6 bg-[#D32F2F] block"></span>
           <div>
-            <h2 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight">マスターデータベース</h2>
-            <p className="text-xs text-gray-500 mt-1 font-bold">コアデータ管理 / AI推論監視</p>
+            <h2 className="text-lg md:text-2xl font-black text-gray-900 tracking-tight">マスターデータベース</h2>
+            <p className="text-[10px] md:text-xs text-gray-500 mt-0.5 md:mt-1 font-bold">コアデータ管理 / AI推論監視</p>
           </div>
         </div>
         <div className="flex bg-gray-100 p-1 rounded-sm overflow-x-auto shadow-inner border border-gray-200">
           {['WIRES', 'UNKNOWN', 'CASTINGS', 'CLIENTS', 'STAFF'].map(tab => (
-            <button key={tab} onClick={() => handleTabChange(tab as any)} className={`px-4 py-2 rounded-sm text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1 ${activeTab === tab ? 'bg-white text-gray-900 shadow-sm border border-gray-300' : 'text-gray-500 hover:text-gray-900'}`}>
-              {tab === 'WIRES' ? '電線' : tab === 'UNKNOWN' ? '💡 未知線種' : tab === 'CASTINGS' ? '非鉄金属' : tab === 'CLIENTS' ? '顧客' : 'スタッフ'}
+            <button key={tab} onClick={() => handleTabChange(tab as any)} className={`px-3 py-1.5 md:px-4 md:py-2 rounded-sm text-[10px] md:text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1 ${activeTab === tab ? 'bg-white text-gray-900 shadow-sm border border-gray-300' : 'text-gray-500 hover:text-gray-900'}`}>
+              {tab === 'WIRES' ? '電線' : tab === 'UNKNOWN' ? '💡 未知' : tab === 'CASTINGS' ? '非鉄' : tab === 'CLIENTS' ? '顧客' : 'スタッフ'}
             </button>
           ))}
         </div>
       </header>
 
       <div className="bg-white border border-gray-200 shadow-sm rounded-sm flex-1 flex flex-col overflow-hidden relative">
-        <div className="p-4 border-b border-gray-200 bg-gray-50 flex flex-col gap-3 z-30 relative">
+        <div className="p-2 md:p-4 border-b border-gray-200 bg-gray-50 flex flex-col gap-2 z-30 relative">
           
           {(isListening || voiceText) && (
               <div className="absolute top-full left-0 w-full z-40 bg-gray-900 text-white p-2 text-center text-sm font-bold shadow-md animate-in slide-in-from-top-2">
@@ -593,7 +592,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
           )}
 
           {activeTab === 'WIRES' && (
-              <div className="bg-white border border-gray-300 rounded-sm shadow-sm flex flex-col lg:flex-row items-start lg:items-center justify-between p-3 gap-4">
+              <div className="bg-white border border-gray-300 rounded-sm shadow-sm flex flex-col lg:flex-row items-start lg:items-center justify-between p-2 md:p-3 gap-2 md:gap-4 hidden md:flex">
                   <div className="flex items-center gap-3 w-full lg:w-1/3">
                       <div className="bg-gray-100 text-gray-800 border border-gray-200 p-2 rounded-full hidden sm:block"><Icons.Camera /></div>
                       <div className="flex-1">
@@ -607,56 +606,56 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                       </div>
                   </div>
                   <div className="flex gap-1.5 overflow-x-auto w-full lg:w-auto pb-1 [&::-webkit-scrollbar]:hidden">
-                      <button onClick={() => setImageStatusFilter('ALL')} className={`px-3 py-1.5 rounded-sm text-[10px] font-bold transition whitespace-nowrap border ${imageStatusFilter === 'ALL' ? 'bg-gray-900 text-white border-gray-900 shadow-inner' : 'bg-white text-gray-600 hover:bg-gray-100 border-gray-300'}`}>
+                      <button onClick={() => setImageStatusFilter('ALL')} className={`px-2 py-1 md:px-3 md:py-1.5 rounded-sm text-[9px] md:text-[10px] font-bold transition whitespace-nowrap border ${imageStatusFilter === 'ALL' ? 'bg-gray-900 text-white border-gray-900 shadow-inner' : 'bg-white text-gray-600 hover:bg-gray-100 border-gray-300'}`}>
                           全 {wireStats.total}件
                       </button>
-                      <button onClick={() => setImageStatusFilter('COMPLETE')} className={`px-3 py-1.5 rounded-sm text-[10px] font-bold transition flex items-center gap-1 whitespace-nowrap border ${imageStatusFilter === 'COMPLETE' ? 'bg-green-700 text-white border-green-800 shadow-inner' : 'bg-white text-green-700 border-green-300 hover:bg-green-50'}`}>
+                      <button onClick={() => setImageStatusFilter('COMPLETE')} className={`px-2 py-1 md:px-3 md:py-1.5 rounded-sm text-[9px] md:text-[10px] font-bold transition flex items-center gap-1 whitespace-nowrap border ${imageStatusFilter === 'COMPLETE' ? 'bg-green-700 text-white border-green-800 shadow-inner' : 'bg-white text-green-700 border-green-300 hover:bg-green-50'}`}>
                           ✨ 完備 ({wireStats.complete})
                       </button>
-                      <button onClick={() => setImageStatusFilter('PARTIAL')} className={`px-3 py-1.5 rounded-sm text-[10px] font-bold transition flex items-center gap-1 whitespace-nowrap border ${imageStatusFilter === 'PARTIAL' ? 'bg-yellow-600 text-white border-yellow-700 shadow-inner' : 'bg-white text-yellow-700 border-yellow-300 hover:bg-yellow-50'}`}>
-                          🔄 一部不足 ({wireStats.partial})
+                      <button onClick={() => setImageStatusFilter('PARTIAL')} className={`px-2 py-1 md:px-3 md:py-1.5 rounded-sm text-[9px] md:text-[10px] font-bold transition flex items-center gap-1 whitespace-nowrap border ${imageStatusFilter === 'PARTIAL' ? 'bg-yellow-600 text-white border-yellow-700 shadow-inner' : 'bg-white text-yellow-700 border-yellow-300 hover:bg-yellow-50'}`}>
+                          🔄 不足 ({wireStats.partial})
                       </button>
-                      <button onClick={() => setImageStatusFilter('NONE')} className={`px-3 py-1.5 rounded-sm text-[10px] font-bold transition flex items-center gap-1 whitespace-nowrap border ${imageStatusFilter === 'NONE' ? 'bg-[#D32F2F] text-white border-red-800 shadow-inner' : 'bg-white text-[#D32F2F] border-red-300 hover:bg-red-50'}`}>
+                      <button onClick={() => setImageStatusFilter('NONE')} className={`px-2 py-1 md:px-3 md:py-1.5 rounded-sm text-[9px] md:text-[10px] font-bold transition flex items-center gap-1 whitespace-nowrap border ${imageStatusFilter === 'NONE' ? 'bg-[#D32F2F] text-white border-red-800 shadow-inner' : 'bg-white text-[#D32F2F] border-red-300 hover:bg-red-50'}`}>
                           ❌ 未登録 ({wireStats.none})
                       </button>
                   </div>
               </div>
           )}
           
-          <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center">
-              <div className="flex flex-1 gap-2 w-full flex-wrap">
-                  <div className="relative flex-1 min-w-[200px]">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Icons.Search /></div>
-                    <input type="text" placeholder="AND検索 (例: 1C VV)..." className="w-full border border-gray-300 rounded-sm pl-10 pr-4 py-2 text-sm focus:border-gray-900 outline-none shadow-inner" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+          <div className="flex flex-col md:flex-row gap-2 justify-between items-start md:items-center">
+              <div className="flex flex-1 gap-1.5 w-full flex-wrap">
+                  <div className="relative flex-1 min-w-[150px]">
+                    <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none"><Icons.Search /></div>
+                    <input type="text" placeholder="AND検索 (例: 1C VV)..." className="w-full pl-7 pr-2 py-1.5 md:py-2 border border-gray-300 rounded-sm text-xs md:text-sm focus:border-gray-900 outline-none shadow-inner" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
                   </div>
 
                   {activeTab === 'WIRES' && uniqueMakers.length > 0 && (
-                      <select className="border border-gray-300 rounded-sm px-3 py-2 text-sm outline-none focus:border-gray-900 bg-white cursor-pointer font-bold text-gray-700 shadow-sm max-w-[140px]" value={filterMaker} onChange={e => setFilterMaker(e.target.value)}>
+                      <select className="border border-gray-300 rounded-sm px-1 py-1.5 md:py-2 text-xs md:text-sm outline-none focus:border-gray-900 bg-white cursor-pointer font-bold text-gray-700 shadow-sm max-w-[100px] md:max-w-[140px]" value={filterMaker} onChange={e => setFilterMaker(e.target.value)}>
                           <option value="">全メーカー</option>
                           {uniqueMakers.map((m: any) => <option key={m} value={m}>{m}</option>)}
                       </select>
                   )}
 
                   {activeTab === 'CASTINGS' && uniqueTypes.length > 0 && (
-                      <select className="border border-gray-300 rounded-sm px-3 py-2 text-sm outline-none focus:border-gray-900 bg-white cursor-pointer font-bold text-gray-700 shadow-sm max-w-[140px]" value={filterType} onChange={e => setFilterType(e.target.value)}>
+                      <select className="border border-gray-300 rounded-sm px-1 py-1.5 md:py-2 text-xs md:text-sm outline-none focus:border-gray-900 bg-white cursor-pointer font-bold text-gray-700 shadow-sm max-w-[100px] md:max-w-[140px]" value={filterType} onChange={e => setFilterType(e.target.value)}>
                           <option value="">すべての種別</option>
                           {uniqueTypes.map((t: any) => <option key={t} value={t}>{t === 'BRASS' ? '真鍮' : t === 'ZINC' ? '亜鉛' : t === 'LEAD' ? '鉛' : t}</option>)}
                       </select>
                   )}
 
-                  <button onClick={toggleVoiceInput} className={`px-3 py-2 border rounded-sm flex items-center justify-center transition-all shadow-sm ${isListening ? 'bg-[#D32F2F] border-red-800 text-white animate-pulse' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`} title="音声で検索キーワード入力">
+                  <button onClick={toggleVoiceInput} className={`px-2 py-1.5 md:py-2 border rounded-sm flex items-center justify-center transition-all shadow-sm ${isListening ? 'bg-[#D32F2F] border-red-800 text-white animate-pulse shadow-inner' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`} title="音声検索">
                       <Icons.Mic />
                   </button>
               </div>
 
               {activeTab !== 'UNKNOWN' && (
-                  <div className="flex gap-2 w-full lg:w-auto shrink-0 mt-2 lg:mt-0">
+                  <div className="flex gap-1.5 w-full md:w-auto shrink-0">
                     {activeTab === 'WIRES' && (
-                        <button onClick={() => setIsAiModalOpen(true)} className="flex-1 lg:flex-none bg-white text-gray-900 border border-gray-300 px-4 py-2 rounded-sm text-sm font-bold hover:bg-gray-100 hover:border-gray-400 transition flex items-center justify-center gap-2 whitespace-nowrap shadow-sm">
-                            <Icons.Sparkles /> AIアシスト登録
+                        <button onClick={() => setIsAiModalOpen(true)} className="flex-1 md:flex-none bg-white text-gray-900 border border-gray-300 px-3 py-1.5 md:px-4 md:py-2 rounded-sm text-xs md:text-sm font-bold hover:bg-gray-100 hover:border-gray-400 transition flex items-center justify-center gap-1 md:gap-2 whitespace-nowrap shadow-sm">
+                            <Icons.Sparkles /> AI登録
                         </button>
                     )}
-                    <button onClick={() => handleOpenModal()} className="flex-1 lg:flex-none bg-gray-900 text-white px-5 py-2 rounded-sm text-sm font-bold hover:bg-black transition flex items-center justify-center gap-2 whitespace-nowrap active:scale-95 shadow-sm">
+                    <button onClick={() => handleOpenModal()} className="flex-1 md:flex-none bg-gray-900 text-white px-3 py-1.5 md:px-5 md:py-2 rounded-sm text-xs md:text-sm font-bold hover:bg-black transition flex items-center justify-center gap-1 md:gap-2 whitespace-nowrap active:scale-95 shadow-sm">
                         <Icons.Plus /> 手動登録
                     </button>
                   </div>
@@ -669,7 +668,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                       <button 
                           key={cat} 
                           onClick={() => setSelectedCategory(cat)} 
-                          className={`px-4 py-1.5 rounded-full text-[10px] font-bold whitespace-nowrap transition-colors border shadow-sm ${selectedCategory === cat ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-500 border-gray-300 hover:bg-gray-100 hover:text-gray-900'}`}
+                          className={`px-3 py-1 md:px-4 md:py-1.5 rounded-full text-[9px] md:text-[10px] font-bold whitespace-nowrap transition-colors border shadow-sm ${selectedCategory === cat ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-500 border-gray-300 hover:bg-gray-100 hover:text-gray-900'}`}
                       >
                           {cat}
                       </button>
@@ -822,32 +821,32 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
               </table>
 
               {/* === スマホ向け高密度リスト表示 (md未満で表示) === */}
-              <div className="md:hidden divide-y divide-gray-200 bg-white">
+              <div className="md:hidden divide-y divide-gray-200 bg-white pb-20">
                 {sortedData.map((item: any, idx: number) => (
-                  <div key={item.id || idx} className={`p-3 flex flex-col gap-1.5 active:bg-gray-50 ${activeTab === 'WIRES' && String(item.showOnWeb) === 'false' ? 'opacity-60 bg-gray-100' : ''}`}>
+                  <div key={item.id || idx} className={`p-2.5 flex flex-col gap-1 active:bg-gray-50 transition-colors ${activeTab === 'WIRES' && String(item.showOnWeb) === 'false' ? 'opacity-60 bg-gray-100' : ''}`}>
                     
                     {activeTab === 'WIRES' && (
                       <>
                         <div className="flex justify-between items-center">
                           <div className="flex items-center gap-1.5 overflow-hidden">
-                            {String(item.showOnWeb) === 'false' ? <span className="text-gray-400"><Icons.EyeOff /></span> : <span className="text-blue-500"><Icons.Globe /></span>}
-                            {item.maker && item.maker !== '-' && <span className="text-[10px] bg-gray-100 border border-gray-200 px-1.5 rounded-sm text-gray-600 whitespace-nowrap">{item.maker}</span>}
-                            <span className="text-sm font-black text-gray-900 truncate">{item.name}</span>
+                            {String(item.showOnWeb) === 'false' ? <span className="text-gray-400 shrink-0"><Icons.EyeOff /></span> : <span className="text-gray-900 shrink-0"><Icons.Globe /></span>}
+                            {item.maker && item.maker !== '-' && <span className="text-[9px] bg-gray-100 border border-gray-200 px-1 rounded-sm text-gray-600 whitespace-nowrap shrink-0">{item.maker}</span>}
+                            <span className="text-[13px] font-black text-gray-900 truncate leading-tight">{item.name}</span>
                             {item.material === '錫メッキ' && <span className="text-[8px] bg-[#D32F2F] text-white px-1 py-0.5 rounded-sm shrink-0">錫</span>}
                             {item.material === 'アルミ' && <span className="text-[8px] bg-gray-600 text-white px-1 py-0.5 rounded-sm shrink-0">Al</span>}
                           </div>
                           <div className="flex items-baseline shrink-0 ml-2">
-                            <span className="text-lg font-black text-gray-900 font-mono tracking-tighter">{item.ratio}%</span>
+                            <span className="text-base font-black text-gray-900 font-mono tracking-tighter">{item.ratio}%</span>
                           </div>
                         </div>
-                        <div className="flex justify-between items-end mt-1">
+                        <div className="flex justify-between items-center mt-0.5">
                           <div className="text-[10px] text-gray-500 flex items-center gap-2">
-                            <span className="font-mono bg-gray-50 px-1 rounded">{formatSqDisplay(item.sq)}/{formatCoreDisplay(item.core)}</span>
-                            <span>📸 {[11,12,13,14,15].filter(i => item[`image${i-10}`]).length}枚</span>
+                            <span className="font-mono bg-gray-50 px-1 rounded border border-gray-100">{formatSqDisplay(item.sq)}/{formatCoreDisplay(item.core)}</span>
+                            <span className="flex items-center gap-0.5"><Icons.Camera /> {[11,12,13,14,15].filter(i => item[`image${i-10}`]).length}</span>
                           </div>
-                          <div className="flex gap-2">
-                            <button onClick={() => handleOpenModal(item)} className="p-2 text-gray-600 bg-gray-100 border border-gray-200 rounded-sm active:bg-gray-200"><Icons.Edit /></button>
-                            <button onClick={() => handleDelete(item.id)} className="p-2 text-red-500 bg-red-50 border border-red-100 rounded-sm active:bg-red-100"><Icons.Trash /></button>
+                          <div className="flex gap-1.5">
+                            <button onClick={() => handleOpenModal(item)} className="p-1.5 text-gray-600 bg-gray-50 border border-gray-200 rounded-sm active:bg-gray-200"><Icons.Edit /></button>
+                            <button onClick={() => handleDelete(item.id)} className="p-1.5 text-[#D32F2F] bg-red-50 border border-red-100 rounded-sm active:bg-red-100"><Icons.Trash /></button>
                           </div>
                         </div>
                       </>
@@ -856,15 +855,15 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                     {activeTab === 'UNKNOWN' && (
                       <>
                         <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-1 font-bold text-gray-900 text-sm truncate"><span className="text-yellow-500"><Icons.Sparkles /></span> {item.name}</div>
-                          <span className="text-lg font-black text-gray-900 font-mono">{item.ratio}%</span>
+                          <div className="flex items-center gap-1 font-bold text-gray-900 text-[13px] truncate"><span className="text-gray-900"><Icons.Sparkles /></span> {item.name}</div>
+                          <span className="text-base font-black text-gray-900 font-mono">{item.ratio}%</span>
                         </div>
                         <p className="text-[10px] text-gray-600 bg-gray-50 p-1.5 rounded border border-gray-100 line-clamp-2">{item.reason}</p>
-                        <div className="flex justify-between items-end mt-1">
+                        <div className="flex justify-between items-center mt-0.5">
                           <span className="text-[9px] text-gray-400 font-mono">{formatTimeShort(item.createdAt)}</span>
-                          <div className="flex gap-2">
-                            <button onClick={() => handlePromoteToWire(item)} className="px-2 py-1.5 text-white bg-gray-900 rounded-sm text-[10px] font-bold"><Icons.ArrowUp /> マスターへ</button>
-                            <button onClick={() => handleDelete(item.id)} className="p-1.5 text-red-500 bg-red-50 rounded-sm"><Icons.Trash /></button>
+                          <div className="flex gap-1.5">
+                            <button onClick={() => handlePromoteToWire(item)} className="px-2 py-1 text-white bg-gray-900 rounded-sm text-[10px] font-bold"><Icons.ArrowUp /> マスターへ</button>
+                            <button onClick={() => handleDelete(item.id)} className="p-1.5 text-[#D32F2F] bg-red-50 rounded-sm border border-red-100"><Icons.Trash /></button>
                           </div>
                         </div>
                       </>
@@ -873,14 +872,14 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                     {activeTab === 'CASTINGS' && (
                       <>
                         <div className="flex justify-between items-center">
-                          <span className="font-bold text-sm text-gray-900 truncate">{item.name}</span>
-                          <span className="text-lg font-black text-gray-900 font-mono">{item.ratio}%</span>
+                          <span className="font-bold text-[13px] text-gray-900 truncate">{item.name}</span>
+                          <span className="text-base font-black text-gray-900 font-mono">{item.ratio}%</span>
                         </div>
-                        <div className="flex justify-between items-end">
-                          <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 rounded">{item.type}</span>
-                          <div className="flex gap-2">
-                            <button onClick={() => handleOpenModal(item)} className="p-1.5 text-gray-600 bg-gray-100 rounded-sm"><Icons.Edit /></button>
-                            <button onClick={() => handleDelete(item.id)} className="p-1.5 text-red-500 bg-red-50 rounded-sm"><Icons.Trash /></button>
+                        <div className="flex justify-between items-center mt-0.5">
+                          <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">{item.type}</span>
+                          <div className="flex gap-1.5">
+                            <button onClick={() => handleOpenModal(item)} className="p-1.5 text-gray-600 bg-gray-50 border border-gray-200 rounded-sm"><Icons.Edit /></button>
+                            <button onClick={() => handleDelete(item.id)} className="p-1.5 text-[#D32F2F] bg-red-50 border border-red-100 rounded-sm"><Icons.Trash /></button>
                           </div>
                         </div>
                       </>
@@ -889,17 +888,17 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                     {activeTab === 'CLIENTS' && (
                       <>
                         <div className="flex justify-between items-center">
-                          <span className="font-bold text-sm text-gray-900 truncate">{item.name}</span>
-                          <span className="text-[10px] font-bold bg-gray-200 text-gray-800 px-1.5 py-0.5 rounded-sm">{item.rank}</span>
+                          <span className="font-bold text-[13px] text-gray-900 truncate">{item.name}</span>
+                          <span className="text-[9px] font-bold bg-gray-100 border border-gray-200 text-gray-800 px-1.5 py-0.5 rounded-sm">{item.rank}</span>
                         </div>
-                        <div className="flex justify-between items-end mt-1">
-                          <div className="flex flex-col gap-0.5">
+                        <div className="flex justify-between items-center mt-0.5">
+                          <div className="flex items-center gap-2">
                             <span className="text-[10px] text-gray-500 font-mono">📞 {item.phone}</span>
                             <span className="text-[10px] text-gray-900 font-bold">✨ {item.points} pt</span>
                           </div>
-                          <div className="flex gap-2">
-                            <button onClick={() => handleOpenModal(item)} className="p-1.5 text-gray-600 bg-gray-100 rounded-sm"><Icons.Edit /></button>
-                            <button onClick={() => handleDelete(item.id)} className="p-1.5 text-red-500 bg-red-50 rounded-sm"><Icons.Trash /></button>
+                          <div className="flex gap-1.5">
+                            <button onClick={() => handleOpenModal(item)} className="p-1.5 text-gray-600 bg-gray-50 border border-gray-200 rounded-sm"><Icons.Edit /></button>
+                            <button onClick={() => handleDelete(item.id)} className="p-1.5 text-[#D32F2F] bg-red-50 border border-red-100 rounded-sm"><Icons.Trash /></button>
                           </div>
                         </div>
                       </>
@@ -908,14 +907,14 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                     {activeTab === 'STAFF' && (
                       <>
                         <div className="flex justify-between items-center">
-                          <span className="font-bold text-sm text-gray-900">{item.name}</span>
-                          <span className={`text-[10px] font-bold text-white px-1.5 py-0.5 rounded-sm ${item.status === 'ACTIVE' ? 'bg-gray-900' : 'bg-gray-400'}`}>{item.status}</span>
+                          <span className="font-bold text-[13px] text-gray-900">{item.name}</span>
+                          <span className={`text-[9px] font-bold text-white px-1.5 py-0.5 rounded-sm ${item.status === 'ACTIVE' ? 'bg-gray-900' : 'bg-gray-400'}`}>{item.status}</span>
                         </div>
-                        <div className="flex justify-between items-end mt-1">
-                          <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">{item.role}</span>
-                          <div className="flex gap-2">
-                            <button onClick={() => handleOpenModal(item)} className="p-1.5 text-gray-600 bg-gray-100 rounded-sm"><Icons.Edit /></button>
-                            <button onClick={() => handleDelete(item.id)} className="p-1.5 text-red-500 bg-red-50 rounded-sm"><Icons.Trash /></button>
+                        <div className="flex justify-between items-center mt-0.5">
+                          <span className="text-[10px] text-gray-500 bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded">{item.role}</span>
+                          <div className="flex gap-1.5">
+                            <button onClick={() => handleOpenModal(item)} className="p-1.5 text-gray-600 bg-gray-50 border border-gray-200 rounded-sm"><Icons.Edit /></button>
+                            <button onClick={() => handleDelete(item.id)} className="p-1.5 text-[#D32F2F] bg-red-50 border border-red-100 rounded-sm"><Icons.Trash /></button>
                           </div>
                         </div>
                       </>
@@ -923,6 +922,9 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
                   </div>
                 ))}
+                {sortedData.length === 0 && (
+                   <div className="p-10 text-center text-gray-400 font-bold text-xs">データがありません</div>
+                )}
               </div>
             </div>
         </div>
@@ -968,7 +970,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                 </div>
               ) : (
                 <div className="animate-in fade-in">
-                    <p className="text-sm text-gray-600 mb-4 leading-relaxed font-bold bg-gray-50 p-3 rounded-sm border border-gray-200">
+                    <p className="text-xs md:text-sm text-gray-600 mb-4 leading-relaxed font-bold bg-gray-50 p-3 rounded-sm border border-gray-200">
                         未知の線種をマスターに登録します。<br/>
                         最大4枚の画像をアップロードしてAIに解析させてください。<br/>
                     </p>
@@ -998,7 +1000,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                         <textarea className="w-full bg-white border border-gray-300 rounded-sm text-sm text-gray-900 p-3 outline-none focus:border-gray-900 min-h-[60px] shadow-sm" placeholder="例: 中身は細線の束、かなり重い、雑線は入っていない等..." value={aiHint} onChange={e => setAiHint(e.target.value)} />
                     </div>
 
-                    <button onClick={runAiExtraction} disabled={!imgData1 && !aiHint} className="w-full bg-gray-900 hover:bg-black text-white font-bold py-4 rounded-sm flex justify-center items-center gap-2 disabled:bg-gray-400 transition shadow-md text-lg">
+                    <button onClick={runAiExtraction} disabled={!imgData1 && !aiHint} className="w-full bg-gray-900 hover:bg-black text-white font-bold py-3 md:py-4 rounded-sm flex justify-center items-center gap-2 disabled:bg-gray-400 transition shadow-md text-base md:text-lg">
                         <Icons.Sparkles />解析してデータを埋める
                     </button>
                 </div>
@@ -1010,10 +1012,10 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
       {/* ★ 編集・新規登録モーダル */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] flex items-center justify-center p-4 md:p-0">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] flex items-center justify-center p-2 md:p-0">
           <div className="bg-white w-full max-w-4xl rounded-sm shadow-2xl animate-in zoom-in-95 duration-200 border-t-4 border-gray-900 overflow-hidden flex flex-col max-h-[95vh]">
-            <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50 shrink-0">
-              <h3 className="font-black text-gray-900 text-lg flex items-center gap-2">
+            <div className="p-3 md:p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50 shrink-0">
+              <h3 className="font-black text-gray-900 text-base md:text-lg flex items-center gap-2">
                   {editingItem?.id ? <Icons.Edit /> : <Icons.Plus />}
                   {editingItem?.id ? 'データ編集' : '新規マスター登録'}
               </h3>
@@ -1023,12 +1025,12 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
             <div className="p-4 md:p-6 overflow-y-auto space-y-4 bg-white flex-1">
                 
                 {activeTab === 'WIRES' && (
-                    <div className="bg-gray-50 border border-gray-200 p-4 rounded-sm flex justify-between items-center shadow-inner mb-2">
+                    <div className="bg-gray-50 border border-gray-200 p-3 md:p-4 rounded-sm flex justify-between items-center shadow-inner mb-2">
                         <div>
-                            <h4 className="font-bold text-gray-900 flex items-center gap-2">
-                                <Icons.Globe /> LP（お客様向けWebサイト）の価格表に表示する
+                            <h4 className="font-bold text-gray-900 text-sm md:text-base flex items-center gap-2">
+                                <Icons.Globe /> LPの価格表に表示する
                             </h4>
-                            <p className="text-[10px] text-gray-500 mt-1 font-bold">OFFにすると、社内システムでのみ表示される隠しマスターになります。</p>
+                            <p className="text-[9px] md:text-[10px] text-gray-500 mt-1 font-bold">OFFにすると社内システム専用になります。</p>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" className="sr-only peer" checked={String(editingItem.showOnWeb) !== 'false'} onChange={(e) => setEditingItem({...editingItem, showOnWeb: e.target.checked})} />
@@ -1038,9 +1040,9 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                 )}
 
                 {activeTab === 'WIRES' && (
-                    <div className="bg-gray-50 p-4 border border-gray-200 rounded-sm">
-                        <label className="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-widest">マスター画像 (全5枠)</label>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                    <div className="bg-gray-50 p-3 md:p-4 border border-gray-200 rounded-sm">
+                        <label className="block text-[10px] md:text-xs font-bold text-gray-600 mb-2 uppercase tracking-widest">マスター画像 (全5枠)</label>
+                        <div className="grid grid-cols-3 md:grid-cols-5 gap-2 md:gap-3">
                             <ImageSlot title="① 断面" imageKey="image1" colIdx={11} pendingKey="_pendingImageData1" />
                             <ImageSlot title="② 全体" imageKey="image2" colIdx={12} pendingKey="_pendingImageData2" />
                             <ImageSlot title="④ 剥線" imageKey="image3" colIdx={13} pendingKey="_pendingImageData3" />
@@ -1051,7 +1053,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                 )}
 
                 {activeTab === 'WIRES' && (editingItem._pendingImageData1 || editingItem._pendingImageData4) && (
-                    <div className="bg-blue-50 border border-blue-200 p-3 rounded-sm text-xs text-blue-800 font-bold flex flex-col gap-1 shadow-sm">
+                    <div className="bg-blue-50 border border-blue-200 p-2 md:p-3 rounded-sm text-[10px] md:text-xs text-blue-800 font-bold flex flex-col gap-1 shadow-sm">
                         <div className="flex items-center gap-2"><Icons.Sparkles /> 画像からAIが推論結果を自動入力しました。</div>
                         <div className="text-gray-600 ml-6 font-normal">※ 下の「確定してマスターに登録」を押すと、アップロードした画像も同時に保存されます。</div>
                     </div>
@@ -1059,105 +1061,105 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
                 {activeTab === 'WIRES' && (
                     <>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                            <div><label className="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">メーカー</label><input type="text" className="w-full bg-white border border-gray-300 p-3 rounded-sm outline-none focus:border-gray-900 font-bold shadow-sm" value={editingItem.maker || ''} onChange={e => setEditingItem({...editingItem, maker: e.target.value})} /></div>
-                            <div><label className="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">品名</label><input type="text" className="w-full bg-white border border-gray-300 p-3 rounded-sm outline-none focus:border-gray-900 font-black text-lg shadow-sm" value={editingItem.name || ''} onChange={e => setEditingItem({...editingItem, name: e.target.value})} /></div>
+                        <div className="grid grid-cols-2 gap-3 md:gap-4 mt-4">
+                            <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">メーカー</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-bold shadow-sm text-sm" value={editingItem.maker || ''} onChange={e => setEditingItem({...editingItem, maker: e.target.value})} /></div>
+                            <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">品名</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-black text-base md:text-lg shadow-sm" value={editingItem.name || ''} onChange={e => setEditingItem({...editingItem, name: e.target.value})} /></div>
                         </div>
 
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div><label className="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">製造年</label><input type="text" placeholder="例: 2024" className="w-full bg-white border border-gray-300 p-3 rounded-sm outline-none focus:border-gray-900 shadow-sm" value={editingItem.year || ''} onChange={e => setEditingItem({...editingItem, year: e.target.value})} /></div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                            <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">製造年</label><input type="text" placeholder="例: 2024" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 shadow-sm text-sm" value={editingItem.year || ''} onChange={e => setEditingItem({...editingItem, year: e.target.value})} /></div>
                             <div>
-                                <label className="block text-[10px] font-bold text-gray-500 mb-1 flex items-center justify-between uppercase tracking-widest"><span>サイズ</span><button onClick={handleCaliperInput} className="text-gray-700 hover:text-gray-900 flex items-center gap-0.5 bg-gray-100 px-1.5 py-0.5 rounded-sm border border-gray-300 transition shadow-sm"><Icons.Ruler /> <span className="text-[9px] font-bold">ノギス</span></button></label>
-                                <div className="flex rounded-sm shadow-sm relative"><input type="number" step="0.01" className="w-full bg-white border-y border-l border-gray-300 p-3 rounded-l-sm outline-none focus:border-gray-900 font-mono text-right font-bold" value={editingItem._sqValue || ''} onChange={e => setEditingItem({...editingItem, _sqValue: e.target.value})} placeholder="2.0" /><select className="border border-gray-300 bg-gray-100 px-2 rounded-r-sm text-xs font-bold text-gray-700 outline-none focus:border-gray-900" value={editingItem._sqUnit || 'sq'} onChange={e => setEditingItem({...editingItem, _sqUnit: e.target.value})}><option value="sq">sq</option><option value="mm">mm</option></select></div>
+                                <label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 flex items-center justify-between uppercase tracking-widest"><span>サイズ</span><button onClick={handleCaliperInput} className="text-gray-700 hover:text-gray-900 flex items-center gap-0.5 bg-gray-100 px-1.5 py-0.5 rounded-sm border border-gray-300 transition shadow-sm"><Icons.Ruler /> <span className="text-[8px] md:text-[9px] font-bold">ノギス</span></button></label>
+                                <div className="flex rounded-sm shadow-sm relative"><input type="number" step="0.01" className="w-full bg-white border-y border-l border-gray-300 p-2.5 md:p-3 rounded-l-sm outline-none focus:border-gray-900 font-mono text-right font-bold text-sm" value={editingItem._sqValue || ''} onChange={e => setEditingItem({...editingItem, _sqValue: e.target.value})} placeholder="2.0" /><select className="border border-gray-300 bg-gray-100 px-1 md:px-2 rounded-r-sm text-[10px] md:text-xs font-bold text-gray-700 outline-none focus:border-gray-900" value={editingItem._sqUnit || 'sq'} onChange={e => setEditingItem({...editingItem, _sqUnit: e.target.value})}><option value="sq">sq</option><option value="mm">mm</option></select></div>
                             </div>
-                            <div><label className="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">芯数</label><div className="relative"><input type="number" className="w-full bg-white border border-gray-300 p-3 rounded-sm outline-none focus:border-gray-900 font-mono pr-8 text-right font-bold shadow-sm" value={editingItem._coreValue || ''} onChange={e => setEditingItem({...editingItem, _coreValue: e.target.value.replace(/[^\d]/g, '')})} placeholder="3" /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold pointer-events-none">C</span></div></div>
+                            <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">芯数</label><div className="relative"><input type="number" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-mono pr-8 text-right font-bold shadow-sm text-sm" value={editingItem._coreValue || ''} onChange={e => setEditingItem({...editingItem, _coreValue: e.target.value.replace(/[^\d]/g, '')})} placeholder="3" /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold pointer-events-none">C</span></div></div>
                             <div>
-                                <label className="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">導体構成 (構造)</label><input type="text" placeholder="単線/7本より線等" className="w-full bg-white border border-gray-300 p-3 rounded-sm outline-none focus:border-gray-900 shadow-sm text-sm font-bold" value={editingItem.conductor || ''} onChange={e => setEditingItem({...editingItem, conductor: e.target.value})} />
-                                <div className="flex gap-1 mt-1.5"><button onClick={() => setEditingItem({...editingItem, conductor: '単線'})} className="flex-1 bg-gray-100 hover:bg-gray-200 text-[10px] py-1.5 rounded-sm text-gray-600 font-bold border border-gray-200 transition">単線</button><button onClick={() => setEditingItem({...editingItem, conductor: 'より線'})} className="flex-1 bg-gray-100 hover:bg-gray-200 text-[10px] py-1.5 rounded-sm text-gray-600 font-bold border border-gray-200 transition">より線</button></div>
+                                <label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">導体構成 (構造)</label><input type="text" placeholder="単線/7本より線等" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 shadow-sm text-xs md:text-sm font-bold" value={editingItem.conductor || ''} onChange={e => setEditingItem({...editingItem, conductor: e.target.value})} />
+                                <div className="flex gap-1 mt-1.5"><button onClick={() => setEditingItem({...editingItem, conductor: '単線'})} className="flex-1 bg-gray-100 hover:bg-gray-200 text-[9px] py-1.5 rounded-sm text-gray-600 font-bold border border-gray-200 transition">単線</button><button onClick={() => setEditingItem({...editingItem, conductor: 'より線'})} className="flex-1 bg-gray-100 hover:bg-gray-200 text-[9px] py-1.5 rounded-sm text-gray-600 font-bold border border-gray-200 transition">より線</button></div>
                             </div>
                         </div>
                         
-                        <div className="bg-gray-100 p-4 md:p-6 rounded-sm border border-gray-300 mt-6 relative shadow-inner">
-                            <span className="absolute top-0 right-0 bg-gray-900 text-white text-[9px] font-bold tracking-widest px-2 py-1 rounded-bl-sm">HUMAN REQUIRED</span>
-                            <label className="block text-sm font-black text-gray-900 mb-4 border-b border-gray-300 pb-2">⚖️ サンプル実測 (人間による確定)</label>
+                        <div className="bg-gray-100 p-3 md:p-6 rounded-sm border border-gray-300 mt-4 md:mt-6 relative shadow-inner">
+                            <span className="absolute top-0 right-0 bg-gray-900 text-white text-[8px] md:text-[9px] font-bold tracking-widest px-2 py-1 rounded-bl-sm">HUMAN REQUIRED</span>
+                            <label className="block text-xs md:text-sm font-black text-gray-900 mb-3 border-b border-gray-300 pb-2">⚖️ サンプル実測 (人間による確定)</label>
                             
-                            <div className="mb-6 bg-white p-4 rounded-sm border border-gray-200 shadow-sm">
-                                <label className="block text-[10px] font-bold text-gray-500 mb-2 uppercase tracking-widest">成分要素 (材質)</label>
+                            <div className="mb-4 bg-white p-3 md:p-4 rounded-sm border border-gray-200 shadow-sm">
+                                <label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-2 uppercase tracking-widest">成分要素 (材質)</label>
                                 <div className="grid grid-cols-3 gap-2">
-                                    <button onClick={() => setEditingItem({...editingItem, material: '純銅'})} className={`py-2 rounded-sm text-sm font-bold border transition ${editingItem.material === '純銅' ? 'bg-orange-50 border-orange-400 text-orange-800' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'}`}>純銅</button>
-                                    <button onClick={() => setEditingItem({...editingItem, material: '錫メッキ'})} className={`py-2 rounded-sm text-sm font-bold border transition ${editingItem.material === '錫メッキ' ? 'bg-red-50 border-[#D32F2F] text-[#D32F2F] animate-pulse' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'}`}>⚠️ 錫メッキ</button>
-                                    <button onClick={() => setEditingItem({...editingItem, material: 'アルミ'})} className={`py-2 rounded-sm text-sm font-bold border transition ${editingItem.material === 'アルミ' ? 'bg-blue-50 border-blue-400 text-blue-800' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'}`}>アルミ</button>
+                                    <button onClick={() => setEditingItem({...editingItem, material: '純銅'})} className={`py-1.5 md:py-2 rounded-sm text-xs md:text-sm font-bold border transition ${editingItem.material === '純銅' ? 'bg-orange-50 border-orange-400 text-orange-800' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'}`}>純銅</button>
+                                    <button onClick={() => setEditingItem({...editingItem, material: '錫メッキ'})} className={`py-1.5 md:py-2 rounded-sm text-xs md:text-sm font-bold border transition ${editingItem.material === '錫メッキ' ? 'bg-red-50 border-[#D32F2F] text-[#D32F2F] animate-pulse' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'}`}>⚠️錫メッキ</button>
+                                    <button onClick={() => setEditingItem({...editingItem, material: 'アルミ'})} className={`py-1.5 md:py-2 rounded-sm text-xs md:text-sm font-bold border transition ${editingItem.material === 'アルミ' ? 'bg-blue-50 border-blue-400 text-blue-800' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'}`}>アルミ</button>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end">
-                                <div className="w-full"><label className="block text-[10px] font-bold text-gray-600 mb-1 uppercase tracking-widest">全体重量(g)</label><input type="number" step="0.001" className="w-full border border-gray-300 shadow-sm p-3 rounded-sm font-mono text-xl outline-none focus:border-gray-900 text-right bg-white font-bold tabular-nums" value={sampleTotal} onChange={e => handleSampleTotalChange(e.target.value)} placeholder="0.000" /></div>
-                                <div className="w-full"><label className="block text-[10px] font-bold text-[#D32F2F] mb-1 uppercase tracking-widest">純銅重量(g)</label><input type="number" step="0.001" className="w-full border border-gray-300 shadow-sm p-3 rounded-sm font-mono text-xl outline-none focus:border-[#D32F2F] text-right bg-white font-bold tabular-nums" value={sampleCopper} onChange={e => handleSampleCopperChange(e.target.value)} placeholder="0.000" /></div>
-                                <div className="w-full"><label className="block text-[10px] font-bold text-gray-600 mb-1 uppercase tracking-widest">被覆重量(g)</label><input type="number" step="0.001" className="w-full border border-gray-300 shadow-sm p-3 rounded-sm font-mono text-xl outline-none focus:border-gray-900 text-right bg-white font-bold tabular-nums" value={sampleCover} onChange={e => handleSampleCoverChange(e.target.value)} placeholder="0.000" /></div>
-                                <div className="w-full flex flex-col gap-2">
-                                    <div className="bg-white border border-gray-300 shadow-sm p-2 rounded-sm flex justify-between items-center"><span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">ダスト</span><span className="font-mono text-base font-bold text-gray-800 tabular-nums">{getJuteWeight()}g</span></div>
-                                    <div className="bg-gray-900 border border-black shadow-inner p-2 rounded-sm flex justify-between items-center relative"><span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">歩留まり</span>{editingItem.aiEstimatedRatio && !sampleTotal && <span className="absolute -top-2 -right-2 text-[8px] bg-gray-500 text-white px-1.5 py-0.5 rounded shadow animate-pulse">AI</span>}<span className="font-mono text-xl font-black text-white tabular-nums">{editingItem.ratio || '---'}%</span></div>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 items-end">
+                                <div className="w-full"><label className="block text-[9px] md:text-[10px] font-bold text-gray-600 mb-1 uppercase tracking-widest">全体重量(g)</label><input type="number" step="0.001" className="w-full border border-gray-300 shadow-sm p-2.5 md:p-3 rounded-sm font-mono text-base md:text-xl outline-none focus:border-gray-900 text-right bg-white font-bold tabular-nums" value={sampleTotal} onChange={e => handleSampleTotalChange(e.target.value)} placeholder="0.000" /></div>
+                                <div className="w-full"><label className="block text-[9px] md:text-[10px] font-bold text-[#D32F2F] mb-1 uppercase tracking-widest">純銅重量(g)</label><input type="number" step="0.001" className="w-full border border-gray-300 shadow-sm p-2.5 md:p-3 rounded-sm font-mono text-base md:text-xl outline-none focus:border-[#D32F2F] text-right bg-white font-bold tabular-nums" value={sampleCopper} onChange={e => handleSampleCopperChange(e.target.value)} placeholder="0.000" /></div>
+                                <div className="w-full"><label className="block text-[9px] md:text-[10px] font-bold text-gray-600 mb-1 uppercase tracking-widest">被覆重量(g)</label><input type="number" step="0.001" className="w-full border border-gray-300 shadow-sm p-2.5 md:p-3 rounded-sm font-mono text-base md:text-xl outline-none focus:border-gray-900 text-right bg-white font-bold tabular-nums" value={sampleCover} onChange={e => handleSampleCoverChange(e.target.value)} placeholder="0.000" /></div>
+                                <div className="w-full flex flex-col gap-1.5 md:gap-2">
+                                    <div className="bg-white border border-gray-300 shadow-sm p-1.5 md:p-2 rounded-sm flex justify-between items-center"><span className="text-[9px] md:text-[10px] font-bold text-gray-500 uppercase tracking-widest">ダスト</span><span className="font-mono text-sm md:text-base font-bold text-gray-800 tabular-nums">{getJuteWeight()}g</span></div>
+                                    <div className="bg-gray-900 border border-black shadow-inner p-1.5 md:p-2 rounded-sm flex justify-between items-center relative"><span className="text-[9px] md:text-[10px] font-bold text-gray-300 uppercase tracking-widest">歩留まり</span>{editingItem.aiEstimatedRatio && !sampleTotal && <span className="absolute -top-2 -right-2 text-[8px] bg-gray-500 text-white px-1.5 py-0.5 rounded shadow animate-pulse">AI</span>}<span className="font-mono text-lg md:text-xl font-black text-white tabular-nums">{editingItem.ratio || '---'}%</span></div>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="mt-6"><label className="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">メモ / 特記事項</label><textarea className="w-full bg-white border border-gray-300 p-4 rounded-sm h-32 text-sm outline-none focus:border-gray-900 leading-relaxed shadow-sm whitespace-pre-wrap" value={editingItem.memo || editingItem.reason || ''} onChange={e => setEditingItem({...editingItem, memo: e.target.value, reason: e.target.value})} /></div>
+                        <div className="mt-4"><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">メモ / 特記事項</label><textarea className="w-full bg-white border border-gray-300 p-3 rounded-sm h-24 text-xs md:text-sm outline-none focus:border-gray-900 leading-relaxed shadow-sm whitespace-pre-wrap" value={editingItem.memo || editingItem.reason || ''} onChange={e => setEditingItem({...editingItem, memo: e.target.value, reason: e.target.value})} /></div>
                     </>
                 )}
 
                 {activeTab === 'CASTINGS' && (
                   <>
-                    <div><label className="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">品目名</label><input type="text" className="w-full bg-white border border-gray-300 p-3 rounded-sm outline-none focus:border-gray-900 font-bold shadow-sm" value={editingItem.name || ''} onChange={e => setEditingItem({...editingItem, name: e.target.value})} /></div>
-                    <div className="grid grid-cols-2 gap-4 mt-4">
-                        <div><label className="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">種別</label><select className="w-full bg-white border border-gray-300 p-3 rounded-sm outline-none focus:border-gray-900 font-bold shadow-sm" value={editingItem.type || 'BRASS'} onChange={e => setEditingItem({...editingItem, type: e.target.value})}><option value="BRASS">真鍮 (Brass)</option><option value="ZINC">亜鉛 (Zinc)</option><option value="LEAD">鉛 (Lead)</option></select></div>
-                        <div><label className="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">歩留まり (%)</label><input type="number" step="0.1" className="w-full bg-white border border-gray-300 p-3 rounded-sm font-black text-lg text-gray-900 outline-none focus:border-gray-900 shadow-sm text-right tabular-nums" value={editingItem.ratio || ''} onChange={e => setEditingItem({...editingItem, ratio: e.target.value})} /></div>
+                    <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">品目名</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-bold shadow-sm" value={editingItem.name || ''} onChange={e => setEditingItem({...editingItem, name: e.target.value})} /></div>
+                    <div className="grid grid-cols-2 gap-3 md:gap-4 mt-4">
+                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">種別</label><select className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-bold shadow-sm text-sm" value={editingItem.type || 'BRASS'} onChange={e => setEditingItem({...editingItem, type: e.target.value})}><option value="BRASS">真鍮 (Brass)</option><option value="ZINC">亜鉛 (Zinc)</option><option value="LEAD">鉛 (Lead)</option></select></div>
+                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">歩留まり (%)</label><input type="number" step="0.1" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm font-black text-base md:text-lg text-gray-900 outline-none focus:border-gray-900 shadow-sm text-right tabular-nums" value={editingItem.ratio || ''} onChange={e => setEditingItem({...editingItem, ratio: e.target.value})} /></div>
                     </div>
                   </>
                 )}
 
                 {activeTab === 'CLIENTS' && (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div><label className="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">業者名</label><input type="text" className="w-full bg-white border border-gray-300 p-3 rounded-sm outline-none focus:border-gray-900 font-bold shadow-sm" value={editingItem.name || ''} onChange={e => setEditingItem({...editingItem, name: e.target.value})} /></div>
-                        <div><label className="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">ランク</label><select className="w-full bg-white border border-gray-300 p-3 rounded-sm outline-none focus:border-gray-900 font-bold shadow-sm" value={editingItem.rank || 'NORMAL'} onChange={e => setEditingItem({...editingItem, rank: e.target.value})}><option value="NORMAL">一般 (NORMAL)</option><option value="BRONZE">ブロンズ (BRONZE)</option><option value="SILVER">シルバー (SILVER)</option><option value="GOLD">ゴールド (GOLD)</option><option value="VIP">VIP</option></select></div>
+                  <div className="space-y-3 md:space-y-4">
+                    <div className="grid grid-cols-2 gap-3 md:gap-4">
+                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">業者名</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-bold shadow-sm text-sm" value={editingItem.name || ''} onChange={e => setEditingItem({...editingItem, name: e.target.value})} /></div>
+                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">ランク</label><select className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-bold shadow-sm text-sm" value={editingItem.rank || 'NORMAL'} onChange={e => setEditingItem({...editingItem, rank: e.target.value})}><option value="NORMAL">一般 (NORMAL)</option><option value="BRONZE">ブロンズ (BRONZE)</option><option value="SILVER">シルバー (SILVER)</option><option value="GOLD">ゴールド (GOLD)</option><option value="VIP">VIP</option></select></div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div><label className="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">電話番号</label><input type="text" className="w-full bg-white border border-gray-300 p-3 rounded-sm outline-none focus:border-gray-900 font-mono shadow-sm" value={editingItem.phone || ''} onChange={e => setEditingItem({...editingItem, phone: e.target.value})} /></div>
-                        <div><label className="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">保有ポイント</label><input type="number" className="w-full bg-white border border-gray-300 p-3 rounded-sm font-black text-lg text-gray-900 outline-none focus:border-gray-900 shadow-sm text-right tabular-nums" value={editingItem.points || 0} onChange={e => setEditingItem({...editingItem, points: e.target.value})} /></div>
+                    <div className="grid grid-cols-2 gap-3 md:gap-4">
+                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">電話番号</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-mono shadow-sm text-sm" value={editingItem.phone || ''} onChange={e => setEditingItem({...editingItem, phone: e.target.value})} /></div>
+                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">保有ポイント</label><input type="number" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm font-black text-base md:text-lg text-gray-900 outline-none focus:border-gray-900 shadow-sm text-right tabular-nums" value={editingItem.points || 0} onChange={e => setEditingItem({...editingItem, points: e.target.value})} /></div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div><label className="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">ログインID</label><input type="text" className="w-full bg-white border border-gray-300 p-3 rounded-sm outline-none focus:border-gray-900 font-mono shadow-sm" value={editingItem.loginId || ''} onChange={e => setEditingItem({...editingItem, loginId: e.target.value})} /></div>
-                        <div><label className="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">パスワード</label><input type="text" className="w-full bg-white border border-gray-300 p-3 rounded-sm outline-none focus:border-gray-900 font-mono shadow-sm" value={editingItem.password || ''} onChange={e => setEditingItem({...editingItem, password: e.target.value})} /></div>
+                    <div className="grid grid-cols-2 gap-3 md:gap-4">
+                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">ログインID</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-mono shadow-sm text-sm" value={editingItem.loginId || ''} onChange={e => setEditingItem({...editingItem, loginId: e.target.value})} /></div>
+                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">パスワード</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-mono shadow-sm text-sm" value={editingItem.password || ''} onChange={e => setEditingItem({...editingItem, password: e.target.value})} /></div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div><label className="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">業種</label><input type="text" className="w-full bg-white border border-gray-300 p-3 rounded-sm outline-none focus:border-gray-900 shadow-sm" value={editingItem.industry || ''} onChange={e => setEditingItem({...editingItem, industry: e.target.value})} /></div>
-                        <div><label className="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">所在地</label><input type="text" className="w-full bg-white border border-gray-300 p-3 rounded-sm outline-none focus:border-gray-900 shadow-sm" value={editingItem.address || ''} onChange={e => setEditingItem({...editingItem, address: e.target.value})} /></div>
+                    <div className="grid grid-cols-2 gap-3 md:gap-4">
+                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">業種</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 shadow-sm text-sm" value={editingItem.industry || ''} onChange={e => setEditingItem({...editingItem, industry: e.target.value})} /></div>
+                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">所在地</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 shadow-sm text-sm" value={editingItem.address || ''} onChange={e => setEditingItem({...editingItem, address: e.target.value})} /></div>
                     </div>
                   </div>
                 )}
 
                 {activeTab === 'STAFF' && (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div><label className="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">スタッフ名</label><input type="text" className="w-full bg-white border border-gray-300 p-3 rounded-sm outline-none focus:border-gray-900 font-bold shadow-sm" value={editingItem.name || ''} onChange={e => setEditingItem({...editingItem, name: e.target.value})} /></div>
-                        <div><label className="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">ステータス</label><select className="w-full bg-white border border-gray-300 p-3 rounded-sm outline-none focus:border-gray-900 font-bold shadow-sm" value={editingItem.status || 'ACTIVE'} onChange={e => setEditingItem({...editingItem, status: e.target.value})}><option value="ACTIVE">有効 (ACTIVE)</option><option value="INACTIVE">停止 (INACTIVE)</option></select></div>
+                  <div className="space-y-3 md:space-y-4">
+                    <div className="grid grid-cols-2 gap-3 md:gap-4">
+                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">スタッフ名</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-bold shadow-sm text-sm" value={editingItem.name || ''} onChange={e => setEditingItem({...editingItem, name: e.target.value})} /></div>
+                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">ステータス</label><select className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-bold shadow-sm text-sm" value={editingItem.status || 'ACTIVE'} onChange={e => setEditingItem({...editingItem, status: e.target.value})}><option value="ACTIVE">有効 (ACTIVE)</option><option value="INACTIVE">停止 (INACTIVE)</option></select></div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div><label className="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">権限 (Role)</label><select className="w-full bg-white border border-gray-300 p-3 rounded-sm outline-none focus:border-gray-900 font-bold shadow-sm" value={editingItem.role || 'FRONT'} onChange={e => setEditingItem({...editingItem, role: e.target.value})}><option value="FRONT">受付 (FRONT)</option><option value="INSPECTION">検収 (INSPECTION)</option><option value="PLANT">工場 (PLANT)</option><option value="MANAGER">工場長 (MANAGER)</option><option value="ALL">管理者 (ALL)</option></select></div>
-                        <div><label className="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">時給/単価</label><input type="number" className="w-full bg-white border border-gray-300 p-3 rounded-sm outline-none focus:border-gray-900 font-mono shadow-sm text-right tabular-nums" value={editingItem.rate || 0} onChange={e => setEditingItem({...editingItem, rate: e.target.value})} /></div>
+                    <div className="grid grid-cols-2 gap-3 md:gap-4">
+                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">権限 (Role)</label><select className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-bold shadow-sm text-sm" value={editingItem.role || 'FRONT'} onChange={e => setEditingItem({...editingItem, role: e.target.value})}><option value="FRONT">受付 (FRONT)</option><option value="INSPECTION">検収 (INSPECTION)</option><option value="PLANT">工場 (PLANT)</option><option value="MANAGER">工場長 (MANAGER)</option><option value="ALL">管理者 (ALL)</option></select></div>
+                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">時給/単価</label><input type="number" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-mono shadow-sm text-right tabular-nums text-sm" value={editingItem.rate || 0} onChange={e => setEditingItem({...editingItem, rate: e.target.value})} /></div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div><label className="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">ログインID</label><input type="text" className="w-full bg-white border border-gray-300 p-3 rounded-sm outline-none focus:border-gray-900 font-mono shadow-sm" value={editingItem.loginId || ''} onChange={e => setEditingItem({...editingItem, loginId: e.target.value})} /></div>
-                        <div><label className="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">パスワード</label><input type="text" className="w-full bg-white border border-gray-300 p-3 rounded-sm outline-none focus:border-gray-900 font-mono shadow-sm" value={editingItem.password || ''} onChange={e => setEditingItem({...editingItem, password: e.target.value})} /></div>
+                    <div className="grid grid-cols-2 gap-3 md:gap-4">
+                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">ログインID</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-mono shadow-sm text-sm" value={editingItem.loginId || ''} onChange={e => setEditingItem({...editingItem, loginId: e.target.value})} /></div>
+                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">パスワード</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-mono shadow-sm text-sm" value={editingItem.password || ''} onChange={e => setEditingItem({...editingItem, password: e.target.value})} /></div>
                     </div>
                   </div>
                 )}
             </div>
             
-            <div className="p-4 border-t border-gray-200 flex justify-end gap-3 bg-gray-50 shrink-0">
-              <button onClick={handleCloseModal} className="px-6 py-3 text-gray-600 font-bold hover:bg-gray-200 rounded-sm transition">キャンセル</button>
-              <button onClick={handleSave} disabled={isSubmitting} className="px-8 py-3 bg-[#D32F2F] text-white font-bold rounded-sm hover:bg-red-800 transition disabled:opacity-50 flex items-center gap-2 shadow-md active:scale-95 text-lg">
-                {isSubmitting ? '保存中...' : '確定してマスターに登録'}
+            <div className="p-3 md:p-4 border-t border-gray-200 flex justify-end gap-2 md:gap-3 bg-gray-50 shrink-0">
+              <button onClick={handleCloseModal} className="px-4 py-2 md:px-6 md:py-3 text-xs md:text-sm text-gray-600 font-bold hover:bg-gray-200 rounded-sm transition">キャンセル</button>
+              <button onClick={handleSave} disabled={isSubmitting} className="px-5 py-2 md:px-8 md:py-3 bg-[#D32F2F] text-white font-bold rounded-sm hover:bg-red-800 transition disabled:opacity-50 flex items-center gap-1 md:gap-2 shadow-md active:scale-95 text-sm md:text-lg">
+                {isSubmitting ? '保存中...' : 'マスター登録'}
               </button>
             </div>
           </div>
