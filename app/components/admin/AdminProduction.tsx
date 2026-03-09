@@ -92,12 +92,36 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
       return name;
   };
 
+  // ★ 状態のクラウド完全同期（PC・スマホ間のズレを解消）
   useEffect(() => {
-      const savedSorted = localStorage.getItem('factoryOS_sortedLots');
-      const savedConsumed = localStorage.getItem('factoryOS_consumedIds');
-      if (savedSorted) setLocalSortedLots(JSON.parse(savedSorted));
-      if (savedConsumed) setLocalConsumedIds(JSON.parse(savedConsumed));
-  }, []);
+      const globalStateStr = data?.config?.global_production_state;
+      if (globalStateStr) {
+          try {
+              const state = JSON.parse(globalStateStr);
+              setLocalSortedLots(state.sortedLots || []);
+              setLocalConsumedIds(state.consumedIds || []);
+          } catch(e) {}
+      } else {
+          const savedSorted = localStorage.getItem('factoryOS_sortedLots');
+          const savedConsumed = localStorage.getItem('factoryOS_consumedIds');
+          if (savedSorted) setLocalSortedLots(JSON.parse(savedSorted));
+          if (savedConsumed) setLocalConsumedIds(JSON.parse(savedConsumed));
+      }
+  }, [data?.config]);
+
+  // ★ クラウドに状態をセーブする関数
+  const syncStateToServer = async (newSorted: any[], newConsumed: string[]) => {
+      const val = JSON.stringify({ sortedLots: newSorted, consumedIds: newConsumed });
+      localStorage.setItem('factoryOS_sortedLots', JSON.stringify(newSorted));
+      localStorage.setItem('factoryOS_consumedIds', JSON.stringify(newConsumed));
+      try {
+          await fetch('/api/gas', { 
+              method: 'POST', 
+              headers: { 'Content-Type': 'application/json' }, 
+              body: JSON.stringify({ action: 'UPDATE_CONFIG', key: 'global_production_state', value: val }) 
+          });
+      } catch(e) { console.error("Sync Error"); }
+  };
 
   const { toSortLots, readyLots } = useMemo(() => {
       let rawLots: any[] = [];
@@ -148,7 +172,8 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
   const totalRedNugget = productions.reduce((sum: number, p: any) => sum + (Number(p.outputRed) || Number(p.outputCopper) || 0), 0);
   const totalMixedNugget = productions.reduce((sum: number, p: any) => sum + (Number(p.outputMixed) || 0), 0);
 
-  const handleSkipSort = (lot: any) => {
+  const handleSkipSort = async (lot: any) => {
+    setIsSubmitting(true);
     const newSortedLots = [...localSortedLots];
     newSortedLots.push({
         lotId: `${lot.lotId}-S-SKIP`, reservationId: lot.reservationId, memberName: lot.memberName,
@@ -156,12 +181,13 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
     });
     const newConsumedIds = [...localConsumedIds, lot.lotId];
     setLocalSortedLots(newSortedLots); setLocalConsumedIds(newConsumedIds);
-    localStorage.setItem('factoryOS_sortedLots', JSON.stringify(newSortedLots));
-    localStorage.setItem('factoryOS_consumedIds', JSON.stringify(newConsumedIds));
+    await syncStateToServer(newSortedLots, newConsumedIds);
+    setIsSubmitting(false);
   };
 
-  const handleSortSubmit = () => {
+  const handleSortSubmit = async () => {
     if (!sortingLot) return;
+    setIsSubmitting(true);
     const newSortedLots = [...localSortedLots];
     sortOutputs.forEach((out, idx) => {
         if (out.product && out.weight) {
@@ -174,8 +200,10 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
     });
     const newConsumedIds = [...localConsumedIds, sortingLot.lotId]; 
     setLocalSortedLots(newSortedLots); setLocalConsumedIds(newConsumedIds);
-    localStorage.setItem('factoryOS_sortedLots', JSON.stringify(newSortedLots)); localStorage.setItem('factoryOS_consumedIds', JSON.stringify(newConsumedIds));
+    await syncStateToServer(newSortedLots, newConsumedIds);
+    
     setSortingLot(null); setSortOutputs([{ product: '', weight: '' }]); setSortDust(''); setSortTime(''); setSortWorker('未選択'); setActiveTab('PROCESS'); 
+    setIsSubmitting(false);
   };
 
   const openBlendModal = () => {
@@ -233,7 +261,9 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
         const result = await res.json();
         if (result.status === 'success') { 
             const newConsumedIds = [...localConsumedIds, ...blendingLots.map(l => l.lotId)];
-            setLocalConsumedIds(newConsumedIds); localStorage.setItem('factoryOS_consumedIds', JSON.stringify(newConsumedIds));
+            setLocalConsumedIds(newConsumedIds);
+            await syncStateToServer(localSortedLots, newConsumedIds);
+            
             alert('ブレンド加工データを記録しました！\n（作業がすべて終わった場合は、カンバン画面で該当カードを「処理完了」に移動させてください）');
             setBlendingLots([]); setCheckedLotIds([]); window.location.reload(); 
         } else { alert('エラー: ' + result.message); }
@@ -312,7 +342,6 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
             </div>
           </header>
 
-          {/* ★ サマリー部分：全体を薄いグレー背景にし、文字を黒に変更 */}
           <div className="bg-gray-100 border border-gray-200 rounded-sm shadow-sm p-4 md:p-6 text-gray-900 mb-6 relative overflow-hidden flex flex-col md:flex-row justify-between md:items-center gap-4 flex-shrink-0">
               <div className="absolute top-0 right-0 p-4 opacity-5 transform scale-150 text-gray-900"><Icons.Factory /></div>
               <div className="relative z-10">
@@ -323,16 +352,14 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                   <div className="text-right">
                       <p className="text-[10px] md:text-xs text-gray-600 font-bold mb-1 uppercase tracking-widest">上ナゲット (赤)</p>
                       <div className="flex items-end gap-1 justify-end">
-                          {/* ★ 数字から font-mono を外し tabular-nums で等幅を担保 */}
                           <span className="text-3xl md:text-4xl font-black text-[#D32F2F] tabular-nums tracking-tighter">{totalRedNugget.toLocaleString()}</span>
                           <span className="text-sm text-gray-500 font-bold mb-1">kg</span>
                       </div>
                   </div>
                   
-                  {/* 区切り線 */}
                   <div className="w-px h-10 bg-gray-300 hidden md:block"></div>
 
-                  <div className="text-right">
+                  <div className="text-right bg-gray-200 px-4 py-2 rounded-sm">
                       <p className="text-[10px] md:text-xs text-gray-600 font-bold mb-1 uppercase tracking-widest">雑ナゲット</p>
                       <div className="flex items-end gap-1 justify-end">
                           <span className="text-3xl md:text-4xl font-black text-gray-900 tabular-nums tracking-tighter">{totalMixedNugget.toLocaleString()}</span>
@@ -380,13 +407,14 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                                           <p className="text-3xl font-black tabular-nums text-gray-900 tracking-tighter">{lot.remainingWeight.toFixed(1)}<span className="text-xs font-bold text-gray-500 ml-1">kg</span></p>
                                           
                                           <div className="flex gap-2">
-                                              <button onClick={() => handleSkipSort(lot)} className="bg-gray-100 text-gray-600 border border-gray-300 text-xs font-bold px-3 py-2.5 rounded-sm hover:bg-gray-200 transition flex items-center gap-1">
+                                              <button onClick={() => handleSkipSort(lot)} disabled={isSubmitting} className="bg-gray-100 text-gray-600 border border-gray-300 text-xs font-bold px-3 py-2.5 rounded-sm hover:bg-gray-200 transition flex items-center gap-1 disabled:opacity-50">
                                                   直行 <Icons.FastForward />
                                               </button>
                                               
+                                              {/* ★ 選別ボタンのエラー回避処理を強化 */}
                                               <button onClick={() => {
                                                   setSortingLot(lot);
-                                                  const cleanName = lot.product.replace(/💡 AI査定: |📦 AI解析: /, '').trim();
+                                                  const cleanName = (lot.product || '').replace(/💡 AI査定: |📦 AI解析: /, '').trim();
                                                   setSortOutputs([{ product: cleanName, weight: String(lot.remainingWeight) }]);
                                               }} className="bg-gray-900 text-white text-sm font-bold px-4 py-2.5 rounded-sm shadow-sm hover:bg-black transition">
                                                   選別
@@ -536,7 +564,84 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
               )}
           </div>
           
-          {/* ブレンド加工モーダル */}
+          {sortingLot && (
+              <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 md:p-4 animate-in fade-in">
+                  <div className="bg-white rounded-sm shadow-2xl w-full max-w-2xl flex flex-col max-h-[95vh]">
+                      <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-start shrink-0">
+                          <div>
+                              <h3 className="text-lg font-black text-gray-900 flex items-center gap-2"><Icons.Scissors /> 選別結果の登録 <ProvenanceBadge type="HUMAN" /></h3>
+                              <p className="text-xs text-gray-500 mt-1 font-mono">元ロット: {sortingLot.product} ({sortingLot.remainingWeight}kg) / {sortingLot.memberName}</p>
+                          </div>
+                          <button onClick={() => setSortingLot(null)} className="text-gray-400 hover:text-gray-900 p-2 bg-white border border-gray-200 rounded-sm shadow-sm"><Icons.Close /></button>
+                      </div>
+                      
+                      <div className="p-4 md:p-6 overflow-y-auto flex-1 space-y-6 bg-white">
+                          <div className="bg-gray-100 border border-gray-200 p-3 md:p-4 rounded-sm flex flex-col md:flex-row md:items-center gap-3 text-gray-900">
+                              <div className="flex-1 flex items-center gap-3">
+                                  <label className="text-sm font-bold text-gray-900 whitespace-nowrap"><Icons.Worker /> 作業担当</label>
+                                  <select className="w-full bg-white border border-gray-300 p-2.5 md:p-3 text-sm md:text-base font-bold rounded-sm outline-none focus:border-gray-500" value={sortWorker} onChange={e => setSortWorker(e.target.value)}>
+                                      {workerList.map(w => <option key={w} value={w}>{w}</option>)}
+                                  </select>
+                              </div>
+                              <div className="flex-1 flex items-center gap-3">
+                                  <label className="text-sm font-bold text-gray-900 whitespace-nowrap">時間</label>
+                                  <div className="relative w-full">
+                                      <input type="number" inputMode="decimal" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 pr-8 text-lg tabular-nums rounded-sm outline-none focus:border-gray-500 text-right" placeholder="0" value={sortTime} onChange={e => setSortTime(e.target.value)} />
+                                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-500">分</span>
+                                  </div>
+                              </div>
+                          </div>
+
+                          <div>
+                              <h4 className="text-xs font-bold text-gray-500 mb-3 uppercase tracking-widest border-b border-gray-200 pb-1">仕分け後の線材 (加工ヤードへ移動)</h4>
+                              <div className="space-y-3">
+                                  {sortOutputs.map((out, idx) => (
+                                      <div key={idx} className="flex flex-col md:flex-row md:items-center gap-3 bg-gray-50 p-3 border border-gray-200 rounded-sm">
+                                          <select className="w-full md:flex-1 p-3 bg-white border border-gray-300 rounded-sm text-base font-bold outline-none" value={out.product} onChange={e => { const newOut = [...sortOutputs]; newOut[idx].product = e.target.value; setSortOutputs(newOut); }}>
+                                              <option value="">仕分け後の品目を選択</option>
+                                              {out.product && !wiresMaster.some(w => getDisplayName(w) === out.product || w.name === out.product) && (
+                                                  <option value={out.product}>{out.product} (見立てを維持)</option>
+                                              )}
+                                              {wiresMaster.map((w:any) => {
+                                                  const dName = getDisplayName(w);
+                                                  return <option key={w.id} value={dName}>{dName}</option>
+                                              })}
+                                          </select>
+                                          <div className="flex items-center gap-2">
+                                              <div className="relative flex-1 md:w-40">
+                                                  <span className="md:hidden absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">重量</span>
+                                                  <input type="number" inputMode="decimal" className="w-full p-3 pr-8 pl-12 md:pl-3 border border-gray-300 rounded-sm text-lg tabular-nums text-right outline-none focus:border-gray-500" placeholder="0" value={out.weight} onChange={e => { const newOut = [...sortOutputs]; newOut[idx].weight = e.target.value; setSortOutputs(newOut); }} />
+                                                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">kg</span>
+                                              </div>
+                                              <button onClick={() => setSortOutputs(sortOutputs.filter((_, i) => i !== idx))} className="p-3 text-gray-400 hover:text-gray-900 bg-white border border-gray-200 rounded-sm"><Icons.Trash /></button>
+                                          </div>
+                                      </div>
+                                  ))}
+                              </div>
+                              <button onClick={() => setSortOutputs([...sortOutputs, { product: '', weight: '' }])} className="mt-3 w-full border-2 border-dashed border-gray-300 text-sm font-bold text-gray-600 hover:bg-gray-100 py-3 rounded-sm flex items-center justify-center gap-1 transition"><Icons.Plus /> 品目を追加</button>
+                          </div>
+
+                          <div>
+                              <h4 className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-widest border-b border-gray-200 pb-1">除去したゴミ・異物 (廃棄)</h4>
+                              <div className="flex flex-col md:flex-row md:items-center gap-3 bg-gray-50 p-3 border border-gray-200 rounded-sm">
+                                  <span className="text-sm font-bold text-gray-700 flex-1">鉄・プラスチック等の総重量</span>
+                                  <div className="relative w-full md:w-48">
+                                      <input type="number" inputMode="decimal" className="w-full p-3 pr-8 border border-gray-300 rounded-sm text-lg tabular-nums text-right outline-none focus:border-gray-500" placeholder="0" value={sortDust} onChange={e => setSortDust(e.target.value)} />
+                                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">kg</span>
+                                  </div>
+                              </div>
+                          </div>
+
+                      </div>
+                      <div className="p-4 border-t border-gray-200 bg-gray-100 shrink-0">
+                          <button onClick={handleSortSubmit} disabled={isSubmitting} className="w-full bg-[#D32F2F] text-white py-4 rounded-sm font-bold text-base shadow-md hover:bg-red-800 transition disabled:opacity-50">
+                              {isSubmitting ? '処理中...' : '選別結果を保存して、加工待ちヤードへ送る'}
+                          </button>
+                      </div>
+                  </div>
+              </div>
+          )}
+
           {blendingLots.length > 0 && (
               <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 md:p-4 animate-in fade-in">
                   <div className="bg-white rounded-sm shadow-2xl w-full max-w-2xl flex flex-col max-h-[95vh]">
