@@ -3,8 +3,8 @@
 import React, { useState } from 'react';
 
 const Icons = {
-  Camera: () => <svg className="w-6 h-6 md:w-8 md:h-8 mb-1 md:mb-2 text-[#D32F2F]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
-  UploadCloud: () => <svg className="w-6 h-6 md:w-8 md:h-8 mb-1 md:mb-2 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>,
+  Camera: () => <svg className="w-5 h-5 md:w-8 md:h-8 mb-1 md:mb-2 text-[#D32F2F]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+  UploadCloud: () => <svg className="w-5 h-5 md:w-8 md:h-8 mb-1 md:mb-2 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>,
   Refresh: () => <svg className="w-6 h-6 animate-spin text-[#D32F2F]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
   Check: () => <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>,
   Download: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>,
@@ -118,13 +118,13 @@ export const AdminPhotoUpload = () => {
       <header className="mb-4 md:mb-8 border-b border-gray-200 pb-3 md:pb-6 shrink-0 mt-4 md:mt-0">
         <h2 className="text-xl md:text-2xl font-black flex items-center gap-2 md:gap-3 font-serif tracking-tight">
           <span className="w-1.5 h-5 md:h-6 bg-[#D32F2F] rounded-full"></span>
-          広報・現場写真アップロード
+          広報・現場写真
         </h2>
         <p className="text-[10px] md:text-xs text-gray-500 mt-1 md:mt-2 font-mono tracking-widest ml-4">PHOTO UPLOAD & GALLERY</p>
       </header>
 
       {/* 1. アップロードエリア */}
-      <div className="bg-white border border-gray-200 shadow-sm rounded-sm p-4 md:p-12 mb-6">
+      <div className="bg-white border border-gray-200 shadow-sm rounded-sm p-4 md:p-12 mb-4 md:mb-6">
         <div className="mb-6 text-center hidden md:block">
             <h3 className="text-lg font-bold text-gray-900 mb-2">現場の様子をGoogle Driveへ保存</h3>
             <p className="text-sm text-gray-500">
@@ -133,18 +133,18 @@ export const AdminPhotoUpload = () => {
             </p>
         </div>
 
-        {/* ★ 変更：スマホで横並び（2カラム）になるように grid-cols-2 を指定 */}
+        {/* ★ スマホでは高さを抑えたスマートな2カラムボタン */}
         <div className="grid grid-cols-2 gap-3 md:gap-4 mb-2">
-          <label className={`bg-red-50 hover:bg-red-100 border border-red-200 text-[#D32F2F] py-6 md:py-12 rounded-sm shadow-sm font-bold flex flex-col items-center justify-center gap-1 md:gap-2 transition cursor-pointer ${isUploadingPhoto ? 'opacity-50 pointer-events-none' : ''}`}>
+          <label className={`bg-red-50 hover:bg-red-100 border border-red-200 text-[#D32F2F] py-4 md:py-12 rounded-sm shadow-sm font-bold flex flex-col items-center justify-center gap-1 md:gap-2 transition cursor-pointer ${isUploadingPhoto ? 'opacity-50 pointer-events-none' : ''}`}>
             <Icons.Camera />
-            <span className="text-[11px] md:text-base tracking-widest text-center">カメラで撮影</span>
+            <span className="text-xs md:text-base tracking-widest text-center">カメラで撮影</span>
             <span className="text-[8px] md:text-xs font-normal opacity-80 hidden md:block">その場で撮影してアップロード</span>
             <input type="file" accept="image/*" capture="environment" onChange={handleMultiPhotoUpload} className="hidden" disabled={isUploadingPhoto} />
           </label>
           
-          <label className={`bg-gray-50 hover:bg-gray-100 border border-gray-300 text-gray-900 py-6 md:py-12 rounded-sm shadow-sm font-bold flex flex-col items-center justify-center gap-1 md:gap-2 transition cursor-pointer ${isUploadingPhoto ? 'opacity-50 pointer-events-none' : ''}`}>
+          <label className={`bg-gray-50 hover:bg-gray-100 border border-gray-300 text-gray-900 py-4 md:py-12 rounded-sm shadow-sm font-bold flex flex-col items-center justify-center gap-1 md:gap-2 transition cursor-pointer ${isUploadingPhoto ? 'opacity-50 pointer-events-none' : ''}`}>
             <Icons.UploadCloud />
-            <span className="text-[11px] md:text-base tracking-widest text-center">フォルダから</span>
+            <span className="text-xs md:text-base tracking-widest text-center">フォルダから</span>
             <span className="text-[8px] md:text-xs font-normal opacity-80 hidden md:block">複数枚の一括アップロードに対応</span>
             <input type="file" accept="image/*" multiple onChange={handleMultiPhotoUpload} className="hidden" disabled={isUploadingPhoto} />
           </label>
