@@ -1,6 +1,6 @@
 // app/components/admin/AdminKanban.tsx
 // @ts-nocheck
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 
 const Icons = {
   Printer: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>,
@@ -20,7 +20,7 @@ const formatTime = (timeStr: string) => {
   return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 };
 
-// ★ コンソールエラーを完全に防ぐ、強化版パース関数
+// ★ 修正版：最強のJSONパース関数（改行コードで破壊されないよう保護）
 export const parseItemsData = (rawItems: any) => {
     if (!rawItems) return [];
     if (Array.isArray(rawItems)) return rawItems;
@@ -34,9 +34,11 @@ export const parseItemsData = (rawItems: any) => {
     } catch (e1) {
         try {
             let temp = String(rawItems);
-            if (temp.startsWith('"') && temp.endsWith('"')) temp = temp.slice(1, -1);
+            if (temp.startsWith('"') && temp.endsWith('"')) {
+                temp = temp.slice(1, -1);
+            }
             temp = temp.replace(/""/g, '"');
-            // 改行コードをスペースに置換してJSONの構造破壊を防ぐ
+            // ★ AIの出力する改行コードをスペースに置換してJSONの構造破壊を防ぐ
             temp = temp.replace(/\n/g, " ").replace(/\r/g, "");
             let parsed = JSON.parse(temp);
             if (typeof parsed === 'string') parsed = JSON.parse(parsed);
@@ -48,9 +50,22 @@ export const parseItemsData = (rawItems: any) => {
     return [];
 };
 
-// ★ props に data を追加し、製造実績（Productions）を読み込めるようにする
 export const AdminKanban = ({ data, localReservations = [], onUpdateStatus, onEditReservation }: { data: any, localReservations: any[], onUpdateStatus: (id: string, status: string) => void, onEditReservation: (id: string) => void }) => {
   
+  // ★ 「リロードで消える問題」の特効薬：DBデータとローカルデータを賢くマージする
+  const effectiveReservations = useMemo(() => {
+      const dbRes = data?.reservations || [];
+      const locRes = localReservations || [];
+      const map = new Map();
+      
+      // DBデータを先にセット
+      dbRes.forEach((r: any) => map.set(r.id, r));
+      // Localのデータ（追加・更新されたもの）で上書き
+      locRes.forEach((r: any) => map.set(r.id, r));
+      
+      return Array.from(map.values());
+  }, [data?.reservations, localReservations]);
+
   const handlePrint = (res: any) => {
       const items = parseItemsData(res.items);
       const totalWeight = items.reduce((sum: number, item: any) => sum + Number(item.weight || 0), 0).toFixed(1);
@@ -202,8 +217,7 @@ export const AdminKanban = ({ data, localReservations = [], onUpdateStatus, onEd
 
       <div className="flex gap-4 overflow-x-auto pb-4 h-full items-stretch">
         {columns.map(col => {
-          const safeReservations = localReservations || [];
-          const colData = safeReservations.filter(r => r.status === col.id).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          const colData = effectiveReservations.filter(r => r.status === col.id).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
           
           return (
             <div key={col.id} className="flex-1 min-w-[300px] flex flex-col bg-gray-50 rounded-sm border border-gray-200 overflow-hidden shadow-sm" onDrop={(e) => handleDrop(e, col.id)} onDragOver={handleDragOver}>
