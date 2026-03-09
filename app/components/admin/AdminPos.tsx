@@ -165,8 +165,8 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
 
   const removeItem = (id: string) => { setCart(prev => prev.filter(item => item.id !== id)); };
 
-  // ★ 修正点: スマホのメモリ不足＆サイズオーバー対策で強烈に圧縮
-  const compressImage = (file: File): Promise<string> => {
+  // ★ ハイブリッド・スマート圧縮ロジック（用途によって画質・解像度を切り替える）
+  const compressImage = (file: File, isDetailMode: boolean = false): Promise<string> => {
       return new Promise((resolve, reject) => {
           if (!file) return reject(new Error("ファイルがありません"));
           const reader = new FileReader(); 
@@ -175,16 +175,19 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
               img.onload = () => {
                   try {
                       const canvas = document.createElement('canvas');
-                      // ★ 1024px -> 800px に縮小して大幅に軽量化
-                      const MAX = 800; 
+                      // 印字・断面は1600px、全体・一括は800pxに制限
+                      const MAX = isDetailMode ? 1600 : 800; 
+                      // 印字・断面は画質85%、全体・一括は60%に圧縮
+                      const quality = isDetailMode ? 0.85 : 0.6; 
+                      
                       let w = img.width; let h = img.height;
                       if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } } else { if (h > MAX) { w *= MAX / h; h = MAX; } }
                       canvas.width = w; canvas.height = h;
                       const ctx = canvas.getContext('2d'); 
                       if (!ctx) throw new Error("Canvas context error");
                       ctx.drawImage(img, 0, 0, w, h);
-                      // ★ 画質 0.7 -> 0.6 に下げてペイロードサイズを抑制
-                      resolve(canvas.toDataURL('image/jpeg', 0.6).split(',')[1]); 
+                      
+                      resolve(canvas.toDataURL('image/jpeg', quality).split(',')[1]); 
                   } catch (e) {
                       reject(new Error("画像の圧縮に失敗しました。解像度を下げてお試しください。"));
                   }
@@ -200,7 +203,10 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   const handleAiImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, num: 1 | 2 | 3 | 4) => {
     const file = e.target.files?.[0]; if (!file) return;
     try { 
-        const compressed = await compressImage(file); 
+        // 1(断面), 3(印字), 4(印字) はディテール（文字・構造）が命なので高画質モード
+        const isDetailMode = (num === 1 || num === 3 || num === 4);
+        const compressed = await compressImage(file, isDetailMode); 
+        
         if (num === 1) setImgData1(compressed); 
         else if (num === 2) setImgData2(compressed); 
         else if (num === 3) setImgData3(compressed); 
@@ -216,7 +222,10 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
     const files = e.target.files; if (!files || files.length === 0) return;
     const newImages: string[] = [];
     for (let i = 0; i < files.length; i++) { 
-        try { newImages.push(await compressImage(files[i])); } catch(err) {} 
+        try { 
+            // フレコン一括画像は全体の量感がわかればいいので軽量モード（false）
+            newImages.push(await compressImage(files[i], false)); 
+        } catch(err) {} 
     }
     setBulkImages(prev => [...prev, ...newImages]); 
     e.target.value = '';
@@ -225,6 +234,13 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
 
   const runAiAnalysis = async () => {
     if (!imgData1) return alert('1. 断面画像（必須）をアップロードしてください');
+    
+    // ★ 安全装置：通信データの上限（約4MB）を超えないかチェック
+    const totalSize = (imgData1.length + imgData2.length + imgData3.length + imgData4.length) * 0.75;
+    if (totalSize > 4 * 1024 * 1024) {
+        return alert('⚠️ 画像サイズの合計が大きすぎます（通信エラーになります）。\n不要な画像を削除するか、もう少し離れて撮影してください。');
+    }
+
     setAiStatus('ANALYZING'); setAiProgressStep(1); 
     const progressInterval = setInterval(() => { setAiProgressStep(prev => prev < 3 ? prev + 1 : 3); }, 2000);
 
@@ -258,6 +274,13 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
 
   const runBulkAiAnalysis = async () => {
     if (bulkImages.length === 0) return alert('画像をアップロードしてください。');
+    
+    // ★ 安全装置：フレコン一括画像の総サイズチェック
+    const totalSize = bulkImages.reduce((sum, img) => sum + img.length, 0) * 0.75;
+    if (totalSize > 4 * 1024 * 1024) {
+        return alert('⚠️ 画像サイズの合計が大きすぎます（通信エラーになります）。\n一度に送る枚数を減らすか、被写体から少し離れて撮影してください。');
+    }
+
     setAiStatus('ANALYZING'); setAiProgressStep(1); 
     const progressInterval = setInterval(() => { setAiProgressStep(prev => prev < 3 ? prev + 1 : 3); }, 3000); 
 
@@ -378,7 +401,8 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           setAiHint(currentHint + (currentHint ? ' ' : '') + finalStr + interim);
       };
       recognition.onend = () => { setIsListeningHint(false); setAiHint(currentHint + (currentHint ? ' ' : '') + finalStr); };
-      hintRecognitionRef.current = recognition; recognition.start();
+      hintRecognitionRef.current = recognition;
+      recognition.start();
   };
 
   const handlePrepareMasterRegistration = (item: any) => {
