@@ -13,23 +13,22 @@ const Icons = {
   Plus: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>,
   Trash: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
   Refresh: () => <svg className="w-4 h-4 animate-spin inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
-  Save: () => <svg className="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>,
-  LightBulb: () => <svg className="w-4 h-4 inline-block text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>,
+  Save: () => <svg className="w-4 h-4 md:w-5 md:h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>,
   Filter: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>,
   Info: () => <svg className="w-3 h-3 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
 };
 
 const Sparkline = ({ data, trend }: { data: number[], trend: string }) => {
-  if (!data || data.length < 2) return <div className="w-12 h-5"></div>;
+  if (!data || data.length < 2) return <div className="w-10 h-4"></div>;
   const min = Math.min(...data);
   const max = Math.max(...data);
   const range = max - min || 1;
-  const width = 48; const height = 16;
+  const width = 40; const height = 14;
   const points = data.map((val, i) => `${(i / (data.length - 1)) * width},${height - ((val - min) / range) * height}`).join(' ');
   const color = trend === 'up' ? '#DC2626' : trend === 'down' ? '#2563EB' : '#9CA3AF'; 
 
   return (
-    <svg viewBox={`0 -2 ${width} ${height + 4}`} className="w-12 h-5 overflow-visible opacity-70" title={`推移: ${data.join(' → ')}`}>
+    <svg viewBox={`0 -2 ${width} ${height + 4}`} className="w-10 h-4 overflow-visible opacity-70" title={`推移: ${data.join(' → ')}`}>
       <polyline fill="none" stroke={color} strokeWidth="1.5" points={points} strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
@@ -60,10 +59,10 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       { key: '被覆線（50%）', type: 'copper', searchKey: '50%', defaultRatio: 50 },
       { key: 'ネズミ線（VA・VVFなど）', type: 'copper', searchKey: 'VVF', defaultRatio: 42 },
       { key: 'LANケーブル', type: 'copper', searchKey: 'LAN', defaultRatio: 40 },
-      { key: '雑線（ハーネスや家電線など）', type: 'copper', searchKey: '雑線', defaultRatio: 35 }
+      { key: '雑線（ハーネスなど）', type: 'copper', searchKey: '雑線', defaultRatio: 35 }
   ];
 
-  const initialVisible = ['光線', '下銅', '砲金', '込真鍮', '被覆線（80%）', 'ネズミ線（VA・VVFなど）', '雑線（ハーネスや家電線など）'];
+  const initialVisible = ['光線', '下銅', '砲金', '込真鍮', '被覆線（80%）', 'ネズミ線（VA・VVFなど）', '雑線（ハーネスなど）'];
   const [visibleItems, setVisibleItems] = useState<string[]>(initialVisible);
 
   const currentCopperPrice = data?.market?.copper?.price || 1450;
@@ -98,9 +97,13 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
           try { currentObj = tPrices[0] ? JSON.parse(tPrices[0].prices) : {}; } catch(e){}
           try { prevObj = tPrices[1] ? JSON.parse(tPrices[1].prices) : {}; } catch(e){}
           
+          // 雑線の名称揺れを吸収
           const currentPrices = currentObj.prices || currentObj;
+          if (currentPrices['雑線（ハーネスや家電線など）']) currentPrices['雑線（ハーネスなど）'] = currentPrices['雑線（ハーネスや家電線など）'];
+          
           const currentEvidence = currentObj.evidence || {};
           const prevPrices = prevObj.prices || prevObj;
+          if (prevPrices['雑線（ハーネスや家電線など）']) prevPrices['雑線（ハーネスなど）'] = prevPrices['雑線（ハーネスや家電線など）'];
 
           const trends: any = {}; const history: any = {};
           
@@ -113,7 +116,10 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
               const hist = tPrices.slice(0, 10).reverse().map(p => {
                   try { 
                       const pObj = JSON.parse(p.prices);
-                      return (pObj.prices ? pObj.prices[k] : pObj[k]) || null;
+                      const prices = pObj.prices || pObj;
+                      let val = prices[k];
+                      if (!val && k === '雑線（ハーネスなど）') val = prices['雑線（ハーネスや家電線など）'];
+                      return val || null;
                   } catch { return null; }
               }).filter(v => v !== null);
               
@@ -138,27 +144,27 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       const vvfAvg = vvfPrices.length > 0 ? Math.floor(vvfPrices.reduce((a,b)=>a+b,0)/vvfPrices.length) : 0;
 
       let vvfStatus = '';
-      if (vvfItem.myPrice >= vvfMax && vvfMax > 0) vvfStatus = `当社のネズミ線買取価格は市場最高値圏にあります。`;
-      else if (vvfItem.myPrice < vvfAvg && vvfAvg > 0) vvfStatus = `当社のネズミ線買取価格は市場平均（約¥${vvfAvg}）を下回っています。`;
-      else if (vvfAvg > 0) vvfStatus = `当社のネズミ線買取価格は市場平均水準で推移しています。`;
-      else vvfStatus = `市場データが十分に取得できていません。`;
+      if (vvfItem.myPrice >= vvfMax && vvfMax > 0) vvfStatus = `当社のネズミ線価格は市場最高値圏です。`;
+      else if (vvfItem.myPrice < vvfAvg && vvfAvg > 0) vvfStatus = `当社のネズミ線価格は市場平均（約¥${vvfAvg}）を下回っています。`;
+      else if (vvfAvg > 0) vvfStatus = `当社のネズミ線価格は市場平均水準です。`;
+      else vvfStatus = `市場データが不足しています。`;
 
       let marginStatus = '';
       const avgMargin = Math.floor(vvfItem.pureValue - vvfAvg);
-      if (avgMargin < 50 && vvfAvg > 0) marginStatus = `市場は利益幅を削った集客競争が起きています（他社平均マージン: 約¥${avgMargin}）。無理な追従は避けるべきです。`;
-      else if (avgMargin > 100 && vvfAvg > 0) marginStatus = `市場全体が利益を多めに確保しています。当社が少し掛率を上げればシェアを獲得できるチャンスです。`;
-      else if (vvfAvg > 0) marginStatus = `市場全体のマージン設定は安定しています。現在の掛率で十分戦えます。`;
-      else marginStatus = `マージン推測データが不足しています。`;
+      if (avgMargin < 50 && vvfAvg > 0) marginStatus = `他社は利益を削って集客しています（他社平均マージン: 約¥${avgMargin}）。無理な追従は避けるべきです。`;
+      else if (avgMargin > 100 && vvfAvg > 0) marginStatus = `市場全体が利益を多めに確保しています。少し掛率を上げれば集客のチャンスです。`;
+      else if (vvfAvg > 0) marginStatus = `市場全体のマージン設定は安定しています。現在の掛率で十分です。`;
+      else marginStatus = `マージンデータが不足しています。`;
 
       return { vvfStatus, marginStatus };
   }, [processedCompetitors, myItems, currentMarginRate]);
 
   const getDiffLabel = (my: number, comp: number) => {
-      if (!comp) return <span className="text-gray-300 font-bold text-xs">-</span>;
+      if (!comp) return <span className="text-gray-300 font-bold text-[10px]">-</span>;
       const diff = my - comp;
-      if (diff > 0) return <span className="text-blue-600 font-bold text-xs">+{diff} 勝</span>;
-      if (diff < 0) return <span className="text-red-600 font-bold text-xs">{diff} 負</span>;
-      return <span className="text-gray-400 font-bold text-xs">同額</span>;
+      if (diff > 0) return <span className="text-blue-600 font-bold text-[10px] bg-blue-50 px-1 rounded-sm">+{diff} 勝</span>;
+      if (diff < 0) return <span className="text-red-600 font-bold text-[10px] bg-red-50 px-1 rounded-sm">{diff} 負</span>;
+      return <span className="text-gray-400 font-bold text-[10px] bg-gray-100 px-1 rounded-sm">同額</span>;
   };
 
   const hasChanges = currentMarginRate !== savedMarginRate;
@@ -233,72 +239,74 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
   };
 
   return (
-    <div className="flex flex-col h-full animate-in fade-in duration-500 w-full font-sans">
+    // ★ 修正: h-fullやoverflow-hiddenを解除し、ページ全体が素直に下にスクロールするように変更
+    <div className="flex flex-col animate-in fade-in duration-500 w-full font-sans text-gray-900 pb-20">
+      
       <header className="mb-4 flex flex-col md:flex-row md:justify-between md:items-end gap-3 border-b border-gray-200 pb-3 shrink-0">
         <div>
           <h2 className="text-xl md:text-2xl font-black text-gray-900 flex items-center gap-2 font-serif tracking-tight">
-            <span className="w-1.5 h-6 bg-[#D32F2F]"></span>
+            <span className="w-1.5 h-5 md:h-6 bg-[#D32F2F]"></span>
             相場レーダー
           </h2>
-          <p className="text-sm text-gray-500 mt-1 font-bold ml-3">自己学習型クローラー / AIマーケット分析</p>
+          <p className="text-[10px] md:text-sm text-gray-500 mt-1 font-bold ml-3">他社サイト自動巡回 / AIマーケット分析</p>
         </div>
-        <div className="flex bg-gray-100 p-1 rounded-sm overflow-x-auto shadow-inner border border-gray-200">
-            <button onClick={() => setActiveTab('RADAR')} className={`px-4 py-2 rounded-sm text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'RADAR' ? 'bg-white text-gray-900 shadow-sm border border-gray-300' : 'text-gray-500 hover:text-gray-900'}`}>
+        <div className="flex bg-gray-100 p-1 rounded-sm overflow-x-auto shadow-inner border border-gray-200 no-scrollbar">
+            <button onClick={() => setActiveTab('RADAR')} className={`px-3 py-1.5 md:px-4 md:py-2 rounded-sm text-[10px] md:text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'RADAR' ? 'bg-white text-gray-900 shadow-sm border border-gray-300' : 'text-gray-500 hover:text-gray-900'}`}>
               <Icons.Radar /> 競合価格ヒートマップ
             </button>
-            <button onClick={() => setActiveTab('TARGETS')} className={`px-4 py-2 rounded-sm text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'TARGETS' ? 'bg-white text-gray-900 shadow-sm border border-gray-300' : 'text-gray-500 hover:text-gray-900'}`}>
-              <Icons.Globe /> ターゲット管理 & ルール設定
+            <button onClick={() => setActiveTab('TARGETS')} className={`px-3 py-1.5 md:px-4 md:py-2 rounded-sm text-[10px] md:text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${activeTab === 'TARGETS' ? 'bg-white text-gray-900 shadow-sm border border-gray-300' : 'text-gray-500 hover:text-gray-900'}`}>
+              <Icons.Globe /> 巡回ターゲット＆ルール
             </button>
         </div>
       </header>
 
       {activeTab === 'RADAR' && (
-          // ★ 修正: スマホ表示時に表が潰れないよう、親の overflow-hidden を外し、縦スクロール可能（overflow-y-auto）にしました
-          <div className="flex-1 flex flex-col gap-4 overflow-y-auto pb-10">
+          <div className="flex flex-col gap-4">
               
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 shrink-0">
-                  <div className="bg-white border border-gray-200 rounded-sm shadow-sm p-5 relative flex flex-col justify-between">
-                      <div className="absolute top-0 right-0 bg-[#D32F2F] text-white text-[9px] font-bold px-3 py-1 rounded-bl-sm tracking-widest uppercase">利益コントロール</div>
+              {/* 上部パネル: スマホでもコンパクトに見えるよう調整 */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                  <div className="bg-white border border-gray-200 rounded-sm shadow-sm p-4 relative flex flex-col justify-between">
+                      <div className="absolute top-0 right-0 bg-[#D32F2F] text-white text-[8px] md:text-[9px] font-bold px-2 py-0.5 rounded-bl-sm tracking-widest uppercase">利益コントロール</div>
                       <div>
-                          <label className="font-bold text-gray-900 text-base flex items-center gap-1.5">
+                          <label className="font-bold text-gray-900 text-sm flex items-center gap-1.5">
                               ベース買取掛率（％）
                           </label>
-                          <p className="text-xs text-gray-500 mb-3">純粋な価値（建値×歩留まり）から何％でお客様から買い取るか</p>
-                          <div className="flex items-center gap-4">
+                          <p className="text-[10px] text-gray-500 mb-2">純粋価値（建値×歩留）から何％で買い取るか</p>
+                          <div className="flex items-center gap-3">
                               <input 
                                   type="range" min="60" max="95" step="1" 
                                   value={currentMarginRate} onChange={(e) => setCurrentMarginRate(Number(e.target.value))} 
-                                  className="w-full accent-[#D32F2F] h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" 
+                                  className="w-full accent-[#D32F2F] h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer" 
                               />
-                              <span className="text-4xl font-black text-gray-900 font-mono w-24 text-right tracking-tighter tabular-nums">{currentMarginRate}%</span>
+                              <span className="text-3xl font-black text-gray-900 font-mono w-20 text-right tracking-tighter tabular-nums">{currentMarginRate}%</span>
                           </div>
                       </div>
                       
-                      <div className="mt-5 flex justify-between items-end h-10">
-                          <div className="text-xs text-gray-400 font-bold flex flex-col justify-end">
-                              <span className="mb-0.5">◀ 利益重視 (60%)</span>
-                              <span>▶ 薄利多売 (95%)</span>
+                      <div className="mt-2 flex justify-between items-end h-8">
+                          <div className="text-[9px] text-gray-400 font-bold flex flex-col justify-end">
+                              <span>◀ 利益重視(60%)</span>
+                              <span>▶ 薄利多売(95%)</span>
                           </div>
                           {hasChanges && (
-                              <button onClick={handleSaveMarginRate} disabled={isProcessing} className="bg-gray-900 hover:bg-black text-white px-5 py-2.5 rounded-sm text-sm font-bold shadow-md flex items-center gap-2 transition animate-pulse">
+                              <button onClick={handleSaveMarginRate} disabled={isProcessing} className="bg-gray-900 hover:bg-black text-white px-3 py-1.5 md:px-4 md:py-2 rounded-sm text-[10px] md:text-xs font-bold shadow-md flex items-center gap-1.5 transition animate-pulse">
                                   {isProcessing ? <Icons.Refresh /> : <Icons.Save />} 保存して反映
                               </button>
                           )}
                       </div>
                   </div>
 
-                  <div className="bg-white border border-gray-200 rounded-sm shadow-sm p-5 flex flex-col justify-between">
+                  <div className="bg-white border border-gray-200 rounded-sm shadow-sm p-4 flex flex-col justify-between">
                       <div>
-                          <h3 className="text-sm font-black flex items-center gap-2 text-gray-900 mb-3 tracking-widest border-b border-gray-100 pb-2">
+                          <h3 className="text-sm font-black flex items-center gap-1.5 text-gray-900 mb-2 tracking-widest border-b border-gray-100 pb-1.5">
                               <span className="text-gray-900"><Icons.Brain /></span> AI マーケット全体分析
                           </h3>
                           {marketAnalysis ? (
-                              <ul className="space-y-3 text-sm leading-relaxed text-gray-700 list-disc list-inside mt-2 font-bold">
+                              <ul className="space-y-1.5 text-[10px] md:text-xs leading-relaxed text-gray-700 list-disc list-inside mt-1 font-bold">
                                   <li>{marketAnalysis.vvfStatus}</li>
                                   <li>{marketAnalysis.marginStatus}</li>
                               </ul>
                           ) : (
-                              <div className="w-full text-center py-6 text-gray-400 text-sm font-bold border border-dashed border-gray-200 rounded-sm mt-2">
+                              <div className="w-full text-center py-4 text-gray-400 text-[10px] md:text-xs font-bold border border-dashed border-gray-200 rounded-sm mt-2">
                                   監視ターゲットが登録されていません。
                               </div>
                           )}
@@ -306,50 +314,63 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                   </div>
               </div>
 
-              {/* ★ 修正: min-h を持たせることで、スマホでも表領域が潰れずに表示されます */}
-              <div className="bg-white border border-gray-200 rounded-sm shadow-sm flex-1 flex flex-col min-h-[500px] overflow-hidden">
-                  <div className="p-4 border-b border-gray-200 bg-gray-50 flex flex-col xl:flex-row justify-between xl:items-center shrink-0 gap-4 relative">
-                      <div className="flex items-center gap-3">
-                          <h3 className="font-bold text-gray-900 text-base">自社 vs 競合 価格差額ヒートマップ</h3>
-                          <span className="text-xs bg-white border border-gray-300 text-gray-700 px-2 py-0.5 rounded-sm font-bold shadow-sm">銅建値: ¥{currentCopperPrice} / 黄銅: ¥{currentBrassPrice}</span>
+              {/* ヒートマップテーブルエリア */}
+              <div className="bg-white border border-gray-200 rounded-sm shadow-sm flex flex-col overflow-hidden">
+                  
+                  {/* ヘッダー＆フィルター */}
+                  <div className="p-3 border-b border-gray-200 bg-gray-50 flex flex-col gap-2">
+                      <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-2">
+                              <h3 className="font-bold text-gray-900 text-xs md:text-sm">自社 vs 競合 価格差額</h3>
+                              <span className="text-[9px] bg-white border border-gray-300 text-gray-700 px-1.5 py-0.5 rounded-sm font-bold shadow-sm">建値: 銅¥{currentCopperPrice} / 込¥{currentBrassPrice}</span>
+                          </div>
+                          <button onClick={handleRunScrape} disabled={isProcessing || processedCompetitors.length === 0} className="hidden md:flex bg-white border border-gray-300 hover:border-gray-900 text-gray-700 px-3 py-1.5 rounded-sm text-[10px] font-bold items-center gap-1 shadow-sm disabled:opacity-50 transition shrink-0 active:scale-95">
+                              {isProcessing ? <Icons.Refresh /> : <Icons.Sparkles />} 手動巡回
+                          </button>
                       </div>
                       
-                      <div className="flex items-center gap-2 flex-wrap bg-white p-2 rounded-sm border border-gray-200 shadow-sm">
-                          <span className="text-xs font-bold text-gray-500 flex items-center gap-1 pl-1"><Icons.Filter /> 表示:</span>
-                          <div className="flex flex-wrap gap-1.5 flex-1">
+                      {/* ★ 修正: スマホでガチャガチャしないよう横スクロール（スワイプ）のバッジリストに変更 */}
+                      <div className="flex items-center gap-2 bg-white p-1.5 rounded-sm border border-gray-200 shadow-inner w-full overflow-hidden relative">
+                          <span className="text-[9px] font-bold text-gray-400 flex items-center gap-0.5 shrink-0 pl-1"><Icons.Filter /> 表示:</span>
+                          <div className="flex gap-1 overflow-x-auto no-scrollbar flex-1 pb-0.5">
                             {ALL_RADAR_ITEMS.map(item => (
-                                <label key={item.key} className={`flex items-center gap-1 text-[11px] font-bold cursor-pointer px-2 py-1 rounded-sm transition-colors border ${visibleItems.includes(item.key) ? 'bg-gray-900 text-white border-gray-900 shadow-inner' : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'}`}>
+                                <label key={item.key} className={`flex items-center justify-center shrink-0 text-[9px] font-bold cursor-pointer px-2 py-1 rounded-sm transition-colors border select-none ${visibleItems.includes(item.key) ? 'bg-gray-900 text-white border-gray-900' : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'}`}>
                                     <input type="checkbox" checked={visibleItems.includes(item.key)} onChange={() => toggleVisibleItem(item.key)} className="hidden" />
                                     {item.key}
                                 </label>
                             ))}
                           </div>
-                          <button onClick={handleRunScrape} disabled={isProcessing || processedCompetitors.length === 0} className="ml-2 bg-white border border-gray-300 hover:border-gray-900 hover:text-gray-900 text-gray-600 px-4 py-1.5 rounded-sm text-sm font-bold flex items-center gap-1.5 shadow-sm disabled:opacity-50 transition active:scale-95 shrink-0">
-                              {isProcessing ? <Icons.Refresh /> : <Icons.Sparkles />} 手動巡回
-                          </button>
                       </div>
 
+                      {/* スマホ用巡回ボタン */}
+                      <button onClick={handleRunScrape} disabled={isProcessing || processedCompetitors.length === 0} className="md:hidden mt-1 bg-gray-900 text-white px-3 py-2 rounded-sm text-[10px] font-bold flex justify-center items-center gap-1 shadow-sm disabled:opacity-50 transition active:scale-95 w-full">
+                          {isProcessing ? <Icons.Refresh /> : <Icons.Sparkles />} AI手動巡回を実行
+                      </button>
+
                       {isProcessing && scrapeProgress.total > 0 && (
-                          <div className="absolute inset-0 bg-white/90 backdrop-blur-sm z-50 flex items-center justify-center gap-3 animate-in fade-in">
+                          <div className="absolute inset-0 bg-white/90 backdrop-blur-sm z-50 flex flex-col items-center justify-center gap-2 animate-in fade-in">
                               <span className="text-[#D32F2F]"><Icons.Refresh /></span>
-                              <span className="font-bold text-sm text-gray-800">
-                                  AI自動学習・巡回中 ({scrapeProgress.current}/{scrapeProgress.total}) : <span className="text-[#D32F2F]">{scrapeProgress.targetName}</span> を分析しています...
+                              <span className="font-bold text-[10px] md:text-xs text-gray-800 text-center">
+                                  AI巡回中 ({scrapeProgress.current}/{scrapeProgress.total})<br/>
+                                  <span className="text-[#D32F2F]">{scrapeProgress.targetName}</span> を分析しています...
                               </span>
                           </div>
                       )}
                   </div>
 
-                  <div className="overflow-x-auto overflow-y-auto flex-1 p-0">
-                      <table className="w-full text-left border-collapse text-base whitespace-nowrap min-w-[800px]">
-                          <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-20">
+                  {/* テーブル本体: 横スクロール可能、縦は自然に伸びる */}
+                  <div className="overflow-x-auto w-full">
+                      <table className="w-full text-left border-collapse text-sm whitespace-nowrap min-w-[700px]">
+                          <thead className="bg-gray-100 border-b border-gray-200">
                               <tr>
-                                  <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest bg-gray-100 border-r border-gray-200 sticky left-0 z-30 shadow-[1px_0_0_rgba(0,0,0,0.1)] w-56">標準品目 / 基準歩留</th>
-                                  <th className="p-3 text-[10px] font-black text-white uppercase tracking-widest bg-gray-900 border-r border-gray-800 min-w-[140px]">
+                                  <th className="p-2 md:p-3 text-[9px] md:text-[10px] font-bold text-gray-500 uppercase tracking-widest bg-gray-100 border-r border-gray-200 sticky left-0 z-20 shadow-[1px_0_0_rgba(0,0,0,0.1)] w-40 md:w-48">品目 / 基準歩留</th>
+                                  <th className="p-2 md:p-3 text-[9px] md:text-[10px] font-black text-white uppercase tracking-widest bg-gray-900 border-r border-gray-800 min-w-[120px] md:min-w-[140px]">
                                       月寒製作所 (自社)
                                   </th>
                                   {processedCompetitors.map(comp => (
-                                      <th key={comp.id} className="p-3 text-[10px] font-bold text-gray-600 uppercase tracking-widest min-w-[160px] bg-white border-r border-gray-200">
-                                          {comp.name}<br/><span className="text-[9px] text-gray-400 font-normal">{comp.type}</span>
+                                      <th key={comp.id} className="p-2 md:p-3 text-[9px] md:text-[10px] font-bold text-gray-600 uppercase tracking-widest min-w-[120px] md:min-w-[150px] bg-white border-r border-gray-200">
+                                          <div className="truncate max-w-[140px]">{comp.name}</div>
+                                          <div className="text-[8px] text-gray-400 font-normal truncate mt-0.5">{comp.type}</div>
                                       </th>
                                   ))}
                               </tr>
@@ -357,17 +378,17 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                           <tbody className="divide-y divide-gray-100">
                               {myItems.filter(item => visibleItems.includes(item.name)).map(item => (
                                   <tr key={item.name} className="hover:bg-red-50/20 transition group">
-                                      <td className="p-3 bg-white border-r border-gray-200 sticky left-0 z-10 shadow-[1px_0_0_rgba(0,0,0,0.1)] group-hover:bg-gray-50">
-                                          <div className="font-bold text-gray-900 text-sm mb-1">{item.name}</div>
-                                          <div className="text-[10px] text-gray-500 font-mono flex items-center gap-2">
-                                              <span className="bg-gray-100 px-1.5 py-0.5 rounded-sm border border-gray-200 font-bold">歩留:{item.ratio}%</span> 
-                                              <span>価値:¥{item.pureValue}</span>
+                                      <td className="p-2 md:p-3 bg-white border-r border-gray-200 sticky left-0 z-10 shadow-[1px_0_0_rgba(0,0,0,0.1)] group-hover:bg-gray-50">
+                                          <div className="font-bold text-gray-900 text-[11px] md:text-sm mb-1 truncate max-w-[150px] md:max-w-[180px]">{item.name}</div>
+                                          <div className="text-[9px] md:text-[10px] text-gray-500 font-mono flex items-center gap-1.5">
+                                              <span className="bg-gray-100 px-1 py-0.5 rounded-sm border border-gray-200 font-bold">歩:{item.ratio}%</span> 
+                                              <span>価:¥{item.pureValue}</span>
                                           </div>
                                       </td>
                                       
-                                      <td className="p-3 bg-gray-50 border-r border-gray-200 relative">
-                                          <div className="font-mono font-black text-2xl text-gray-900 tracking-tighter">¥{item.myPrice.toLocaleString()}</div>
-                                          <div className="text-[10px] font-bold text-gray-500 mt-1 uppercase tracking-widest">
+                                      <td className="p-2 md:p-3 bg-gray-50 border-r border-gray-200 relative">
+                                          <div className="font-mono font-black text-lg md:text-2xl text-gray-900 tracking-tighter">¥{item.myPrice.toLocaleString()}</div>
+                                          <div className="text-[9px] md:text-[10px] font-bold text-gray-500 mt-0.5 uppercase tracking-widest">
                                               粗利: ¥{item.myMargin}
                                           </div>
                                       </td>
@@ -379,28 +400,28 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                                           const historyData = comp.history[item.name] || [];
                                           
                                           return (
-                                              <td key={comp.id} className="p-3 bg-white border-r border-gray-100 align-top group/cell hover:bg-gray-50">
+                                              <td key={comp.id} className="p-2 md:p-3 bg-white border-r border-gray-100 align-top group/cell hover:bg-gray-50">
                                                   <div className="flex flex-col h-full justify-between">
                                                       <div>
                                                           <div className="flex items-center justify-between mb-1">
-                                                              <div className="flex items-center gap-1.5">
-                                                                  <span className={`font-mono text-xl font-bold tabular-nums ${compPrice ? 'text-gray-800' : 'text-gray-300'}`}>
+                                                              <div className="flex items-center gap-1">
+                                                                  <span className={`font-mono text-sm md:text-lg font-bold tabular-nums ${compPrice ? 'text-gray-800' : 'text-gray-300'}`}>
                                                                       {compPrice ? `¥${compPrice.toLocaleString()}` : '---'}
                                                                   </span>
                                                                   {compPrice && trend === 'up' ? <Icons.TrendingUp /> : compPrice && trend === 'down' ? <Icons.TrendingDown /> : null}
                                                               </div>
                                                               <Sparkline data={historyData} trend={trend} />
                                                           </div>
-                                                          <div className="mt-1">
+                                                          <div className="mt-0.5">
                                                               {getDiffLabel(item.myPrice, compPrice)}
                                                           </div>
                                                       </div>
                                                       
                                                       {compEvidence && (
-                                                          <div className="mt-2 pt-2 border-t border-dashed border-gray-200">
-                                                              <p className="text-[9px] text-gray-500 leading-tight flex items-start gap-1">
-                                                                  <span className="text-gray-400 mt-0.5"><Icons.Info /></span>
-                                                                  <span>AI抽出元: 「{compEvidence}」</span>
+                                                          <div className="mt-2 pt-1.5 border-t border-dashed border-gray-200">
+                                                              <p className="text-[8px] md:text-[9px] text-gray-400 leading-tight flex items-start gap-0.5 truncate max-w-[130px]">
+                                                                  <span className="mt-0.5"><Icons.Info /></span>
+                                                                  <span title={compEvidence}>{compEvidence}</span>
                                                               </p>
                                                           </div>
                                                       )}
@@ -413,7 +434,7 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
                           </tbody>
                       </table>
                       {myItems.filter(item => visibleItems.includes(item.name)).length === 0 && (
-                          <div className="p-10 text-center text-gray-400 font-bold text-sm">
+                          <div className="p-8 text-center text-gray-400 font-bold text-[10px] md:text-sm">
                               表示する品目が選択されていません。
                           </div>
                       )}
@@ -423,85 +444,82 @@ export const AdminCompetitor = ({ data }: { data: any }) => {
       )}
 
       {activeTab === 'TARGETS' && (
-          <div className="flex-1 bg-white border border-gray-200 rounded-sm shadow-sm p-4 md:p-6 overflow-y-auto animate-in fade-in">
-              <div className="max-w-4xl mx-auto space-y-6">
-                  
-                  {/* ★ AI全体プロンプト（グローバルルール）設定エリア */}
-                  <div className="bg-gray-50 border border-gray-200 p-5 rounded-sm shadow-sm relative overflow-hidden">
-                      <div className="absolute top-0 right-0 bg-gray-900 text-white text-[10px] font-bold px-3 py-1 rounded-bl-sm tracking-widest uppercase">GLOBAL AI PROMPT</div>
-                      <h4 className="font-bold text-base text-gray-900 mb-2 flex items-center gap-2"><Icons.Brain /> AI共通ルール設定（ボスからの特別指示）</h4>
-                      <p className="text-xs text-gray-600 mb-3 leading-relaxed font-bold">
-                          すべてのターゲット企業を巡回する際、AIが<span className="text-[#D32F2F]">最優先で守るべき絶対ルール</span>を設定できます。<br/>
-                          （例: 「価格は税込で計算して」「建値ベースという表記があれば1450を足して」など）
-                      </p>
-                      <textarea 
-                          className="w-full p-3 border border-gray-300 rounded-sm text-sm outline-none focus:border-gray-900 bg-white min-h-[80px] shadow-inner" 
-                          placeholder="例: 価格は必ず税込で取得すること。"
-                          value={globalPrompt} 
-                          onChange={(e) => setGlobalPrompt(e.target.value)}
-                      />
-                      <div className="flex justify-end mt-3">
-                          <button 
-                              onClick={handleSaveGlobalPrompt} 
-                              disabled={isProcessing || globalPrompt === savedGlobalPrompt} 
-                              className="bg-gray-900 hover:bg-black text-white px-6 py-2 rounded-sm text-sm font-bold shadow-sm transition disabled:opacity-50"
-                          >
-                              {isProcessing ? '保存中...' : 'ルールを保存'}
-                          </button>
-                      </div>
+          <div className="flex flex-col gap-6 pb-10 animate-in fade-in">
+              {/* AI全体プロンプト（グローバルルール）設定エリア */}
+              <div className="bg-gray-50 border border-gray-200 p-4 md:p-5 rounded-sm shadow-sm relative overflow-hidden">
+                  <div className="absolute top-0 right-0 bg-gray-900 text-white text-[8px] md:text-[9px] font-bold px-2 py-0.5 md:px-3 md:py-1 rounded-bl-sm tracking-widest uppercase">GLOBAL AI PROMPT</div>
+                  <h4 className="font-bold text-sm md:text-base text-gray-900 mb-2 flex items-center gap-1.5"><Icons.Brain /> AI共通ルール設定（指示）</h4>
+                  <p className="text-[10px] md:text-xs text-gray-600 mb-3 leading-relaxed font-bold">
+                      すべてのターゲット企業を巡回する際、AIが<span className="text-[#D32F2F]">最優先で守るべき絶対ルール</span>を設定できます。<br/>
+                      （例: 「価格は税込で計算して」「建値ベースという表記があれば1450を足して」など）
+                  </p>
+                  <textarea 
+                      className="w-full p-2.5 md:p-3 border border-gray-300 rounded-sm text-xs md:text-sm outline-none focus:border-gray-900 bg-white min-h-[60px] md:min-h-[80px] shadow-inner" 
+                      placeholder="例: 価格は必ず税込で取得すること。"
+                      value={globalPrompt} 
+                      onChange={(e) => setGlobalPrompt(e.target.value)}
+                  />
+                  <div className="flex justify-end mt-2 md:mt-3">
+                      <button 
+                          onClick={handleSaveGlobalPrompt} 
+                          disabled={isProcessing || globalPrompt === savedGlobalPrompt} 
+                          className="bg-gray-900 hover:bg-black text-white px-4 py-1.5 md:px-6 md:py-2 rounded-sm text-[10px] md:text-xs font-bold shadow-sm transition disabled:opacity-50"
+                      >
+                          {isProcessing ? '保存中...' : 'ルールを保存'}
+                      </button>
                   </div>
+              </div>
 
-                  <div className="bg-white border border-gray-200 p-5 rounded-sm shadow-sm mt-8">
-                      <h4 className="font-bold text-base mb-4 flex items-center gap-2"><Icons.Plus /> 個別ターゲットの追加</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-                          <input type="text" placeholder="企業名 (例: 札幌 A社)" className="w-full p-3 border border-gray-300 rounded-sm text-sm outline-none focus:border-gray-900 bg-white shadow-sm" value={newTarget.name} onChange={e => setNewTarget({...newTarget, name: e.target.value})} />
-                          <select className="w-full p-3 border border-gray-300 rounded-sm text-sm outline-none focus:border-gray-900 bg-white shadow-sm font-bold text-gray-700" value={newTarget.type} onChange={e => setNewTarget({...newTarget, type: e.target.value})}>
-                              <option value="同業(競合)">同業(競合)</option>
-                              <option value="メーカー直系">メーカー直系</option>
-                              <option value="輸出ヤード">輸出ヤード</option>
-                          </select>
-                          <input type="url" placeholder="トップページのURL" className="w-full p-3 border border-gray-300 rounded-sm text-sm outline-none font-mono focus:border-gray-900 bg-white shadow-sm" value={newTarget.url} onChange={e => setNewTarget({...newTarget, url: e.target.value})} />
-                      </div>
-                      <div className="flex flex-col md:flex-row gap-3">
-                          <input type="text" placeholder="AIへの初回ヒント (例: FケーブルはVVF。以後はAIが自己更新します)" className="w-full p-3 border border-gray-300 rounded-sm text-sm outline-none focus:border-gray-900 bg-white flex-1 shadow-sm" value={newTarget.hint} onChange={e => setNewTarget({...newTarget, hint: e.target.value})} />
-                          <button onClick={handleAddTarget} disabled={isProcessing || !newTarget.name || !newTarget.url} className="bg-[#D32F2F] hover:bg-red-800 text-white px-8 py-3 rounded-sm text-sm font-bold shadow-md transition disabled:opacity-50 whitespace-nowrap">
-                              {isProcessing ? '処理中...' : '登録する'}
-                          </button>
-                      </div>
+              <div className="bg-white border border-gray-200 p-4 md:p-5 rounded-sm shadow-sm">
+                  <h4 className="font-bold text-sm md:text-base mb-3 flex items-center gap-1.5"><Icons.Plus /> 個別ターゲットの追加</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-3 mb-2 md:mb-3">
+                      <input type="text" placeholder="企業名 (例: 札幌 A社)" className="w-full p-2.5 border border-gray-300 rounded-sm text-xs md:text-sm outline-none focus:border-gray-900 bg-white shadow-sm" value={newTarget.name} onChange={e => setNewTarget({...newTarget, name: e.target.value})} />
+                      <select className="w-full p-2.5 border border-gray-300 rounded-sm text-xs md:text-sm outline-none focus:border-gray-900 bg-white shadow-sm font-bold text-gray-700" value={newTarget.type} onChange={e => setNewTarget({...newTarget, type: e.target.value})}>
+                          <option value="同業(競合)">同業(競合)</option>
+                          <option value="メーカー直系">メーカー直系</option>
+                          <option value="輸出ヤード">輸出ヤード</option>
+                      </select>
+                      <input type="url" placeholder="トップページのURL" className="w-full p-2.5 border border-gray-300 rounded-sm text-xs md:text-sm outline-none font-mono focus:border-gray-900 bg-white shadow-sm" value={newTarget.url} onChange={e => setNewTarget({...newTarget, url: e.target.value})} />
                   </div>
+                  <div className="flex flex-col md:flex-row gap-2 md:gap-3">
+                      <input type="text" placeholder="AIへの初回ヒント (例: FケーブルはVVF。以後はAIが自己更新します)" className="w-full p-2.5 border border-gray-300 rounded-sm text-xs md:text-sm outline-none focus:border-gray-900 bg-white flex-1 shadow-sm" value={newTarget.hint} onChange={e => setNewTarget({...newTarget, hint: e.target.value})} />
+                      <button onClick={handleAddTarget} disabled={isProcessing || !newTarget.name || !newTarget.url} className="bg-[#D32F2F] hover:bg-red-800 text-white px-6 py-2.5 rounded-sm text-[10px] md:text-xs font-bold shadow-sm transition disabled:opacity-50 whitespace-nowrap">
+                          {isProcessing ? '処理中...' : '登録する'}
+                      </button>
+                  </div>
+              </div>
 
-                  <div className="space-y-3 mt-8">
-                      <h4 className="font-bold text-xs text-gray-500 uppercase tracking-widest border-b border-gray-200 pb-2">登録済みターゲット（AI自己学習状況）</h4>
-                      {processedCompetitors.map(target => (
-                          <div key={target.id} className="border border-gray-200 rounded-sm p-4 flex flex-col md:flex-row gap-4 bg-white shadow-sm hover:border-gray-400 transition-colors group">
-                              <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-1">
-                                      <h4 className="font-bold text-gray-900 text-base">{target.name}</h4>
-                                      <span className="text-[9px] bg-gray-100 px-1.5 py-0.5 rounded-sm text-gray-600 font-bold border border-gray-200">{target.type}</span>
-                                  </div>
-                                  <a href={target.url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-gray-500 font-mono mb-3 hover:text-gray-900 hover:underline truncate block max-w-[300px] md:max-w-md">{target.url}</a>
-                                  
-                                  <div className="bg-gray-50 border border-gray-200 p-2.5 rounded-sm shadow-inner">
-                                      <p className="text-[9px] font-bold text-gray-500 mb-1 flex items-center gap-1 uppercase tracking-widest"><Icons.Sparkles /> AIが生成した抽出ルール (次回以降適用)</p>
-                                      <p className="text-[11px] text-gray-800 font-bold leading-relaxed">{target.hint || 'まだルールは生成されていません。巡回を実行してください。'}</p>
-                                  </div>
+              <div className="space-y-2 md:space-y-3">
+                  <h4 className="font-bold text-[10px] md:text-xs text-gray-500 uppercase tracking-widest border-b border-gray-200 pb-1.5 md:pb-2">登録済みターゲット（AI自己学習状況）</h4>
+                  {processedCompetitors.map(target => (
+                      <div key={target.id} className="border border-gray-200 rounded-sm p-3 md:p-4 flex flex-col md:flex-row gap-3 md:gap-4 bg-white shadow-sm hover:border-gray-400 transition-colors group">
+                          <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                  <h4 className="font-bold text-gray-900 text-sm md:text-base truncate">{target.name}</h4>
+                                  <span className="text-[8px] md:text-[9px] bg-gray-100 px-1.5 py-0.5 rounded-sm text-gray-600 font-bold border border-gray-200 shrink-0">{target.type}</span>
                               </div>
-                              <div className="flex items-center justify-end gap-6 shrink-0 border-t md:border-t-0 md:border-l border-gray-100 pt-3 md:pt-0 md:pl-6 min-w-[150px]">
-                                  <div className="text-right">
-                                      <p className="text-[9px] text-gray-400 font-bold tracking-widest uppercase">最終AIクロール</p>
-                                      <p className="text-xs font-mono font-bold text-gray-900 mt-1">
-                                          {target.lastCrawled || '未実行'} 
-                                      </p>
-                                      <p className="mt-1">
-                                          {target.status && target.status.includes('成功') && <span className="text-[9px] text-green-700 font-bold bg-green-50 border border-green-200 px-1.5 py-0.5 rounded-sm">● {target.status}</span>}
-                                          {target.status && !target.status.includes('成功') && target.status !== '未実行' && <span className="text-[9px] text-[#D32F2F] font-bold bg-red-50 border border-red-200 px-1.5 py-0.5 rounded-sm">❌ {target.status}</span>}
-                                      </p>
-                                  </div>
-                                  <button onClick={() => handleDeleteTarget(target.id)} disabled={isProcessing} className="text-gray-400 hover:text-[#D32F2F] p-2 hover:bg-red-50 rounded-sm transition opacity-50 group-hover:opacity-100"><Icons.Trash /></button>
+                              <a href={target.url} target="_blank" rel="noopener noreferrer" className="text-[9px] md:text-[10px] text-gray-400 font-mono mb-2 md:mb-3 hover:text-gray-900 hover:underline truncate block w-full">{target.url}</a>
+                              
+                              <div className="bg-gray-50 border border-gray-200 p-2 rounded-sm shadow-inner">
+                                  <p className="text-[8px] md:text-[9px] font-bold text-gray-500 mb-0.5 md:mb-1 flex items-center gap-1 uppercase tracking-widest"><Icons.Sparkles /> AI抽出ルール (自己更新)</p>
+                                  <p className="text-[10px] md:text-[11px] text-gray-800 font-bold leading-relaxed line-clamp-2 md:line-clamp-none">{target.hint || 'まだルールは生成されていません。巡回を実行してください。'}</p>
                               </div>
                           </div>
-                      ))}
-                  </div>
+                          <div className="flex items-center justify-between md:justify-end gap-4 md:gap-6 shrink-0 border-t md:border-t-0 md:border-l border-gray-100 pt-2 md:pt-0 md:pl-4 min-w-[120px] md:min-w-[150px]">
+                              <div className="text-left md:text-right">
+                                  <p className="text-[8px] md:text-[9px] text-gray-400 font-bold tracking-widest uppercase">最終AIクロール</p>
+                                  <p className="text-[10px] md:text-xs font-mono font-bold text-gray-900 mt-0.5 md:mt-1">
+                                      {target.lastCrawled || '未実行'} 
+                                  </p>
+                                  <p className="mt-1">
+                                      {target.status && target.status.includes('成功') && <span className="text-[8px] md:text-[9px] text-green-700 font-bold bg-green-50 border border-green-200 px-1.5 py-0.5 rounded-sm">● {target.status}</span>}
+                                      {target.status && !target.status.includes('成功') && target.status !== '未実行' && <span className="text-[8px] md:text-[9px] text-[#D32F2F] font-bold bg-red-50 border border-red-200 px-1.5 py-0.5 rounded-sm">❌ {target.status}</span>}
+                                  </p>
+                              </div>
+                              <button onClick={() => handleDeleteTarget(target.id)} disabled={isProcessing} className="text-gray-400 hover:text-[#D32F2F] p-1.5 md:p-2 hover:bg-red-50 rounded-sm transition md:opacity-50 md:group-hover:opacity-100"><Icons.Trash /></button>
+                          </div>
+                      </div>
+                  ))}
               </div>
           </div>
       )}
