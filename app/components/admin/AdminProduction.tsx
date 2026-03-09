@@ -56,7 +56,8 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
   const [localSortedLots, setLocalSortedLots] = useState<any[]>([]); 
   const [localConsumedIds, setLocalConsumedIds] = useState<string[]>([]); 
 
-  const [sortOutputs, setSortOutputs] = useState([{ category: '', ratio: '', weight: '' }]);
+  // ★ 選別出力用ステート
+  const [sortOutputs, setSortOutputs] = useState([{ category: '被覆B', ratio: '', weight: '' }]);
   const [sortTime, setSortTime] = useState('');
   const [sortWorker, setSortWorker] = useState('未選択');
 
@@ -134,11 +135,19 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                   const remainingWeight = initialWeight - processedWeight;
                   
                   if (remainingWeight > 0) {
-                      const productMaster = wiresMaster.find((w: any) => getDisplayName(w) === product || w.name === product);
+                      // ★ POSからの歩留まりデータ (it.ratio) を最優先で取得するロジック
+                      let expectedRatio = 0;
+                      if (it.ratio && Number(it.ratio) > 0) {
+                          expectedRatio = Number(it.ratio);
+                      } else {
+                          const productMaster = wiresMaster.find((w: any) => getDisplayName(w) === product || w.name === product);
+                          expectedRatio = productMaster ? productMaster.ratio : 0;
+                      }
+
                       rawLots.push({
                           lotId, reservationId: res.id, memberName: res.memberName || '名称未設定',
                           date: res.createdAt ? String(res.createdAt).substring(5, 16) : '不明', 
-                          product: product, remainingWeight: remainingWeight, expectedRatio: productMaster ? productMaster.ratio : 0,
+                          product: product, remainingWeight: remainingWeight, expectedRatio: expectedRatio,
                           isSorted: false, isTin: product.includes('錫') || it.material === '錫メッキ' 
                       });
                   }
@@ -165,9 +174,14 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
   const handleSkipSort = async (lot: any) => {
     setIsSubmitting(true);
     const newSortedLots = [...localSortedLots];
+    
+    // ★ 直行の場合、POSの歩留まりを引き継いだ「被覆B」としてヤードに送る
+    let productName = '被覆B';
+    if (lot.expectedRatio > 0) productName = `被覆B (${lot.expectedRatio}%)`;
+
     newSortedLots.push({
         lotId: `${lot.lotId}-S-SKIP`, reservationId: lot.reservationId, memberName: lot.memberName,
-        date: lot.date, product: lot.product, remainingWeight: lot.remainingWeight, expectedRatio: lot.expectedRatio, isSorted: true, isTin: lot.isTin
+        date: lot.date, product: productName, remainingWeight: lot.remainingWeight, expectedRatio: lot.expectedRatio, isSorted: true, isTin: lot.isTin
     });
     const newConsumedIds = [...localConsumedIds, lot.lotId];
     setLocalSortedLots(newSortedLots); setLocalConsumedIds(newConsumedIds);
@@ -181,13 +195,13 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
     const newSortedLots = [...localSortedLots];
     
     sortOutputs.forEach((out, idx) => {
-        if (out.category && out.weight) {
+        if (out.category && Number(out.weight) > 0) {
             let productName = out.category;
             let expectedRatio = 0;
 
             if (out.category === '被覆B') {
                 const ratioVal = Number(out.ratio) || 0;
-                productName = `被覆B (${ratioVal}%)`;
+                if(ratioVal > 0) productName = `被覆B (${ratioVal}%)`;
                 expectedRatio = ratioVal;
             }
 
@@ -210,7 +224,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
     await syncStateToServer(newSortedLots, newConsumedIds);
     
     setSortingLot(null); 
-    setSortOutputs([{ category: '', ratio: '', weight: '' }]); 
+    setSortOutputs([{ category: '被覆B', ratio: '', weight: '' }]); 
     setSortTime(''); 
     setSortWorker('未選択'); 
     setActiveTab('PROCESS'); 
@@ -421,7 +435,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                                                   直行 <Icons.FastForward />
                                               </button>
                                               
-                                              {/* ★ スマート初期値セット機能 */}
+                                              {/* ★ 選別ボタン：初期状態でベースとなる被覆Bをセット */}
                                               <button onClick={() => {
                                                   setSortingLot(lot);
                                                   setSortOutputs([{ 
@@ -577,14 +591,14 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
               )}
           </div>
           
-          {/* ★ 選別・仕分けモーダル */}
+          {/* ★ 選別・仕分けモーダル（引き算ロジック実装） */}
           {sortingLot && (
               <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 md:p-4 animate-in fade-in">
                   <div className="bg-white rounded-sm shadow-2xl w-full max-w-2xl flex flex-col max-h-[95vh]">
                       <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center shrink-0">
                           <div>
                               <h3 className="text-lg font-black text-gray-900 flex items-center gap-2"><Icons.Scissors /> 選別結果の登録 <ProvenanceBadge type="HUMAN" /></h3>
-                              <p className="text-xs text-gray-500 mt-1 font-mono">元ロット: {sortingLot.product} ({sortingLot.remainingWeight}kg) / {sortingLot.memberName}</p>
+                              <p className="text-xs text-gray-500 mt-1 font-mono">元ロット: {sortingLot.product} (総重量: {sortingLot.remainingWeight}kg)</p>
                           </div>
                           <button onClick={() => setSortingLot(null)} className="text-gray-400 hover:text-gray-900 p-2 bg-white border border-gray-200 rounded-sm shadow-sm"><Icons.Close /></button>
                       </div>
@@ -610,40 +624,104 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                               <h4 className="text-xs font-bold text-gray-500 mb-3 uppercase tracking-widest border-b border-gray-200 pb-1">仕分け後の品目・重量</h4>
                               <div className="space-y-3">
                                   {sortOutputs.map((out, idx) => (
-                                      <div key={idx} className="flex flex-col md:flex-row md:items-center gap-3 bg-gray-50 p-3 border border-gray-200 rounded-sm">
+                                      <div key={idx} className={`flex flex-col md:flex-row md:items-center gap-3 p-3 border rounded-sm ${idx === 0 ? 'bg-blue-50/30 border-blue-200' : 'bg-gray-50 border-gray-200'}`}>
                                           
-                                          {/* ★ 選択肢を現場のオペレーションに完全特化 */}
-                                          <select className="w-full md:w-1/3 p-3 bg-white border border-gray-300 rounded-sm text-base font-bold outline-none" value={out.category} onChange={e => { const newOut = [...sortOutputs]; newOut[idx].category = e.target.value; setSortOutputs(newOut); }}>
-                                              <option value="">品目を選択</option>
-                                              <option value="被覆B">被覆B (ナゲット原料)</option>
-                                              <option value="被覆C">被覆C (異物付き)</option>
-                                              <option value="鉄">鉄</option>
-                                              <option value="ゴミ">ゴミ・廃棄物</option>
+                                          {/* セレクトボックス */}
+                                          <select 
+                                              className={`w-full md:w-1/3 p-3 rounded-sm text-base font-bold outline-none ${idx === 0 ? 'bg-transparent text-gray-900 border border-blue-300' : 'bg-white border border-gray-300'}`}
+                                              value={out.category} 
+                                              disabled={idx === 0} // 1行目はベース原料として固定
+                                              onChange={e => { 
+                                                  const newOut = [...sortOutputs]; 
+                                                  newOut[idx].category = e.target.value; 
+                                                  setSortOutputs(newOut); 
+                                              }}
+                                          >
+                                              {idx === 0 ? (
+                                                  <option value="被覆B">被覆B (ベース原料)</option>
+                                              ) : (
+                                                  <>
+                                                      <option value="">品目を選択</option>
+                                                      <option value="被覆B">被覆B (別口の原料)</option>
+                                                      <option value="被覆C">被覆C (異物付き)</option>
+                                                      <option value="鉄">鉄</option>
+                                                      <option value="ゴミ">ゴミ・廃棄物</option>
+                                                  </>
+                                              )}
                                           </select>
 
-                                          {/* ★ 被覆Bの場合のみ、歩留まり入力枠が出現 */}
+                                          {/* 歩留まり入力 (被覆Bの場合のみ出現) */}
                                           {out.category === '被覆B' ? (
                                               <div className="relative w-full md:w-28">
                                                   <span className="md:hidden absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">歩留</span>
-                                                  <input type="number" inputMode="decimal" className="w-full p-3 pr-8 pl-12 md:pl-3 border border-[#D32F2F] rounded-sm text-lg tabular-nums text-right outline-none focus:ring-1 focus:ring-[#D32F2F] bg-red-50/30" placeholder="0" value={out.ratio} onChange={e => { const newOut = [...sortOutputs]; newOut[idx].ratio = e.target.value; setSortOutputs(newOut); }} />
+                                                  <input 
+                                                      type="number" 
+                                                      inputMode="decimal" 
+                                                      className={`w-full p-3 pr-8 pl-12 md:pl-3 border rounded-sm text-lg tabular-nums text-right outline-none focus:ring-1 focus:ring-[#D32F2F] ${idx === 0 ? 'border-[#D32F2F] bg-white font-bold' : 'border-gray-300 bg-white'}`}
+                                                      placeholder="0" 
+                                                      value={out.ratio} 
+                                                      onChange={e => { 
+                                                          const newOut = [...sortOutputs]; 
+                                                          newOut[idx].ratio = e.target.value; 
+                                                          setSortOutputs(newOut); 
+                                                      }} 
+                                                  />
                                                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#D32F2F]">%</span>
                                               </div>
                                           ) : (
                                               <div className="w-full md:w-28 hidden md:block"></div>
                                           )}
 
+                                          {/* 重量入力 (自動引き算ロジック搭載) */}
                                           <div className="flex items-center gap-2 w-full md:w-auto md:flex-1">
                                               <div className="relative flex-1">
                                                   <span className="md:hidden absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">重量</span>
-                                                  <input type="number" inputMode="decimal" className="w-full p-3 pr-8 pl-12 md:pl-3 border border-gray-300 rounded-sm text-lg tabular-nums text-right outline-none focus:border-gray-500" placeholder="0" value={out.weight} onChange={e => { const newOut = [...sortOutputs]; newOut[idx].weight = e.target.value; setSortOutputs(newOut); }} />
-                                                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">kg</span>
+                                                  <input 
+                                                      type="number" 
+                                                      inputMode="decimal" 
+                                                      className={`w-full p-3 pr-8 pl-12 md:pl-3 rounded-sm text-lg tabular-nums text-right outline-none ${idx === 0 ? 'bg-gray-200 border border-gray-300 text-gray-700 font-black shadow-inner cursor-not-allowed' : 'bg-white border border-gray-500 focus:border-gray-900 font-bold'}`}
+                                                      placeholder="0" 
+                                                      value={out.weight} 
+                                                      readOnly={idx === 0} // 1行目は自動計算なのでリードオンリー
+                                                      onChange={e => { 
+                                                          if (idx === 0) return;
+                                                          const newOut = [...sortOutputs]; 
+                                                          newOut[idx].weight = e.target.value; 
+                                                          
+                                                          // ★ 他の重量が入力されたら、1行目(ベース)から自動的に引き算する
+                                                          const othersSum = newOut.slice(1).reduce((sum, item) => sum + (Number(item.weight) || 0), 0);
+                                                          newOut[0].weight = String(Math.max(0, sortingLot.remainingWeight - othersSum));
+
+                                                          setSortOutputs(newOut); 
+                                                      }} 
+                                                  />
+                                                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-500">kg</span>
                                               </div>
-                                              <button onClick={() => setSortOutputs(sortOutputs.filter((_, i) => i !== idx))} className="p-3 text-gray-400 hover:text-gray-900 bg-white border border-gray-200 rounded-sm"><Icons.Trash /></button>
+                                              
+                                              {/* 削除ボタン（1行目はベースなので削除不可） */}
+                                              {idx > 0 ? (
+                                                  <button 
+                                                      onClick={() => {
+                                                          const newOut = sortOutputs.filter((_, i) => i !== idx);
+                                                          // 削除した分、1行目の重量に払い戻す
+                                                          const othersSum = newOut.slice(1).reduce((sum, item) => sum + (Number(item.weight) || 0), 0);
+                                                          newOut[0].weight = String(Math.max(0, sortingLot.remainingWeight - othersSum));
+                                                          setSortOutputs(newOut);
+                                                      }} 
+                                                      className="p-3 text-gray-400 hover:text-[#D32F2F] bg-white border border-gray-200 hover:border-red-200 hover:bg-red-50 rounded-sm transition"
+                                                  >
+                                                      <Icons.Trash />
+                                                  </button>
+                                              ) : (
+                                                  <div className="w-[46px] h-full flex items-center justify-center text-blue-500">
+                                                      <Icons.Check />
+                                                  </div>
+                                              )}
                                           </div>
                                       </div>
                                   ))}
                               </div>
-                              <button onClick={() => setSortOutputs([...sortOutputs, { category: '', ratio: '', weight: '' }])} className="mt-3 w-full border-2 border-dashed border-gray-300 text-sm font-bold text-gray-600 hover:bg-gray-100 py-3 rounded-sm flex items-center justify-center gap-1 transition"><Icons.Plus /> 品目を追加</button>
+                              <button onClick={() => setSortOutputs([...sortOutputs, { category: '', ratio: '', weight: '' }])} className="mt-3 w-full border-2 border-dashed border-gray-300 text-sm font-bold text-gray-600 hover:bg-gray-100 py-3 rounded-sm flex items-center justify-center gap-1 transition"><Icons.Plus /> 異物・別の品目を追加 (ベース重量から自動で引かれます)</button>
                           </div>
                       </div>
                       
@@ -713,7 +791,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                           <div className="bg-gray-50 border border-gray-200 p-4 rounded-sm">
                               <label className="block text-xs font-bold text-gray-700 mb-1">回収 被覆重量 (kg) <span className="text-gray-400 font-normal ml-1">※任意</span></label>
                               <p className="text-[10px] text-gray-500 mb-2 leading-relaxed">
-                                CV線などで紙や介在物（ゴミ）が含まれる場合のみ入力してください。<br/>未入力の場合は「総重量 − ナゲット ＝ すべて被覆（ダスト0）」として自動計算されます。
+                                介在物（紙・糸など）が含まれる場合のみ入力してください。<br/>未入力の場合は「総重量 − ナゲット ＝ すべて被覆チップ（ダスト0）」として自動計算されます。
                               </p>
                               <div className="relative md:w-1/2">
                                   <input type="number" step="0.1" placeholder="入力なしで自動計算" className="w-full p-3 pr-10 border border-gray-300 rounded-sm text-sm tabular-nums outline-none focus:border-gray-900 bg-white text-right" value={processOutputCover} onChange={e => setProcessOutputCover(e.target.value)} />
