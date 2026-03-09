@@ -32,15 +32,23 @@ const parseItemsData = (rawItems: any) => {
   if (!rawItems) return [];
   if (Array.isArray(rawItems)) return rawItems;
   try {
-      let temp = String(rawItems);
-      if (temp.startsWith('"') && temp.endsWith('"')) temp = temp.slice(1, -1);
-      temp = temp.replace(/""/g, '"');
-      temp = temp.replace(/\\n/g, "\\n").replace(/\\r/g, "\\r").replace(/\\t/g, "\\t");
-      temp = temp.replace(/\n/g, "\\n").replace(/\r/g, "");
-      let parsed = JSON.parse(temp);
-      if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+      const parsed = JSON.parse(rawItems);
       if (Array.isArray(parsed)) return parsed;
-  } catch (e) {}
+      if (typeof parsed === 'string') {
+          const doubleParsed = JSON.parse(parsed);
+          if (Array.isArray(doubleParsed)) return doubleParsed;
+      }
+  } catch (e1) {
+      try {
+          let temp = String(rawItems);
+          if (temp.startsWith('"') && temp.endsWith('"')) temp = temp.slice(1, -1);
+          temp = temp.replace(/""/g, '"');
+          temp = temp.replace(/\n/g, " ").replace(/\r/g, "");
+          let parsed = JSON.parse(temp);
+          if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+          if (Array.isArray(parsed)) return parsed;
+      } catch (e2) {}
+  }
   return [];
 };
 
