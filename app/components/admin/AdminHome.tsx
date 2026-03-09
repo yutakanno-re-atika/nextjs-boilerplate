@@ -6,7 +6,7 @@ const Icons = {
   TrendingUp: () => <svg className="w-4 h-4 text-[#D32F2F]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>,
   TrendingDown: () => <svg className="w-4 h-4 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>,
   Minus: () => <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M20 12H4" /></svg>,
-  Print: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>,
+  Print: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>,
   Refresh: () => <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
   ExternalLink: () => <svg className="w-3 h-3 ml-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>,
   Calculator: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
@@ -252,12 +252,50 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
       return { total: wires.length, complete, partial, none };
   }, [data?.wires]);
 
-
-  // ★★★ 修正ポイント：専用のHTMLレポート生成エンジン ★★★
-  const handlePrintReport = () => {
+  // ★★★ 最強のAI週報レポート生成・HTML出力エンジン ★★★
+  const handlePrintReport = async () => {
     setIsGeneratingReport(true);
     
-    // 別ウィンドウを開く（ここに綺麗なHTMLを流し込む）
+    const todayStr = new Date().toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+
+    // 1. AIに渡すためのデータを準備
+    const promptData = `
+    【市場相場トレンド】
+    ・銅建値: ${copperPrice}円 (直近推移: ${copperSparkData.join('→')})
+    ・真鍮: ${brassPrice}円 / 亜鉛: ${zincPrice}円 / 鉛: ${leadPrice}円
+
+    【プラント・在庫稼働】
+    ・本日の稼働予定: ${todayCount}件 (計 ${todayWeight}kg)
+    ・現在庫の評価額: ${inventoryValue}円 (銅換算: ${totalCopperStock}kg)
+    ・今月ナゲット生産量: ${mCopper}kg (月末予測: ${projectedCopper}kg)
+    ・歩留まり乖離: ${yieldStats.diff >= 0 ? '+' : ''}${yieldStats.diff.toFixed(1)}%
+
+    【営業・システム運用】
+    ・AIによる競合値決め勝敗: 勝${win} / 負${lose} / 引分${draw}
+    ・マスターDB画像完備率: ${wireStats.total > 0 ? Math.floor((wireStats.complete / wireStats.total) * 100) : 0}%
+    ・AIコンシェルジュ顧客対応: 累計${data?.chatStats?.total || 0}件
+
+    指示：上記のデータに基づき、経営陣に向けた「今週の総括および来週への戦略提言」を300字〜400字程度で出力してください。挨拶や敬具は不要です。段落を分けて読みやすくしてください。
+    `;
+
+    let aiSummaryText = "AIへの接続に失敗しました。定量データのみ確認してください。";
+    
+    // 2. Next.jsのAPIを経由してAIに考察を生成させる
+    try {
+        const res = await fetch('/api/print-summary', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pageName: '経営ダッシュボード 週報', promptData })
+        });
+        const result = await res.json();
+        if (result.success && result.summary) {
+            aiSummaryText = result.summary.replace(/\n/g, '<br/>');
+        }
+    } catch(e) {
+        console.warn("AI summary fetch failed", e);
+    }
+
+    // 3. レポート用の別ウィンドウを開く
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
       alert('ポップアップブロックを解除してください。');
@@ -265,47 +303,64 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
       return;
     }
 
-    const todayStr = new Date().toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+    // PDF上でSparklineを描画するためのSVG生成関数
+    const generateSparklineSvg = (dataArray: number[], color: string) => {
+      if (!dataArray || dataArray.length < 2) return '';
+      const min = Math.min(...dataArray);
+      const max = Math.max(...dataArray);
+      const range = max - min || 1;
+      const padding = 4;
+      const width = 120;
+      const height = 30;
+      const points = dataArray.map((d, i) => {
+        const x = (i / (dataArray.length - 1)) * width;
+        const y = max === min ? height / 2 : height - padding - ((d - min) / range) * (height - padding * 2);
+        return `${x},${y}`;
+      }).join(' ');
+      const fillPoints = `${width},${height} 0,${height} ${points}`;
+      
+      return `
+        <svg viewBox="0 0 ${width} ${height}" style="width:120px; height:30px; display:block;" preserveAspectRatio="none">
+          <polygon points="${fillPoints}" fill="${color}" fill-opacity="0.1" />
+          <polyline points="${points}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <circle cx="${points.split(' ').pop()?.split(',')[0]}" cy="${points.split(' ').pop()?.split(',')[1]}" r="3" fill="${color}" />
+        </svg>
+      `;
+    };
 
-    // 買取価格表のHTML文字列を構築
-    const priceTableHtml = data?.wires?.slice(0, 15).map((w: any) => `
-        <tr>
-            <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold; color: #111;">
-                ${w.maker && w.maker !== '-' ? `【${w.maker}】` : ''}${w.name} ${w.sq !== '-' ? `${w.sq}sq` : ''} ${w.core !== '-' ? `${w.core}C` : ''}
-            </td>
-            <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: center;">${w.material}</td>
-            <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: center; font-family: monospace;">${w.ratio}%</td>
-            <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right; font-family: monospace; font-weight: bold; color: #D32F2F; font-size: 16px;">
-                ¥${Math.floor(copperPrice * (w.ratio/100) * 0.85).toLocaleString()}
-            </td>
-        </tr>
-    `).join('') || '<tr><td colspan="4" style="text-align:center; padding: 10px;">データがありません</td></tr>';
-
-    // A4サイズ・印刷に最適化されたHTML
+    // 4. 洗練されたA4レポートHTMLを構築
     const html = `
         <!DOCTYPE html>
         <html>
         <head>
-            <title>経営ダッシュボード 日報_${todayStr}</title>
+            <title>EXECUTIVE REPORT_${todayStr}</title>
             <style>
                 body { font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif; padding: 40px; color: #111; line-height: 1.6; background: #fff; }
-                .header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #D32F2F; padding-bottom: 10px; margin-bottom: 30px; }
-                .header h1 { margin: 0; font-size: 26px; font-weight: 900; letter-spacing: 2px; }
-                .header p { margin: 0; color: #555; font-size: 12px; font-weight: bold; }
+                .header { border-bottom: 4px solid #D32F2F; padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end; }
+                .header h1 { margin: 0; font-size: 24px; font-weight: 900; letter-spacing: 2px; }
+                .header p { margin: 0; color: #666; font-size: 11px; font-weight: bold; }
                 
-                .section-title { font-size: 16px; font-weight: 900; background: #f1f5f9; padding: 8px 12px; border-left: 4px solid #111; margin-bottom: 15px; margin-top: 30px;}
+                .ai-box { background: #f9f9f9; border-left: 4px solid #111; padding: 15px 20px; margin-bottom: 30px; border-radius: 0 4px 4px 0; }
+                .ai-box h3 { margin: 0 0 10px 0; font-size: 14px; display: flex; align-items: center; color: #111; text-transform: uppercase; letter-spacing: 1px;}
+                .ai-box p { margin: 0; font-size: 13px; color: #444; line-height: 1.8; }
+
+                .section-title { font-size: 14px; font-weight: 900; color: #333; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
                 
-                .kpi-grid { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; }
-                .kpi-box { flex: 1; min-width: 150px; background: #fff; border: 1px solid #ddd; padding: 15px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-                .kpi-box p { margin: 0 0 5px 0; font-size: 11px; color: #666; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
-                .kpi-box h3 { margin: 0; font-size: 24px; font-weight: 900; color: #111; font-family: monospace; }
-                .kpi-box .sub { font-size: 11px; color: #888; margin-top: 5px; font-weight: bold; }
+                .grid-3 { display: flex; gap: 15px; margin-bottom: 30px; }
+                .card { flex: 1; border: 1px solid #ddd; padding: 15px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+                .card.highlight { border-color: #D32F2F; border-top: 4px solid #D32F2F; }
+                
+                .stat-label { font-size: 10px; color: #666; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; }
+                .stat-val { font-size: 22px; font-weight: 900; font-family: monospace; color: #111; margin-bottom: 5px; display: flex; align-items: baseline; gap: 4px; }
+                .stat-val span { font-size: 12px; color: #888; font-weight: normal; }
+                .stat-sub { font-size: 11px; color: #555; }
+                .stat-sub.red { color: #D32F2F; font-weight: bold; }
 
-                .kpi-box.highlight { border-color: #D32F2F; border-bottom: 4px solid #D32F2F; }
-                .kpi-box.highlight h3 { color: #D32F2F; }
-
-                table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 13px; }
-                th { background-color: #f8fafc; padding: 12px 10px; text-align: left; font-size: 11px; color: #475569; border-bottom: 2px solid #cbd5e1; text-transform: uppercase; letter-spacing: 1px; }
+                table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 20px; }
+                th, td { border-bottom: 1px solid #eee; padding: 10px 5px; text-align: left; }
+                th { color: #888; text-transform: uppercase; font-size: 10px; }
+                .text-right { text-align: right; }
+                .text-center { text-align: center; }
                 
                 @media print { 
                     body { padding: 0; margin: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; } 
@@ -315,92 +370,96 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
         </head>
         <body>
             <div class="header">
-                <h1>経営管理 日次レポート</h1>
+                <h1>EXECUTIVE WEEKLY REPORT</h1>
                 <p>出力日時: ${todayStr}</p>
             </div>
 
-            <div class="section-title">1. 市場・相場状況</div>
-            <div class="kpi-grid">
-                <div class="kpi-box highlight">
-                    <p>銅建値 (JX)</p>
-                    <h3>¥${copperPrice.toLocaleString()}</h3>
-                    <div class="sub">前日比: ${copperDiff >= 0 ? '+' : ''}${copperDiff} 円</div>
+            <div class="ai-box">
+                <h3>✨ AI Executive Summary (経営考察)</h3>
+                <p>${aiSummaryText}</p>
+            </div>
+
+            <div class="section-title">1. FINANCIAL & PRODUCTION KPI (財務・生産指標)</div>
+            <div class="grid-3">
+                <div class="card highlight">
+                    <div class="stat-label">推定総在庫 評価額</div>
+                    <div class="stat-val">¥${inventoryValue.toLocaleString()}</div>
+                    <div class="stat-sub">銅換算: ${totalCopperStock.toLocaleString()} kg</div>
                 </div>
-                <div class="kpi-box">
-                    <p>真鍮建値 (日伸)</p>
-                    <h3>¥${brassPrice.toLocaleString()}</h3>
+                <div class="card">
+                    <div class="stat-label">月間生産実績 / 月末予測</div>
+                    <div class="stat-val">${mCopper.toLocaleString()}<span>kg</span></div>
+                    <div class="stat-sub">予測: ${projectedCopper.toLocaleString()} kg</div>
+                    <div class="stat-sub ${yieldStats.isPositive ? '' : 'red'}">歩留ブレ: ${yieldStats.isPositive ? '+' : ''}${yieldStats.diff.toFixed(1)}%</div>
                 </div>
-                <div class="kpi-box">
-                    <p>亜鉛建値 (三井)</p>
-                    <h3>¥${zincPrice.toLocaleString()}</h3>
-                </div>
-                <div class="kpi-box">
-                    <p>鉛建値 (三菱)</p>
-                    <h3>¥${leadPrice.toLocaleString()}</h3>
+                <div class="card">
+                    <div class="stat-label">本日の現場稼働 (受付 / 予定量)</div>
+                    <div class="stat-val">${todayCount}<span>件</span></div>
+                    <div class="stat-sub">持込予定: ${todayWeight.toLocaleString()} kg</div>
                 </div>
             </div>
 
-            <div class="section-title">2. 現場稼働・生産状況</div>
-            <div class="kpi-grid">
-                <div class="kpi-box">
-                    <p>本日 受付件数 / 予定量</p>
-                    <h3>${todayCount} 件 / ${todayWeight.toLocaleString()} kg</h3>
+            <div class="grid-3">
+                <div style="flex: 2;">
+                    <div class="section-title">2. MARKET TRENDS (建値・相場推移)</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>指標</th>
+                                <th class="text-right">最新価格</th>
+                                <th class="text-right">前日比</th>
+                                <th class="text-right">直近トレンド</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>銅建値 (JX)</td>
+                                <td class="text-right font-bold">¥${copperPrice.toLocaleString()}</td>
+                                <td class="text-right ${copperDiff > 0 ? 'text-red' : ''}">${copperDiff > 0 ? '+' : ''}${copperDiff}</td>
+                                <td align="right">${generateSparklineSvg(copperSparkData, '#D32F2F')}</td>
+                            </tr>
+                            <tr>
+                                <td>真鍮建値 (日伸)</td>
+                                <td class="text-right font-bold">¥${brassPrice.toLocaleString()}</td>
+                                <td class="text-right ${getDiff(brassSparkData) > 0 ? 'text-red' : ''}">${getDiff(brassSparkData) > 0 ? '+' : ''}${getDiff(brassSparkData)}</td>
+                                <td align="right">${generateSparklineSvg(brassSparkData, '#111111')}</td>
+                            </tr>
+                            <tr>
+                                <td>亜鉛建値 (三井)</td>
+                                <td class="text-right font-bold">¥${zincPrice.toLocaleString()}</td>
+                                <td class="text-right">${getDiff(zincSparkData) > 0 ? '+' : ''}${getDiff(zincSparkData)}</td>
+                                <td align="right">${generateSparklineSvg(zincSparkData, '#666666')}</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-                <div class="kpi-box highlight">
-                    <p>推定総在庫 評価額</p>
-                    <h3>¥${inventoryValue.toLocaleString()}</h3>
-                    <div class="sub">銅換算在庫: ${totalCopperStock.toLocaleString()} kg</div>
-                </div>
-                <div class="kpi-box">
-                    <p>今月生産量 / 月末予測</p>
-                    <h3>${mCopper.toLocaleString()} kg <span style="font-size:14px;color:#666;">(予測: ${projectedCopper.toLocaleString()})</span></h3>
-                    <div class="sub">歩留まりブレ: ${yieldStats.isPositive ? '+' : ''}${yieldStats.diff.toFixed(1)}%</div>
+
+                <div style="flex: 1;">
+                    <div class="section-title">3. SYSTEM & AI STATUS</div>
+                    <div class="card" style="margin-bottom:10px;">
+                        <div class="stat-label">AI 競合価格勝敗</div>
+                        <div class="stat-val" style="color:#D32F2F;">Win: ${win}</div>
+                        <div class="stat-sub">Lose: ${lose} / Draw: ${draw}</div>
+                    </div>
+                    <div class="card">
+                        <div class="stat-label">マスターDB 完成度</div>
+                        <div class="stat-val">${wireStats.total > 0 ? Math.floor((wireStats.complete / wireStats.total) * 100) : 0}<span>%</span></div>
+                        <div class="stat-sub">写真完備: ${wireStats.complete} / 全${wireStats.total}件</div>
+                    </div>
                 </div>
             </div>
 
-            <div class="section-title">3. AI・システム運用状況</div>
-            <div class="kpi-grid">
-                <div class="kpi-box">
-                    <p>AI 競合価格勝敗</p>
-                    <h3 style="color:#D32F2F;">Win: ${win}</h3>
-                    <div class="sub">Lose: ${lose} / Draw: ${draw}</div>
-                </div>
-                <div class="kpi-box">
-                    <p>マスターDB 完成度</p>
-                    <h3>${wireStats.total > 0 ? Math.floor((wireStats.complete / wireStats.total) * 100) : 0}%</h3>
-                    <div class="sub">全 ${wireStats.total}件 (写真完備: ${wireStats.complete})</div>
-                </div>
-            </div>
-
-            <div class="section-title">4. 本日の主要買取価格表</div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>メーカー / 品名 / サイズ</th>
-                        <th style="text-align: center;">材質</th>
-                        <th style="text-align: center;">銅分率 (歩留)</th>
-                        <th style="text-align: right;">本日の買取単価</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${priceTableHtml}
-                </tbody>
-            </table>
-
-            <div style="text-align: right; margin-top: 50px; font-size: 12px; color: #555;">
-                <p style="margin-bottom: 5px; font-weight: bold;">【承認印欄】</p>
-                <div style="border: 1px solid #111; width: 90px; height: 90px; display: inline-block; margin-left: 10px;"></div>
-                <div style="border: 1px solid #111; width: 90px; height: 90px; display: inline-block; margin-left: 10px;"></div>
-                <div style="border: 1px solid #111; width: 90px; height: 90px; display: inline-block; margin-left: 10px;"></div>
+            <div style="text-align: right; margin-top: 40px; font-size: 11px; color: #555;">
+                <div style="border: 1px solid #111; width: 80px; height: 80px; display: inline-block; margin-left: 10px; position: relative;"><span style="position:absolute; top:2px; left:2px;">社長</span></div>
+                <div style="border: 1px solid #111; width: 80px; height: 80px; display: inline-block; margin-left: 10px; position: relative;"><span style="position:absolute; top:2px; left:2px;">工場長</span></div>
             </div>
 
             <script>
-                // レポート画面が読み込まれたら自動的に印刷プレビューを立ち上げる
                 window.onload = function() { 
                     setTimeout(() => { 
                         window.print(); 
-                        window.close(); // 印刷が終わったら自動で閉じる
-                    }, 500); 
+                        window.close(); 
+                    }, 800); 
                 };
             </script>
         </body>
@@ -431,9 +490,9 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
               <button onClick={() => setShowAiData(true)} className={`px-4 py-1.5 text-xs font-bold transition-colors ${showAiData ? 'bg-gray-900 text-white' : 'text-gray-400 hover:bg-gray-100'}`}>予測あり</button>
               <button onClick={() => setShowAiData(false)} className={`px-4 py-1.5 text-xs font-bold transition-colors ${!showAiData ? 'bg-gray-900 text-white' : 'text-gray-400 hover:bg-gray-100'}`}>実測のみ</button>
             </div>
-            <button onClick={handlePrintReport} disabled={isGeneratingReport} className="bg-white border border-gray-300 text-gray-800 px-4 py-2 rounded-sm text-xs font-bold hover:border-[#D32F2F] hover:text-[#D32F2F] transition shadow-sm flex items-center gap-2 disabled:opacity-50">
+            <button onClick={handlePrintReport} disabled={isGeneratingReport} className="bg-gray-900 text-white px-5 py-2.5 rounded-sm text-sm font-bold hover:bg-black transition shadow-md flex items-center gap-2 disabled:opacity-50">
               {isGeneratingReport ? <span className="animate-spin"><Icons.Refresh /></span> : <Icons.Print />}
-              日次レポート作成
+              AI経営週報を出力
             </button>
           </div>
         </header>
@@ -659,59 +718,6 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                             ))}
                         </tbody>
                     </table>
-                </div>
-            </div>
-        </div>
-
-        {/* ★ リアルタイム稼働状況 (カンバン抜粋) */}
-        <div className="px-2 mb-10 w-full">
-            <div className="bg-white rounded-sm border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-[300px] relative group hover:border-[#D32F2F] hover:shadow-md transition-all">
-                <div className="absolute top-4 right-4 z-20"><ProvenanceBadge type="HUMAN" /></div>
-                <div className="p-6 border-b border-gray-100 bg-gray-50 cursor-pointer transition pr-24 shrink-0" onClick={() => onNavigate('OPERATIONS')}>
-                    <span className="text-[10px] font-bold text-gray-500 tracking-widest uppercase mb-1 block">Source: 現場状況管理</span>
-                    <h3 className="font-black text-gray-900 tracking-wider text-lg flex items-center gap-3">
-                        <span className="relative flex h-2.5 w-2.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#D32F2F] opacity-75"></span><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#D32F2F]"></span></span>
-                        リアルタイム稼働状況 (現場カンバン)
-                    </h3>
-                </div>
-                
-                <div className="p-6 bg-white flex-1 overflow-y-auto">
-                    {activeReservations.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-full text-gray-400 py-10">
-                            <p className="text-sm font-bold mt-3">本日の予定・処理待ちの荷物はありません</p>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {activeReservations.map((res: any) => {
-                                let w = 0; let p = "品目不明";
-                                try { 
-                                    const items = parseItemsData(res.items); 
-                                    if (Array.isArray(items) && items.length > 0) { 
-                                        w = items.reduce((s:number, i:any) => s + (Number(i.weight)||0), 0); 
-                                        p = items[0].product || items[0].name || items[0].productName || "不明"; 
-                                        if(items.length > 1) p += " 他"; 
-                                    } 
-                                } catch(e){}
-                                
-                                return (
-                                    <div key={res.id} className="bg-gray-50 border border-gray-200 p-4 rounded-sm shadow-sm hover:border-gray-900 transition-colors cursor-pointer group/card" onClick={() => onNavigate('OPERATIONS')}>
-                                        <div className="flex justify-between items-center mb-3">
-                                            <div className="flex items-center gap-2">
-                                                <div className={`w-2 h-2 rounded-full ${res.status === 'PROCESSING' || res.status === 'IN_PROGRESS' ? 'bg-[#D32F2F]' : 'bg-gray-900 animate-pulse'}`}></div>
-                                                <span className="text-[10px] font-bold text-gray-600 bg-white px-2 py-0.5 rounded-sm border border-gray-200 shadow-sm tabular-nums tracking-widest">{formatTime(res.createdAt || res.visitDate)}</span>
-                                            </div>
-                                            <span className="text-[9px] font-mono text-gray-400 tracking-widest">{res.id}</span>
-                                        </div>
-                                        <p className="font-black text-base text-gray-900 mb-2 truncate">{res.memberName}</p>
-                                        <p className="text-xs text-gray-600 font-bold flex items-center justify-between border-t border-gray-200 pt-2">
-                                            <span className="truncate mr-2">{p}</span>
-                                            <span className="font-black text-gray-900 text-lg shrink-0 tabular-nums">{w.toFixed(1)} <span className="text-[10px] font-bold text-gray-500">kg</span></span>
-                                        </p>
-                                    </div>
-                                )
-                            })}
-                        </div>
-                    )}
                 </div>
             </div>
         </div>
