@@ -9,7 +9,6 @@ const Icons = {
   Alert: () => <svg className="w-4 h-4 inline-block text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
   FrontDesk: () => <svg className="w-4 h-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
   Inspection: () => <svg className="w-4 h-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-  Plant: () => <svg className="w-4 h-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>,
   Check: () => <svg className="w-4 h-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>,
   Database: () => <svg className="w-3 h-3 inline-block mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" /></svg>,
   RefreshSync: () => <svg className="w-4 h-4 inline-block md:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
@@ -49,14 +48,11 @@ export const parseItemsData = (rawItems: any) => {
 
 export const AdminKanban = ({ data, localReservations = [], onUpdateStatus, onEditReservation }: { data: any, localReservations: any[], onUpdateStatus: (id: string, status: string) => void, onEditReservation: (id: string) => void }) => {
   
-  // スマホから画面に戻ってきた際に、視覚的に「リロードが必要」と気づかせるための状態
   const [needsSync, setNeedsSync] = useState(false);
 
   useEffect(() => {
       const handleVisibilityChange = () => {
-          if (document.visibilityState === 'visible') {
-              setNeedsSync(true); // 画面に戻ってきたら赤いポッチ等で同期を促す
-          }
+          if (document.visibilityState === 'visible') setNeedsSync(true);
       };
       document.addEventListener("visibilitychange", handleVisibilityChange);
       return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
@@ -74,17 +70,13 @@ export const AdminKanban = ({ data, localReservations = [], onUpdateStatus, onEd
               map.set(r.id, r);
           } else {
               const createdTime = new Date(r.createdAt || Date.now()).getTime();
-              // 10分以上前の幽霊データは除外
-              if (now - createdTime < 10 * 60 * 1000) {
-                  map.set(r.id, r);
-              }
+              if (now - createdTime < 10 * 60 * 1000) map.set(r.id, r);
           }
       });
       return Array.from(map.values());
   }, [data?.reservations, localReservations]);
 
   const handleForceSync = () => {
-      // 一時的なキャッシュを全て吹き飛ばして完全リロード
       Object.keys(localStorage).forEach(key => {
           if (key.includes('factoryOS') || key.includes('Reservations') || key.includes('lots') || key.includes('consumed')) {
               localStorage.removeItem(key);
@@ -189,50 +181,37 @@ export const AdminKanban = ({ data, localReservations = [], onUpdateStatus, onEd
   const handleDrop = (e: React.DragEvent, status: string) => { e.preventDefault(); const id = e.dataTransfer.getData('resId'); if (id) onUpdateStatus(id, status); };
   const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); };
 
+  // ★ カンバンの列を実態に合わせて3列にスリム化
   const columns = [
     { 
       id: 'RESERVED', 
-      title: '1. 受付・計量', 
-      subtitle: 'フロント担当',
+      title: '1. 受付完了 (POS済)', 
       icon: Icons.FrontDesk,
-      desc: 'POSで受付。内容を確認して検収列へ。',
+      desc: 'POSでの受付・会計が完了した荷物。',
       borderColor: 'border-gray-900', 
       headerBg: 'bg-gray-100',
       textColor: 'text-gray-900'
     },
     { 
       id: 'RECEIVED', 
-      title: '2. 検収完了 (ヤード待機)', 
-      subtitle: '現場査定担当',
+      title: '2. ヤード待機 (自社加工待ち)', 
       icon: Icons.Inspection,
-      desc: '現物確認済。プラントへの投入待ち。',
+      desc: '荷下ろしされ、自社工場での選別・加工を待っている状態。',
       borderColor: 'border-gray-900', 
       headerBg: 'bg-gray-100',
       textColor: 'text-gray-900'
     },
     { 
-      id: 'IN_PROGRESS', 
-      title: '3. プラント処理中', 
-      subtitle: 'プラント担当',
-      icon: Icons.Plant,
-      desc: '現在ナゲット機や選別ラインで加工中。',
-      borderColor: 'border-[#D32F2F]', 
-      headerBg: 'bg-red-50',
-      textColor: 'text-[#D32F2F]'
-    },
-    { 
       id: 'COMPLETED', 
-      title: '4. 処理完了', 
-      subtitle: '実績確定',
+      title: '3. 加工完了 (アーカイブ)', 
       icon: Icons.Check,
-      desc: '加工終了。歩留まり確定済。',
+      desc: 'ナゲット製造や出荷処理が完了し、処理済みとなった履歴。',
       borderColor: 'border-gray-300', 
       headerBg: 'bg-gray-50',
       textColor: 'text-gray-500'
     }
   ];
 
-  // ★ スマホ用 ステータス移動ロジック
   const getNextStatus = (currentStatus: string) => {
     const idx = columns.findIndex(c => c.id === currentStatus);
     return idx >= 0 && idx < columns.length - 1 ? columns[idx + 1].id : null;
@@ -249,11 +228,10 @@ export const AdminKanban = ({ data, localReservations = [], onUpdateStatus, onEd
             <span className="w-1.5 h-6 bg-[#D32F2F] block"></span>
             <div>
                 <h2 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight">現場状況管理 (カンバン)</h2>
-                <p className="text-xs text-gray-500 mt-1 font-bold">受付から製造までの全体ワークフロー管理</p>
+                <p className="text-xs text-gray-500 mt-1 font-bold">自社内での荷物の流れと加工ステータスを可視化</p>
             </div>
         </div>
         
-        {/* スマホでも押しやすい強制同期ボタン */}
         <button onClick={() => { setNeedsSync(false); handleForceSync(); }} className={`text-xs px-4 py-2.5 rounded-sm shadow-sm flex items-center justify-center transition font-bold border ${needsSync ? 'bg-[#D32F2F] text-white border-red-800 animate-pulse' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-100 hover:text-gray-900'}`}>
             <Icons.RefreshSync /> 
             <span className="hidden md:inline">最新データに強制同期</span>
@@ -264,7 +242,10 @@ export const AdminKanban = ({ data, localReservations = [], onUpdateStatus, onEd
 
       <div className="flex gap-4 overflow-x-auto pb-4 h-full items-stretch">
         {columns.map(col => {
-          const colData = effectiveReservations.filter(r => r.status === col.id).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          // ★ IN_PROGRESS (旧:処理中) のデータは互換性維持のため「ヤード待機」に合流させて表示
+          const colData = effectiveReservations
+            .filter(r => col.id === 'RECEIVED' ? (r.status === 'RECEIVED' || r.status === 'IN_PROGRESS') : r.status === col.id)
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
           
           return (
             <div key={col.id} className="flex-1 min-w-[300px] flex flex-col bg-gray-50 rounded-sm border border-gray-200 overflow-hidden shadow-sm" onDrop={(e) => handleDrop(e, col.id)} onDragOver={handleDragOver}>
@@ -293,7 +274,7 @@ export const AdminKanban = ({ data, localReservations = [], onUpdateStatus, onEd
                   return (
                     <div key={res.id} draggable onDragStart={(e) => handleDragStart(e, res.id)} className={`bg-white p-3 rounded-sm shadow-sm border cursor-grab active:cursor-grabbing hover:shadow-md hover:border-gray-400 transition relative group ${hasTin ? 'border-red-400' : 'border-gray-300'}`}>
                       
-                      <div className={`absolute left-0 top-0 bottom-0 w-1 ${hasTin ? 'bg-[#D32F2F]' : col.id === 'IN_PROGRESS' ? 'bg-[#D32F2F]' : 'bg-transparent'}`}></div>
+                      <div className={`absolute left-0 top-0 bottom-0 w-1 ${hasTin ? 'bg-[#D32F2F]' : 'bg-transparent'}`}></div>
                       
                       <div className="flex justify-between items-start mb-2 pl-1">
                         <div className="flex items-center gap-1 text-[10px] text-gray-500 font-mono font-bold"><Icons.Clock /> {formatTime(res.createdAt)}</div>
@@ -369,7 +350,7 @@ export const AdminKanban = ({ data, localReservations = [], onUpdateStatus, onEd
                           </div>
                       )}
 
-                      {/* ★ スマホ対応：タップで移動できるステータス変更ボタン */}
+                      {/* スマホ対応：タップで移動できるステータス変更ボタン */}
                       <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-100 ml-1">
                           <button 
                               onClick={() => { const prev = getPrevStatus(col.id); if (prev) onUpdateStatus(res.id, prev); }}
