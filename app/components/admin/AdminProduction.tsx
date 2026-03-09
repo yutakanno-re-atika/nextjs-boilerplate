@@ -15,8 +15,7 @@ const Icons = {
   FastForward: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>,
   Print: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>,
   Refresh: () => <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
-  Brain: () => <svg className="w-5 h-5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>,
-  AlertTriangle: () => <svg className="w-4 h-4 inline-block text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+  Brain: () => <svg className="w-5 h-5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
 };
 
 const ProvenanceBadge = ({ type }: { type: 'HUMAN' | 'AI_AUTO' | 'CO_OP' }) => {
@@ -64,7 +63,6 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
 
   const [processInputWeight, setProcessInputWeight] = useState('');
   const [processOutputCopper, setProcessOutputCopper] = useState('');
-  // ★ 追加: 被覆重量の入力ステート（ダスト算出用）
   const [processOutputCover, setProcessOutputCover] = useState('');
   const [processWorker, setProcessWorker] = useState('未選択');
   const [processMemo, setProcessMemo] = useState('');         
@@ -146,7 +144,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
       return { toSortLots: sortList, readyLots: processList };
   }, [localReservations, productions, wiresMaster, localSortedLots, localConsumedIds]);
 
-  const totalProducedCopper = productions.reduce((sum: number, p: any) => sum + (Number(p.outputCopper) || 0), 0);
+  const totalProducedCopper = productions.reduce((sum: number, p: any) => sum + (Number(p.outputRed) || Number(p.outputCopper) || 0), 0);
 
   const handleSkipSort = (lot: any) => {
     const newSortedLots = [...localSortedLots];
@@ -199,7 +197,6 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
     if (Number(processOutputCopper) > Number(processInputWeight)) return alert("産出重量が投入重量を上回っています。");
     setIsSubmitting(true);
     
-    // ★ ダストと被覆の自動計算ロジック
     const inW = parseFloat(processInputWeight); 
     const outC = parseFloat(processOutputCopper); 
     const coverInput = parseFloat(processOutputCover) || 0;
@@ -219,8 +216,8 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
             materialName: mixedName.substring(0, 50), 
             inputWeight: inW, 
             outputCopper: outC,
-            outputMixed: coverW, // 被覆として保存
-            outputJute: dustW,   // ダストとして保存
+            outputMixed: coverW,
+            outputJute: dustW,   
             actualRatio: parseFloat(ratio), 
             memo: `作業者: ${processWorker} | 元ロット: ${blendingLots.length}件 | ${processMemo}`
         };
@@ -331,7 +328,6 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
               </button>
           </div>
 
-          {/* ★ スマホでの高さを確保するため flex-1 overflow-hidden を設定し、内部でスクロールさせる */}
           <div className="flex-1 bg-white border-x border-b border-gray-200 shadow-sm flex flex-col min-h-[400px] overflow-hidden">
               
               {activeTab === 'SORT' && (
@@ -431,8 +427,10 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
               )}
 
               {activeTab === 'LOG' && (
-                  <div className="p-0 overflow-y-auto overflow-x-auto flex-1 relative">
-                      <div className={`transition-all duration-500 ${showAiData ? 'max-h-40 opacity-100 border-b border-gray-200' : 'max-h-0 opacity-0 overflow-hidden'}`}>
+                  // ★ AIアラートとテーブル領域を明確に分離
+                  <div className="flex flex-col flex-1 overflow-hidden relative">
+                      {/* AIアラート部分（横スクロールしないよう固定） */}
+                      <div className={`transition-all duration-500 flex-shrink-0 ${showAiData ? 'max-h-40 opacity-100 border-b border-gray-200' : 'max-h-0 opacity-0 overflow-hidden'}`}>
                           <div className="bg-gray-100 p-4">
                               <h4 className="text-xs font-bold text-gray-900 mb-2 flex items-center gap-1.5"><Icons.Brain /> AI アラート・分析</h4>
                               {productions.length > 0 ? (() => {
@@ -456,51 +454,57 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                           </div>
                       </div>
 
-                      <table className="w-full text-left border-collapse min-w-[600px]">
-                          <thead className="sticky top-0 bg-gray-100 border-b border-gray-200 z-10">
-                              <tr>
-                                  <th className="p-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">登録日時 <ProvenanceBadge type="HUMAN" /></th>
-                                  <th className="p-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">対象バッチ</th>
-                                  <th className="p-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">投入量 <ProvenanceBadge type="HUMAN" /></th>
-                                  <th className="p-4 text-[10px] font-bold text-[#D32F2F] uppercase tracking-widest text-right">産出銅 <ProvenanceBadge type="HUMAN" /></th>
-                                  <th className="p-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">被覆 <ProvenanceBadge type="HUMAN" /></th>
-                                  <th className="p-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">ダスト <ProvenanceBadge type="HUMAN" /></th>
-                                  <th className="p-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">実質歩留 <ProvenanceBadge type="HUMAN" /></th>
-                              </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-100">
-                              {productions.slice(-20).reverse().map((p: any, idx: number) => {
-                                  const master = wiresMaster.find((w:any) => getDisplayName(w) === p.materialName || w.name === p.materialName);
-                                  const expected = master ? Number(master.ratio) : 0;
-                                  const diff = Number(p.actualRatio) - expected;
-                                  const isAlert = expected > 0 && Math.abs(diff) > 2.0;
+                      {/* テーブル領域（ここだけ横・縦スクロールする） */}
+                      <div className="p-0 overflow-y-auto overflow-x-auto flex-1">
+                          <table className="w-full text-left border-collapse min-w-[600px]">
+                              <thead className="sticky top-0 bg-gray-100 border-b border-gray-200 z-10">
+                                  <tr>
+                                      <th className="p-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">登録日時 <ProvenanceBadge type="HUMAN" /></th>
+                                      <th className="p-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">対象バッチ</th>
+                                      <th className="p-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">投入量 <ProvenanceBadge type="HUMAN" /></th>
+                                      <th className="p-4 text-[10px] font-bold text-[#D32F2F] uppercase tracking-widest text-right">産出銅 <ProvenanceBadge type="HUMAN" /></th>
+                                      <th className="p-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">被覆 <ProvenanceBadge type="HUMAN" /></th>
+                                      <th className="p-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">ダスト <ProvenanceBadge type="HUMAN" /></th>
+                                      <th className="p-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">実質歩留 <ProvenanceBadge type="HUMAN" /></th>
+                                  </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-100">
+                                  {productions.slice(-20).reverse().map((p: any, idx: number) => {
+                                      const master = wiresMaster.find((w:any) => getDisplayName(w) === p.materialName || w.name === p.materialName);
+                                      const expected = master ? Number(master.ratio) : 0;
+                                      const diff = Number(p.actualRatio) - expected;
+                                      const isAlert = expected > 0 && Math.abs(diff) > 2.0;
+                                      
+                                      // ★ 産出銅の値が確実に数値として表示されるように修復
+                                      const outputCuVal = Number(p.outputRed) || Number(p.outputCopper) || 0;
 
-                                  return (
-                                      <tr key={idx} className={`hover:bg-gray-50 transition ${showAiData && isAlert && diff < 0 ? 'bg-red-50/30' : ''}`}>
-                                          <td className="p-4 text-xs text-gray-500 font-mono">
-                                              {p.createdAt ? String(p.createdAt).substring(5,16) : '不明'}
-                                          </td>
-                                          <td className="p-4">
-                                              <p className="text-sm font-bold text-gray-900">{p.materialName}</p>
-                                              <p className="text-xs text-gray-400 mt-1 line-clamp-1">{p.memberName}</p>
-                                          </td>
-                                          <td className="p-4 text-right text-base font-mono text-gray-600">{p.inputWeight} kg</td>
-                                          <td className="p-4 text-right text-base font-mono font-bold text-[#D32F2F]">{p.outputRed || p.outputCopper} kg</td>
-                                          <td className="p-4 text-right text-base font-mono text-gray-600">{p.outputMixed} kg</td>
-                                          <td className="p-4 text-right text-base font-mono text-gray-600">{p.outputJute > 0 ? <span className="bg-yellow-100 text-yellow-800 px-1 py-0.5 rounded text-sm">{p.outputJute} kg</span> : '0 kg'}</td>
-                                          <td className="p-4 text-right">
-                                              <span className={`text-lg font-mono font-black tracking-tighter ${showAiData && isAlert && diff < 0 ? 'text-[#D32F2F]' : 'text-gray-900'}`}>{p.actualRatio}%</span>
-                                              {showAiData && expected > 0 && (
-                                                  <div className="text-[10px] text-gray-400 font-mono mt-0.5">
-                                                      (マスタ比: {diff > 0 ? '+' : ''}{diff.toFixed(1)})
-                                                  </div>
-                                              )}
-                                          </td>
-                                      </tr>
-                                  );
-                              })}
-                          </tbody>
-                      </table>
+                                      return (
+                                          <tr key={idx} className={`hover:bg-gray-50 transition ${showAiData && isAlert && diff < 0 ? 'bg-red-50/30' : ''}`}>
+                                              <td className="p-4 text-xs text-gray-500 font-mono">
+                                                  {p.createdAt ? String(p.createdAt).substring(5,16) : '不明'}
+                                              </td>
+                                              <td className="p-4">
+                                                  <p className="text-sm font-bold text-gray-900">{p.materialName}</p>
+                                                  <p className="text-xs text-gray-400 mt-1 line-clamp-1">{p.memberName}</p>
+                                              </td>
+                                              <td className="p-4 text-right text-base font-mono text-gray-600">{Number(p.inputWeight || 0)} kg</td>
+                                              <td className="p-4 text-right text-base font-mono font-bold text-[#D32F2F]">{outputCuVal} kg</td>
+                                              <td className="p-4 text-right text-base font-mono text-gray-600">{Number(p.outputMixed || 0)} kg</td>
+                                              <td className="p-4 text-right text-base font-mono text-gray-600">{Number(p.outputJute) > 0 ? <span className="bg-yellow-100 text-yellow-800 px-1 py-0.5 rounded text-sm">{p.outputJute} kg</span> : '0 kg'}</td>
+                                              <td className="p-4 text-right">
+                                                  <span className={`text-lg font-mono font-black tracking-tighter ${showAiData && isAlert && diff < 0 ? 'text-[#D32F2F]' : 'text-gray-900'}`}>{p.actualRatio}%</span>
+                                                  {showAiData && expected > 0 && (
+                                                      <div className="text-[10px] text-gray-400 font-mono mt-0.5">
+                                                          (マスタ比: {diff > 0 ? '+' : ''}{diff.toFixed(1)})
+                                                      </div>
+                                                  )}
+                                              </td>
+                                          </tr>
+                                      );
+                                  })}
+                              </tbody>
+                          </table>
+                      </div>
                   </div>
               )}
           </div>
@@ -583,7 +587,6 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
               </div>
           )}
 
-          {/* ★ ブレンド加工モーダル（ダスト・被覆計算ロジック搭載） */}
           {blendingLots.length > 0 && (
               <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 animate-in fade-in">
                   <div className="bg-white rounded-sm shadow-2xl w-full max-w-xl flex flex-col max-h-[90vh]">
@@ -630,7 +633,6 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                               </div>
                           </div>
 
-                          {/* ★ 被覆・ダストのスマート計算エリア */}
                           <div className="bg-gray-50 border border-gray-200 p-4 rounded-sm">
                               <label className="block text-xs font-bold text-gray-700 mb-1">回収 被覆重量 (kg) <span className="text-gray-400 font-normal ml-1">※任意</span></label>
                               <p className="text-[10px] text-gray-500 mb-2 leading-relaxed">
