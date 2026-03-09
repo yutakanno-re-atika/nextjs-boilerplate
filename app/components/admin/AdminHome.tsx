@@ -6,7 +6,7 @@ const Icons = {
   TrendingUp: () => <svg className="w-4 h-4 text-[#D32F2F]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>,
   TrendingDown: () => <svg className="w-4 h-4 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>,
   Minus: () => <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M20 12H4" /></svg>,
-  Print: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>,
+  Print: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>,
   Refresh: () => <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
   ExternalLink: () => <svg className="w-3 h-3 ml-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>,
   Calculator: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
@@ -252,13 +252,42 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
       return { total: wires.length, complete, partial, none };
   }, [data?.wires]);
 
-  // ★★★ 最強のAI週報レポート生成・HTML出力エンジン ★★★
+  // ★★★ 修正ポイント：AI通信を待つ前に、即座にウィンドウを開いてポップアップブロックを回避 ★★★
   const handlePrintReport = async () => {
+    // 1. ポップアップブロック回避のため、クリック直後に同期的にウィンドウを開く
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('ブラウザのポップアップブロックを解除してください（アドレスバー右端のアイコン等から許可できます）。');
+      return;
+    }
+
+    // 2. ローディング画面を描画しておく
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>AI経営週報 生成中...</title>
+        <style>
+          body { font-family: sans-serif; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; background: #f9f9f9; margin: 0; }
+          .spinner { width: 50px; height: 50px; border: 5px solid #e5e7eb; border-top-color: #D32F2F; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+          @keyframes spin { to { transform: rotate(360deg); } }
+          h2 { color: #111; margin: 0 0 10px 0; }
+          p { color: #666; font-size: 14px; text-align: center; }
+        </style>
+      </head>
+      <body>
+        <div class="spinner"></div>
+        <h2>AI経営週報を生成しています</h2>
+        <p>市場データと現場実績を分析し、考察を作成中です。<br/>このまま10秒〜20秒ほどお待ちください。</p>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+
     setIsGeneratingReport(true);
     
     const todayStr = new Date().toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
 
-    // 1. AIに渡すためのデータを準備
     const promptData = `
     【市場相場トレンド】
     ・銅建値: ${copperPrice}円 (直近推移: ${copperSparkData.join('→')})
@@ -280,7 +309,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
 
     let aiSummaryText = "AIへの接続に失敗しました。定量データのみ確認してください。";
     
-    // 2. Next.jsのAPIを経由してAIに考察を生成させる
+    // 3. API通信でAI考察を取得
     try {
         const res = await fetch('/api/print-summary', {
             method: 'POST',
@@ -295,15 +324,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
         console.warn("AI summary fetch failed", e);
     }
 
-    // 3. レポート用の別ウィンドウを開く
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      alert('ポップアップブロックを解除してください。');
-      setIsGeneratingReport(false);
-      return;
-    }
-
-    // PDF上でSparklineを描画するためのSVG生成関数
+    // 4. SVGグラフの生成関数
     const generateSparklineSvg = (dataArray: number[], color: string) => {
       if (!dataArray || dataArray.length < 2) return '';
       const min = Math.min(...dataArray);
@@ -328,8 +349,22 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
       `;
     };
 
-    // 4. 洗練されたA4レポートHTMLを構築
-    const html = `
+    // 5. 価格表HTMLの生成
+    const priceTableHtml = data?.wires?.slice(0, 15).map((w: any) => `
+        <tr>
+            <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold; color: #111;">
+                ${w.maker && w.maker !== '-' ? `【${w.maker}】` : ''}${w.name} ${w.sq !== '-' ? `${w.sq}sq` : ''} ${w.core !== '-' ? `${w.core}C` : ''}
+            </td>
+            <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: center;">${w.material}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: center; font-family: monospace; font-weight: bold;">${w.ratio}%</td>
+            <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right; font-family: monospace; font-weight: bold; color: #D32F2F; font-size: 16px;">
+                ¥${Math.floor(copperPrice * (w.ratio/100) * 0.85).toLocaleString()}
+            </td>
+        </tr>
+    `).join('') || '<tr><td colspan="4" style="text-align:center; padding: 10px;">データがありません</td></tr>';
+
+    // 6. 最終的なHTML
+    const finalHtml = `
         <!DOCTYPE html>
         <html>
         <head>
@@ -353,7 +388,7 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                 .stat-label { font-size: 10px; color: #666; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; }
                 .stat-val { font-size: 22px; font-weight: 900; font-family: monospace; color: #111; margin-bottom: 5px; display: flex; align-items: baseline; gap: 4px; }
                 .stat-val span { font-size: 12px; color: #888; font-weight: normal; }
-                .stat-sub { font-size: 11px; color: #555; }
+                .stat-sub { font-size: 11px; color: #555; font-weight: bold; }
                 .stat-sub.red { color: #D32F2F; font-weight: bold; }
 
                 table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 20px; }
@@ -449,7 +484,22 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                 </div>
             </div>
 
-            <div style="text-align: right; margin-top: 40px; font-size: 11px; color: #555;">
+            <div class="section-title" style="page-break-before: always;">4. 本日の主要買取価格表</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>メーカー / 品名 / サイズ</th>
+                        <th style="text-align: center;">材質</th>
+                        <th style="text-align: center;">銅分率 (歩留)</th>
+                        <th style="text-align: right;">本日の買取単価</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${priceTableHtml}
+                </tbody>
+            </table>
+
+            <div style="text-align: right; margin-top: 50px; font-size: 11px; color: #555;">
                 <div style="border: 1px solid #111; width: 80px; height: 80px; display: inline-block; margin-left: 10px; position: relative;"><span style="position:absolute; top:2px; left:2px;">社長</span></div>
                 <div style="border: 1px solid #111; width: 80px; height: 80px; display: inline-block; margin-left: 10px; position: relative;"><span style="position:absolute; top:2px; left:2px;">工場長</span></div>
             </div>
@@ -459,14 +509,18 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                     setTimeout(() => { 
                         window.print(); 
                         window.close(); 
-                    }, 800); 
+                    }, 500); 
                 };
             </script>
         </body>
         </html>
     `;
-    printWindow.document.write(html);
+
+    // 7. ローディング画面を消して、完成したレポートを上書き出力
+    printWindow.document.open();
+    printWindow.document.write(finalHtml);
     printWindow.document.close();
+    
     setIsGeneratingReport(false);
   };
 
@@ -718,6 +772,59 @@ export const AdminHome = ({ data, localReservations, onNavigate }: { data: any, 
                             ))}
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+
+        {/* ★ リアルタイム稼働状況 (カンバン抜粋) */}
+        <div className="px-2 mb-10 w-full">
+            <div className="bg-white rounded-sm border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-[300px] relative group hover:border-[#D32F2F] hover:shadow-md transition-all">
+                <div className="absolute top-4 right-4 z-20"><ProvenanceBadge type="HUMAN" /></div>
+                <div className="p-6 border-b border-gray-100 bg-gray-50 cursor-pointer transition pr-24 shrink-0" onClick={() => onNavigate('OPERATIONS')}>
+                    <span className="text-[10px] font-bold text-gray-500 tracking-widest uppercase mb-1 block">Source: 現場状況管理</span>
+                    <h3 className="font-black text-gray-900 tracking-wider text-lg flex items-center gap-3">
+                        <span className="relative flex h-2.5 w-2.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#D32F2F] opacity-75"></span><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#D32F2F]"></span></span>
+                        リアルタイム稼働状況 (現場カンバン)
+                    </h3>
+                </div>
+                
+                <div className="p-6 bg-white flex-1 overflow-y-auto">
+                    {activeReservations.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center h-full text-gray-400 py-10">
+                            <p className="text-sm font-bold mt-3">本日の予定・処理待ちの荷物はありません</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {activeReservations.map((res: any) => {
+                                let w = 0; let p = "品目不明";
+                                try { 
+                                    const items = parseItemsData(res.items); 
+                                    if (Array.isArray(items) && items.length > 0) { 
+                                        w = items.reduce((s:number, i:any) => s + (Number(i.weight)||0), 0); 
+                                        p = items[0].product || items[0].name || items[0].productName || "不明"; 
+                                        if(items.length > 1) p += " 他"; 
+                                    } 
+                                } catch(e){}
+                                
+                                return (
+                                    <div key={res.id} className="bg-gray-50 border border-gray-200 p-4 rounded-sm shadow-sm hover:border-gray-900 transition-colors cursor-pointer group/card" onClick={() => onNavigate('OPERATIONS')}>
+                                        <div className="flex justify-between items-center mb-3">
+                                            <div className="flex items-center gap-2">
+                                                <div className={`w-2 h-2 rounded-full ${res.status === 'PROCESSING' || res.status === 'IN_PROGRESS' ? 'bg-[#D32F2F]' : 'bg-gray-900 animate-pulse'}`}></div>
+                                                <span className="text-[10px] font-bold text-gray-600 bg-white px-2 py-0.5 rounded-sm border border-gray-200 shadow-sm tabular-nums tracking-widest">{formatTime(res.createdAt || res.visitDate)}</span>
+                                            </div>
+                                            <span className="text-[9px] font-mono text-gray-400 tracking-widest">{res.id}</span>
+                                        </div>
+                                        <p className="font-black text-base text-gray-900 mb-2 truncate">{res.memberName}</p>
+                                        <p className="text-xs text-gray-600 font-bold flex items-center justify-between border-t border-gray-200 pt-2">
+                                            <span className="truncate mr-2">{p}</span>
+                                            <span className="font-black text-gray-900 text-lg shrink-0 tabular-nums">{w.toFixed(1)} <span className="text-[10px] font-bold text-gray-500">kg</span></span>
+                                        </p>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
