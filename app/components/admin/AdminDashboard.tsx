@@ -9,7 +9,7 @@ import { AdminPos } from './AdminPos';
 import { AdminCompetitor } from './AdminCompetitor';
 import { AdminProduction } from './AdminProduction';
 import { AdminDatabase } from './AdminDatabase';
-import { AdminSettings } from './AdminSettings'; // ★ 新しいファイルをインポート
+import { AdminSettings } from './AdminSettings';
 import { AdminClientDetail } from './AdminClientDetail';
 import { AdminSales } from './AdminSales';
 import { FloatingAiMentor } from './FloatingAiMentor';
@@ -36,7 +36,6 @@ const Icons = {
   AlertTriangle: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
 };
 
-// ★ ROLE_PERMISSIONS に SETTINGS を追加
 const ROLE_PERMISSIONS = {
   ADMIN:   ['HOME', 'OPERATIONS', 'POS', 'PRODUCTION', 'PHOTO', 'COMPETITOR', 'DATABASE', 'SETTINGS', 'SALES', 'CLIENT_DETAIL'],
   MANAGER: ['HOME', 'OPERATIONS', 'POS', 'PRODUCTION', 'PHOTO', 'COMPETITOR', 'DATABASE', 'SETTINGS', 'SALES', 'CLIENT_DETAIL'],
@@ -159,12 +158,11 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
       }
   };
 
-  // ★ メニューリストにシステム設定を追加
   const ALL_MENU_ITEMS = [
       { id: 'HOME', icon: Icons.Home, label: 'ダッシュボード', reqRole: 'MANAGER〜' },
       { id: 'OPERATIONS', icon: Icons.Kanban, label: '現場状況管理', reqRole: 'FRONT/PLANT〜' },
       { id: 'POS', icon: Icons.Calc, label: 'POS (受付・計量)', reqRole: 'FRONT〜' },
-      { id: 'PRODUCTION', icon: Icons.Factory, label: '製造(WN-800)', reqRole: 'PLANT〜' },
+      { id: 'PRODUCTION', icon: Icons.Factory, label: '製造・在庫管理', reqRole: 'PLANT〜' },
       { id: 'SALES', icon: Icons.Briefcase, label: '営業・顧客', reqRole: 'SALES〜' },
       { id: 'COMPETITOR', icon: Icons.Radar, label: '相場レーダー', reqRole: 'MANAGER〜' },
       { id: 'DATABASE', icon: Icons.Database, label: 'マスターDB', reqRole: 'MANAGER〜' },
@@ -207,24 +205,24 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
                 <p className="text-sm font-bold text-gray-800 truncate">{user?.name || user?.companyName || 'スタッフ'}</p>
                 {currentRole === 'ADMIN' && <Icons.Shield />}
             </div>
-            <p className="text-[10px] font-mono text-white font-bold bg-gray-800 px-2 py-0.5 rounded-sm inline-block w-fit">
-               [現在] ROLE: {currentRole}
+            <p className="text-[10px] font-mono text-white font-bold bg-gray-900 px-2 py-0.5 rounded-sm inline-block w-fit tracking-widest">
+               ROLE: {currentRole}
             </p>
             
             <div className="flex flex-col gap-2 mt-3">
-                <div className="flex items-center justify-between bg-white border border-gray-200 p-2 rounded-md shadow-sm">
-                    <span className="text-xs font-bold text-gray-600 flex items-center gap-1.5">
-                        <span className="text-green-600"><Icons.School /></span> 教育メンターAI
+                <div className="flex items-center justify-between bg-white border border-gray-200 p-2 rounded-sm shadow-sm">
+                    <span className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                        <span className="text-[#D32F2F]"><Icons.School /></span> 教育AI
                     </span>
-                    <button onClick={() => setIsLearningMode(!isLearningMode)} className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${isLearningMode ? 'bg-green-500' : 'bg-gray-300'}`}>
+                    <button onClick={() => setIsLearningMode(!isLearningMode)} className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${isLearningMode ? 'bg-gray-900' : 'bg-gray-300'}`}>
                         <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${isLearningMode ? 'translate-x-5' : 'translate-x-1'}`} />
                     </button>
                 </div>
-                <div className="flex items-center justify-between bg-white border border-gray-200 p-2 rounded-md shadow-sm">
-                    <span className="text-xs font-bold text-gray-600 flex items-center gap-1.5">
-                        <span className="text-blue-500">🔊</span> 音声読み上げ
+                <div className="flex items-center justify-between bg-white border border-gray-200 p-2 rounded-sm shadow-sm">
+                    <span className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                        <span className="text-gray-900">🔊</span> 読み上げ
                     </span>
-                    <button onClick={() => setIsVoiceOutputEnabled(!isVoiceOutputEnabled)} className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${isVoiceOutputEnabled ? 'bg-blue-600' : 'bg-gray-300'}`}>
+                    <button onClick={() => setIsVoiceOutputEnabled(!isVoiceOutputEnabled)} className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${isVoiceOutputEnabled ? 'bg-gray-900' : 'bg-gray-300'}`}>
                         <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${isVoiceOutputEnabled ? 'translate-x-5' : 'translate-x-1'}`} />
                     </button>
                 </div>
@@ -239,7 +237,7 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
                     <button 
                         key={item.id}
                         onClick={() => handleNavigate(item.id)} 
-                        className={`w-full text-left px-3 py-2.5 rounded-md text-sm font-bold transition-all flex items-center justify-between group relative ${isActive ? 'text-gray-900 bg-white shadow-sm border border-gray-200' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'}`}
+                        className={`w-full text-left px-3 py-2.5 rounded-sm text-sm font-bold transition-all flex items-center justify-between group relative ${isActive ? 'text-gray-900 bg-white shadow-sm border border-gray-200' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100 border border-transparent'}`}
                     >
                         {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-4 bg-[#D32F2F] rounded-r-md"></div>}
                         <div className="flex items-center gap-3">
@@ -252,11 +250,11 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
         </nav>
         
         <div className="p-4 border-t border-[#E5E7EB] flex-shrink-0 space-y-1">
-            <button onClick={() => { setView('LP'); setIsMobileMenuOpen(false); }} className="w-full text-left px-3 py-2.5 rounded-md text-sm font-bold text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition flex items-center gap-3">
+            <button onClick={() => { setView('LP'); setIsMobileMenuOpen(false); }} className="w-full text-left px-3 py-2.5 rounded-sm text-sm font-bold text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition flex items-center gap-3">
                 <Icons.ExternalLink /> Webサイト確認
             </button>
             {onLogout && (
-                <button onClick={onLogout} className="w-full text-left px-3 py-2.5 rounded-md text-sm font-bold text-gray-500 hover:text-[#D32F2F] hover:bg-red-50 transition flex items-center gap-3">
+                <button onClick={onLogout} className="w-full text-left px-3 py-2.5 rounded-sm text-sm font-bold text-gray-500 hover:text-[#D32F2F] hover:bg-red-50 transition flex items-center gap-3">
                     <Icons.Logout /> ログアウト
                 </button>
             )}
@@ -265,23 +263,23 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
 
       <main className="flex-1 overflow-y-auto bg-[#FFFFFF] p-4 md:p-8 lg:p-10 flex flex-col relative w-full selection:bg-red-100 selection:text-red-900 pb-32 md:pb-10">
          {adminTab === 'HOME' && <AdminHome data={data} localReservations={localReservations} onNavigate={handleNavigate} />}
-         {adminTab === 'OPERATIONS' && <AdminKanban localReservations={localReservations} onUpdateStatus={handleUpdateStatus} onEditReservation={(id) => handleNavigate('POS', id)} />}
+         {/* ★ Kanban に data={data} を渡して製造実績が読み込めるように修正 */}
+         {adminTab === 'OPERATIONS' && <AdminKanban data={data} localReservations={localReservations} onUpdateStatus={handleUpdateStatus} onEditReservation={(id) => handleNavigate('POS', id)} />}
          {adminTab === 'POS' && <AdminPos data={data} editingResId={editingResId} localReservations={localReservations} onSuccess={handlePosSuccess} onClear={() => setEditingResId(null)} isVoiceOutputEnabled={isVoiceOutputEnabled} />}
          {adminTab === 'PRODUCTION' && <AdminProduction data={data} localReservations={localReservations} />}
          {adminTab === 'COMPETITOR' && <AdminCompetitor data={data} />}
          {adminTab === 'SALES' && <AdminSales data={data} />}
          {adminTab === 'DATABASE' && <AdminDatabase data={data} isVoiceOutputEnabled={isVoiceOutputEnabled} />}
-         {/* ★ 新しく独立した設定画面をレンダリング */}
          {adminTab === 'SETTINGS' && <AdminSettings data={data} />}
          {adminTab === 'CLIENT_DETAIL' && selectedClientName && <AdminClientDetail data={data} clientName={selectedClientName} onBack={() => handleNavigate('HOME')} />}
          {adminTab === 'PHOTO' && <AdminPhotoUpload />}
       </main>
 
       {syncStatus !== 'IDLE' && (
-          <div className={`fixed bottom-4 left-4 md:left-[260px] z-[100] px-4 py-2.5 rounded-full shadow-lg flex items-center gap-2 text-sm font-bold transition-all duration-300 animate-in slide-in-from-bottom-5 ${
-              syncStatus === 'SYNCING' ? 'bg-blue-600 text-white' :
-              syncStatus === 'SUCCESS' ? 'bg-green-500 text-white' :
-              'bg-red-600 text-white'
+          <div className={`fixed bottom-4 left-4 md:left-[260px] z-[100] px-4 py-2.5 rounded-sm shadow-lg flex items-center gap-2 text-sm font-bold transition-all duration-300 animate-in slide-in-from-bottom-5 border ${
+              syncStatus === 'SYNCING' ? 'bg-gray-900 text-white border-gray-800' :
+              syncStatus === 'SUCCESS' ? 'bg-gray-800 text-white border-gray-700' :
+              'bg-[#D32F2F] text-white border-red-800'
           }`}>
               {syncStatus === 'SYNCING' && <><Icons.RefreshIcon /> クラウドと同期中...</>}
               {syncStatus === 'SUCCESS' && <><Icons.CheckCircle /> 同期完了</>}
