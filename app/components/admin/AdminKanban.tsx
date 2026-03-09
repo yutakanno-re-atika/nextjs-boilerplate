@@ -6,7 +6,7 @@ const Icons = {
   Printer: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>,
   Clock: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   User: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>,
-  Alert: () => <svg className="w-4 h-4 inline-block text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
+  Alert: () => <svg className="w-4 h-4 inline-block text-[#D32F2F]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
   FrontDesk: () => <svg className="w-4 h-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
   Inspection: () => <svg className="w-4 h-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   Plant: () => <svg className="w-4 h-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>,
@@ -19,21 +19,32 @@ const formatTime = (timeStr: string) => {
   return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 };
 
+// ★ 修正版：最強のJSONパース関数（改行コードで破壊されないよう保護）
 export const parseItemsData = (rawItems: any) => {
     if (!rawItems) return [];
     if (Array.isArray(rawItems)) return rawItems;
     try {
-        let temp = String(rawItems);
-        if (temp.startsWith('"') && temp.endsWith('"')) temp = temp.slice(1, -1);
-        temp = temp.replace(/""/g, '"');
-        temp = temp.replace(/\\n/g, "\\n").replace(/\\r/g, "\\r").replace(/\\t/g, "\\t");
-        temp = temp.replace(/\n/g, "\\n").replace(/\r/g, "");
-        
-        let parsed = JSON.parse(temp);
-        if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+        // 余計な置換をせず、まずは素直にパースを試みる
+        const parsed = JSON.parse(rawItems);
         if (Array.isArray(parsed)) return parsed;
-    } catch (e) {
-        console.error("JSON parse failed. Raw data:", rawItems);
+        if (typeof parsed === 'string') {
+            const doubleParsed = JSON.parse(parsed);
+            if (Array.isArray(doubleParsed)) return doubleParsed;
+        }
+    } catch (e1) {
+        // パース失敗時のみ、安全なエスケープ置換を行う
+        try {
+            let temp = String(rawItems);
+            if (temp.startsWith('"') && temp.endsWith('"')) temp = temp.slice(1, -1);
+            temp = temp.replace(/""/g, '"');
+            // 改行コードはスペースに置換してJSONの破壊を防ぐ
+            temp = temp.replace(/\n/g, " ").replace(/\r/g, "");
+            let parsed = JSON.parse(temp);
+            if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+            if (Array.isArray(parsed)) return parsed;
+        } catch (e2) {
+            console.error("JSON parse failed. Raw data:", rawItems);
+        }
     }
     return [];
 };
@@ -56,7 +67,7 @@ export const AdminKanban = ({ localReservations = [], onUpdateStatus, onEditRese
           <tr>
               <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold; color: #111;">
                 ${itemName}
-                ${isTinItem ? '<span style="background: #ef4444; color: #fff; font-size: 10px; padding: 2px 4px; border-radius: 3px; margin-left: 5px;">⚠️錫</span>' : ''}
+                ${isTinItem ? '<span style="background: #fee2e2; color: #D32F2F; font-size: 10px; padding: 2px 4px; border-radius: 3px; margin-left: 5px;">⚠️錫</span>' : ''}
               </td>
               <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: center;">${itemMaterial}</td>
               <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right; font-family: monospace;">${itemRatio}</td>
@@ -86,7 +97,7 @@ export const AdminKanban = ({ localReservations = [], onUpdateStatus, onEditRese
                   .total-row { display: flex; justify-content: flex-end; align-items: center; font-size: 24px; font-weight: 900; border-top: 2px solid #111; padding-top: 15px; }
                   .total-row span { font-size: 14px; color: #666; margin-right: 15px; font-weight: bold; }
                   .memo { margin-top: 40px; padding: 15px; border: 1px dashed #ccc; background: #fff; font-size: 12px; color: #444; border-radius: 5px; }
-                  .alert { background: #fee2e2; border-left: 4px solid #ef4444; padding: 10px; margin-bottom: 20px; font-size: 14px; color: #b91c1c; font-weight: bold; }
+                  .alert { background: #fee2e2; border-left: 4px solid #D32F2F; padding: 10px; margin-bottom: 20px; font-size: 14px; color: #D32F2F; font-weight: bold; }
                   @media print { body { padding: 0; margin: 0; } @page { margin: 15mm; } }
               </style>
           </head>
@@ -135,7 +146,7 @@ export const AdminKanban = ({ localReservations = [], onUpdateStatus, onEditRese
   const handleDrop = (e: React.DragEvent, status: string) => { e.preventDefault(); const id = e.dataTransfer.getData('resId'); if (id) onUpdateStatus(id, status); };
   const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); };
 
-  // ★ カンバンのデザインを「白・黒・赤」のコーポレート仕様に統一
+  // ★ デザインを白・黒・赤に完全統一
   const columns = [
     { 
       id: 'RESERVED', 
@@ -173,9 +184,9 @@ export const AdminKanban = ({ localReservations = [], onUpdateStatus, onEditRese
       subtitle: '実績確定',
       icon: Icons.Check,
       desc: '加工終了。歩留まり確定済。',
-      borderColor: 'border-gray-400', 
-      headerBg: 'bg-gray-200',
-      textColor: 'text-gray-600'
+      borderColor: 'border-gray-300', 
+      headerBg: 'bg-gray-50',
+      textColor: 'text-gray-500'
     }
   ];
 
@@ -215,7 +226,7 @@ export const AdminKanban = ({ localReservations = [], onUpdateStatus, onEditRese
                   return (
                     <div key={res.id} draggable onDragStart={(e) => handleDragStart(e, res.id)} className={`bg-white p-3 rounded-sm shadow-sm border cursor-grab active:cursor-grabbing hover:shadow-md hover:border-gray-400 transition relative group ${hasTin ? 'border-red-400' : 'border-gray-300'}`}>
                       
-                      {/* 赤い左線で状態を強調 */}
+                      {/* 左端のハイライト線 */}
                       <div className={`absolute left-0 top-0 bottom-0 w-1 ${hasTin ? 'bg-[#D32F2F]' : col.id === 'IN_PROGRESS' ? 'bg-[#D32F2F]' : 'bg-transparent'}`}></div>
                       
                       <div className="flex justify-between items-start mb-2 pl-1">
@@ -238,7 +249,7 @@ export const AdminKanban = ({ localReservations = [], onUpdateStatus, onEditRese
 
                       <div className="bg-gray-50 rounded-sm p-2 text-xs mb-2 border border-gray-200 ml-1">
                         {items.length === 0 ? (
-                            <div className="text-gray-400 text-center py-1 font-bold">データ解読エラー</div>
+                            <div className="text-gray-400 text-center py-1 font-bold">データなし</div>
                         ) : (
                             items.slice(0, 3).map((item: any, idx: number) => {
                                 const displayName = item.product || item.name || '不明な商材';
@@ -265,7 +276,7 @@ export const AdminKanban = ({ localReservations = [], onUpdateStatus, onEditRese
                           </div>
                           
                           {col.id === 'RESERVED' && (
-                              <button onClick={() => onEditReservation(res.id)} className="text-[10px] text-blue-600 hover:text-blue-800 underline font-bold transition">
+                              <button onClick={() => onEditReservation(res.id)} className="text-[10px] text-gray-500 hover:text-gray-900 underline font-bold transition">
                                   POSで再編集
                               </button>
                           )}
