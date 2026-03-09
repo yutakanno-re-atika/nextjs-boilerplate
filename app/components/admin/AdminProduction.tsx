@@ -19,7 +19,7 @@ const Icons = {
 };
 
 const ProvenanceBadge = ({ type }: { type: 'HUMAN' | 'AI_AUTO' | 'CO_OP' }) => {
-  const baseStyle = "inline-block px-1.5 py-0.5 text-[9px] font-mono font-bold tracking-widest rounded-sm text-white cursor-default shadow-sm";
+  const baseStyle = "inline-block px-1.5 py-0.5 text-[9px] font-mono font-bold tracking-widest rounded-sm text-white cursor-default shadow-sm ml-1 align-middle";
   switch (type) {
     case 'HUMAN': return <span className={`${baseStyle} bg-gray-900`} title="実測・確定データ">HUMAN</span>;
     case 'CO_OP': return <span className={`${baseStyle} bg-gray-600`} title="AI＋人間 協調データ">CO-P</span>;
@@ -62,8 +62,9 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
   const [sortWorker, setSortWorker] = useState('未選択');
 
   const [processInputWeight, setProcessInputWeight] = useState('');
-  const [processOutputCopper, setProcessOutputCopper] = useState('');
-  const [processOutputCover, setProcessOutputCover] = useState('');
+  const [processOutputRed, setProcessOutputRed] = useState(''); // 上ナゲット(赤)
+  const [processOutputMixed, setProcessOutputMixed] = useState(''); // 雑ナゲット
+  const [processOutputCover, setProcessOutputCover] = useState(''); // 被覆(ダスト計算用)
   const [processWorker, setProcessWorker] = useState('未選択');
   const [processMemo, setProcessMemo] = useState('');         
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -144,7 +145,9 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
       return { toSortLots: sortList, readyLots: processList };
   }, [localReservations, productions, wiresMaster, localSortedLots, localConsumedIds]);
 
-  const totalProducedCopper = productions.reduce((sum: number, p: any) => sum + (Number(p.outputRed) || Number(p.outputCopper) || 0), 0);
+  // ★ 上ナゲットと雑ナゲットをそれぞれ集計
+  const totalRedNugget = productions.reduce((sum: number, p: any) => sum + (Number(p.outputRed) || Number(p.outputCopper) || 0), 0);
+  const totalMixedNugget = productions.reduce((sum: number, p: any) => sum + (Number(p.outputMixed) || 0), 0);
 
   const handleSkipSort = (lot: any) => {
     const newSortedLots = [...localSortedLots];
@@ -189,21 +192,25 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
 
     setBlendingLots(selected);
     const totalWeight = selected.reduce((sum, l) => sum + l.remainingWeight, 0);
-    setProcessInputWeight(String(totalWeight)); setProcessOutputCopper(''); setProcessOutputCover(''); setProcessWorker('未選択'); setProcessMemo('');
+    setProcessInputWeight(String(totalWeight)); setProcessOutputRed(''); setProcessOutputMixed(''); setProcessOutputCover(''); setProcessWorker('未選択'); setProcessMemo('');
   };
 
   const handleProcessSubmit = async () => {
-    if (blendingLots.length === 0 || !processInputWeight || !processOutputCopper) return;
-    if (Number(processOutputCopper) > Number(processInputWeight)) return alert("産出重量が投入重量を上回っています。");
-    setIsSubmitting(true);
-    
-    const inW = parseFloat(processInputWeight); 
-    const outC = parseFloat(processOutputCopper); 
+    if (blendingLots.length === 0 || !processInputWeight) return;
+    const inW = parseFloat(processInputWeight) || 0; 
+    const outRed = parseFloat(processOutputRed) || 0; 
+    const outMixed = parseFloat(processOutputMixed) || 0;
     const coverInput = parseFloat(processOutputCover) || 0;
+    const outCu = outRed + outMixed;
 
-    const coverW = coverInput > 0 ? coverInput : Math.max(0, inW - outC);
-    const dustW = coverInput > 0 ? Math.max(0, inW - outC - coverInput) : 0;
-    const ratio = ((outC / inW) * 100).toFixed(1);
+    if (outCu === 0) return alert("産出されたナゲット重量（上または雑）を入力してください。");
+    if (outCu > inW) return alert("産出重量が投入重量を上回っています。");
+    
+    setIsSubmitting(true);
+
+    const coverW = coverInput > 0 ? coverInput : Math.max(0, inW - outCu);
+    const dustW = coverInput > 0 ? Math.max(0, inW - outCu - coverInput) : 0;
+    const ratio = inW > 0 ? ((outCu / inW) * 100).toFixed(1) : 0;
     
     const materialNames = blendingLots.map(l => l.product).join(' + ');
     const mixedName = blendingLots.length > 1 ? `混合バッチ (${materialNames})` : blendingLots[0].product;
@@ -211,13 +218,15 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
 
     try {
         const payload = {
-            action: 'REGISTER_PRODUCTION', reservationId: reservationIds.substring(0, 40), 
+            action: 'REGISTER_PRODUCTION', 
+            reservationId: reservationIds.substring(0, 40), 
             memberName: blendingLots.length > 1 ? 'ブレンド処理' : blendingLots[0].memberName,
             materialName: mixedName.substring(0, 50), 
             inputWeight: inW, 
-            outputCopper: outC,
-            outputMixed: coverW,
-            outputJute: dustW,   
+            outputRed: outRed, // 上ナゲット
+            outputMixed: outMixed, // 雑ナゲット
+            outputChips: coverW, // 被覆
+            outputJute: dustW, // ダスト 
             actualRatio: parseFloat(ratio), 
             memo: `作業者: ${processWorker} | 元ロット: ${blendingLots.length}件 | ${processMemo}`
         };
@@ -238,7 +247,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
     const recentLogs = productions.slice(-10).map((p:any) => `${p.materialName}: 歩留${p.actualRatio}% (投入${p.inputWeight}kg)`).join('\n');
     const promptData = `
     ・データモード: ${showAiData ? 'AI予測データ含む' : '実測確定データのみ'}
-    ・累計 ピカ銅生産量: ${totalProducedCopper.toLocaleString()} kg
+    ・累計 上ナゲット生産量: ${totalRedNugget.toLocaleString()} kg
     ・現在の選別待ちロット: ${toSortLots.length} 件
     ・現在の加工待ちヤード在庫: ${readyLots.length} 件
     ・直近10件の加工ログ:
@@ -304,15 +313,28 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
             </div>
           </header>
 
-          <div className="bg-[#111] rounded-sm shadow-sm p-5 md:p-6 text-white mb-6 relative overflow-hidden flex flex-col md:flex-row justify-between md:items-end gap-2 md:gap-4 flex-shrink-0">
+          <div className="bg-[#111] rounded-sm shadow-sm p-5 md:p-6 text-white mb-6 relative overflow-hidden flex flex-col md:flex-row justify-between md:items-center gap-4 flex-shrink-0">
               <div className="absolute top-0 right-0 p-4 opacity-10 transform scale-150 text-[#D32F2F]"><Icons.Factory /></div>
               <div>
-                  <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">TOTAL PURE COPPER</h3>
-                  <p className="text-sm font-bold text-gray-200 flex items-center gap-2">累計 ピカ銅生産量 <ProvenanceBadge type="HUMAN" /></p>
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">TOTAL COPPER NUGGET</h3>
+                  <p className="text-sm font-bold text-gray-200 flex items-center">累計 銅ナゲット生産量 <ProvenanceBadge type="HUMAN" /></p>
               </div>
-              <div className="flex items-end gap-1 md:gap-2 relative z-10">
-                  <span className="text-4xl md:text-5xl font-black text-white font-mono tracking-tighter">{totalProducedCopper.toLocaleString()}</span>
-                  <span className="text-sm md:text-lg text-gray-400 font-bold mb-1">kg</span>
+              <div className="flex items-center gap-6 md:gap-10 relative z-10">
+                  <div className="text-right">
+                      <p className="text-[10px] md:text-xs text-gray-400 font-bold mb-1 uppercase tracking-widest">上ナゲット (赤)</p>
+                      <div className="flex items-end gap-1 justify-end">
+                          <span className="text-3xl md:text-4xl font-black text-[#D32F2F] font-mono tracking-tighter">{totalRedNugget.toLocaleString()}</span>
+                          <span className="text-sm text-gray-500 font-bold mb-1">kg</span>
+                      </div>
+                  </div>
+                  <div className="w-px h-10 bg-gray-700"></div>
+                  <div className="text-right">
+                      <p className="text-[10px] md:text-xs text-gray-400 font-bold mb-1 uppercase tracking-widest">雑ナゲット</p>
+                      <div className="flex items-end gap-1 justify-end">
+                          <span className="text-3xl md:text-4xl font-black text-blue-400 font-mono tracking-tighter">{totalMixedNugget.toLocaleString()}</span>
+                          <span className="text-sm text-gray-500 font-bold mb-1">kg</span>
+                      </div>
+                  </div>
               </div>
           </div>
 
@@ -339,7 +361,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                               {toSortLots.map(lot => (
                                   <div key={lot.lotId} className={`bg-white border ${lot.isTin ? 'border-red-300' : 'border-gray-200'} rounded-sm p-5 shadow-sm hover:border-gray-400 transition flex flex-col`}>
                                       <div className="flex justify-between items-start mb-3">
-                                          <div className="flex gap-2">
+                                          <div className="flex items-center gap-1">
                                               <span className="text-[10px] font-bold bg-gray-100 text-gray-700 border border-gray-200 px-2 py-0.5 rounded-sm">未選別</span>
                                               <ProvenanceBadge type="HUMAN" />
                                           </div>
@@ -381,10 +403,10 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                               <thead className="sticky top-0 bg-gray-100 border-b border-gray-200 z-10">
                                   <tr>
                                       <th className="p-3 w-12 text-center"><input type="checkbox" onChange={(e) => setCheckedLotIds(e.target.checked ? readyLots.map(l=>l.lotId) : [])} checked={checkedLotIds.length === readyLots.length && readyLots.length > 0} className="w-4 h-4 accent-[#D32F2F]" /></th>
-                                      <th className="p-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest">状態 / 入庫</th>
-                                      <th className="p-3 text-xs font-bold text-gray-500 uppercase tracking-widest">品目 <ProvenanceBadge type="HUMAN" /></th>
-                                      <th className="p-3 text-xs font-bold text-gray-500 uppercase tracking-widest">業者名 <ProvenanceBadge type="HUMAN" /></th>
-                                      <th className="p-3 text-xs font-bold text-gray-900 uppercase tracking-widest text-right">重量 <ProvenanceBadge type="HUMAN" /></th>
+                                      <th className="p-3 text-xs font-bold text-gray-600 uppercase tracking-widest whitespace-nowrap">状態 / 入庫</th>
+                                      <th className="p-3 text-xs font-bold text-gray-600 uppercase tracking-widest whitespace-nowrap">品目 <ProvenanceBadge type="HUMAN" /></th>
+                                      <th className="p-3 text-xs font-bold text-gray-600 uppercase tracking-widest whitespace-nowrap">業者名 <ProvenanceBadge type="HUMAN" /></th>
+                                      <th className="p-3 text-xs font-bold text-gray-900 uppercase tracking-widest text-right whitespace-nowrap">重量 <ProvenanceBadge type="HUMAN" /></th>
                                   </tr>
                               </thead>
                               <tbody className="divide-y divide-gray-100">
@@ -453,16 +475,17 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                       </div>
 
                       <div className="p-0 overflow-y-auto overflow-x-auto flex-1">
-                          <table className="w-full text-left border-collapse min-w-[600px]">
-                              <thead className="sticky top-0 bg-gray-100 border-b border-gray-200 z-10">
+                          <table className="w-full text-left border-collapse min-w-[800px]">
+                              <thead className="sticky top-0 bg-gray-100 border-b border-gray-200 z-10 shadow-sm">
                                   <tr>
-                                      <th className="p-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">登録日時 <ProvenanceBadge type="HUMAN" /></th>
-                                      <th className="p-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">対象バッチ</th>
-                                      <th className="p-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">投入量 <ProvenanceBadge type="HUMAN" /></th>
-                                      <th className="p-4 text-[10px] font-bold text-[#D32F2F] uppercase tracking-widest text-right">産出銅 <ProvenanceBadge type="HUMAN" /></th>
-                                      <th className="p-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">被覆 <ProvenanceBadge type="HUMAN" /></th>
-                                      <th className="p-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">ダスト <ProvenanceBadge type="HUMAN" /></th>
-                                      <th className="p-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">実質歩留 <ProvenanceBadge type="HUMAN" /></th>
+                                      <th className="p-3 text-xs font-bold text-gray-600 uppercase tracking-widest whitespace-nowrap">登録日時 <ProvenanceBadge type="HUMAN" /></th>
+                                      <th className="p-3 text-xs font-bold text-gray-600 uppercase tracking-widest whitespace-nowrap">対象バッチ</th>
+                                      <th className="p-3 text-xs font-bold text-gray-600 uppercase tracking-widest whitespace-nowrap text-right">投入量 <ProvenanceBadge type="HUMAN" /></th>
+                                      <th className="p-3 text-xs font-bold text-[#D32F2F] uppercase tracking-widest whitespace-nowrap text-right">上ナゲット(赤) <ProvenanceBadge type="HUMAN" /></th>
+                                      <th className="p-3 text-xs font-bold text-blue-700 uppercase tracking-widest whitespace-nowrap text-right">雑ナゲット <ProvenanceBadge type="HUMAN" /></th>
+                                      <th className="p-3 text-xs font-bold text-gray-600 uppercase tracking-widest whitespace-nowrap text-right">被覆 <ProvenanceBadge type="HUMAN" /></th>
+                                      <th className="p-3 text-xs font-bold text-gray-600 uppercase tracking-widest whitespace-nowrap text-right">ダスト <ProvenanceBadge type="HUMAN" /></th>
+                                      <th className="p-3 text-xs font-bold text-gray-600 uppercase tracking-widest whitespace-nowrap text-right">実質歩留 <ProvenanceBadge type="HUMAN" /></th>
                                   </tr>
                               </thead>
                               <tbody className="divide-y divide-gray-100">
@@ -472,25 +495,29 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                                       const diff = Number(p.actualRatio) - expected;
                                       const isAlert = expected > 0 && Math.abs(diff) > 2.0;
                                       
-                                      const outputCuVal = Number(p.outputRed) || Number(p.outputCopper) || 0;
+                                      const outputRedVal = Number(p.outputRed) || Number(p.outputCopper) || 0;
+                                      const outputMixedVal = Number(p.outputMixed) || 0;
+                                      const outputCoverVal = Number(p.outputChips) || 0;
+                                      const outputDustVal = Number(p.outputJute) || 0;
 
                                       return (
                                           <tr key={idx} className={`hover:bg-gray-50 transition ${showAiData && isAlert && diff < 0 ? 'bg-red-50/30' : ''}`}>
-                                              <td className="p-4 text-xs text-gray-500 font-mono">
+                                              <td className="p-3 text-xs text-gray-500 font-mono whitespace-nowrap">
                                                   {p.createdAt ? String(p.createdAt).substring(5,16) : '不明'}
                                               </td>
-                                              <td className="p-4">
-                                                  <p className="text-sm font-bold text-gray-900">{p.materialName}</p>
-                                                  <p className="text-xs text-gray-400 mt-1 line-clamp-1">{p.memberName}</p>
+                                              <td className="p-3 min-w-[150px]">
+                                                  <p className="text-sm font-bold text-gray-900 leading-tight">{p.materialName}</p>
+                                                  <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">{p.memberName}</p>
                                               </td>
-                                              <td className="p-4 text-right text-base font-mono text-gray-600">{Number(p.inputWeight || 0)} kg</td>
-                                              <td className="p-4 text-right text-base font-mono font-bold text-[#D32F2F]">{outputCuVal} kg</td>
-                                              <td className="p-4 text-right text-base font-mono text-gray-600">{Number(p.outputMixed || 0)} kg</td>
-                                              <td className="p-4 text-right text-base font-mono text-gray-600">{Number(p.outputJute) > 0 ? <span className="bg-yellow-100 text-yellow-800 px-1 py-0.5 rounded text-sm">{p.outputJute} kg</span> : '0 kg'}</td>
-                                              <td className="p-4 text-right">
-                                                  <span className={`text-lg font-mono font-black tracking-tighter ${showAiData && isAlert && diff < 0 ? 'text-[#D32F2F]' : 'text-gray-900'}`}>{p.actualRatio}%</span>
+                                              <td className="p-3 text-right text-sm font-mono text-gray-600 whitespace-nowrap">{Number(p.inputWeight || 0).toLocaleString()} kg</td>
+                                              <td className="p-3 text-right text-sm font-mono font-bold text-[#D32F2F] whitespace-nowrap">{outputRedVal.toLocaleString()} kg</td>
+                                              <td className="p-3 text-right text-sm font-mono font-bold text-blue-700 whitespace-nowrap">{outputMixedVal.toLocaleString()} kg</td>
+                                              <td className="p-3 text-right text-sm font-mono text-gray-500 whitespace-nowrap">{outputCoverVal.toLocaleString()} kg</td>
+                                              <td className="p-3 text-right text-sm font-mono text-gray-500 whitespace-nowrap">{outputDustVal > 0 ? <span className="bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded font-bold">{outputDustVal.toLocaleString()} kg</span> : '0 kg'}</td>
+                                              <td className="p-3 text-right whitespace-nowrap">
+                                                  <span className={`text-base md:text-lg font-mono font-black tracking-tighter ${showAiData && isAlert && diff < 0 ? 'text-[#D32F2F]' : 'text-gray-900'}`}>{p.actualRatio}%</span>
                                                   {showAiData && expected > 0 && (
-                                                      <div className="text-[10px] text-gray-400 font-mono mt-0.5">
+                                                      <div className="text-[9px] text-gray-400 font-mono mt-0.5">
                                                           (マスタ比: {diff > 0 ? '+' : ''}{diff.toFixed(1)})
                                                       </div>
                                                   )}
@@ -505,87 +532,10 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
               )}
           </div>
           
-          {sortingLot && (
-              <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 animate-in fade-in">
-                  <div className="bg-white rounded-sm shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh]">
-                      <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center shrink-0">
-                          <div>
-                              <h3 className="text-lg font-black text-gray-900 flex items-center gap-2"><Icons.Scissors /> 選別結果の登録 <ProvenanceBadge type="HUMAN" /></h3>
-                              <p className="text-xs text-gray-500 mt-1 font-mono">元ロット: {sortingLot.product} ({sortingLot.remainingWeight}kg) / {sortingLot.memberName}</p>
-                          </div>
-                          <button onClick={() => setSortingLot(null)} className="text-gray-400 hover:text-gray-900 p-2 bg-white rounded-sm border border-gray-200"><Icons.Close /></button>
-                      </div>
-                      
-                      <div className="p-5 overflow-y-auto flex-1 space-y-6 bg-white">
-                          <div className="bg-gray-100 border border-gray-300 p-4 rounded-sm flex flex-col md:flex-row md:items-center gap-4">
-                              <div className="flex-1 flex items-center gap-3">
-                                  <label className="text-sm font-bold text-gray-900 whitespace-nowrap">作業担当</label>
-                                  <select className="w-full bg-white border border-gray-300 p-3 text-base font-bold rounded-sm outline-none focus:border-gray-900" value={sortWorker} onChange={e => setSortWorker(e.target.value)}>
-                                      {workerList.map(w => <option key={w} value={w}>{w}</option>)}
-                                  </select>
-                              </div>
-                              <div className="flex-1 flex items-center gap-3">
-                                  <label className="text-sm font-bold text-gray-900 whitespace-nowrap">時間</label>
-                                  <div className="relative w-full">
-                                      <input type="number" inputMode="decimal" className="w-full bg-white border border-gray-300 p-3 pr-8 text-lg font-mono rounded-sm outline-none focus:border-gray-900 text-right" placeholder="0" value={sortTime} onChange={e => setSortTime(e.target.value)} />
-                                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-500">分</span>
-                                  </div>
-                              </div>
-                          </div>
-
-                          <div>
-                              <h4 className="text-xs font-bold text-gray-500 mb-3 uppercase tracking-widest border-b border-gray-200 pb-1">仕分け後の線材 (加工ヤードへ移動)</h4>
-                              <div className="space-y-3">
-                                  {sortOutputs.map((out, idx) => (
-                                      <div key={idx} className="flex flex-col md:flex-row md:items-center gap-3 bg-gray-50 p-3 border border-gray-200 rounded-sm">
-                                          <select className="w-full md:flex-1 p-3 bg-white border border-gray-300 rounded-sm text-base font-bold outline-none" value={out.product} onChange={e => { const newOut = [...sortOutputs]; newOut[idx].product = e.target.value; setSortOutputs(newOut); }}>
-                                              <option value="">仕分け後の品目を選択</option>
-                                              {out.product && !wiresMaster.some(w => getDisplayName(w) === out.product || w.name === out.product) && (
-                                                  <option value={out.product}>{out.product} (見立てを維持)</option>
-                                              )}
-                                              {wiresMaster.map((w:any) => {
-                                                  const dName = getDisplayName(w);
-                                                  return <option key={w.id} value={dName}>{dName}</option>
-                                              })}
-                                          </select>
-                                          <div className="flex items-center gap-2">
-                                              <div className="relative flex-1 md:w-40">
-                                                  <span className="md:hidden absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">重量</span>
-                                                  <input type="number" inputMode="decimal" className="w-full p-3 pr-8 pl-12 md:pl-3 border border-gray-300 rounded-sm text-lg font-mono text-right outline-none focus:border-gray-900" placeholder="0" value={out.weight} onChange={e => { const newOut = [...sortOutputs]; newOut[idx].weight = e.target.value; setSortOutputs(newOut); }} />
-                                                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">kg</span>
-                                              </div>
-                                              <button onClick={() => setSortOutputs(sortOutputs.filter((_, i) => i !== idx))} className="p-3 text-gray-400 hover:text-gray-900 bg-white border border-gray-200 rounded-sm"><Icons.Trash /></button>
-                                          </div>
-                                      </div>
-                                  ))}
-                              </div>
-                              <button onClick={() => setSortOutputs([...sortOutputs, { product: '', weight: '' }])} className="mt-3 w-full border-2 border-dashed border-gray-300 text-sm font-bold text-gray-600 hover:bg-gray-100 py-3 rounded-sm flex items-center justify-center gap-1 transition"><Icons.Plus /> 品目を追加</button>
-                          </div>
-
-                          <div>
-                              <h4 className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-widest border-b border-gray-200 pb-1">除去したゴミ・異物 (廃棄)</h4>
-                              <div className="flex flex-col md:flex-row md:items-center gap-3 bg-gray-50 p-3 border border-gray-200 rounded-sm">
-                                  <span className="text-sm font-bold text-gray-700 flex-1">鉄・プラスチック等の総重量</span>
-                                  <div className="relative w-full md:w-48">
-                                      <input type="number" inputMode="decimal" className="w-full p-3 pr-8 border border-gray-300 rounded-sm text-lg font-mono text-right outline-none focus:border-gray-900" placeholder="0" value={sortDust} onChange={e => setSortDust(e.target.value)} />
-                                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">kg</span>
-                                  </div>
-                              </div>
-                          </div>
-
-                      </div>
-                      <div className="p-4 border-t border-gray-200 bg-gray-100 shrink-0">
-                          <button onClick={handleSortSubmit} className="w-full bg-gray-900 text-white py-4 rounded-sm font-bold text-base shadow-md hover:bg-black transition">
-                              選別結果を保存して、加工待ちヤードへ送る
-                          </button>
-                      </div>
-                  </div>
-              </div>
-          )}
-
+          {/* ブレンド加工モーダル */}
           {blendingLots.length > 0 && (
-              <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 animate-in fade-in">
-                  <div className="bg-white rounded-sm shadow-2xl w-full max-w-xl flex flex-col max-h-[90vh]">
+              <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 md:p-4 animate-in fade-in">
+                  <div className="bg-white rounded-sm shadow-2xl w-full max-w-2xl flex flex-col max-h-[95vh]">
                       <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-start shrink-0">
                           <div>
                               <h3 className="text-lg font-black text-gray-900 flex items-center gap-2"><Icons.Blend /> ブレンド加工の登録 <ProvenanceBadge type="HUMAN" /></h3>
@@ -601,30 +551,37 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                                   ))}
                               </div>
                           </div>
-                          <button onClick={() => setBlendingLots([])} className="text-gray-400 hover:text-gray-900 p-2 bg-white border border-gray-200 rounded-sm"><Icons.Close /></button>
+                          <button onClick={() => setBlendingLots([])} className="text-gray-400 hover:text-gray-900 p-2 bg-white border border-gray-200 rounded-sm shadow-sm"><Icons.Close /></button>
                       </div>
                       
-                      <div className="p-5 overflow-y-auto flex-1 space-y-5 bg-white">
-                          <div className="bg-[#111] p-4 rounded-sm flex flex-col md:flex-row md:items-center gap-3 text-white">
+                      <div className="p-4 md:p-6 overflow-y-auto flex-1 space-y-6 bg-white">
+                          <div className="bg-[#111] p-3 md:p-4 rounded-sm flex flex-col md:flex-row md:items-center gap-3 text-white">
                               <label className="text-sm font-bold flex items-center whitespace-nowrap text-gray-300"><Icons.Worker /> プラント担当</label>
-                              <select className="w-full bg-gray-800 border border-gray-700 p-3 text-base font-bold rounded-sm outline-none" value={processWorker} onChange={e => setProcessWorker(e.target.value)}>
+                              <select className="w-full bg-gray-800 border border-gray-700 p-2.5 md:p-3 text-sm md:text-base font-bold rounded-sm outline-none focus:border-gray-500" value={processWorker} onChange={e => setProcessWorker(e.target.value)}>
                                   {workerList.map(w => <option key={w} value={w}>{w}</option>)}
                               </select>
                           </div>
 
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
                               <div className="bg-gray-50 p-4 border border-gray-200 rounded-sm">
-                                  <label className="block text-xs font-bold text-gray-500 mb-2">総投入重量 (kg)</label>
+                                  <label className="block text-xs font-bold text-gray-600 mb-2">総投入重量 (kg)</label>
                                   <div className="relative">
-                                      <input type="number" inputMode="decimal" className="w-full bg-white border border-gray-300 p-4 pr-10 rounded-sm text-2xl font-black font-mono text-right outline-none focus:border-[#D32F2F] shadow-inner" value={processInputWeight} onChange={e => setProcessInputWeight(e.target.value)} />
-                                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-bold">kg</span>
+                                      <input type="number" inputMode="decimal" className="w-full bg-white border border-gray-300 p-3 pr-10 rounded-sm text-xl font-black font-mono text-right outline-none focus:border-[#D32F2F] shadow-inner" value={processInputWeight} onChange={e => setProcessInputWeight(e.target.value)} />
+                                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold">kg</span>
                                   </div>
                               </div>
-                              <div className="bg-gray-50 p-4 border border-gray-200 rounded-sm">
-                                  <label className="block text-xs font-bold text-[#D32F2F] mb-2">産出ピカ銅 (kg)</label>
+                              <div className="bg-red-50 p-4 border border-red-200 rounded-sm">
+                                  <label className="block text-[11px] md:text-xs font-bold text-[#D32F2F] mb-2 whitespace-nowrap">産出 上ナゲット(赤)</label>
                                   <div className="relative">
-                                      <input type="number" inputMode="decimal" className="w-full bg-white border border-[#D32F2F] p-4 pr-10 rounded-sm text-2xl font-black font-mono text-gray-900 text-right outline-none focus:ring-1 focus:ring-[#D32F2F] shadow-inner bg-red-50/30" value={processOutputCopper} onChange={e => setProcessOutputCopper(e.target.value)} placeholder="0" />
-                                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-bold">kg</span>
+                                      <input type="number" inputMode="decimal" className="w-full bg-white border border-[#D32F2F] p-3 pr-10 rounded-sm text-xl font-black font-mono text-gray-900 text-right outline-none focus:ring-2 focus:ring-[#D32F2F] shadow-inner" value={processOutputRed} onChange={e => setProcessOutputRed(e.target.value)} placeholder="0" />
+                                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 font-bold">kg</span>
+                                  </div>
+                              </div>
+                              <div className="bg-blue-50 p-4 border border-blue-200 rounded-sm">
+                                  <label className="block text-[11px] md:text-xs font-bold text-blue-700 mb-2 whitespace-nowrap">産出 雑ナゲット</label>
+                                  <div className="relative">
+                                      <input type="number" inputMode="decimal" className="w-full bg-white border border-blue-300 p-3 pr-10 rounded-sm text-xl font-black font-mono text-gray-900 text-right outline-none focus:ring-2 focus:ring-blue-500 shadow-inner" value={processOutputMixed} onChange={e => setProcessOutputMixed(e.target.value)} placeholder="0" />
+                                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 font-bold">kg</span>
                                   </div>
                               </div>
                           </div>
@@ -632,17 +589,20 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                           <div className="bg-gray-50 border border-gray-200 p-4 rounded-sm">
                               <label className="block text-xs font-bold text-gray-700 mb-1">回収 被覆重量 (kg) <span className="text-gray-400 font-normal ml-1">※任意</span></label>
                               <p className="text-[10px] text-gray-500 mb-2 leading-relaxed">
-                                CV線などで紙や介在物（ゴミ）が含まれる場合のみ入力してください。<br/>未入力の場合は「総重量 − 純銅 ＝ すべて被覆（ダスト0）」として自動計算されます。
+                                CV線などで紙や介在物（ゴミ）が含まれる場合のみ入力してください。<br/>未入力の場合は「総重量 − ナゲット ＝ すべて被覆（ダスト0）」として自動計算されます。
                               </p>
-                              <input type="number" step="0.1" placeholder="入力なしで自動計算" className="w-full p-3 border border-gray-300 rounded-sm text-sm font-mono outline-none focus:border-gray-900 bg-white text-right" value={processOutputCover} onChange={e => setProcessOutputCover(e.target.value)} />
+                              <div className="relative md:w-1/2">
+                                  <input type="number" step="0.1" placeholder="入力なしで自動計算" className="w-full p-3 pr-10 border border-gray-300 rounded-sm text-sm font-mono outline-none focus:border-gray-900 bg-white text-right" value={processOutputCover} onChange={e => setProcessOutputCover(e.target.value)} />
+                                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold">kg</span>
+                              </div>
                           </div>
 
-                          {processInputWeight && processOutputCopper && (
+                          {processInputWeight && (processOutputRed || processOutputMixed) && (
                               <div className="bg-gray-900 text-white rounded-sm p-4 shadow-inner flex justify-between items-center">
                                   <div>
                                       <p className="text-[10px] text-gray-400 font-bold mb-1">算出ダスト(ゴミ)重量</p>
-                                      <p className="font-mono font-black text-xl text-yellow-400">
-                                          {(parseFloat(processOutputCover) > 0 ? Math.max(0, parseFloat(processInputWeight) - parseFloat(processOutputCopper) - parseFloat(processOutputCover)) : 0).toFixed(1)} kg
+                                      <p className="font-mono font-black text-2xl text-yellow-400 tracking-tighter">
+                                          {(parseFloat(processOutputCover) > 0 ? Math.max(0, parseFloat(processInputWeight) - (parseFloat(processOutputRed)||0) - (parseFloat(processOutputMixed)||0) - parseFloat(processOutputCover)) : 0).toFixed(1)} <span className="text-sm font-normal">kg</span>
                                       </p>
                                   </div>
                                   <div className="text-right border-l border-gray-700 pl-4">
@@ -650,8 +610,8 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                                           <p className="text-[10px] text-gray-400 font-bold tracking-widest uppercase">ブレンド実測歩留</p>
                                           <ProvenanceBadge type="HUMAN" />
                                       </div>
-                                      <p className="text-3xl font-black font-mono tracking-tighter">
-                                          {((parseFloat(processOutputCopper) / parseFloat(processInputWeight)) * 100).toFixed(1)} <span className="text-lg font-normal text-gray-400">%</span>
+                                      <p className="text-3xl md:text-4xl font-black font-mono tracking-tighter">
+                                          {(((parseFloat(processOutputRed)||0) + (parseFloat(processOutputMixed)||0)) / parseFloat(processInputWeight) * 100).toFixed(1)} <span className="text-lg font-normal text-gray-400">%</span>
                                       </p>
                                   </div>
                               </div>
@@ -659,12 +619,12 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
 
                           <div>
                               <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-widest">特記事項・刃の摩耗チェック等</label>
-                              <input type="text" className="w-full border border-gray-300 p-4 rounded-sm text-base outline-none focus:border-gray-900 bg-gray-50" placeholder="メモ..." value={processMemo} onChange={e => setProcessMemo(e.target.value)} />
+                              <input type="text" className="w-full border border-gray-300 p-3 rounded-sm text-sm outline-none focus:border-gray-900 bg-gray-50" placeholder="メモ..." value={processMemo} onChange={e => setProcessMemo(e.target.value)} />
                           </div>
                       </div>
 
                       <div className="p-4 border-t border-gray-200 bg-gray-100 shrink-0">
-                          <button onClick={handleProcessSubmit} disabled={!processOutputCopper || isSubmitting} className="w-full bg-[#D32F2F] text-white py-4 rounded-sm font-bold text-lg shadow-md hover:bg-red-800 transition disabled:opacity-50">
+                          <button onClick={handleProcessSubmit} disabled={(!processOutputRed && !processOutputMixed) || isSubmitting} className="w-full bg-[#D32F2F] text-white py-4 rounded-sm font-bold text-lg shadow-md hover:bg-red-800 transition disabled:opacity-50">
                               {isSubmitting ? '処理中...' : 'ブレンド実績を保存する'}
                           </button>
                       </div>
