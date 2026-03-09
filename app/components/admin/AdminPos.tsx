@@ -747,8 +747,8 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
             </div>
           </div>
 
-          <div className="flex gap-2">
-            <button onClick={handleCheckout} disabled={isProcessing || simulation.totalWeight === 0 || (posMode === 'BULK' && !isPercentageValid)} className={`flex-1 text-white font-bold py-3 rounded-sm transition shadow-sm disabled:opacity-50 flex justify-center items-center text-sm ${hasTinPlated ? 'bg-[#D32F2F] hover:bg-red-800' : 'bg-gray-100 text-gray-900 hover:bg-white border border-gray-300'}`}>
+<div className="flex gap-2">
+            <button onClick={handleCheckout} disabled={isProcessing || simulation.totalWeight === 0 || (posMode === 'BULK' && !isPercentageValid)} className={`flex-1 font-bold py-3 rounded-sm transition shadow-sm flex justify-center items-center text-sm ${hasTinPlated ? 'bg-[#D32F2F] text-white hover:bg-red-800 disabled:bg-gray-800 disabled:text-gray-500 disabled:border-gray-700' : 'bg-white text-gray-900 hover:bg-gray-200 disabled:bg-gray-800 disabled:text-gray-500 disabled:border-gray-700'}`}>
                 {isProcessing ? <Icons.Refresh /> : hasTinPlated ? '⚠️ 確認して受付確定' : '受付を確定してカンバンへ'}
             </button>
             <button onClick={() => {setCart([]); onClear(); setBulkTotalWeight('');}} className="px-4 text-[10px] text-gray-400 bg-gray-800 font-bold border border-gray-700 rounded-sm hover:bg-gray-700 hover:text-white transition">リセット</button>
