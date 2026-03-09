@@ -158,7 +158,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
     if (percentage < 0) percentage = 0; if (percentage > 100) percentage = 100;
     setCart(prev => prev.map(item => item.id === id ? { ...item, percentage } : item));
   };
-  // ★ NEW: 歩留まり（銅分率）を手動調整する機能
   const updateRatio = (id: string, ratio: number) => {
     if (ratio < 0) ratio = 0; if (ratio > 100) ratio = 100;
     setCart(prev => prev.map(item => item.id === id ? { ...item, ratio } : item));
@@ -166,6 +165,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
 
   const removeItem = (id: string) => { setCart(prev => prev.filter(item => item.id !== id)); };
 
+  // ★ 修正点: スマホのメモリ不足＆サイズオーバー対策で強烈に圧縮
   const compressImage = (file: File): Promise<string> => {
       return new Promise((resolve, reject) => {
           if (!file) return reject(new Error("ファイルがありません"));
@@ -175,14 +175,16 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
               img.onload = () => {
                   try {
                       const canvas = document.createElement('canvas');
-                      const MAX = 1024; 
+                      // ★ 1024px -> 800px に縮小して大幅に軽量化
+                      const MAX = 800; 
                       let w = img.width; let h = img.height;
                       if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } } else { if (h > MAX) { w *= MAX / h; h = MAX; } }
                       canvas.width = w; canvas.height = h;
                       const ctx = canvas.getContext('2d'); 
                       if (!ctx) throw new Error("Canvas context error");
                       ctx.drawImage(img, 0, 0, w, h);
-                      resolve(canvas.toDataURL('image/jpeg', 0.7).split(',')[1]); 
+                      // ★ 画質 0.7 -> 0.6 に下げてペイロードサイズを抑制
+                      resolve(canvas.toDataURL('image/jpeg', 0.6).split(',')[1]); 
                   } catch (e) {
                       reject(new Error("画像の圧縮に失敗しました。解像度を下げてお試しください。"));
                   }
@@ -473,7 +475,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
     }
     setIsProcessing(true);
     
-    // ★ 確定時に手動調整された ratio もしっかり保持して保存する
     const finalCart = cart.map(item => ({ 
         ...item, 
         weight: posMode === 'BULK' ? ((Number(bulkTotalWeight) || 0) * ((Number(item.percentage) || 0) / 100)).toFixed(1) : item.weight 
@@ -525,7 +526,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       {/* 左側：マスター検索＆AI機能 */}
       <div className="w-full lg:w-7/12 flex flex-col bg-white border border-gray-200 rounded-sm shadow-sm overflow-hidden h-[45vh] lg:h-full shrink-0">
         
-        {/* 新しいデザインのヘッダー */}
         <header className="p-3 border-b border-gray-200 bg-white flex items-center gap-2 shrink-0">
             <span className="w-1.5 h-5 bg-[#D32F2F] block"></span>
             <h2 className="text-lg font-black text-gray-900 tracking-tight">POSレジ受付・AI査定</h2>
@@ -646,7 +646,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                           )}
                       </div>
 
-                      {/* ★ 手動編集可能な 歩留まり ＆ 重量/割合 エリア */}
                       <div className="flex items-center justify-end gap-2 shrink-0">
                         {/* 歩留まり(%) 手動調整 */}
                         <div className="relative w-[65px] group">
@@ -747,7 +746,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
             </div>
           </div>
 
-<div className="flex gap-2">
+          <div className="flex gap-2">
             <button onClick={handleCheckout} disabled={isProcessing || simulation.totalWeight === 0 || (posMode === 'BULK' && !isPercentageValid)} className={`flex-1 font-bold py-3 rounded-sm transition shadow-sm flex justify-center items-center text-sm ${hasTinPlated ? 'bg-[#D32F2F] text-white hover:bg-red-800 disabled:bg-gray-800 disabled:text-gray-500 disabled:border-gray-700' : 'bg-white text-gray-900 hover:bg-gray-200 disabled:bg-gray-800 disabled:text-gray-500 disabled:border-gray-700'}`}>
                 {isProcessing ? <Icons.Refresh /> : hasTinPlated ? '⚠️ 確認して受付確定' : '受付を確定してカンバンへ'}
             </button>
@@ -780,10 +779,10 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                             {imgData2 ? ( <div className="relative w-full h-full"><img src={`data:image/jpeg;base64,${imgData2}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData2('')} className="absolute top-1 right-1 bg-[#D32F2F] text-white p-1 rounded-sm shadow-md"><Icons.Trash/></button><span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">②全体</span></div> ) : ( <><p className="text-[10px] font-bold text-gray-500 mb-1.5 text-center">② 全体・被覆</p><div className="flex gap-1.5 h-full"><label className="flex-1 bg-white border border-gray-200 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.Camera /><span className="text-[8px] mt-1 font-bold">カメラ</span><input type="file" onChange={e=>handleAiImageUpload(e,2)} className="hidden" accept="image/*" capture="environment"/></label><label className="flex-1 bg-white border border-gray-200 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.UploadCloud /><span className="text-[8px] mt-1 font-bold">フォルダ</span><input type="file" onChange={e=>handleAiImageUpload(e,2)} className="hidden" accept="image/*"/></label></div></> )}
                         </div>
                         <div className="flex flex-col p-2 border-2 border-dashed border-gray-300 bg-gray-50 rounded-sm h-28">
-                            {imgData3 ? ( <div className="relative w-full h-full"><img src={`data:image/jpeg;base64,${imgData3}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData3('')} className="absolute top-1 right-1 bg-[#D32F2F] text-white p-1 rounded-sm shadow-md"><Icons.Trash/></button><span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">③印字1</span></div> ) : ( <><p className="text-[10px] font-bold text-gray-500 mb-1.5 text-center">③ 印字アップ1</p><div className="flex gap-1.5 h-full"><label className="flex-1 bg-white border border-gray-200 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.Camera /><span className="text-[8px] mt-1 font-bold">カメラ</span><input type="file" onChange={e=>handleAiImageUpload(e,3)} className="hidden" accept="image/*" capture="environment"/></label><label className="flex-1 bg-white border border-gray-200 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.UploadCloud /><span className="text-[8px] mt-1 font-bold">フォルダ</span><input type="file" onChange={e=>handleAiImageUpload(e,3)} className="hidden" accept="image/*"/></label></div></> )}
+                            {imgData3 ? ( <div className="relative w-full h-full"><img src={`data:image/jpeg;base64,${imgData3}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData3('')} className="absolute top-1 right-1 bg-[#D32F2F] text-white p-1 rounded-sm shadow-md"><Icons.Trash/></button><span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">③印字1</span></div> ) : ( <><p className="text-[10px] font-bold text-gray-500 mb-1.5 text-center">③ 印字アップ1</p><div className="flex gap-1.5 h-full"><label className="flex-1 bg-white border border-gray-300 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.Camera /><span className="text-[8px] mt-1 font-bold">カメラ</span><input type="file" onChange={e=>handleAiImageUpload(e,3)} className="hidden" accept="image/*" capture="environment"/></label><label className="flex-1 bg-white border border-gray-300 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.UploadCloud /><span className="text-[8px] mt-1 font-bold">フォルダ</span><input type="file" onChange={e=>handleAiImageUpload(e,3)} className="hidden" accept="image/*"/></label></div></> )}
                         </div>
                         <div className="flex flex-col p-2 border-2 border-dashed border-gray-300 bg-gray-50 rounded-sm h-28">
-                            {imgData4 ? ( <div className="relative w-full h-full"><img src={`data:image/jpeg;base64,${imgData4}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData4('')} className="absolute top-1 right-1 bg-[#D32F2F] text-white p-1 rounded-sm shadow-md"><Icons.Trash/></button><span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">④印字2</span></div> ) : ( <><p className="text-[10px] font-bold text-gray-500 mb-1.5 text-center">④ 印字アップ2</p><div className="flex gap-1.5 h-full"><label className="flex-1 bg-white border border-gray-200 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.Camera /><span className="text-[8px] mt-1 font-bold">カメラ</span><input type="file" onChange={e=>handleAiImageUpload(e,4)} className="hidden" accept="image/*" capture="environment"/></label><label className="flex-1 bg-white border border-gray-200 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.UploadCloud /><span className="text-[8px] mt-1 font-bold">フォルダ</span><input type="file" onChange={e=>handleAiImageUpload(e,4)} className="hidden" accept="image/*"/></label></div></> )}
+                            {imgData4 ? ( <div className="relative w-full h-full"><img src={`data:image/jpeg;base64,${imgData4}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData4('')} className="absolute top-1 right-1 bg-[#D32F2F] text-white p-1 rounded-sm shadow-md"><Icons.Trash/></button><span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">④印字2</span></div> ) : ( <><p className="text-[10px] font-bold text-gray-500 mb-1.5 text-center">④ 印字アップ2</p><div className="flex gap-1.5 h-full"><label className="flex-1 bg-white border border-gray-300 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.Camera /><span className="text-[8px] mt-1 font-bold">カメラ</span><input type="file" onChange={e=>handleAiImageUpload(e,4)} className="hidden" accept="image/*" capture="environment"/></label><label className="flex-1 bg-white border border-gray-300 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.UploadCloud /><span className="text-[8px] mt-1 font-bold">フォルダ</span><input type="file" onChange={e=>handleAiImageUpload(e,4)} className="hidden" accept="image/*"/></label></div></> )}
                         </div>
                     </div>
 
