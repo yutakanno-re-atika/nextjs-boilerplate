@@ -820,7 +820,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                 </tbody>
               </table>
 
-              {/* === スマホ向け高密度リスト表示 (md未満で表示) === */}
+              {/* === ★ 超高密度！スマホ向けリスト表示 (md未満で表示) === */}
               <div className="md:hidden divide-y divide-gray-200 bg-white pb-20">
                 {sortedData.map((item: any, idx: number) => (
                   <div key={item.id || idx} className={`p-2.5 flex flex-col gap-1 active:bg-gray-50 transition-colors ${activeTab === 'WIRES' && String(item.showOnWeb) === 'false' ? 'opacity-60 bg-gray-100' : ''}`}>
@@ -839,14 +839,30 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                             <span className="text-base font-black text-gray-900 font-mono tracking-tighter">{item.ratio}%</span>
                           </div>
                         </div>
-                        <div className="flex justify-between items-center mt-0.5">
-                          <div className="text-[10px] text-gray-500 flex items-center gap-2">
-                            <span className="font-mono bg-gray-50 px-1 rounded border border-gray-100">{formatSqDisplay(item.sq)}/{formatCoreDisplay(item.core)}</span>
-                            <span className="flex items-center gap-0.5"><Icons.Camera /> {[11,12,13,14,15].filter(i => item[`image${i-10}`]).length}</span>
+                        <div className="flex justify-between items-center mt-1">
+                          <div className="text-[10px] text-gray-500 flex items-center">
+                            <span className="font-mono bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">{formatSqDisplay(item.sq)}/{formatCoreDisplay(item.core)}</span>
                           </div>
-                          <div className="flex gap-1.5">
-                            <button onClick={() => handleOpenModal(item)} className="p-1.5 text-gray-600 bg-gray-50 border border-gray-200 rounded-sm active:bg-gray-200"><Icons.Edit /></button>
-                            <button onClick={() => handleDelete(item.id)} className="p-1.5 text-[#D32F2F] bg-red-50 border border-red-100 rounded-sm active:bg-red-100"><Icons.Trash /></button>
+                          <div className="flex items-center gap-2">
+                            {/* ★ 画像スロットをショートカットボタンとして並べる */}
+                            <button onClick={() => handleOpenModal(item)} className="flex gap-0.5 items-center bg-gray-50 p-1 rounded-sm border border-gray-200 active:bg-gray-100 transition-colors" title="タップして画像編集">
+                              {[11, 12, 13, 14, 15].map(colIdx => {
+                                const img = item[`image${colIdx-10}`];
+                                return (
+                                  <div key={colIdx} className={`w-[18px] h-[18px] rounded-[2px] overflow-hidden flex items-center justify-center border ${img ? 'border-gray-300' : 'border-dashed border-gray-300 bg-white'}`}>
+                                    {img ? (
+                                      <img src={getDriveImageUrl(img)} className="w-full h-full object-cover opacity-80" />
+                                    ) : (
+                                      <span className="text-[8px] text-gray-300 font-bold">+</span>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </button>
+                            <div className="flex gap-1 border-l border-gray-200 pl-2">
+                              <button onClick={() => handleOpenModal(item)} className="p-1.5 text-gray-600 bg-gray-50 border border-gray-200 rounded-sm active:bg-gray-200"><Icons.Edit /></button>
+                              <button onClick={() => handleDelete(item.id)} className="p-1.5 text-[#D32F2F] bg-red-50 border border-red-100 rounded-sm active:bg-red-100"><Icons.Trash /></button>
+                            </div>
                           </div>
                         </div>
                       </>
