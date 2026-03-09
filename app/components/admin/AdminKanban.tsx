@@ -6,7 +6,7 @@ const Icons = {
   Printer: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>,
   Clock: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   User: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>,
-  Alert: () => <svg className="w-4 h-4 inline-block text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
+  Alert: () => <svg className="w-4 h-4 inline-block text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
   FrontDesk: () => <svg className="w-4 h-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
   Inspection: () => <svg className="w-4 h-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   Plant: () => <svg className="w-4 h-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>,
@@ -19,7 +19,6 @@ const formatTime = (timeStr: string) => {
   return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 };
 
-// ★ どんなに汚いJSONでも確実にパースする最強の解読関数
 export const parseItemsData = (rawItems: any) => {
     if (!rawItems) return [];
     if (Array.isArray(rawItems)) return rawItems;
@@ -55,13 +54,13 @@ export const AdminKanban = ({ localReservations = [], onUpdateStatus, onEditRese
 
           return `
           <tr>
-              <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold; color: #333;">
+              <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold; color: #111;">
                 ${itemName}
-                ${isTinItem ? '<span style="background: #fee2e2; color: #dc2626; font-size: 10px; padding: 2px 4px; border-radius: 3px; margin-left: 5px;">⚠️錫</span>' : ''}
+                ${isTinItem ? '<span style="background: #ef4444; color: #fff; font-size: 10px; padding: 2px 4px; border-radius: 3px; margin-left: 5px;">⚠️錫</span>' : ''}
               </td>
               <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: center;">${itemMaterial}</td>
               <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right; font-family: monospace;">${itemRatio}</td>
-              <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right; font-family: monospace; font-weight: bold;">${itemWeight} kg</td>
+              <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right; font-family: monospace; font-weight: bold; font-size: 16px;">${itemWeight} kg</td>
           </tr>
           `;
       }).join('');
@@ -79,12 +78,12 @@ export const AdminKanban = ({ localReservations = [], onUpdateStatus, onEditRese
                   .header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #111; padding-bottom: 10px; margin-bottom: 30px; }
                   .header h1 { margin: 0; font-size: 24px; font-weight: 900; letter-spacing: 2px; }
                   .header p { margin: 0; color: #555; font-size: 12px; }
-                  .info-grid { display: flex; justify-content: space-between; background: #f9f9f9; padding: 15px 20px; border-radius: 5px; margin-bottom: 30px; border: 1px solid #eee; }
+                  .info-grid { display: flex; justify-content: space-between; background: #f9f9f9; padding: 15px 20px; border-radius: 5px; margin-bottom: 30px; border: 1px solid #ddd; }
                   .info-box p { margin: 0 0 5px 0; font-size: 12px; color: #666; font-weight: bold; }
                   .info-box h3 { margin: 0; font-size: 18px; color: #111; }
                   table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
                   th { background-color: #f1f5f9; padding: 12px 10px; text-align: left; font-size: 12px; color: #475569; border-bottom: 2px solid #cbd5e1; }
-                  .total-row { display: flex; justify-content: flex-end; align-items: center; font-size: 20px; font-weight: 900; border-top: 2px solid #111; padding-top: 15px; }
+                  .total-row { display: flex; justify-content: flex-end; align-items: center; font-size: 24px; font-weight: 900; border-top: 2px solid #111; padding-top: 15px; }
                   .total-row span { font-size: 14px; color: #666; margin-right: 15px; font-weight: bold; }
                   .memo { margin-top: 40px; padding: 15px; border: 1px dashed #ccc; background: #fff; font-size: 12px; color: #444; border-radius: 5px; }
                   .alert { background: #fee2e2; border-left: 4px solid #ef4444; padding: 10px; margin-bottom: 20px; font-size: 14px; color: #b91c1c; font-weight: bold; }
@@ -136,75 +135,75 @@ export const AdminKanban = ({ localReservations = [], onUpdateStatus, onEditRese
   const handleDrop = (e: React.DragEvent, status: string) => { e.preventDefault(); const id = e.dataTransfer.getData('resId'); if (id) onUpdateStatus(id, status); };
   const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); };
 
+  // ★ カンバンのデザインを「白・黒・赤」のコーポレート仕様に統一
   const columns = [
     { 
       id: 'RESERVED', 
-      title: '受付・計量', 
+      title: '1. 受付・計量', 
       subtitle: 'フロント担当',
       icon: Icons.FrontDesk,
       desc: 'POSで受付。内容を確認して検収列へ。',
-      color: 'border-blue-500', 
-      bg: 'bg-blue-50',
-      headerBg: 'bg-blue-100',
-      textColor: 'text-blue-800'
+      borderColor: 'border-gray-900', 
+      headerBg: 'bg-gray-100',
+      textColor: 'text-gray-900'
     },
     { 
       id: 'RECEIVED', 
-      title: '検収完了 (ヤード待機)', 
+      title: '2. 検収完了 (ヤード待機)', 
       subtitle: '現場査定担当',
       icon: Icons.Inspection,
       desc: '現物確認済。プラントへの投入待ち。',
-      color: 'border-purple-500', 
-      bg: 'bg-purple-50',
-      headerBg: 'bg-purple-100',
-      textColor: 'text-purple-800'
+      borderColor: 'border-gray-900', 
+      headerBg: 'bg-gray-100',
+      textColor: 'text-gray-900'
     },
     { 
       id: 'IN_PROGRESS', 
-      title: 'プラント処理中', 
+      title: '3. プラント処理中', 
       subtitle: 'プラント担当',
       icon: Icons.Plant,
       desc: '現在ナゲット機や選別ラインで加工中。',
-      color: 'border-orange-500', 
-      bg: 'bg-orange-50',
-      headerBg: 'bg-orange-100',
-      textColor: 'text-orange-800'
+      borderColor: 'border-[#D32F2F]', 
+      headerBg: 'bg-red-50',
+      textColor: 'text-[#D32F2F]'
     },
     { 
       id: 'COMPLETED', 
-      title: '処理完了', 
+      title: '4. 処理完了', 
       subtitle: '実績確定',
       icon: Icons.Check,
       desc: '加工終了。歩留まり確定済。',
-      color: 'border-gray-400', 
-      bg: 'bg-gray-50',
+      borderColor: 'border-gray-400', 
       headerBg: 'bg-gray-200',
-      textColor: 'text-gray-700'
+      textColor: 'text-gray-600'
     }
   ];
 
   return (
-    <div className="flex flex-col h-full animate-in fade-in duration-500">
-      <header className="mb-6">
-        <h2 className="text-2xl font-black text-gray-900 font-serif tracking-tight">OPERATIONS KANBAN</h2>
-        <p className="text-xs text-gray-500 mt-1 font-mono">受付から製造までの全体ワークフロー管理</p>
+    <div className="flex flex-col h-full animate-in fade-in duration-500 font-sans">
+      <header className="mb-4 flex items-center gap-2 shrink-0">
+        <span className="w-1.5 h-6 bg-[#D32F2F] block"></span>
+        <div>
+            <h2 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight">現場状況管理 (カンバン)</h2>
+            <p className="text-xs text-gray-500 mt-1 font-bold">受付から製造までの全体ワークフロー管理</p>
+        </div>
       </header>
 
-      <div className="flex gap-4 overflow-x-auto pb-4 h-full">
+      <div className="flex gap-4 overflow-x-auto pb-4 h-full items-stretch">
         {columns.map(col => {
           const safeReservations = localReservations || [];
           const colData = safeReservations.filter(r => r.status === col.id).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
           
           return (
-            <div key={col.id} className="flex-1 min-w-[300px] flex flex-col bg-gray-100/50 rounded-md border border-gray-200 overflow-hidden" onDrop={(e) => handleDrop(e, col.id)} onDragOver={handleDragOver}>
-              <div className={`p-4 border-t-4 ${col.color} ${col.headerBg}`}>
+            <div key={col.id} className="flex-1 min-w-[300px] flex flex-col bg-gray-50 rounded-sm border border-gray-200 overflow-hidden shadow-sm" onDrop={(e) => handleDrop(e, col.id)} onDragOver={handleDragOver}>
+              
+              <div className={`p-3 border-t-4 ${col.borderColor} ${col.headerBg} border-b border-gray-200`}>
                 <div className="flex justify-between items-center mb-1">
-                    <h3 className={`font-bold ${col.textColor} text-sm flex items-center`}>
+                    <h3 className={`font-bold ${col.textColor} text-sm flex items-center tracking-widest`}>
                         <col.icon /> {col.title}
                     </h3>
-                    <span className="bg-white px-2.5 py-0.5 rounded-full text-xs font-bold text-gray-600 shadow-sm">{colData.length}</span>
+                    <span className="bg-white px-2 py-0.5 rounded-sm border border-gray-300 text-xs font-bold text-gray-900 shadow-sm">{colData.length}</span>
                 </div>
-                <p className={`text-[10px] ${col.textColor} font-bold tracking-widest`}>担当: {col.subtitle}</p>
               </div>
               
               <div className="flex-1 p-3 overflow-y-auto space-y-3">
@@ -214,51 +213,60 @@ export const AdminKanban = ({ localReservations = [], onUpdateStatus, onEditRese
                   const hasTin = items.some((i: any) => i.material === '錫メッキ' || (i.product || i.name || '').includes('錫'));
 
                   return (
-                    <div key={res.id} draggable onDragStart={(e) => handleDragStart(e, res.id)} className={`bg-white p-3 rounded-sm shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing hover:shadow-md transition relative group ${hasTin ? 'border-l-4 border-l-red-500' : `border-l-4 ${col.color}`}`}>
+                    <div key={res.id} draggable onDragStart={(e) => handleDragStart(e, res.id)} className={`bg-white p-3 rounded-sm shadow-sm border cursor-grab active:cursor-grabbing hover:shadow-md hover:border-gray-400 transition relative group ${hasTin ? 'border-red-400' : 'border-gray-300'}`}>
                       
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="flex items-center gap-1.5 text-xs text-gray-500 font-mono"><Icons.Clock /> {formatTime(res.createdAt)}</div>
+                      {/* 赤い左線で状態を強調 */}
+                      <div className={`absolute left-0 top-0 bottom-0 w-1 ${hasTin ? 'bg-[#D32F2F]' : col.id === 'IN_PROGRESS' ? 'bg-[#D32F2F]' : 'bg-transparent'}`}></div>
+                      
+                      <div className="flex justify-between items-start mb-2 pl-1">
+                        <div className="flex items-center gap-1 text-[10px] text-gray-500 font-mono font-bold"><Icons.Clock /> {formatTime(res.createdAt)}</div>
                         
-                        <button onClick={() => handlePrint(res)} className="text-[10px] bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded shadow-sm flex items-center gap-1 transition opacity-0 group-hover:opacity-100">
+                        <button onClick={() => handlePrint(res)} className="text-[10px] bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 px-2 py-1 rounded-sm shadow-sm flex items-center gap-1 transition opacity-0 group-hover:opacity-100 font-bold">
                             <Icons.Printer /> 帳票出力
                         </button>
                       </div>
                       
-                      <div className="font-bold text-gray-900 text-sm mb-1 flex items-center gap-1">
+                      <div className="font-black text-gray-900 text-sm mb-2 flex items-center gap-1 pl-1">
                           <Icons.User /> {res.memberName || '新規・非会員'}
                       </div>
 
                       {hasTin && (
-                          <div className="text-[9px] bg-red-100 text-red-700 font-bold px-1.5 py-0.5 rounded-sm inline-flex items-center gap-1 mb-2">
-                              <Icons.Alert /> 錫メッキ混入あり
+                          <div className="text-[10px] bg-[#D32F2F] text-white font-bold px-2 py-1 rounded-sm flex items-center gap-1 mb-2 shadow-sm ml-1">
+                              <Icons.Alert /> 錫メッキ混入あり！別管理！
                           </div>
                       )}
 
-                      <div className="bg-gray-50 rounded-sm p-2 text-xs mb-2 border border-gray-100">
+                      <div className="bg-gray-50 rounded-sm p-2 text-xs mb-2 border border-gray-200 ml-1">
                         {items.length === 0 ? (
                             <div className="text-gray-400 text-center py-1 font-bold">データ解読エラー</div>
                         ) : (
                             items.slice(0, 3).map((item: any, idx: number) => {
                                 const displayName = item.product || item.name || '不明な商材';
                                 const displayWeight = item.weight !== undefined ? item.weight : '0';
+                                const ratio = item.ratio !== undefined ? `${item.ratio}%` : '-';
                                 
                                 return (
-                                    <div key={idx} className="flex justify-between items-center py-0.5 border-b border-gray-200 last:border-0 truncate">
-                                        <span className="text-gray-700 truncate mr-2" title={displayName}>{displayName}</span>
-                                        <span className="font-mono font-bold text-gray-900 shrink-0">{displayWeight}kg</span>
+                                    <div key={idx} className="flex justify-between items-center py-1 border-b border-gray-200 last:border-0 truncate">
+                                        <div className="flex flex-col min-w-0 pr-2">
+                                            <span className="text-gray-900 font-bold truncate" title={displayName}>{displayName}</span>
+                                            <span className="text-[9px] text-gray-500 font-mono">歩留: {ratio}</span>
+                                        </div>
+                                        <span className="font-mono font-black text-gray-900 shrink-0 text-sm tabular-nums">{displayWeight}kg</span>
                                     </div>
                                 );
                             })
                         )}
-                        {items.length > 3 && <div className="text-center text-[10px] text-gray-400 mt-1 pt-1">他 {items.length - 3} 品目...</div>}
+                        {items.length > 3 && <div className="text-center text-[10px] text-gray-500 font-bold mt-1 pt-1 border-t border-gray-200">他 {items.length - 3} 品目...</div>}
                       </div>
 
-                      <div className="flex justify-between items-end mt-3">
-                          <div className="text-[10px] text-gray-500 font-bold bg-gray-100 px-2 py-1 rounded-sm">総重量: <span className="text-sm font-black text-gray-800 font-mono">{totalW.toFixed(1)}</span> kg</div>
+                      <div className="flex justify-between items-end mt-3 ml-1">
+                          <div className="text-[10px] text-gray-600 font-bold bg-gray-100 border border-gray-200 px-2 py-1 rounded-sm">
+                              総重量: <span className="text-sm font-black text-gray-900 font-mono tabular-nums">{totalW.toFixed(1)}</span> kg
+                          </div>
                           
                           {col.id === 'RESERVED' && (
-                              <button onClick={() => onEditReservation(res.id)} className="text-[10px] text-blue-600 hover:underline font-bold">
-                                  POSで再編集 ✏️
+                              <button onClick={() => onEditReservation(res.id)} className="text-[10px] text-blue-600 hover:text-blue-800 underline font-bold transition">
+                                  POSで再編集
                               </button>
                           )}
                       </div>
@@ -266,9 +274,9 @@ export const AdminKanban = ({ localReservations = [], onUpdateStatus, onEditRese
                   );
                 })}
                 {colData.length === 0 && (
-                    <div className="h-full flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-sm text-gray-400">
-                        <span className="text-[10px] font-bold mb-1">{col.desc}</span>
-                        <span className="text-xs font-bold opacity-50">カードをドロップ</span>
+                    <div className="h-full flex flex-col items-center justify-center border-2 border-dashed border-gray-300 bg-gray-50 rounded-sm text-gray-400 p-4">
+                        <span className="text-[10px] font-bold mb-2 text-center leading-relaxed">{col.desc}</span>
+                        <span className="text-xs font-black bg-white px-3 py-1 rounded-sm border border-gray-200 shadow-sm">カードをドロップ</span>
                     </div>
                 )}
               </div>
