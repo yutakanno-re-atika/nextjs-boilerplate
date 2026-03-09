@@ -1,6 +1,6 @@
 // app/components/admin/AdminKanban.tsx
 // @ts-nocheck
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 
 const Icons = {
   Printer: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>,
@@ -12,7 +12,7 @@ const Icons = {
   Plant: () => <svg className="w-4 h-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>,
   Check: () => <svg className="w-4 h-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>,
   Database: () => <svg className="w-3 h-3 inline-block mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" /></svg>,
-  RefreshSync: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+  RefreshSync: () => <svg className="w-4 h-4 inline-block md:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
 };
 
 const formatTime = (timeStr: string) => {
@@ -42,55 +42,56 @@ export const parseItemsData = (rawItems: any) => {
             let parsed = JSON.parse(temp);
             if (typeof parsed === 'string') parsed = JSON.parse(parsed);
             if (Array.isArray(parsed)) return parsed;
-        } catch (e2) {
-            console.error("JSON parse failed. Raw data:", rawItems);
-        }
+        } catch (e2) {}
     }
     return [];
 };
 
 export const AdminKanban = ({ data, localReservations = [], onUpdateStatus, onEditReservation }: { data: any, localReservations: any[], onUpdateStatus: (id: string, status: string) => void, onEditReservation: (id: string) => void }) => {
   
-  // ★ 最強の同期ロジック（ゾンビデータの自動排除）
+  // スマホから画面に戻ってきた際に、視覚的に「リロードが必要」と気づかせるための状態
+  const [needsSync, setNeedsSync] = useState(false);
+
+  useEffect(() => {
+      const handleVisibilityChange = () => {
+          if (document.visibilityState === 'visible') {
+              setNeedsSync(true); // 画面に戻ってきたら赤いポッチ等で同期を促す
+          }
+      };
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+      return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, []);
+
   const effectiveReservations = useMemo(() => {
       const dbRes = data?.reservations || [];
       const locRes = localReservations || [];
       const map = new Map();
-      
-      // 1. DBの確定データをセット
       dbRes.forEach((r: any) => map.set(r.id, r));
       
-      // 2. Local（ブラウザの一時データ）で上書き
       const now = new Date().getTime();
       locRes.forEach((r: any) => {
           if (map.has(r.id)) {
-              // DBにも存在する場合は、ステータス変更などを反映するため上書き
               map.set(r.id, r);
           } else {
-              // DBに存在しない場合（新規追加直後、またはDBから手動削除されたゾンビ）
               const createdTime = new Date(r.createdAt || Date.now()).getTime();
-              // 受付から10分以上経っているのにDBに無いものは「ゾンビ」として排除（無視）
+              // 10分以上前の幽霊データは除外
               if (now - createdTime < 10 * 60 * 1000) {
                   map.set(r.id, r);
               }
           }
       });
-      
       return Array.from(map.values());
   }, [data?.reservations, localReservations]);
 
-  // ★ スマホ用：強制同期（キャッシュクリア）機能
   const handleForceSync = () => {
-      if (confirm("画面の表示を最新のデータベース状態に同期しますか？\n（保存されていない一時データはクリアされます）")) {
-          // localStorage内に「factoryOS」と名前のつくキャッシュを全消去
-          Object.keys(localStorage).forEach(key => {
-              if (key.includes('factoryOS') || key.includes('Reservations') || key.includes('lots') || key.includes('consumed')) {
-                  localStorage.removeItem(key);
-              }
-          });
-          sessionStorage.clear();
-          window.location.reload();
-      }
+      // 一時的なキャッシュを全て吹き飛ばして完全リロード
+      Object.keys(localStorage).forEach(key => {
+          if (key.includes('factoryOS') || key.includes('Reservations') || key.includes('lots') || key.includes('consumed')) {
+              localStorage.removeItem(key);
+          }
+      });
+      sessionStorage.clear();
+      window.location.reload();
   };
 
   const handlePrint = (res: any) => {
@@ -231,6 +232,16 @@ export const AdminKanban = ({ data, localReservations = [], onUpdateStatus, onEd
     }
   ];
 
+  // ★ スマホ用 ステータス移動ロジック
+  const getNextStatus = (currentStatus: string) => {
+    const idx = columns.findIndex(c => c.id === currentStatus);
+    return idx >= 0 && idx < columns.length - 1 ? columns[idx + 1].id : null;
+  };
+  const getPrevStatus = (currentStatus: string) => {
+    const idx = columns.findIndex(c => c.id === currentStatus);
+    return idx > 0 ? columns[idx - 1].id : null;
+  };
+
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-500 font-sans">
       <header className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4 shrink-0">
@@ -242,9 +253,12 @@ export const AdminKanban = ({ data, localReservations = [], onUpdateStatus, onEd
             </div>
         </div>
         
-        {/* ★ 強制同期（キャッシュクリア）ボタン */}
-        <button onClick={handleForceSync} className="text-xs bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 hover:text-gray-900 px-4 py-2 rounded-sm shadow-sm flex items-center justify-center transition font-bold">
-            <Icons.RefreshSync /> 最新データに強制同期
+        {/* スマホでも押しやすい強制同期ボタン */}
+        <button onClick={() => { setNeedsSync(false); handleForceSync(); }} className={`text-xs px-4 py-2.5 rounded-sm shadow-sm flex items-center justify-center transition font-bold border ${needsSync ? 'bg-[#D32F2F] text-white border-red-800 animate-pulse' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-100 hover:text-gray-900'}`}>
+            <Icons.RefreshSync /> 
+            <span className="hidden md:inline">最新データに強制同期</span>
+            <span className="md:hidden">同期して更新</span>
+            {needsSync && <span className="ml-2 w-2 h-2 rounded-full bg-white block"></span>}
         </button>
       </header>
 
@@ -284,7 +298,7 @@ export const AdminKanban = ({ data, localReservations = [], onUpdateStatus, onEd
                       <div className="flex justify-between items-start mb-2 pl-1">
                         <div className="flex items-center gap-1 text-[10px] text-gray-500 font-mono font-bold"><Icons.Clock /> {formatTime(res.createdAt)}</div>
                         
-                        <button onClick={() => handlePrint(res)} className="text-[10px] bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 px-2 py-1 rounded-sm shadow-sm flex items-center gap-1 transition opacity-0 group-hover:opacity-100 font-bold">
+                        <button onClick={() => handlePrint(res)} className="text-[10px] bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 px-2 py-1 rounded-sm shadow-sm flex items-center gap-1 transition font-bold">
                             <Icons.Printer /> 帳票出力
                         </button>
                       </div>
@@ -324,7 +338,7 @@ export const AdminKanban = ({ data, localReservations = [], onUpdateStatus, onEd
 
                       <div className="flex justify-between items-end mt-3 ml-1">
                           <div className="text-[10px] text-gray-600 font-bold bg-gray-100 border border-gray-200 px-2 py-1 rounded-sm">
-                              受付総重量: <span className="text-sm font-black text-gray-900 font-mono tabular-nums">{totalW.toFixed(1)}</span> kg
+                              受付重量: <span className="text-sm font-black text-gray-900 font-mono tabular-nums">{totalW.toFixed(1)}</span> kg
                           </div>
                           
                           {col.id === 'RESERVED' && (
@@ -355,13 +369,30 @@ export const AdminKanban = ({ data, localReservations = [], onUpdateStatus, onEd
                           </div>
                       )}
 
+                      {/* ★ スマホ対応：タップで移動できるステータス変更ボタン */}
+                      <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-100 ml-1">
+                          <button 
+                              onClick={() => { const prev = getPrevStatus(col.id); if (prev) onUpdateStatus(res.id, prev); }}
+                              className={`text-[10px] px-2 py-1.5 rounded-sm font-bold transition-colors ${getPrevStatus(col.id) ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' : 'opacity-0 pointer-events-none'}`}
+                          >
+                              ◀ 戻す
+                          </button>
+                          
+                          <button 
+                              onClick={() => { const next = getNextStatus(col.id); if (next) onUpdateStatus(res.id, next); }}
+                              className={`text-[10px] px-3 py-1.5 rounded-sm font-bold transition-colors shadow-sm ${getNextStatus(col.id) ? 'bg-gray-900 text-white hover:bg-black' : 'opacity-0 pointer-events-none'}`}
+                          >
+                              次の工程へ ▶
+                          </button>
+                      </div>
+
                     </div>
                   );
                 })}
                 {colData.length === 0 && (
                     <div className="h-full flex flex-col items-center justify-center border-2 border-dashed border-gray-300 bg-gray-50 rounded-sm text-gray-400 p-4">
                         <span className="text-[10px] font-bold mb-2 text-center leading-relaxed">{col.desc}</span>
-                        <span className="text-xs font-black bg-white px-3 py-1 rounded-sm border border-gray-200 shadow-sm">カードをドロップ</span>
+                        <span className="text-xs font-black bg-white px-3 py-1 rounded-sm border border-gray-200 shadow-sm">ここに移動</span>
                     </div>
                 )}
               </div>
