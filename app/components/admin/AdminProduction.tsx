@@ -56,7 +56,6 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
   const [localSortedLots, setLocalSortedLots] = useState<any[]>([]); 
   const [localConsumedIds, setLocalConsumedIds] = useState<string[]>([]); 
 
-  // ★ 仕分け用ステート構造を変更 (product -> category, ratio追加)
   const [sortOutputs, setSortOutputs] = useState([{ category: '', ratio: '', weight: '' }]);
   const [sortTime, setSortTime] = useState('');
   const [sortWorker, setSortWorker] = useState('未選択');
@@ -181,7 +180,6 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
     setIsSubmitting(true);
     const newSortedLots = [...localSortedLots];
     
-    // ★ 選択されたカテゴリをもとに品名と歩留まりを構築して保存
     sortOutputs.forEach((out, idx) => {
         if (out.category && out.weight) {
             let productName = out.category;
@@ -354,7 +352,6 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
             </div>
           </header>
 
-          {/* ★ サマリー部分：全体を薄いグレー背景にし、見出しを黒（濃いグレー）に変更 */}
           <div className="bg-gray-100 border border-gray-200 rounded-sm shadow-sm p-4 md:p-6 text-gray-900 mb-6 relative overflow-hidden flex flex-col md:flex-row justify-between md:items-center gap-4 flex-shrink-0">
               <div className="absolute top-0 right-0 p-4 opacity-5 transform scale-150 text-gray-900"><Icons.Factory /></div>
               <div className="relative z-10">
@@ -376,7 +373,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                       <p className="text-[10px] md:text-xs text-gray-600 font-bold mb-1 uppercase tracking-widest">雑ナゲット</p>
                       <div className="flex items-end gap-1 justify-end">
                           <span className="text-3xl md:text-4xl font-black text-gray-900 tabular-nums tracking-tighter">{totalMixedNugget.toLocaleString()}</span>
-                          <span className="text-sm text-gray-500 font-bold mb-1">kg</span>
+                          <span className="text-sm text-gray-600 font-bold mb-1">kg</span>
                       </div>
                   </div>
               </div>
@@ -424,9 +421,14 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                                                   直行 <Icons.FastForward />
                                               </button>
                                               
+                                              {/* ★ スマート初期値セット機能 */}
                                               <button onClick={() => {
                                                   setSortingLot(lot);
-                                                  setSortOutputs([{ category: '', ratio: '', weight: String(lot.remainingWeight) }]);
+                                                  setSortOutputs([{ 
+                                                      category: '被覆B', 
+                                                      ratio: String(lot.expectedRatio || ''), 
+                                                      weight: String(lot.remainingWeight) 
+                                                  }]);
                                               }} className="bg-gray-900 text-white text-sm font-bold px-4 py-2.5 rounded-sm shadow-sm hover:bg-black transition">
                                                   選別
                                               </button>
@@ -605,12 +607,12 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                           </div>
 
                           <div>
-                              <h4 className="text-xs font-bold text-gray-500 mb-3 uppercase tracking-widest border-b border-gray-200 pb-1">仕分け・解体後の項目を追加</h4>
+                              <h4 className="text-xs font-bold text-gray-500 mb-3 uppercase tracking-widest border-b border-gray-200 pb-1">仕分け後の品目・重量</h4>
                               <div className="space-y-3">
                                   {sortOutputs.map((out, idx) => (
                                       <div key={idx} className="flex flex-col md:flex-row md:items-center gap-3 bg-gray-50 p-3 border border-gray-200 rounded-sm">
                                           
-                                          {/* ★ 選択肢を4つに限定 */}
+                                          {/* ★ 選択肢を現場のオペレーションに完全特化 */}
                                           <select className="w-full md:w-1/3 p-3 bg-white border border-gray-300 rounded-sm text-base font-bold outline-none" value={out.category} onChange={e => { const newOut = [...sortOutputs]; newOut[idx].category = e.target.value; setSortOutputs(newOut); }}>
                                               <option value="">品目を選択</option>
                                               <option value="被覆B">被覆B (ナゲット原料)</option>
@@ -654,6 +656,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
               </div>
           )}
 
+          {/* ブレンド加工モーダル */}
           {blendingLots.length > 0 && (
               <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 md:p-4 animate-in fade-in">
                   <div className="bg-white rounded-sm shadow-2xl w-full max-w-2xl flex flex-col max-h-[95vh]">
