@@ -19,7 +19,7 @@ const Icons = {
 };
 
 const ProvenanceBadge = ({ type }: { type: 'HUMAN' | 'AI_AUTO' | 'CO_OP' }) => {
-  const baseStyle = "inline-block px-1.5 py-0.5 text-[9px] font-mono font-bold tracking-widest rounded-sm text-white cursor-default shadow-sm ml-1 align-middle";
+  const baseStyle = "inline-block px-1.5 py-0.5 text-[9px] font-bold tracking-widest rounded-sm text-white cursor-default shadow-sm ml-1 align-middle";
   switch (type) {
     case 'HUMAN': return <span className={`${baseStyle} bg-gray-900`} title="実測・確定データ">HUMAN</span>;
     case 'CO_OP': return <span className={`${baseStyle} bg-gray-600`} title="AI＋人間 協調データ">CO-P</span>;
@@ -62,9 +62,9 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
   const [sortWorker, setSortWorker] = useState('未選択');
 
   const [processInputWeight, setProcessInputWeight] = useState('');
-  const [processOutputRed, setProcessOutputRed] = useState(''); // 上ナゲット(赤)
-  const [processOutputMixed, setProcessOutputMixed] = useState(''); // 雑ナゲット
-  const [processOutputCover, setProcessOutputCover] = useState(''); // 被覆(ダスト計算用)
+  const [processOutputRed, setProcessOutputRed] = useState(''); 
+  const [processOutputMixed, setProcessOutputMixed] = useState(''); 
+  const [processOutputCover, setProcessOutputCover] = useState(''); 
   const [processWorker, setProcessWorker] = useState('未選択');
   const [processMemo, setProcessMemo] = useState('');         
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -145,7 +145,6 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
       return { toSortLots: sortList, readyLots: processList };
   }, [localReservations, productions, wiresMaster, localSortedLots, localConsumedIds]);
 
-  // ★ 上ナゲットと雑ナゲットをそれぞれ集計
   const totalRedNugget = productions.reduce((sum: number, p: any) => sum + (Number(p.outputRed) || Number(p.outputCopper) || 0), 0);
   const totalMixedNugget = productions.reduce((sum: number, p: any) => sum + (Number(p.outputMixed) || 0), 0);
 
@@ -223,10 +222,10 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
             memberName: blendingLots.length > 1 ? 'ブレンド処理' : blendingLots[0].memberName,
             materialName: mixedName.substring(0, 50), 
             inputWeight: inW, 
-            outputRed: outRed, // 上ナゲット
-            outputMixed: outMixed, // 雑ナゲット
-            outputChips: coverW, // 被覆
-            outputJute: dustW, // ダスト 
+            outputRed: outRed, 
+            outputMixed: outMixed, 
+            outputChips: coverW, 
+            outputJute: dustW, 
             actualRatio: parseFloat(ratio), 
             memo: `作業者: ${processWorker} | 元ロット: ${blendingLots.length}件 | ${processMemo}`
         };
@@ -313,26 +312,31 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
             </div>
           </header>
 
-          <div className="bg-[#111] rounded-sm shadow-sm p-5 md:p-6 text-white mb-6 relative overflow-hidden flex flex-col md:flex-row justify-between md:items-center gap-4 flex-shrink-0">
-              <div className="absolute top-0 right-0 p-4 opacity-10 transform scale-150 text-[#D32F2F]"><Icons.Factory /></div>
-              <div>
-                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">TOTAL COPPER NUGGET</h3>
-                  <p className="text-sm font-bold text-gray-200 flex items-center">累計 銅ナゲット生産量 <ProvenanceBadge type="HUMAN" /></p>
+          {/* ★ サマリー部分：全体を薄いグレー背景にし、文字を黒に変更 */}
+          <div className="bg-gray-100 border border-gray-200 rounded-sm shadow-sm p-4 md:p-6 text-gray-900 mb-6 relative overflow-hidden flex flex-col md:flex-row justify-between md:items-center gap-4 flex-shrink-0">
+              <div className="absolute top-0 right-0 p-4 opacity-5 transform scale-150 text-gray-900"><Icons.Factory /></div>
+              <div className="relative z-10">
+                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">TOTAL COPPER NUGGET</h3>
+                  <p className="text-sm font-bold text-gray-900 flex items-center">累計 銅ナゲット生産量 <ProvenanceBadge type="HUMAN" /></p>
               </div>
-              <div className="flex items-center gap-6 md:gap-10 relative z-10">
+              <div className="flex items-center gap-4 md:gap-8 relative z-10">
                   <div className="text-right">
-                      <p className="text-[10px] md:text-xs text-gray-400 font-bold mb-1 uppercase tracking-widest">上ナゲット (赤)</p>
+                      <p className="text-[10px] md:text-xs text-gray-600 font-bold mb-1 uppercase tracking-widest">上ナゲット (赤)</p>
                       <div className="flex items-end gap-1 justify-end">
-                          <span className="text-3xl md:text-4xl font-black text-[#D32F2F] font-mono tracking-tighter">{totalRedNugget.toLocaleString()}</span>
+                          {/* ★ 数字から font-mono を外し tabular-nums で等幅を担保 */}
+                          <span className="text-3xl md:text-4xl font-black text-[#D32F2F] tabular-nums tracking-tighter">{totalRedNugget.toLocaleString()}</span>
                           <span className="text-sm text-gray-500 font-bold mb-1">kg</span>
                       </div>
                   </div>
-                  <div className="w-px h-10 bg-gray-700"></div>
+                  
+                  {/* 区切り線 */}
+                  <div className="w-px h-10 bg-gray-300 hidden md:block"></div>
+
                   <div className="text-right">
-                      <p className="text-[10px] md:text-xs text-gray-400 font-bold mb-1 uppercase tracking-widest">雑ナゲット</p>
+                      <p className="text-[10px] md:text-xs text-gray-600 font-bold mb-1 uppercase tracking-widest">雑ナゲット</p>
                       <div className="flex items-end gap-1 justify-end">
-                          <span className="text-3xl md:text-4xl font-black text-blue-400 font-mono tracking-tighter">{totalMixedNugget.toLocaleString()}</span>
-                          <span className="text-sm text-gray-500 font-bold mb-1">kg</span>
+                          <span className="text-3xl md:text-4xl font-black text-gray-900 tabular-nums tracking-tighter">{totalMixedNugget.toLocaleString()}</span>
+                          <span className="text-sm text-gray-600 font-bold mb-1">kg</span>
                       </div>
                   </div>
               </div>
@@ -365,7 +369,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                                               <span className="text-[10px] font-bold bg-gray-100 text-gray-700 border border-gray-200 px-2 py-0.5 rounded-sm">未選別</span>
                                               <ProvenanceBadge type="HUMAN" />
                                           </div>
-                                          <span className="text-[10px] text-gray-400 font-mono">{lot.date} 入庫</span>
+                                          <span className="text-[10px] text-gray-400 tabular-nums">{lot.date} 入庫</span>
                                       </div>
                                       <h4 className="font-black text-gray-900 text-lg mb-1 flex items-center gap-1">
                                           {lot.isTin && <span className="bg-[#D32F2F] text-white text-[9px] px-1.5 py-0.5 rounded-sm">⚠️錫メッキ</span>}
@@ -373,7 +377,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                                       </h4>
                                       <p className="text-sm text-gray-500 flex items-center mb-5"><Icons.User /> {lot.memberName}</p>
                                       <div className="mt-auto border-t border-gray-100 pt-4 flex justify-between items-center">
-                                          <p className="text-3xl font-black font-mono text-gray-900 tracking-tighter">{lot.remainingWeight.toFixed(1)}<span className="text-xs font-bold text-gray-500 ml-1">kg</span></p>
+                                          <p className="text-3xl font-black tabular-nums text-gray-900 tracking-tighter">{lot.remainingWeight.toFixed(1)}<span className="text-xs font-bold text-gray-500 ml-1">kg</span></p>
                                           
                                           <div className="flex gap-2">
                                               <button onClick={() => handleSkipSort(lot)} className="bg-gray-100 text-gray-600 border border-gray-300 text-xs font-bold px-3 py-2.5 rounded-sm hover:bg-gray-200 transition flex items-center gap-1">
@@ -417,7 +421,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                                           <td className="p-3">
                                               <div className="flex flex-col items-start gap-1">
                                                   {lot.isSorted ? <span className="text-[10px] font-bold bg-green-50 text-green-700 border border-green-200 px-1.5 py-0.5 rounded-sm">選別済</span> : <span className="text-[10px] font-bold bg-gray-100 text-gray-600 border border-gray-200 px-1.5 py-0.5 rounded-sm">原反</span>}
-                                                  <span className="text-xs text-gray-400 font-mono">{lot.date}</span>
+                                                  <span className="text-xs text-gray-400 tabular-nums">{lot.date}</span>
                                               </div>
                                           </td>
                                           <td className="p-3 font-bold text-base text-gray-900">
@@ -427,7 +431,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                                               </div>
                                           </td>
                                           <td className="p-3 text-sm text-gray-600">{lot.memberName}</td>
-                                          <td className="p-3 text-right font-black font-mono text-xl text-gray-900 tracking-tighter">{lot.remainingWeight.toFixed(1)}<span className="text-xs text-gray-500 font-normal ml-1">kg</span></td>
+                                          <td className="p-3 text-right font-black tabular-nums text-xl text-gray-900 tracking-tighter">{lot.remainingWeight.toFixed(1)}<span className="text-xs text-gray-500 font-normal ml-1">kg</span></td>
                                       </tr>
                                   ))}
                               </tbody>
@@ -435,12 +439,12 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                       </div>
                       
                       {checkedLotIds.length > 0 && (
-                          <div className="fixed bottom-0 left-0 md:absolute md:bottom-0 md:left-0 w-full bg-[#111] text-white p-4 flex justify-between items-center shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.3)] md:shadow-none z-50">
+                          <div className="fixed bottom-0 left-0 md:absolute md:bottom-0 md:left-0 w-full bg-gray-100 border-t border-gray-200 p-4 flex justify-between items-center shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.1)] z-50">
                               <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-4">
-                                  <span className="text-xs font-bold bg-gray-800 px-2.5 py-1 rounded-sm border border-gray-700 inline-block w-max">{checkedLotIds.length} 件選択中</span>
-                                  <span className="text-sm text-gray-400">合計 <span className="text-2xl font-black font-mono text-white ml-1 tracking-tighter">{readyLots.filter(l => checkedLotIds.includes(l.lotId)).reduce((sum, l) => sum + l.remainingWeight, 0).toFixed(1)}</span> kg</span>
+                                  <span className="text-xs font-bold bg-white px-2.5 py-1 rounded-sm border border-gray-300 inline-block w-max text-gray-700">{checkedLotIds.length} 件選択中</span>
+                                  <span className="text-sm text-gray-500">合計 <span className="text-2xl font-black tabular-nums text-gray-900 ml-1 tracking-tighter">{readyLots.filter(l => checkedLotIds.includes(l.lotId)).reduce((sum, l) => sum + l.remainingWeight, 0).toFixed(1)}</span> kg</span>
                               </div>
-                              <button onClick={openBlendModal} className="bg-[#D32F2F] hover:bg-red-700 text-white px-5 py-3 md:px-8 md:py-3.5 rounded-sm font-bold text-sm md:text-base shadow-lg flex items-center gap-2 transition whitespace-nowrap">
+                              <button onClick={openBlendModal} className="bg-[#D32F2F] hover:bg-red-700 text-white px-5 py-3 md:px-8 md:py-3.5 rounded-sm font-bold text-sm md:text-base shadow-sm flex items-center gap-2 transition whitespace-nowrap">
                                   <Icons.Blend /> ブレンド加工へ
                               </button>
                           </div>
@@ -451,7 +455,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
               {activeTab === 'LOG' && (
                   <div className="flex flex-col flex-1 overflow-hidden relative">
                       <div className={`transition-all duration-500 flex-shrink-0 ${showAiData ? 'max-h-40 opacity-100 border-b border-gray-200' : 'max-h-0 opacity-0 overflow-hidden'}`}>
-                          <div className="bg-gray-100 p-4">
+                          <div className="bg-gray-50 p-4 border-b border-gray-200">
                               <h4 className="text-xs font-bold text-gray-900 mb-2 flex items-center gap-1.5"><Icons.Brain /> AI アラート・分析</h4>
                               {productions.length > 0 ? (() => {
                                   const recent = productions.slice(-1);
@@ -463,7 +467,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                                   
                                   if (expected > 0 && Math.abs(diff) > 2.0) {
                                       return (
-                                          <div className={`p-3 rounded-sm border text-sm font-bold ${diff > 0 ? 'bg-gray-50 border-gray-300 text-gray-800' : 'bg-red-50 border-red-200 text-[#D32F2F]'}`}>
+                                          <div className={`p-3 rounded-sm border text-sm font-bold ${diff > 0 ? 'bg-white border-gray-300 text-gray-800' : 'bg-red-50 border-red-200 text-[#D32F2F]'}`}>
                                               <ProvenanceBadge type="AI_AUTO" /> 最新ロット（{last.materialName}）の歩留まりがマスタ設定値({expected}%)から大きく乖離({diff > 0 ? '+'+diff.toFixed(1) : diff.toFixed(1)}%)しています。{diff < 0 ? '異物混入や機械の摩耗の可能性があります。' : '非常に良質なロットでした。'}
                                           </div>
                                       );
@@ -478,14 +482,14 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                           <table className="w-full text-left border-collapse min-w-[800px]">
                               <thead className="sticky top-0 bg-gray-100 border-b border-gray-200 z-10 shadow-sm">
                                   <tr>
-                                      <th className="p-3 text-xs font-bold text-gray-600 uppercase tracking-widest whitespace-nowrap">登録日時 <ProvenanceBadge type="HUMAN" /></th>
-                                      <th className="p-3 text-xs font-bold text-gray-600 uppercase tracking-widest whitespace-nowrap">対象バッチ</th>
-                                      <th className="p-3 text-xs font-bold text-gray-600 uppercase tracking-widest whitespace-nowrap text-right">投入量 <ProvenanceBadge type="HUMAN" /></th>
-                                      <th className="p-3 text-xs font-bold text-[#D32F2F] uppercase tracking-widest whitespace-nowrap text-right">上ナゲット(赤) <ProvenanceBadge type="HUMAN" /></th>
-                                      <th className="p-3 text-xs font-bold text-blue-700 uppercase tracking-widest whitespace-nowrap text-right">雑ナゲット <ProvenanceBadge type="HUMAN" /></th>
-                                      <th className="p-3 text-xs font-bold text-gray-600 uppercase tracking-widest whitespace-nowrap text-right">被覆 <ProvenanceBadge type="HUMAN" /></th>
-                                      <th className="p-3 text-xs font-bold text-gray-600 uppercase tracking-widest whitespace-nowrap text-right">ダスト <ProvenanceBadge type="HUMAN" /></th>
-                                      <th className="p-3 text-xs font-bold text-gray-600 uppercase tracking-widest whitespace-nowrap text-right">実質歩留 <ProvenanceBadge type="HUMAN" /></th>
+                                      <th className="p-3 text-xs md:text-sm font-bold text-gray-600 uppercase tracking-widest whitespace-nowrap">登録日時 <ProvenanceBadge type="HUMAN" /></th>
+                                      <th className="p-3 text-xs md:text-sm font-bold text-gray-600 uppercase tracking-widest whitespace-nowrap">対象バッチ</th>
+                                      <th className="p-3 text-xs md:text-sm font-bold text-gray-600 uppercase tracking-widest whitespace-nowrap text-right">投入量 <ProvenanceBadge type="HUMAN" /></th>
+                                      <th className="p-3 text-xs md:text-sm font-bold text-[#D32F2F] uppercase tracking-widest whitespace-nowrap text-right">上ナゲット <ProvenanceBadge type="HUMAN" /></th>
+                                      <th className="p-3 text-xs md:text-sm font-bold text-gray-900 uppercase tracking-widest whitespace-nowrap text-right">雑ナゲット <ProvenanceBadge type="HUMAN" /></th>
+                                      <th className="p-3 text-xs md:text-sm font-bold text-gray-600 uppercase tracking-widest whitespace-nowrap text-right">被覆 <ProvenanceBadge type="HUMAN" /></th>
+                                      <th className="p-3 text-xs md:text-sm font-bold text-gray-600 uppercase tracking-widest whitespace-nowrap text-right">ダスト <ProvenanceBadge type="HUMAN" /></th>
+                                      <th className="p-3 text-xs md:text-sm font-bold text-gray-600 uppercase tracking-widest whitespace-nowrap text-right">実質歩留 <ProvenanceBadge type="HUMAN" /></th>
                                   </tr>
                               </thead>
                               <tbody className="divide-y divide-gray-100">
@@ -502,22 +506,22 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
 
                                       return (
                                           <tr key={idx} className={`hover:bg-gray-50 transition ${showAiData && isAlert && diff < 0 ? 'bg-red-50/30' : ''}`}>
-                                              <td className="p-3 text-xs text-gray-500 font-mono whitespace-nowrap">
+                                              <td className="p-3 text-xs md:text-sm text-gray-500 tabular-nums whitespace-nowrap">
                                                   {p.createdAt ? String(p.createdAt).substring(5,16) : '不明'}
                                               </td>
                                               <td className="p-3 min-w-[150px]">
                                                   <p className="text-sm font-bold text-gray-900 leading-tight">{p.materialName}</p>
                                                   <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">{p.memberName}</p>
                                               </td>
-                                              <td className="p-3 text-right text-sm font-mono text-gray-600 whitespace-nowrap">{Number(p.inputWeight || 0).toLocaleString()} kg</td>
-                                              <td className="p-3 text-right text-sm font-mono font-bold text-[#D32F2F] whitespace-nowrap">{outputRedVal.toLocaleString()} kg</td>
-                                              <td className="p-3 text-right text-sm font-mono font-bold text-blue-700 whitespace-nowrap">{outputMixedVal.toLocaleString()} kg</td>
-                                              <td className="p-3 text-right text-sm font-mono text-gray-500 whitespace-nowrap">{outputCoverVal.toLocaleString()} kg</td>
-                                              <td className="p-3 text-right text-sm font-mono text-gray-500 whitespace-nowrap">{outputDustVal > 0 ? <span className="bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded font-bold">{outputDustVal.toLocaleString()} kg</span> : '0 kg'}</td>
+                                              <td className="p-3 text-right text-sm md:text-base tabular-nums text-gray-600 whitespace-nowrap">{Number(p.inputWeight || 0).toLocaleString()} kg</td>
+                                              <td className="p-3 text-right text-sm md:text-base tabular-nums font-bold text-[#D32F2F] whitespace-nowrap">{outputRedVal.toLocaleString()} kg</td>
+                                              <td className="p-3 text-right text-sm md:text-base tabular-nums font-bold text-gray-900 whitespace-nowrap">{outputMixedVal.toLocaleString()} kg</td>
+                                              <td className="p-3 text-right text-sm md:text-base tabular-nums text-gray-500 whitespace-nowrap">{outputCoverVal.toLocaleString()} kg</td>
+                                              <td className="p-3 text-right text-sm md:text-base tabular-nums text-gray-500 whitespace-nowrap">{outputDustVal > 0 ? <span className="bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded-sm font-bold border border-gray-200">{outputDustVal.toLocaleString()} kg</span> : '0 kg'}</td>
                                               <td className="p-3 text-right whitespace-nowrap">
-                                                  <span className={`text-base md:text-lg font-mono font-black tracking-tighter ${showAiData && isAlert && diff < 0 ? 'text-[#D32F2F]' : 'text-gray-900'}`}>{p.actualRatio}%</span>
+                                                  <span className={`text-base md:text-lg tabular-nums font-black tracking-tighter ${showAiData && isAlert && diff < 0 ? 'text-[#D32F2F]' : 'text-gray-900'}`}>{p.actualRatio}%</span>
                                                   {showAiData && expected > 0 && (
-                                                      <div className="text-[9px] text-gray-400 font-mono mt-0.5">
+                                                      <div className="text-[9px] text-gray-400 tabular-nums mt-0.5">
                                                           (マスタ比: {diff > 0 ? '+' : ''}{diff.toFixed(1)})
                                                       </div>
                                                   )}
@@ -539,7 +543,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                       <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-start shrink-0">
                           <div>
                               <h3 className="text-lg font-black text-gray-900 flex items-center gap-2"><Icons.Blend /> ブレンド加工の登録 <ProvenanceBadge type="HUMAN" /></h3>
-                              <div className="text-xs text-gray-500 mt-2 space-y-1 bg-white p-2 border border-gray-200 rounded-sm max-h-24 overflow-y-auto font-mono">
+                              <div className="text-xs text-gray-500 mt-2 space-y-1 bg-white p-2 border border-gray-200 rounded-sm max-h-24 overflow-y-auto tabular-nums">
                                   {blendingLots.map(l => (
                                       <div key={l.lotId} className="flex justify-between">
                                         <span className="flex items-center gap-1">
@@ -555,9 +559,9 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                       </div>
                       
                       <div className="p-4 md:p-6 overflow-y-auto flex-1 space-y-6 bg-white">
-                          <div className="bg-[#111] p-3 md:p-4 rounded-sm flex flex-col md:flex-row md:items-center gap-3 text-white">
-                              <label className="text-sm font-bold flex items-center whitespace-nowrap text-gray-300"><Icons.Worker /> プラント担当</label>
-                              <select className="w-full bg-gray-800 border border-gray-700 p-2.5 md:p-3 text-sm md:text-base font-bold rounded-sm outline-none focus:border-gray-500" value={processWorker} onChange={e => setProcessWorker(e.target.value)}>
+                          <div className="bg-gray-100 border border-gray-200 p-3 md:p-4 rounded-sm flex flex-col md:flex-row md:items-center gap-3 text-gray-900">
+                              <label className="text-sm font-bold flex items-center whitespace-nowrap"><Icons.Worker /> プラント担当</label>
+                              <select className="w-full bg-white border border-gray-300 p-2.5 md:p-3 text-sm md:text-base font-bold rounded-sm outline-none focus:border-gray-500" value={processWorker} onChange={e => setProcessWorker(e.target.value)}>
                                   {workerList.map(w => <option key={w} value={w}>{w}</option>)}
                               </select>
                           </div>
@@ -566,21 +570,21 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                               <div className="bg-gray-50 p-4 border border-gray-200 rounded-sm">
                                   <label className="block text-xs font-bold text-gray-600 mb-2">総投入重量 (kg)</label>
                                   <div className="relative">
-                                      <input type="number" inputMode="decimal" className="w-full bg-white border border-gray-300 p-3 pr-10 rounded-sm text-xl font-black font-mono text-right outline-none focus:border-[#D32F2F] shadow-inner" value={processInputWeight} onChange={e => setProcessInputWeight(e.target.value)} />
+                                      <input type="number" inputMode="decimal" className="w-full bg-white border border-gray-300 p-3 pr-10 rounded-sm text-xl font-black tabular-nums text-right outline-none focus:border-[#D32F2F] shadow-inner" value={processInputWeight} onChange={e => setProcessInputWeight(e.target.value)} />
                                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold">kg</span>
                                   </div>
                               </div>
                               <div className="bg-red-50 p-4 border border-red-200 rounded-sm">
                                   <label className="block text-[11px] md:text-xs font-bold text-[#D32F2F] mb-2 whitespace-nowrap">産出 上ナゲット(赤)</label>
                                   <div className="relative">
-                                      <input type="number" inputMode="decimal" className="w-full bg-white border border-[#D32F2F] p-3 pr-10 rounded-sm text-xl font-black font-mono text-gray-900 text-right outline-none focus:ring-2 focus:ring-[#D32F2F] shadow-inner" value={processOutputRed} onChange={e => setProcessOutputRed(e.target.value)} placeholder="0" />
+                                      <input type="number" inputMode="decimal" className="w-full bg-white border border-[#D32F2F] p-3 pr-10 rounded-sm text-xl font-black tabular-nums text-gray-900 text-right outline-none focus:ring-2 focus:ring-[#D32F2F] shadow-inner" value={processOutputRed} onChange={e => setProcessOutputRed(e.target.value)} placeholder="0" />
                                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 font-bold">kg</span>
                                   </div>
                               </div>
-                              <div className="bg-blue-50 p-4 border border-blue-200 rounded-sm">
-                                  <label className="block text-[11px] md:text-xs font-bold text-blue-700 mb-2 whitespace-nowrap">産出 雑ナゲット</label>
+                              <div className="bg-gray-100 p-4 border border-gray-300 rounded-sm">
+                                  <label className="block text-[11px] md:text-xs font-bold text-gray-700 mb-2 whitespace-nowrap">産出 雑ナゲット</label>
                                   <div className="relative">
-                                      <input type="number" inputMode="decimal" className="w-full bg-white border border-blue-300 p-3 pr-10 rounded-sm text-xl font-black font-mono text-gray-900 text-right outline-none focus:ring-2 focus:ring-blue-500 shadow-inner" value={processOutputMixed} onChange={e => setProcessOutputMixed(e.target.value)} placeholder="0" />
+                                      <input type="number" inputMode="decimal" className="w-full bg-white border border-gray-400 p-3 pr-10 rounded-sm text-xl font-black tabular-nums text-gray-900 text-right outline-none focus:ring-2 focus:ring-gray-500 shadow-inner" value={processOutputMixed} onChange={e => setProcessOutputMixed(e.target.value)} placeholder="0" />
                                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 font-bold">kg</span>
                                   </div>
                               </div>
@@ -592,26 +596,26 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                                 CV線などで紙や介在物（ゴミ）が含まれる場合のみ入力してください。<br/>未入力の場合は「総重量 − ナゲット ＝ すべて被覆（ダスト0）」として自動計算されます。
                               </p>
                               <div className="relative md:w-1/2">
-                                  <input type="number" step="0.1" placeholder="入力なしで自動計算" className="w-full p-3 pr-10 border border-gray-300 rounded-sm text-sm font-mono outline-none focus:border-gray-900 bg-white text-right" value={processOutputCover} onChange={e => setProcessOutputCover(e.target.value)} />
+                                  <input type="number" step="0.1" placeholder="入力なしで自動計算" className="w-full p-3 pr-10 border border-gray-300 rounded-sm text-sm tabular-nums outline-none focus:border-gray-900 bg-white text-right" value={processOutputCover} onChange={e => setProcessOutputCover(e.target.value)} />
                                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold">kg</span>
                               </div>
                           </div>
 
                           {processInputWeight && (processOutputRed || processOutputMixed) && (
-                              <div className="bg-gray-900 text-white rounded-sm p-4 shadow-inner flex justify-between items-center">
+                              <div className="bg-gray-100 border border-gray-300 text-gray-900 rounded-sm p-4 flex justify-between items-center shadow-sm">
                                   <div>
-                                      <p className="text-[10px] text-gray-400 font-bold mb-1">算出ダスト(ゴミ)重量</p>
-                                      <p className="font-mono font-black text-2xl text-yellow-400 tracking-tighter">
-                                          {(parseFloat(processOutputCover) > 0 ? Math.max(0, parseFloat(processInputWeight) - (parseFloat(processOutputRed)||0) - (parseFloat(processOutputMixed)||0) - parseFloat(processOutputCover)) : 0).toFixed(1)} <span className="text-sm font-normal">kg</span>
+                                      <p className="text-[10px] text-gray-600 font-bold mb-1">算出ダスト(ゴミ)重量</p>
+                                      <p className="tabular-nums font-black text-2xl text-gray-900 tracking-tighter">
+                                          {(parseFloat(processOutputCover) > 0 ? Math.max(0, parseFloat(processInputWeight) - (parseFloat(processOutputRed)||0) - (parseFloat(processOutputMixed)||0) - parseFloat(processOutputCover)) : 0).toFixed(1)} <span className="text-sm font-normal text-gray-500">kg</span>
                                       </p>
                                   </div>
-                                  <div className="text-right border-l border-gray-700 pl-4">
+                                  <div className="text-right border-l border-gray-300 pl-4">
                                       <div className="flex items-center gap-2 justify-end mb-1">
-                                          <p className="text-[10px] text-gray-400 font-bold tracking-widest uppercase">ブレンド実測歩留</p>
+                                          <p className="text-[10px] text-gray-600 font-bold tracking-widest uppercase">ブレンド実測歩留</p>
                                           <ProvenanceBadge type="HUMAN" />
                                       </div>
-                                      <p className="text-3xl md:text-4xl font-black font-mono tracking-tighter">
-                                          {(((parseFloat(processOutputRed)||0) + (parseFloat(processOutputMixed)||0)) / parseFloat(processInputWeight) * 100).toFixed(1)} <span className="text-lg font-normal text-gray-400">%</span>
+                                      <p className="text-3xl md:text-4xl font-black tabular-nums tracking-tighter">
+                                          {(((parseFloat(processOutputRed)||0) + (parseFloat(processOutputMixed)||0)) / parseFloat(processInputWeight) * 100).toFixed(1)} <span className="text-lg font-normal text-gray-500">%</span>
                                       </p>
                                   </div>
                               </div>
