@@ -4,11 +4,11 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 
 const Icons = {
   Plus: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>,
-  Edit: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>,
-  Trash: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
+  Edit: () => <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>,
+  Trash: () => <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
   Search: () => <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
   Image: () => <svg className="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2-2v12a2 2 0 002 2z" /></svg>,
-  Sparkles: () => <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 8.134a1 1 0 010 1.932l-3.354.933-1.179 4.456a1 1 0 01-1.934 0l-1.179-4.456-3.354-.933a1 1 0 010-1.932l3.354-.933 1.179-4.456A1 1 0 0112 2z" clipRule="evenodd" /></svg>,
+  Sparkles: () => <svg className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 8.134a1 1 0 010 1.932l-3.354.933-1.179 4.456a1 1 0 01-1.934 0l-1.179-4.456-3.354-.933a1 1 0 010-1.932l3.354-.933 1.179-4.456A1 1 0 0112 2z" clipRule="evenodd" /></svg>,
   ArrowUp: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>,
   Close: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>,
   Refresh: () => <svg className="w-5 h-5 animate-spin inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
@@ -678,9 +678,12 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
           )}
         </div>
         
-        <div className="flex-1 overflow-hidden relative">
+        {/* ★ スマホ向け高密度リスト ＆ PC向けテーブル のレスポンシブ切り替え */}
+        <div className="flex-1 overflow-hidden relative bg-gray-100 md:bg-white">
             <div className="h-full overflow-y-auto relative">
-              <table className="w-full text-left border-collapse text-sm whitespace-nowrap md:whitespace-normal">
+              
+              {/* === PC向けテーブル表示 (md以上で表示) === */}
+              <table className="hidden md:table w-full text-left border-collapse text-sm">
                 <thead className="bg-gray-100 text-gray-600 uppercase tracking-wider text-xs sticky top-0 z-20 shadow-sm border-b border-gray-300">
                   <tr>
                     {activeTab === 'WIRES' && (
@@ -817,6 +820,110 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                   ))}
                 </tbody>
               </table>
+
+              {/* === スマホ向け高密度リスト表示 (md未満で表示) === */}
+              <div className="md:hidden divide-y divide-gray-200 bg-white">
+                {sortedData.map((item: any, idx: number) => (
+                  <div key={item.id || idx} className={`p-3 flex flex-col gap-1.5 active:bg-gray-50 ${activeTab === 'WIRES' && String(item.showOnWeb) === 'false' ? 'opacity-60 bg-gray-100' : ''}`}>
+                    
+                    {activeTab === 'WIRES' && (
+                      <>
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-1.5 overflow-hidden">
+                            {String(item.showOnWeb) === 'false' ? <span className="text-gray-400"><Icons.EyeOff /></span> : <span className="text-blue-500"><Icons.Globe /></span>}
+                            {item.maker && item.maker !== '-' && <span className="text-[10px] bg-gray-100 border border-gray-200 px-1.5 rounded-sm text-gray-600 whitespace-nowrap">{item.maker}</span>}
+                            <span className="text-sm font-black text-gray-900 truncate">{item.name}</span>
+                            {item.material === '錫メッキ' && <span className="text-[8px] bg-[#D32F2F] text-white px-1 py-0.5 rounded-sm shrink-0">錫</span>}
+                            {item.material === 'アルミ' && <span className="text-[8px] bg-gray-600 text-white px-1 py-0.5 rounded-sm shrink-0">Al</span>}
+                          </div>
+                          <div className="flex items-baseline shrink-0 ml-2">
+                            <span className="text-lg font-black text-gray-900 font-mono tracking-tighter">{item.ratio}%</span>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-end mt-1">
+                          <div className="text-[10px] text-gray-500 flex items-center gap-2">
+                            <span className="font-mono bg-gray-50 px-1 rounded">{formatSqDisplay(item.sq)}/{formatCoreDisplay(item.core)}</span>
+                            <span>📸 {[11,12,13,14,15].filter(i => item[`image${i-10}`]).length}枚</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <button onClick={() => handleOpenModal(item)} className="p-2 text-gray-600 bg-gray-100 border border-gray-200 rounded-sm active:bg-gray-200"><Icons.Edit /></button>
+                            <button onClick={() => handleDelete(item.id)} className="p-2 text-red-500 bg-red-50 border border-red-100 rounded-sm active:bg-red-100"><Icons.Trash /></button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {activeTab === 'UNKNOWN' && (
+                      <>
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-1 font-bold text-gray-900 text-sm truncate"><span className="text-yellow-500"><Icons.Sparkles /></span> {item.name}</div>
+                          <span className="text-lg font-black text-gray-900 font-mono">{item.ratio}%</span>
+                        </div>
+                        <p className="text-[10px] text-gray-600 bg-gray-50 p-1.5 rounded border border-gray-100 line-clamp-2">{item.reason}</p>
+                        <div className="flex justify-between items-end mt-1">
+                          <span className="text-[9px] text-gray-400 font-mono">{formatTimeShort(item.createdAt)}</span>
+                          <div className="flex gap-2">
+                            <button onClick={() => handlePromoteToWire(item)} className="px-2 py-1.5 text-white bg-gray-900 rounded-sm text-[10px] font-bold"><Icons.ArrowUp /> マスターへ</button>
+                            <button onClick={() => handleDelete(item.id)} className="p-1.5 text-red-500 bg-red-50 rounded-sm"><Icons.Trash /></button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {activeTab === 'CASTINGS' && (
+                      <>
+                        <div className="flex justify-between items-center">
+                          <span className="font-bold text-sm text-gray-900 truncate">{item.name}</span>
+                          <span className="text-lg font-black text-gray-900 font-mono">{item.ratio}%</span>
+                        </div>
+                        <div className="flex justify-between items-end">
+                          <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 rounded">{item.type}</span>
+                          <div className="flex gap-2">
+                            <button onClick={() => handleOpenModal(item)} className="p-1.5 text-gray-600 bg-gray-100 rounded-sm"><Icons.Edit /></button>
+                            <button onClick={() => handleDelete(item.id)} className="p-1.5 text-red-500 bg-red-50 rounded-sm"><Icons.Trash /></button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {activeTab === 'CLIENTS' && (
+                      <>
+                        <div className="flex justify-between items-center">
+                          <span className="font-bold text-sm text-gray-900 truncate">{item.name}</span>
+                          <span className="text-[10px] font-bold bg-gray-200 text-gray-800 px-1.5 py-0.5 rounded-sm">{item.rank}</span>
+                        </div>
+                        <div className="flex justify-between items-end mt-1">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-[10px] text-gray-500 font-mono">📞 {item.phone}</span>
+                            <span className="text-[10px] text-gray-900 font-bold">✨ {item.points} pt</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <button onClick={() => handleOpenModal(item)} className="p-1.5 text-gray-600 bg-gray-100 rounded-sm"><Icons.Edit /></button>
+                            <button onClick={() => handleDelete(item.id)} className="p-1.5 text-red-500 bg-red-50 rounded-sm"><Icons.Trash /></button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {activeTab === 'STAFF' && (
+                      <>
+                        <div className="flex justify-between items-center">
+                          <span className="font-bold text-sm text-gray-900">{item.name}</span>
+                          <span className={`text-[10px] font-bold text-white px-1.5 py-0.5 rounded-sm ${item.status === 'ACTIVE' ? 'bg-gray-900' : 'bg-gray-400'}`}>{item.status}</span>
+                        </div>
+                        <div className="flex justify-between items-end mt-1">
+                          <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">{item.role}</span>
+                          <div className="flex gap-2">
+                            <button onClick={() => handleOpenModal(item)} className="p-1.5 text-gray-600 bg-gray-100 rounded-sm"><Icons.Edit /></button>
+                            <button onClick={() => handleDelete(item.id)} className="p-1.5 text-red-500 bg-red-50 rounded-sm"><Icons.Trash /></button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                  </div>
+                ))}
+              </div>
             </div>
         </div>
       </div>
