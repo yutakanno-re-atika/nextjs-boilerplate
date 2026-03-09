@@ -272,7 +272,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
             <div>
                 <h2 className="text-xl md:text-2xl font-black text-gray-900 flex items-center gap-2">
                     <span className="w-1.5 h-6 bg-[#D32F2F]"></span>
-                    ナゲット解体・製造管理
+                    ナゲット製造管理
                 </h2>
                 <p className="text-xs text-gray-500 mt-1 font-bold ml-3">選別フローと歩留まり・ダスト計測</p>
             </div>
@@ -427,9 +427,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
               )}
 
               {activeTab === 'LOG' && (
-                  // ★ AIアラートとテーブル領域を明確に分離
                   <div className="flex flex-col flex-1 overflow-hidden relative">
-                      {/* AIアラート部分（横スクロールしないよう固定） */}
                       <div className={`transition-all duration-500 flex-shrink-0 ${showAiData ? 'max-h-40 opacity-100 border-b border-gray-200' : 'max-h-0 opacity-0 overflow-hidden'}`}>
                           <div className="bg-gray-100 p-4">
                               <h4 className="text-xs font-bold text-gray-900 mb-2 flex items-center gap-1.5"><Icons.Brain /> AI アラート・分析</h4>
@@ -454,7 +452,6 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                           </div>
                       </div>
 
-                      {/* テーブル領域（ここだけ横・縦スクロールする） */}
                       <div className="p-0 overflow-y-auto overflow-x-auto flex-1">
                           <table className="w-full text-left border-collapse min-w-[600px]">
                               <thead className="sticky top-0 bg-gray-100 border-b border-gray-200 z-10">
@@ -475,7 +472,6 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                                       const diff = Number(p.actualRatio) - expected;
                                       const isAlert = expected > 0 && Math.abs(diff) > 2.0;
                                       
-                                      // ★ 産出銅の値が確実に数値として表示されるように修復
                                       const outputCuVal = Number(p.outputRed) || Number(p.outputCopper) || 0;
 
                                       return (
