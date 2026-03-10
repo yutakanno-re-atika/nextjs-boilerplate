@@ -244,6 +244,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     if (activeTab === 'CLIENTS') sheetName = 'Clients';
     if (activeTab === 'STAFF') sheetName = 'Staff';
 
+    // 1枚ずつ送信（最大1600pxの高画質画像をGoogle Driveにアップロード）
     const uploadPendingImage = async (pendingKey: string, dbKey: string, suffix: string) => {
         if (finalItem[pendingKey]) {
             try {
@@ -297,7 +298,8 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     return {};
   };
 
-  const compressImage = (file: File): Promise<string> => {
+  // ★ ハイブリッド圧縮ロジック（マスターDB用）
+  const compressImage = (file: File, isDetailMode: boolean = true): Promise<string> => {
       return new Promise((resolve, reject) => {
           if (!file) return reject(new Error("ファイルがありません"));
           const reader = new FileReader(); 
@@ -306,36 +308,49 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
               img.onload = () => {
                   try {
                       const canvas = document.createElement('canvas');
-                      const MAX = 1024; 
+                      // 文字(印字)や断面などディテール重視の画像は高解像度・高画質に設定
+                      const MAX = isDetailMode ? 1600 : 1024; 
+                      const quality = isDetailMode ? 0.85 : 0.7;
+                      
                       let w = img.width; let h = img.height;
                       if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } } else { if (h > MAX) { w *= MAX / h; h = MAX; } }
                       canvas.width = w; canvas.height = h;
                       const ctx = canvas.getContext('2d'); 
+                      if (!ctx) throw new Error("Canvas context error");
                       ctx.drawImage(img, 0, 0, w, h);
-                      resolve(canvas.toDataURL('image/jpeg', 0.7).split(',')[1]); 
+                      resolve(canvas.toDataURL('image/jpeg', quality).split(',')[1]); 
                   } catch (e) {
                       reject(new Error("画像の圧縮に失敗しました。"));
                   }
               };
+              img.onerror = () => reject(new Error('画像の読み込みに失敗しました'));
               img.src = event.target?.result as string;
           };
+          reader.onerror = () => reject(new Error('ファイルの読み込みに失敗しました'));
           reader.readAsDataURL(file);
       });
   };
 
+  // 手動で個別に画像をアップロードする時
   const handleImageUploadLocal = async (e: React.ChangeEvent<HTMLInputElement>, pendingKey: string) => {
       const file = e.target.files?.[0]; if (!file) return;
       try {
-          const b64 = await compressImage(file);
+          // 全体写真（image2）以外はディテールモードで綺麗に保存
+          const isDetail = pendingKey !== '_pendingImageData2';
+          const b64 = await compressImage(file, isDetail);
           setEditingItem({...editingItem, [pendingKey]: b64});
       } catch(err: any) { alert(err.message); }
       e.target.value = '';
   };
 
+  // AIアシスト用にアップロードする時
   const handleAiImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, num: 1 | 2 | 3 | 4) => {
     const file = e.target.files?.[0]; if (!file) return;
     try { 
-        const compressed = await compressImage(file); 
+        // 2(全体)以外はディテールモード
+        const isDetail = num !== 2;
+        const compressed = await compressImage(file, isDetail); 
+        
         if (num === 1) setImgData1(compressed); 
         else if (num === 2) setImgData2(compressed); 
         else if (num === 3) setImgData3(compressed); 
@@ -398,6 +413,13 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
   const runAiExtraction = async () => {
     if (!imgData1) return alert('最低1枚の画像（断面など）をアップロードしてください');
+    
+    // ★ 安全装置：通信データの上限（約4MB）を超えないかチェック
+    const totalSize = (imgData1.length + imgData2.length + imgData3.length + imgData4.length) * 0.75;
+    if (totalSize > 4 * 1024 * 1024) {
+        return alert('⚠️ 画像サイズの合計が大きすぎます（通信エラーになります）。\n不要な画像を削除するか、もう少し離れて撮影してください。');
+    }
+
     setAiStatus('ANALYZING'); setAiProgressStep(1); 
     const progressInterval = setInterval(() => { setAiProgressStep(prev => { if (prev === 1) return 2; if (prev === 2) return 3; return 3; }); }, 2000);
     
@@ -839,7 +861,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                             <span className="text-base font-black text-gray-900 font-mono tracking-tighter">{item.ratio}%</span>
                           </div>
                         </div>
-                        <div className="flex justify-between items-center mt-1">
+                        <div className="flex justify-between items-center mt-0.5">
                           <div className="text-[10px] text-gray-500 flex items-center">
                             <span className="font-mono bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">{formatSqDisplay(item.sq)}/{formatCoreDisplay(item.core)}</span>
                           </div>
@@ -1002,7 +1024,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                             {imgData3 ? ( <div className="relative w-full h-full"><img src={`data:image/jpeg;base64,${imgData3}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData3('')} className="absolute top-1 right-1 bg-[#D32F2F] text-white p-1 rounded-sm shadow-md"><Icons.Trash/></button><span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">③印字1</span></div> ) : ( <><p className="text-[10px] font-bold text-gray-500 mb-1.5 text-center">③ 印字アップ1</p><div className="flex gap-1.5 h-full"><label className="flex-1 bg-white border border-gray-300 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.Camera /><span className="text-[8px] mt-1 font-bold">カメラ</span><input type="file" onChange={e=>handleAiImageUpload(e,3)} className="hidden" accept="image/*" capture="environment"/></label><label className="flex-1 bg-white border border-gray-300 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.UploadCloud /><span className="text-[8px] mt-1 font-bold">フォルダ</span><input type="file" onChange={e=>handleAiImageUpload(e,3)} className="hidden" accept="image/*"/></label></div></> )}
                         </div>
                         <div className="flex flex-col p-2 border-2 border-dashed border-gray-300 bg-gray-50 rounded-sm h-28">
-                            {imgData4 ? ( <div className="relative w-full h-full"><img src={`data:image/jpeg;base64,${imgData4}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData4('')} className="absolute top-1 right-1 bg-[#D32F2F] text-white p-1 rounded-sm shadow-md"><Icons.Trash/></button><span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">③印字2</span></div> ) : ( <><p className="text-[10px] font-bold text-gray-500 mb-1.5 text-center">③ 印字アップ2</p><div className="flex gap-1.5 h-full"><label className="flex-1 bg-white border border-gray-300 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.Camera /><span className="text-[8px] mt-1 font-bold">カメラ</span><input type="file" onChange={e=>handleAiImageUpload(e,4)} className="hidden" accept="image/*" capture="environment"/></label><label className="flex-1 bg-white border border-gray-300 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.UploadCloud /><span className="text-[8px] mt-1 font-bold">フォルダ</span><input type="file" onChange={e=>handleAiImageUpload(e,4)} className="hidden" accept="image/*"/></label></div></> )}
+                            {imgData4 ? ( <div className="relative w-full h-full"><img src={`data:image/jpeg;base64,${imgData4}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData4('')} className="absolute top-1 right-1 bg-[#D32F2F] text-white p-1 rounded-sm shadow-md"><Icons.Trash/></button><span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">④印字2</span></div> ) : ( <><p className="text-[10px] font-bold text-gray-500 mb-1.5 text-center">③ 印字アップ2</p><div className="flex gap-1.5 h-full"><label className="flex-1 bg-white border border-gray-300 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.Camera /><span className="text-[8px] mt-1 font-bold">カメラ</span><input type="file" onChange={e=>handleAiImageUpload(e,4)} className="hidden" accept="image/*" capture="environment"/></label><label className="flex-1 bg-white border border-gray-300 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.UploadCloud /><span className="text-[8px] mt-1 font-bold">フォルダ</span><input type="file" onChange={e=>handleAiImageUpload(e,4)} className="hidden" accept="image/*"/></label></div></> )}
                         </div>
                     </div>
 
