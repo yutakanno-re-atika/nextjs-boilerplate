@@ -65,33 +65,41 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
 
   const [sortOutputs, setSortOutputs] = useState([{ category: '被覆B', ratio: '', weight: '' }]);
   const [sortTime, setSortTime] = useState('');
-  const [sortWorker, setSortWorker] = useState('未選択');
+  
+  // ★ ログインユーザー情報の取得と初期値セット
+  const currentUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('factoryOS_user') || '{}') : {};
+  const currentUserName = currentUser.name || currentUser.companyName || '未選択';
+  
+  const [sortWorker, setSortWorker] = useState(currentUserName);
 
   const [processInputWeight, setProcessInputWeight] = useState('');
   const [processOutputRed, setProcessOutputRed] = useState(''); 
   const [processOutputMixed, setProcessOutputMixed] = useState(''); 
   const [processOutputCover, setProcessOutputCover] = useState(''); 
-  const [processWorker, setProcessWorker] = useState('未選択');
+  const [processWorker, setProcessWorker] = useState(currentUserName);
   const [processMemo, setProcessMemo] = useState('');         
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
   const productions = data?.productions || [];
   const wiresMaster = data?.wires || [];
   const staffs = data?.staffs || [];
   
-  // ★ データベースから取得した在庫データ
   const dbStocks = data?.stocks || [];
   const activeStocks = dbStocks.filter((s: any) => s.status === 'IN_STOCK');
 
   const workerList = useMemo(() => {
       const list = staffs
-          .filter((s: any) => s.status !== 'INACTIVE' && (s.role === 'ALL' || s.role === 'SORTING' || s.role === 'PLANT'))
+          .filter((s: any) => s.status !== 'INACTIVE' && (s.role === 'ALL' || s.role === 'SORTING' || s.role === 'PLANT' || s.role === 'MANAGER' || s.role === 'ADMIN'))
           .map((s: any) => s.name);
-      if (list.length === 0) return ["未選択", "工場長", "佐藤", "鈴木", "高橋", "田中", "パートA"];
-      return ["未選択", ...list];
-  }, [staffs]);
+          
+      let res = list.length === 0 ? ["未選択", "工場長", "佐藤", "鈴木", "高橋", "田中", "パートA"] : ["未選択", ...list];
+      
+      // リストに自分の名前がなければ強制的に追加する
+      if (currentUserName !== '未選択' && !res.includes(currentUserName)) {
+          res.push(currentUserName);
+      }
+      return res;
+  }, [staffs, currentUserName]);
 
   const getDisplayName = (w: any) => {
       let name = w.name;
@@ -169,7 +177,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
 
       rawLots.forEach(lot => {
           if (!lot.isSorted) sortList.push(lot);
-          else processList.push(lot); // localSortedLotsに入るのは被覆Bのみになるよう制御
+          else processList.push(lot); 
       });
 
       return { toSortLots: sortList, readyLots: processList };
@@ -194,7 +202,6 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
     setIsSubmitting(false);
   };
 
-  // ★ 選別結果の送信：被覆Bはヤードへ、それ以外はDBへ！
   const handleSortSubmit = async () => {
     if (!sortingLot) return;
     setIsSubmitting(true);
@@ -203,9 +210,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
     
     sortOutputs.forEach((out, idx) => {
         if (out.category && Number(out.weight) > 0) {
-            
             if (out.category.includes('被覆B')) {
-                // 加工ヤード（プロセス）へ送る
                 let productName = '被覆B';
                 let expectedRatio = Number(out.ratio) || 0;
                 if(expectedRatio > 0) productName = `被覆B (${expectedRatio}%)`;
@@ -222,7 +227,6 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                     isTin: sortingLot.isTin
                 });
             } else {
-                // ★ 被覆C・鉄・ゴミは本物のデータベース（Stocks）へ送る！
                 stockPromises.push(
                     fetch('/api/gas', {
                         method: 'POST',
@@ -245,17 +249,16 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
     setLocalSortedLots(newSortedLots); setLocalConsumedIds(newConsumedIds);
     await syncStateToServer(newSortedLots, newConsumedIds);
     
-    // DBへの書き込みを待つ
     if (stockPromises.length > 0) {
         try { await Promise.all(stockPromises); } catch(e) {}
-        window.location.reload(); // DBから最新の在庫を取得するためリロード
+        window.location.reload(); 
         return;
     }
     
     setSortingLot(null); 
     setSortOutputs([{ category: '被覆B', ratio: '', weight: '' }]); 
     setSortTime(''); 
-    setSortWorker('未選択'); 
+    setSortWorker(currentUserName); // リセット時にも自分の名前を復元
     setActiveTab('PROCESS'); 
     setIsSubmitting(false);
   };
@@ -273,7 +276,12 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
 
     setBlendingLots(selected);
     const totalWeight = selected.reduce((sum, l) => sum + l.remainingWeight, 0);
-    setProcessInputWeight(String(totalWeight)); setProcessOutputRed(''); setProcessOutputMixed(''); setProcessOutputCover(''); setProcessWorker('未選択'); setProcessMemo('');
+    setProcessInputWeight(String(totalWeight)); 
+    setProcessOutputRed(''); 
+    setProcessOutputMixed(''); 
+    setProcessOutputCover(''); 
+    setProcessWorker(currentUserName); // モーダルを開く時に自分の名前を初期値に
+    setProcessMemo('');
   };
 
   const handleProcessSubmit = async () => {
@@ -313,18 +321,28 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
         };
         const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
         const result = await res.json();
+        
         if (result.status === 'success') { 
             const newConsumedIds = [...localConsumedIds, ...blendingLots.map(l => l.lotId)];
             setLocalConsumedIds(newConsumedIds);
             await syncStateToServer(localSortedLots, newConsumedIds);
-            alert('ブレンド加工データを記録しました！\n（作業がすべて終わった場合は、カンバン画面で該当カードを「処理完了」に移動させてください）');
+
+            const uniqueResIds = Array.from(new Set(blendingLots.map(l => l.reservationId)));
+            uniqueResIds.forEach(id => {
+                fetch('/api/gas', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'UPDATE_RESERVATION_STATUS', reservationId: id, status: 'COMPLETED' })
+                }).catch(e => console.error("Auto Complete Error:", e));
+            });
+
+            alert('ブレンド加工データを記録しました！\nカンバンの該当カードは自動的に「処理完了」へ移行します。');
             setBlendingLots([]); setCheckedLotIds([]); window.location.reload(); 
         } else { alert('エラー: ' + result.message); }
     } catch(e) { alert('通信エラーが発生しました'); }
     setIsSubmitting(false);
   };
 
-  // ★ 本物のデータベースから在庫を消費する処理
   const handleConsumeStock = async (stockId: string, productName: string) => {
       if(!confirm(`「${productName}」を在庫から消費（出庫/廃棄）しますか？`)) return;
       try {
@@ -422,7 +440,6 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                                                   直行 <Icons.FastForward />
                                               </button>
                                               
-                                              {/* ★ 選別ボタン：初期状態でベースとなる被覆Bをセット */}
                                               <button onClick={() => {
                                                   setSortingLot(lot);
                                                   setSortOutputs([{ 
@@ -495,7 +512,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                   </div>
               )}
 
-              {/* === 3. 保管・産廃在庫 (本物のデータベース) === */}
+              {/* === 3. 保管・産廃在庫 === */}
               {activeTab === 'STOCK' && (
                   <div className="flex flex-col h-full relative">
                       <div className="p-0 overflow-y-auto overflow-x-auto flex-1">
@@ -598,7 +615,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
               )}
           </div>
           
-          {/* ★ 選別・仕分けモーダル（引き算ロジック実装） */}
+          {/* ★ 選別・仕分けモーダル */}
           {sortingLot && (
               <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 md:p-4 animate-in fade-in">
                   <div className="bg-white rounded-sm shadow-2xl w-full max-w-2xl flex flex-col max-h-[95vh]">
@@ -653,11 +670,12 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                                                       <option value="被覆C">被覆C (異物付き)</option>
                                                       <option value="鉄">鉄</option>
                                                       <option value="ゴミ">ゴミ・廃棄物</option>
+                                                  </
                                                   </>
                                               )}
                                           </select>
 
-                                          {/* 歩留まり入力 (被覆Bの場合のみ出現) */}
+                                          {/* 歩留まり入力 */}
                                           {out.category === '被覆B' ? (
                                               <div className="relative w-full md:w-28">
                                                   <span className="md:hidden absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">歩留</span>
@@ -679,7 +697,7 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                                               <div className="w-full md:w-28 hidden md:block"></div>
                                           )}
 
-                                          {/* 重量入力 (自動引き算ロジック搭載) */}
+                                          {/* 重量入力 */}
                                           <div className="flex items-center gap-2 w-full md:w-auto md:flex-1">
                                               <div className="relative flex-1">
                                                   <span className="md:hidden absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">重量</span>
@@ -689,13 +707,12 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                                                       className={`w-full p-3 pr-8 pl-12 md:pl-3 rounded-sm text-lg tabular-nums text-right outline-none ${idx === 0 ? 'bg-gray-200 border border-gray-300 text-gray-700 font-black shadow-inner cursor-not-allowed' : 'bg-white border border-gray-500 focus:border-gray-900 font-bold'}`}
                                                       placeholder="0" 
                                                       value={out.weight} 
-                                                      readOnly={idx === 0} // 1行目は自動計算
+                                                      readOnly={idx === 0}
                                                       onChange={e => { 
                                                           if (idx === 0) return;
                                                           const newOut = [...sortOutputs]; 
                                                           newOut[idx].weight = e.target.value; 
                                                           
-                                                          // 1行目(ベース)から自動的に引き算
                                                           const othersSum = newOut.slice(1).reduce((sum, item) => sum + (Number(item.weight) || 0), 0);
                                                           newOut[0].weight = String(Math.max(0, sortingLot.remainingWeight - othersSum));
 
@@ -705,7 +722,6 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                                                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-500">kg</span>
                                               </div>
                                               
-                                              {/* 削除ボタン */}
                                               {idx > 0 ? (
                                                   <button 
                                                       onClick={() => {
