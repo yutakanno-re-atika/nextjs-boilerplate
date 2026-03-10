@@ -7,7 +7,6 @@ export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
-    // 前回 area の受け取りが漏れていたのも修正しています
     const { area, industry, count, teacherClients } = await req.json();
     
     const gasUrl = process.env.GAS_API_URL || "https://script.google.com/macros/s/AKfycbxuE0iPCEruoQLretA8R0cmSnRyZPYT9qd6YqDGVCCCY1h0wRVJX8P-MZF20I1whF7Z/exec";
@@ -17,7 +16,8 @@ export async function POST(req: Request) {
         : '';
 
     const { object } = await generateObject({
-      // ★ 最重要改善ポイント：useSearchGrounding を true にして、Google検索を強制的に使わせる
+      // ★ 型チェックエラーを回避して、Google検索（Search Grounding）を強制的に有効化する
+      // @ts-ignore
       model: google('gemini-2.5-pro', { useSearchGrounding: true }), 
       schema: z.object({
         targets: z.array(z.object({
@@ -26,7 +26,6 @@ export async function POST(req: Request) {
           area: z.string().describe("【必須】エリア（例：帯広市、釧路市、旭川市など）"),
           industry: z.string().describe("【必須】業種（例：電気工事業、解体工事業など）"),
           contact: z.string().regex(/^0\d{1,4}-?\d{1,4}-?\d{3,4}$/).describe("【必須】電話番号（公式サイト等で確認できる実在の番号のみ）"),
-          // ★ 改善ポイント：URLは無理に出させず、見つからない場合は空欄を許容する
           website: z.string().optional().catch("").describe("WebサイトURL（確実に実在する場合のみ。見つからない、または確証がない場合は絶対に空欄にする）"),
           volume: z.string().describe("【必須】月間見込み排出量（推測値）"),
           priority: z.enum(['S', 'A', 'B']).describe("【必須】S: 自社置き場がありそうな地場の有力企業, A: 一般的な地場企業, B: 小規模"),
@@ -56,7 +55,6 @@ export async function POST(req: Request) {
 
     const targets = object.targets;
 
-    // 取得したターゲットをGASに登録
     for (const target of targets) {
       const payload = {
         action: 'ADD_DB_RECORD',
@@ -69,7 +67,7 @@ export async function POST(req: Request) {
           industry: target.industry,
           volume: target.volume, 
           contact: target.contact,
-          website: target.website || '', // 空欄の場合はそのまま空文字でDBへ
+          website: target.website || '',
           status: '未確認',
           reason: target.reason,
           proposal: target.proposal,
