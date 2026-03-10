@@ -111,6 +111,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const [editingItem, setEditingItem] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // ★ AIアシスト登録モーダルのステート
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [aiStatus, setAiStatus] = useState<'IDLE' | 'ANALYZING'>('IDLE');
   const [aiProgressStep, setAiProgressStep] = useState(0); 
@@ -185,7 +186,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     setEditingItem(null); setSampleTotal(''); setSampleCopper(''); setSampleCover(''); setIsModalOpen(false);
   };
 
-  // ★ AIディープリサーチ処理（引数を正しく渡す）
   const handleEnrichClient = async (targetItem?: any) => {
       const itemToEnrich = targetItem || editingItem;
       if(!itemToEnrich || !itemToEnrich.name) return alert("企業名がありません");
@@ -208,7 +208,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                   memo: `${d.data.memo}`.trim()
               });
               if (!targetItem) {
-                  // モーダルを開いていない状態で呼ばれた場合は、モーダルを開く
                   setIsModalOpen(true);
               }
               alert("AIが企業情報を深掘りし、データを補完しました！\n「マスター登録」を押して保存してください。");
@@ -452,7 +451,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       recognition.start();
   };
 
-  // ★ 修正：AI登録（VISION_AI_REGISTER）の呼び出しを明示
   const runAiExtraction = async () => {
     if (!imgData1) return alert('最低1枚の画像（断面など）をアップロードしてください');
     
@@ -468,7 +466,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       const res = await fetch('/api/gas', { 
           method: 'POST', 
           headers: { 'Content-Type': 'application/json' }, 
-          // ★ action を正しく指定
           body: JSON.stringify({ action: 'VISION_AI_REGISTER', imageData: imgData1, imageData2: imgData2, imageData3: imgData3, imageData4: imgData4, hint: aiHint }) 
       });
       const result = await res.json();
@@ -1037,6 +1034,86 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         </div>
       </div>
 
+      {/* ★ AIアシスト登録モーダル */}
+      {isAiModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-4xl rounded-sm shadow-2xl animate-in zoom-in-95 border-t-4 border-[#D32F2F] overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+              <h3 className="font-black text-gray-900 flex items-center gap-2">
+                <Icons.Sparkles /> AI マスター登録アシスタント
+              </h3>
+              {aiStatus !== 'ANALYZING' && <button onClick={() => setIsAiModalOpen(false)} className="text-gray-400 hover:text-gray-900"><Icons.Close /></button>}
+            </div>
+            
+            <div className="p-6 overflow-y-auto">
+              {aiStatus === 'ANALYZING' ? (
+                <div className="py-8 flex flex-col items-center animate-in fade-in zoom-in duration-500">
+                    <div className="relative w-20 h-20 mb-8">
+                        <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
+                        <div className="absolute inset-0 border-4 border-gray-900 rounded-full border-t-transparent animate-spin"></div>
+                        <div className="absolute inset-0 flex items-center justify-center text-gray-900"><Icons.Sparkles /></div>
+                    </div>
+                    <div className="space-y-5 w-full max-w-xs font-bold text-sm">
+                        <div className={`flex items-center gap-4 transition-all duration-500 ${aiProgressStep >= 1 ? 'text-gray-900 translate-x-0 opacity-100' : 'text-gray-300 -translate-x-4 opacity-0'}`}>
+                            <span className="w-6 text-center text-xl">{aiProgressStep >= 2 ? '✅' : aiProgressStep === 1 ? '🔄' : '・'}</span>
+                            <span>画像をサーバーへ送信中...</span>
+                        </div>
+                        <div className={`flex items-center gap-4 transition-all duration-500 delay-300 ${aiProgressStep >= 2 ? 'text-gray-900 translate-x-0 opacity-100' : 'text-gray-300 -translate-x-4 opacity-0'}`}>
+                            <span className="w-6 text-center text-xl">{aiProgressStep >= 3 ? '✅' : aiProgressStep === 2 ? '🔄' : '・'}</span>
+                            <span>AIが画像を解析・特徴抽出中...</span>
+                        </div>
+                        <div className={`flex items-center gap-4 transition-all duration-500 delay-300 ${aiProgressStep >= 3 ? 'text-gray-900 translate-x-0 opacity-100' : 'text-gray-300 -translate-x-4 opacity-0'}`}>
+                            <span className="w-6 text-center text-xl">{aiProgressStep >= 4 ? '✅' : aiProgressStep === 3 ? '🔄' : '・'}</span>
+                            <span>マスターデータと照合・推論中...</span>
+                        </div>
+                        <div className={`flex items-center gap-4 transition-all duration-500 delay-300 ${aiProgressStep >= 4 ? 'text-green-600 scale-110 translate-x-0 opacity-100' : 'text-gray-300 -translate-x-4 opacity-0'}`}>
+                            <span className="w-6 text-center text-xl">{aiProgressStep >= 4 ? '✨' : '・'}</span>
+                            <span>解析完了！結果を出力します</span>
+                        </div>
+                    </div>
+                </div>
+              ) : (
+                <div className="animate-in fade-in">
+                    <p className="text-xs md:text-sm text-gray-600 mb-4 leading-relaxed font-bold bg-gray-50 p-3 rounded-sm border border-gray-200">
+                        未知の線種をマスターに登録します。<br/>
+                        最大4枚の画像をアップロードしてAIに解析させてください。<br/>
+                    </p>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                        <div className="flex flex-col p-2 border-2 border-dashed border-gray-300 bg-gray-50 rounded-sm h-28">
+                            {imgData1 ? ( <div className="relative w-full h-full"><img src={`data:image/jpeg;base64,${imgData1}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData1('')} className="absolute top-1 right-1 bg-[#D32F2F] text-white p-1 rounded-sm shadow-md"><Icons.Trash/></button><span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">①断面</span></div> ) : ( <><p className="text-[10px] font-bold text-gray-900 mb-1.5 text-center">① 断面 (必須)</p><div className="flex gap-1.5 h-full"><label className="flex-1 bg-white border border-gray-300 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.Camera /><span className="text-[8px] mt-1 font-bold">カメラ</span><input type="file" onChange={e=>handleAiImageUpload(e,1)} className="hidden" accept="image/*" capture="environment"/></label><label className="flex-1 bg-white border border-gray-300 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.UploadCloud /><span className="text-[8px] mt-1 font-bold">フォルダ</span><input type="file" onChange={e=>handleAiImageUpload(e,1)} className="hidden" accept="image/*"/></label></div></> )}
+                        </div>
+                        <div className="flex flex-col p-2 border-2 border-dashed border-gray-300 bg-gray-50 rounded-sm h-28">
+                            {imgData2 ? ( <div className="relative w-full h-full"><img src={`data:image/jpeg;base64,${imgData2}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData2('')} className="absolute top-1 right-1 bg-[#D32F2F] text-white p-1 rounded-sm shadow-md"><Icons.Trash/></button><span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">②全体</span></div> ) : ( <><p className="text-[10px] font-bold text-gray-500 mb-1.5 text-center">② 全体・被覆</p><div className="flex gap-1.5 h-full"><label className="flex-1 bg-white border border-gray-300 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.Camera /><span className="text-[8px] mt-1 font-bold">カメラ</span><input type="file" onChange={e=>handleAiImageUpload(e,2)} className="hidden" accept="image/*" capture="environment"/></label><label className="flex-1 bg-white border border-gray-300 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.UploadCloud /><span className="text-[8px] mt-1 font-bold">フォルダ</span><input type="file" onChange={e=>handleAiImageUpload(e,2)} className="hidden" accept="image/*"/></label></div></> )}
+                        </div>
+                        <div className="flex flex-col p-2 border-2 border-dashed border-gray-300 bg-gray-50 rounded-sm h-28">
+                            {imgData3 ? ( <div className="relative w-full h-full"><img src={`data:image/jpeg;base64,${imgData3}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData3('')} className="absolute top-1 right-1 bg-[#D32F2F] text-white p-1 rounded-sm shadow-md"><Icons.Trash/></button><span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">③印字1</span></div> ) : ( <><p className="text-[10px] font-bold text-gray-500 mb-1.5 text-center">③ 印字アップ1</p><div className="flex gap-1.5 h-full"><label className="flex-1 bg-white border border-gray-300 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.Camera /><span className="text-[8px] mt-1 font-bold">カメラ</span><input type="file" onChange={e=>handleAiImageUpload(e,3)} className="hidden" accept="image/*" capture="environment"/></label><label className="flex-1 bg-white border border-gray-300 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.UploadCloud /><span className="text-[8px] mt-1 font-bold">フォルダ</span><input type="file" onChange={e=>handleAiImageUpload(e,3)} className="hidden" accept="image/*"/></label></div></> )}
+                        </div>
+                        <div className="flex flex-col p-2 border-2 border-dashed border-gray-300 bg-gray-50 rounded-sm h-28">
+                            {imgData4 ? ( <div className="relative w-full h-full"><img src={`data:image/jpeg;base64,${imgData4}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData4('')} className="absolute top-1 right-1 bg-[#D32F2F] text-white p-1 rounded-sm shadow-md"><Icons.Trash/></button><span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">④印字2</span></div> ) : ( <><p className="text-[10px] font-bold text-gray-500 mb-1.5 text-center">④ 印字アップ2</p><div className="flex gap-1.5 h-full"><label className="flex-1 bg-white border border-gray-300 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.Camera /><span className="text-[8px] mt-1 font-bold">カメラ</span><input type="file" onChange={e=>handleAiImageUpload(e,4)} className="hidden" accept="image/*" capture="environment"/></label><label className="flex-1 bg-white border border-gray-300 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.UploadCloud /><span className="text-[8px] mt-1 font-bold">フォルダ</span><input type="file" onChange={e=>handleAiImageUpload(e,4)} className="hidden" accept="image/*"/></label></div></> )}
+                        </div>
+                    </div>
+
+                    <div className="mb-6 bg-gray-50 border border-gray-200 p-3 rounded-sm relative shadow-inner">
+                        <label className="block text-xs font-bold text-gray-700 mb-2 flex items-center justify-between">
+                            <span>🗣️ AIへのヒント・補足（任意）</span>
+                            <button onClick={toggleHintVoiceInput} className={`p-1.5 rounded-sm transition ${isListeningHint ? 'bg-[#D32F2F] text-white animate-pulse shadow-inner' : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}>
+                                <Icons.Mic />
+                            </button>
+                        </label>
+                        <textarea className="w-full bg-white border border-gray-300 rounded-sm text-sm text-gray-900 p-3 outline-none focus:border-gray-900 min-h-[60px] shadow-sm" placeholder="例: 中身は細線の束、かなり重い、雑線は入っていない等..." value={aiHint} onChange={e => setAiHint(e.target.value)} />
+                    </div>
+
+                    <button onClick={runAiExtraction} disabled={!imgData1 && !aiHint} className="w-full bg-gray-900 hover:bg-black text-white font-bold py-3 md:py-4 rounded-sm flex justify-center items-center gap-2 disabled:bg-gray-400 transition shadow-md text-base md:text-lg">
+                        <Icons.Sparkles />解析してデータを埋める
+                    </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ★ 編集・新規登録モーダル */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] flex items-center justify-center p-2 md:p-0">
@@ -1047,6 +1124,16 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                   {editingItem?.id ? 'データ編集' : '新規マスター登録'}
               </h3>
               <div className="flex gap-2">
+                  {/* PC版：AIディープリサーチボタン */}
+                  {activeTab === 'CLIENTS' && editingItem?.name && (
+                      <button 
+                          onClick={() => handleEnrichClient()}
+                          disabled={isSubmitting}
+                          className="bg-yellow-50 text-yellow-800 border border-yellow-300 px-3 py-1.5 rounded-sm text-xs font-bold flex items-center gap-1 hover:bg-yellow-100 transition disabled:opacity-50"
+                      >
+                          <Icons.Sparkles /> AIディープリサーチで補完
+                      </button>
+                  )}
                   <button onClick={handleCloseModal} className="text-gray-400 hover:text-gray-900 bg-white border border-gray-200 p-1.5 rounded-sm shadow-sm"><Icons.Close /></button>
               </div>
             </div>
@@ -1181,13 +1268,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                     <div>
                         <label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest flex justify-between items-center">
                             <span>顧客メモ・AIプロファイル</span>
-                            <button 
-                                onClick={() => handleEnrichClient()} 
-                                disabled={isSubmitting || !editingItem.name}
-                                className="bg-yellow-50 text-yellow-800 border border-yellow-300 px-2 py-1 rounded-sm text-[10px] font-bold flex items-center gap-1 hover:bg-yellow-100 transition disabled:opacity-50"
-                            >
-                                <Icons.Sparkles /> AIで補完
-                            </button>
+                            {/* スマホ版ディープリサーチボタンは削除（ヘッダーで十分なため） */}
                         </label>
                         <textarea className="w-full bg-white border border-gray-300 p-3 rounded-sm min-h-[120px] text-xs md:text-sm outline-none focus:border-gray-900 leading-relaxed shadow-sm whitespace-pre-wrap" value={editingItem.memo || ''} onChange={e => setEditingItem({...editingItem, memo: e.target.value})} />
                     </div>
