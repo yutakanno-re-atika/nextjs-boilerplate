@@ -52,7 +52,8 @@ export const AdminSales = ({ data }: { data: any }) => {
   
   const [targetArea, setTargetArea] = useState('北海道苫小牧市');
   const [targetIndustry, setTargetIndustry] = useState('解体工事、電気工事、設備工事（地元密着の地場企業）');
-  const [targetCount, setTargetCount] = useState(5);
+  // ★ 初期値を1に設定
+  const [targetCount, setTargetCount] = useState(1);
 
   // 手動追加用のステート
   const [newTarget, setNewTarget] = useState({ company: '', area: '北海道苫小牧市', industry: '電気設備工事', contact: '', website: '', reason: '' });
@@ -200,7 +201,6 @@ export const AdminSales = ({ data }: { data: any }) => {
             <p className="text-xs text-gray-500 mt-1 font-mono tracking-wider ml-3">SOURCING PIPELINE & CRM</p>
         </div>
         <div className="flex gap-2 flex-wrap">
-            {/* ★ 個別ターゲット追加ボタン */}
             <button 
                 onClick={() => {setIsManualAddOpen(!isManualAddOpen); setIsAiPanelOpen(false);}}
                 className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-sm shadow-sm transition-colors border ${isManualAddOpen ? 'bg-gray-100 text-gray-900 border-gray-300' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
@@ -303,7 +303,7 @@ export const AdminSales = ({ data }: { data: any }) => {
           </div>
       </div>
 
-      {/* ★ 新設：手動ターゲット追加パネル */}
+      {/* 手動ターゲット追加パネル */}
       {isManualAddOpen && (
           <div className="mb-8 bg-white border border-gray-200 p-6 rounded-sm shadow-sm relative overflow-hidden animate-in slide-in-from-top-4">
               <h3 className="font-bold text-gray-900 flex items-center gap-2 mb-4">
@@ -376,12 +376,11 @@ export const AdminSales = ({ data }: { data: any }) => {
                           <input type="text" value={targetIndustry} onChange={e => setTargetIndustry(e.target.value)} className="w-full pl-9 p-2.5 border border-gray-300 rounded-sm text-sm outline-none focus:border-gray-900 bg-white shadow-sm font-bold" placeholder="例: 解体工事業、電気工事業" disabled={isGenerating} />
                       </div>
                   </div>
+                  {/* ★ 変更: 検証用に1件固定のモードに変更 */}
                   <div>
-                      <label className="block text-xs font-bold text-gray-700 mb-1">抽出件数</label>
-                      <select value={targetCount} onChange={e => setTargetCount(Number(e.target.value))} className="w-full p-2.5 border border-gray-300 rounded-sm text-sm outline-none focus:border-gray-900 bg-white shadow-sm font-mono font-bold" disabled={isGenerating}>
-                          <option value={5}>5件 (質の高い順)</option>
-                          <option value={10}>10件 (標準・推奨)</option>
-                          <option value={20}>20件 (広範囲)</option>
+                      <label className="block text-xs font-bold text-gray-700 mb-1">抽出件数 (検証モード)</label>
+                      <select value={targetCount} onChange={e => setTargetCount(Number(e.target.value))} className="w-full p-2.5 md:p-3.5 border border-gray-300 rounded-sm text-sm outline-none focus:border-gray-900 bg-gray-100 shadow-sm font-mono font-bold text-gray-500" disabled={true}>
+                          <option value={1}>1件 (ハルシネーション防止の最高精度)</option>
                       </select>
                   </div>
               </div>
@@ -433,7 +432,7 @@ export const AdminSales = ({ data }: { data: any }) => {
               </div>
           ) : (
               filteredTargets.reverse().map((t: any) => {
-                  const isAi = t.memo?.includes('AI_AUTO') || t.source === 'AI_AUTO' || t.memo?.includes('AIスナイパー') || t.memo?.includes('AI自動抽出') || !t.memo;
+                  const isAi = t.memo?.includes('AI_AUTO') || t.source === 'AI_AUTO' || t.memo?.includes('AIスナイパー') || t.memo?.includes('AI自動抽出') || t.memo?.includes('AIスナイパー抽出') || !t.memo;
                   const isClient = t.status === '既存取引先';
                   
                   return (
@@ -468,6 +467,7 @@ export const AdminSales = ({ data }: { data: any }) => {
                                           'bg-white border-gray-300 text-gray-900 hover:bg-gray-50'
                                       }`}
                                   >
+                                      <option value="未確認">未確認</option>
                                       <option value="確認中">潜在リード (未着手)</option>
                                       <option value="アプローチ中">アプローチ中 (育成)</option>
                                       <option value="見送り">見送り</option>
@@ -546,7 +546,7 @@ export const AdminSales = ({ data }: { data: any }) => {
                                   <span className="text-gray-400 font-normal">※入力後、枠外をタップで自動保存</span>
                               </p>
                               <textarea 
-                                  defaultValue={isAi ? '' : t.memo}
+                                  defaultValue={isAi && t.memo.includes('AIスナイパー') ? '' : t.memo}
                                   placeholder={isClient ? "この企業は顧客マスターへ昇格済みです。" : "電話をかけた結果や、次回訪問予定などを記録してください..."}
                                   onBlur={(e) => handleMemoChange(t.id, e.target.value)}
                                   disabled={isClient}
