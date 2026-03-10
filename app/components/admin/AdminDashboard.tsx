@@ -206,7 +206,7 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
                 {currentRole === 'ADMIN' && <Icons.Shield />}
             </div>
             <p className="text-[10px] font-mono text-white font-bold bg-gray-900 px-2 py-0.5 rounded-sm inline-block w-fit tracking-widest">
-               ROLE: {currentRole}
+                ROLE: {currentRole}
             </p>
             
             <div className="flex flex-col gap-2 mt-3">
@@ -261,9 +261,9 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
         </div>
       </aside>
 
-      <main className="flex-1 overflow-y-auto bg-[#FFFFFF] p-4 md:p-8 lg:p-10 flex flex-col relative w-full selection:bg-red-100 selection:text-red-900 pb-32 md:pb-10">
+      {/* ★ 修正: isLearningModeの時はスマホでのスクロールが隠れないように、下部余白(pb-[40vh])を追加 */}
+      <main className={`flex-1 overflow-y-auto bg-[#FFFFFF] p-4 md:p-8 lg:p-10 flex flex-col relative w-full selection:bg-red-100 selection:text-red-900 ${isLearningMode ? 'pb-[40vh] md:pb-10' : 'pb-32 md:pb-10'}`}>
          {adminTab === 'HOME' && <AdminHome data={data} localReservations={localReservations} onNavigate={handleNavigate} />}
-         {/* ★ Kanban に data={data} を渡して製造実績が読み込めるように修正 */}
          {adminTab === 'OPERATIONS' && <AdminKanban data={data} localReservations={localReservations} onUpdateStatus={handleUpdateStatus} onEditReservation={(id) => handleNavigate('POS', id)} />}
          {adminTab === 'POS' && <AdminPos data={data} editingResId={editingResId} localReservations={localReservations} onSuccess={handlePosSuccess} onClear={() => setEditingResId(null)} isVoiceOutputEnabled={isVoiceOutputEnabled} />}
          {adminTab === 'PRODUCTION' && <AdminProduction data={data} localReservations={localReservations} />}
