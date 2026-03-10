@@ -31,7 +31,7 @@ const ProvenanceBadge = ({ type }: { type: 'HUMAN' | 'AI_AUTO' | 'CO_OP' }) => {
     switch (type) {
         case 'HUMAN': return <span className={`${baseStyle} bg-gray-900`} title="実測・確定データ">HUMAN</span>;
         case 'CO_OP': return <span className={`${baseStyle} bg-gray-600`} title="AI＋人間 協調データ">CO-P</span>;
-        case 'AI_AUTO': return <span className={`${baseStyle} bg-blue-600`} title="AI予測・推論データ">AI抽出</span>;
+        case 'AI_AUTO': return <span className={`${baseStyle} bg-gray-900`} title="AI予測・推論データ">AI抽出</span>; // AIバッジも青から黒に変更
         default: return null;
     }
 };
@@ -63,14 +63,14 @@ export const AdminSales = ({ data }: { data: any }) => {
       return { uncontacted, approaching, converted, passed, total: targets.length };
   }, [targets]);
 
-  // ★ 北海道エリア別の集計（AIが拾ってきた住所・エリアから自動判別）
+  // ★ 北海道エリア別の集計（モノトーン＋赤の配色に修正）
   const areaStats = useMemo(() => {
       const areas = {
-          '道北': { count: 0, color: 'bg-emerald-500', top: '15%', left: '55%' },
-          '道東': { count: 0, color: 'bg-amber-500', top: '35%', left: '85%' },
-          '札幌圏': { count: 0, color: 'bg-blue-500', top: '45%', left: '40%' },
-          '苫小牧・室蘭': { count: 0, color: 'bg-[#D32F2F]', top: '65%', left: '50%' },
-          '道南': { count: 0, color: 'bg-purple-500', top: '80%', left: '15%' },
+          '道北': { count: 0, color: 'bg-gray-300', top: '15%', left: '55%' },
+          '道東': { count: 0, color: 'bg-gray-400', top: '35%', left: '85%' },
+          '札幌圏': { count: 0, color: 'bg-gray-600', top: '45%', left: '40%' },
+          '苫小牧・室蘭': { count: 0, color: 'bg-[#D32F2F]', top: '65%', left: '50%' }, // ターゲットのみ赤
+          '道南': { count: 0, color: 'bg-gray-500', top: '80%', left: '15%' },
       };
       let otherCount = 0;
       
@@ -150,14 +150,14 @@ export const AdminSales = ({ data }: { data: any }) => {
         <div className="flex gap-2">
             <button 
                 onClick={() => setIsAiPanelOpen(!isAiPanelOpen)}
-                className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-sm shadow-sm transition-colors border ${isAiPanelOpen ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-gray-900 text-white hover:bg-black border-transparent'}`}
+                className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-sm shadow-sm transition-colors border ${isAiPanelOpen ? 'bg-gray-100 text-gray-900 border-gray-300' : 'bg-gray-900 text-white hover:bg-black border-transparent'}`}
             >
                 <Icons.Target /> AIスナイパー (条件指定抽出)
             </button>
         </div>
       </header>
 
-      {/* ★ 新設：上部ダッシュボード（ファネル ＆ 北海道マップ） */}
+      {/* 上部ダッシュボード（ファネル ＆ 北海道マップ） */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-6">
           
           {/* 左：セールスパイプライン（ファネル） */}
@@ -173,27 +173,31 @@ export const AdminSales = ({ data }: { data: any }) => {
                        </div>
                        <div className="text-center">
                            <p className="text-[10px] text-gray-500 font-bold mb-1">アプローチ率</p>
-                           <p className="text-2xl font-black text-blue-600">{pipelineStats.total > 0 ? Math.floor((pipelineStats.approaching + pipelineStats.converted) / pipelineStats.total * 100) : 0}%</p>
+                           {/* 修正: 色をモノトーンに */}
+                           <p className="text-2xl font-black text-gray-700">{pipelineStats.total > 0 ? Math.floor((pipelineStats.approaching + pipelineStats.converted) / pipelineStats.total * 100) : 0}%</p>
                        </div>
                        <div className="text-center">
                            <p className="text-[10px] text-gray-500 font-bold mb-1">顧客転換率</p>
-                           <p className="text-2xl font-black text-green-600">{pipelineStats.total > 0 ? Math.floor(pipelineStats.converted / pipelineStats.total * 100) : 0}%</p>
+                           {/* 修正: 最終成果を赤に */}
+                           <p className="text-2xl font-black text-[#D32F2F]">{pipelineStats.total > 0 ? Math.floor(pipelineStats.converted / pipelineStats.total * 100) : 0}%</p>
                        </div>
                   </div>
+                  
+                  {/* 修正: ファネルの色調をモノトーンの濃淡で表現 */}
                   <div className="flex gap-1 md:gap-2">
                       <div className="flex-1 bg-gray-50 border border-gray-200 p-2 md:p-3 rounded-sm text-center relative shadow-sm">
                          <span className="text-[9px] md:text-[10px] font-bold text-gray-500 block mb-1">潜在リード</span>
-                         <span className="text-xl md:text-2xl font-black">{pipelineStats.uncontacted}</span>
+                         <span className="text-xl md:text-2xl font-black text-gray-600">{pipelineStats.uncontacted}</span>
                          <div className="absolute top-1/2 -right-2 md:-right-3 transform -translate-y-1/2 text-gray-300 z-10 text-xs md:text-sm">▶</div>
                       </div>
-                      <div className="flex-1 bg-yellow-50 border border-yellow-200 p-2 md:p-3 rounded-sm text-center relative shadow-sm">
-                         <span className="text-[9px] md:text-[10px] font-bold text-yellow-700 block mb-1">アプローチ中</span>
-                         <span className="text-xl md:text-2xl font-black text-yellow-800">{pipelineStats.approaching}</span>
-                         <div className="absolute top-1/2 -right-2 md:-right-3 transform -translate-y-1/2 text-yellow-300 z-10 text-xs md:text-sm">▶</div>
+                      <div className="flex-1 bg-gray-100 border border-gray-300 p-2 md:p-3 rounded-sm text-center relative shadow-sm">
+                         <span className="text-[9px] md:text-[10px] font-bold text-gray-700 block mb-1">アプローチ中</span>
+                         <span className="text-xl md:text-2xl font-black text-gray-900">{pipelineStats.approaching}</span>
+                         <div className="absolute top-1/2 -right-2 md:-right-3 transform -translate-y-1/2 text-gray-400 z-10 text-xs md:text-sm">▶</div>
                       </div>
-                      <div className="flex-1 bg-green-50 border border-green-200 p-2 md:p-3 rounded-sm text-center shadow-sm">
-                         <span className="text-[9px] md:text-[10px] font-bold text-green-700 block mb-1">顧客化 (既存)</span>
-                         <span className="text-xl md:text-2xl font-black text-green-800">{pipelineStats.converted}</span>
+                      <div className="flex-1 bg-gray-900 border border-gray-900 p-2 md:p-3 rounded-sm text-center shadow-sm">
+                         <span className="text-[9px] md:text-[10px] font-bold text-gray-300 block mb-1">顧客化 (既存)</span>
+                         <span className="text-xl md:text-2xl font-black text-white">{pipelineStats.converted}</span>
                       </div>
                   </div>
                   <div className="text-right mt-2"><span className="text-[9px] text-gray-400 font-bold">見送り: {pipelineStats.passed}件</span></div>
@@ -219,7 +223,7 @@ export const AdminSales = ({ data }: { data: any }) => {
                       {/* エリアノード */}
                       {Object.entries(areaStats.areas).map(([label, d]) => (
                           <div key={label} className="absolute flex flex-col items-center justify-center transform -translate-x-1/2 -translate-y-1/2 transition-all duration-500 cursor-default group" style={{ top: d.top, left: d.left }}>
-                              <div className={`w-3 h-3 md:w-4 md:h-4 rounded-full shadow-md mb-0.5 transition-transform group-hover:scale-125 ${d.count > 0 ? d.color : 'bg-gray-300'} ${d.count > 0 && label === '苫小牧・室蘭' ? 'ring-4 ring-red-100 animate-pulse' : ''}`} />
+                              <div className={`w-3 h-3 md:w-4 md:h-4 rounded-full shadow-md mb-0.5 transition-transform group-hover:scale-125 ${d.count > 0 ? d.color : 'bg-gray-200'} ${d.count > 0 && label === '苫小牧・室蘭' ? 'ring-4 ring-red-100 animate-pulse' : ''}`} />
                               <span className={`text-[8px] md:text-[9px] font-bold bg-white/70 px-1 rounded-sm ${d.count > 0 ? 'text-gray-900' : 'text-gray-400'}`}>{label}</span>
                               {d.count > 0 && <span className="bg-white border border-gray-200 px-1 py-0.5 text-[8px] font-black rounded-sm shadow-sm mt-0.5 tabular-nums text-gray-800">{d.count}</span>}
                           </div>
@@ -240,7 +244,7 @@ export const AdminSales = ({ data }: { data: any }) => {
                           <div className="flex items-center gap-2">
                               <span className="text-[10px] font-bold w-16 truncate text-gray-500">その他</span>
                               <div className="flex-1 h-2 md:h-3 bg-gray-100 rounded-sm overflow-hidden flex shadow-inner">
-                                  <div className="h-full bg-gray-400 transition-all duration-1000" style={{ width: `${(areaStats.otherCount / Math.max(1, pipelineStats.total)) * 100}%` }}></div>
+                                  <div className="h-full bg-gray-300 transition-all duration-1000" style={{ width: `${(areaStats.otherCount / Math.max(1, pipelineStats.total)) * 100}%` }}></div>
                               </div>
                               <span className="text-[10px] font-mono tabular-nums w-6 text-right text-gray-500">{areaStats.otherCount}</span>
                           </div>
@@ -252,14 +256,14 @@ export const AdminSales = ({ data }: { data: any }) => {
 
       {/* AIスナイパー設定パネル */}
       {isAiPanelOpen && (
-          <div className="mb-8 bg-blue-50/50 border border-blue-200 p-6 rounded-sm shadow-inner relative overflow-hidden animate-in slide-in-from-top-4">
+          <div className="mb-8 bg-gray-50 border border-gray-200 p-6 rounded-sm shadow-inner relative overflow-hidden animate-in slide-in-from-top-4">
               <div className="absolute top-4 right-4"><ProvenanceBadge type="AI_AUTO" /></div>
-              <h3 className="font-bold text-blue-900 flex items-center gap-2 mb-2">
-                  <Icons.Brain /> ディープリサーチ・パラメータ設定
+              <h3 className="font-bold text-gray-900 flex items-center gap-2 mb-2">
+                  <Icons.Brain /> AIスナイパー・パラメータ設定
               </h3>
               <p className="text-xs text-gray-600 mb-6 max-w-2xl leading-relaxed">
                   Web上の企業情報をAIが分析し、中規模以上の「廃電線・非鉄スクラップを定期的に排出する企業」をリストアップします。<br/>
-                  <span className="font-bold text-blue-800">※まずは足元の「苫小牧エリア」の優良顧客を一本釣りする戦略を推奨します。</span>
+                  <span className="font-bold text-[#D32F2F]">※まずは足元の「苫小牧エリア」の優良顧客を一本釣りする戦略を推奨します。</span>
               </p>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -267,19 +271,19 @@ export const AdminSales = ({ data }: { data: any }) => {
                       <label className="block text-xs font-bold text-gray-700 mb-1">ターゲットエリア</label>
                       <div className="relative">
                           <div className="absolute left-3 top-1/2 -translate-y-1/2"><Icons.MapPin /></div>
-                          <input type="text" value={targetArea} onChange={e => setTargetArea(e.target.value)} className="w-full pl-9 p-2.5 border border-blue-200 rounded-sm text-sm outline-none focus:border-blue-500 bg-white shadow-sm font-bold" placeholder="例: 北海道苫小牧市" disabled={isGenerating} />
+                          <input type="text" value={targetArea} onChange={e => setTargetArea(e.target.value)} className="w-full pl-9 p-2.5 border border-gray-300 rounded-sm text-sm outline-none focus:border-gray-900 bg-white shadow-sm font-bold" placeholder="例: 北海道苫小牧市" disabled={isGenerating} />
                       </div>
                   </div>
                   <div>
                       <label className="block text-xs font-bold text-gray-700 mb-1">対象業種キーワード</label>
                       <div className="relative">
                           <div className="absolute left-3 top-1/2 -translate-y-1/2"><Icons.Briefcase /></div>
-                          <input type="text" value={targetIndustry} onChange={e => setTargetIndustry(e.target.value)} className="w-full pl-9 p-2.5 border border-blue-200 rounded-sm text-sm outline-none focus:border-blue-500 bg-white shadow-sm font-bold" placeholder="例: 解体工事業、電気工事業" disabled={isGenerating} />
+                          <input type="text" value={targetIndustry} onChange={e => setTargetIndustry(e.target.value)} className="w-full pl-9 p-2.5 border border-gray-300 rounded-sm text-sm outline-none focus:border-gray-900 bg-white shadow-sm font-bold" placeholder="例: 解体工事業、電気工事業" disabled={isGenerating} />
                       </div>
                   </div>
                   <div>
                       <label className="block text-xs font-bold text-gray-700 mb-1">抽出件数</label>
-                      <select value={targetCount} onChange={e => setTargetCount(Number(e.target.value))} className="w-full p-2.5 border border-blue-200 rounded-sm text-sm outline-none focus:border-blue-500 bg-white shadow-sm font-mono font-bold" disabled={isGenerating}>
+                      <select value={targetCount} onChange={e => setTargetCount(Number(e.target.value))} className="w-full p-2.5 border border-gray-300 rounded-sm text-sm outline-none focus:border-gray-900 bg-white shadow-sm font-mono font-bold" disabled={isGenerating}>
                           <option value={5}>5件 (質の高い順)</option>
                           <option value={10}>10件 (標準・推奨)</option>
                           <option value={20}>20件 (広範囲)</option>
@@ -287,11 +291,11 @@ export const AdminSales = ({ data }: { data: any }) => {
                   </div>
               </div>
 
-              <div className="flex justify-end border-t border-blue-200 pt-4">
+              <div className="flex justify-end border-t border-gray-200 pt-4">
                   <button 
                       onClick={handleGenerateLeads}
                       disabled={isGenerating}
-                      className="bg-blue-600 text-white px-6 py-2.5 rounded-sm text-sm font-bold shadow-md hover:bg-blue-700 transition flex items-center gap-2 disabled:opacity-50"
+                      className="bg-gray-900 text-white px-6 py-2.5 rounded-sm text-sm font-bold shadow-md hover:bg-black transition flex items-center gap-2 disabled:opacity-50"
                   >
                       {isGenerating ? <><Icons.Refresh /> リサーチ実行中 (約10〜30秒)...</> : <><Icons.Target /> この条件で抽出を開始する</>}
                   </button>
@@ -372,14 +376,15 @@ export const AdminSales = ({ data }: { data: any }) => {
                                         </p>
                                     </td>
                                     <td className="p-4 align-top">
-                                        <div className="bg-blue-50/50 p-3 rounded-sm border border-blue-100">
-                                            <p className="text-xs text-blue-900 leading-relaxed font-bold flex gap-1">
+                                        <div className="bg-gray-50 p-3 rounded-sm border border-gray-200">
+                                            <p className="text-xs text-gray-800 leading-relaxed font-bold flex gap-1">
                                                 <Icons.Brain />
                                                 <span className="line-clamp-4 group-hover:line-clamp-none transition-all">{t.proposal || '-'}</span>
                                             </p>
                                         </div>
                                     </td>
                                     
+                                    {/* ★ ステータスとメモ欄を統合した実戦的UI（モノトーン修正） */}
                                     <td className="p-4 align-top">
                                         <div className="flex flex-col gap-2 h-full">
                                             <div className="flex items-center justify-between">
@@ -388,9 +393,9 @@ export const AdminSales = ({ data }: { data: any }) => {
                                                     onChange={(e) => handleStatusChange(t.id, e.target.value)}
                                                     disabled={isClient}
                                                     className={`p-2 text-xs font-bold rounded-sm border outline-none cursor-pointer shadow-sm w-3/5 ${
-                                                        t.status === 'アプローチ中' ? 'bg-yellow-50 border-yellow-300 text-yellow-800' :
-                                                        t.status === '見送り' ? 'bg-gray-100 border-gray-300 text-gray-500' :
-                                                        isClient ? 'bg-green-50 border-green-300 text-green-800' :
+                                                        t.status === 'アプローチ中' ? 'bg-gray-100 border-gray-400 text-gray-900' :
+                                                        t.status === '見送り' ? 'bg-gray-50 border-gray-200 text-gray-400' :
+                                                        isClient ? 'bg-gray-900 border-gray-900 text-white' :
                                                         'bg-white border-gray-300 text-gray-800'
                                                     }`}
                                                 >
@@ -416,7 +421,7 @@ export const AdminSales = ({ data }: { data: any }) => {
                                                     placeholder="電話した結果や、次回訪問予定などを記録..."
                                                     onBlur={(e) => handleMemoChange(t.id, e.target.value)}
                                                     disabled={isClient}
-                                                    className={`w-full flex-1 min-h-[60px] p-2 text-xs border rounded-sm outline-none resize-none shadow-inner leading-relaxed transition-colors ${isClient ? 'bg-gray-100 border-gray-200 text-gray-500' : 'bg-yellow-50/50 border-yellow-200 focus:border-yellow-400 text-gray-800'}`}
+                                                    className={`w-full flex-1 min-h-[60px] p-2 text-xs border rounded-sm outline-none resize-none shadow-inner leading-relaxed transition-colors ${isClient ? 'bg-gray-50 border-gray-200 text-gray-400' : 'bg-gray-50 border-gray-300 focus:border-gray-900 focus:bg-white text-gray-900'}`}
                                                 />
                                             </div>
                                         </div>
