@@ -1,3 +1,4 @@
+// app/components/features/Concierge.tsx
 // @ts-nocheck
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
@@ -66,28 +67,8 @@ export const Concierge = () => {
     }
   };
 
-  // ★ FAQ生成用のアクションハンドラ
-  const handleGenerateFaq = async () => {
-    if (!confirm("AIによるFAQ生成を開始します。よろしいですか？（約10〜20秒かかります）")) return;
-    try {
-        const res = await fetch('/api/faq', { method: 'POST' });
-        const data = await res.json();
-        alert(data.success ? "生成成功！ページをリロードしてください。" : "エラー: " + data.message);
-    } catch (err) {
-        alert("通信エラーが発生しました");
-    }
-  };
-
   return (
     <>
-      {/* ★ FAQ生成ボタン (コンシェルジュアイコンの上に配置) */}
-      <button 
-        onClick={handleGenerateFaq} 
-        className="fixed bottom-[100px] right-6 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full shadow-lg text-xs font-bold z-[90] transition-colors"
-      >
-          🔄 AI FAQ生成
-      </button>
-
       <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end font-sans">
         
         {showTooltip && !isOpen && (
