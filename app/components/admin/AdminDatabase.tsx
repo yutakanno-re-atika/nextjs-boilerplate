@@ -8,7 +8,7 @@ const Icons = {
   Trash: () => <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
   Search: () => <svg className="w-4 h-4 md:w-5 md:h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
   Image: () => <svg className="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2-2v12a2 2 0 002 2z" /></svg>,
-  Sparkles: () => <svg className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 8.134a1 1 0 010 1.932l-3.354.933-1.179 4.456a1 1 0 01-1.934 0l-1.179-4.456-3.354-.933a1 1 0 010-1.932l3.354-.933 1.179-4.456A1 1 0 0112 2z" clipRule="evenodd" /></svg>,
+  Sparkles: () => <svg className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 01-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 8.134a1 1 0 010 1.932l-3.354.933-1.179 4.456a1 1 0 01-1.934 0l-1.179-4.456-3.354-.933a1 1 0 010-1.932l3.354-.933 1.179-4.456A1 1 0 0112 2z" clipRule="evenodd" /></svg>,
   ArrowUp: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>,
   Close: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>,
   Refresh: () => <svg className="w-4 h-4 md:w-5 md:h-5 animate-spin inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
@@ -177,7 +177,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const handleOpenModal = (item: any = null) => {
     const sqData = parseSqForInput(item?.sq); const coreData = parseCoreForInput(item?.core);
     setEditingItem({ ...item, _sqValue: sqData.val, _sqUnit: sqData.unit, _coreValue: coreData, material: item?.material || '純銅', showOnWeb: item ? String(item.showOnWeb) !== 'false' : true });
-    setSampleTotal(item?.sampleTotal || ''); setSampleCopper(item?.sampleCopper || ''); setSampleCover(item?.sampleCover || ''); 
+    setSampleTotal(item?.sampleTotal || ''); setSampleCopper(item?.sampleCopper || ''); setSampleCover(item?.sampleCover === 0 ? '' : (item?.sampleCover || '')); 
     setIsModalOpen(true);
   };
 
@@ -194,12 +194,26 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const handleSampleCopperChange = (val: string) => { const num = val ? Number(val) : ''; setSampleCopper(num); setEditingItem({...editingItem, sampleCopper: num, ratio: calculateRatio(sampleTotal, num)}); };
   const handleSampleCoverChange = (val: string) => { const num = val ? Number(val) : ''; setSampleCover(num); setEditingItem({...editingItem, sampleCover: num}); };
 
+  // ★ 修正: 被覆重量が未入力(省略)の場合は、差分は全て被覆とみなしダストは0とする
   const getJuteWeight = () => {
-      if (sampleTotal && (sampleCopper || sampleCover)) {
-          const jute = (Number(sampleTotal) || 0) - (Number(sampleCopper) || 0) - (Number(sampleCover) || 0);
+      if (sampleTotal && sampleCopper) {
+          const coverVal = Number(sampleCover) || 0;
+          if (coverVal === 0) {
+              return '0.000'; // 被覆未入力または0の場合はすべて被覆とみなす
+          }
+          const jute = (Number(sampleTotal) || 0) - (Number(sampleCopper) || 0) - coverVal;
           return jute > 0 ? jute.toFixed(3) : '0.000';
       }
       return '---';
+  };
+
+  // 被覆の自動計算値（プレースホルダー用）
+  const getAutoCoverWeight = () => {
+      if (sampleTotal && sampleCopper && (Number(sampleCover) || 0) === 0) {
+          const autoCover = (Number(sampleTotal) || 0) - (Number(sampleCopper) || 0);
+          return autoCover > 0 ? autoCover.toFixed(3) : '0.000';
+      }
+      return '0.000';
   };
 
   const handlePromoteToWire = (unknownItem: any) => {
@@ -298,7 +312,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     return {};
   };
 
-  // ★ ハイブリッド圧縮ロジック（マスターDB用）
+  // ハイブリッド圧縮ロジック（マスターDB用）
   const compressImage = (file: File, isDetailMode: boolean = true): Promise<string> => {
       return new Promise((resolve, reject) => {
           if (!file) return reject(new Error("ファイルがありません"));
@@ -699,11 +713,9 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
           )}
         </div>
         
-        {/* ★ スマホ向け高密度リスト ＆ PC向けテーブル のレスポンシブ切り替え */}
         <div className="flex-1 overflow-hidden relative bg-gray-100 md:bg-white">
             <div className="h-full overflow-y-auto relative">
               
-              {/* === PC向けテーブル表示 (md以上で表示) === */}
               <table className="hidden md:table w-full text-left border-collapse text-sm">
                 <thead className="bg-gray-100 text-gray-600 uppercase tracking-wider text-xs sticky top-0 z-20 shadow-sm border-b border-gray-300">
                   <tr>
@@ -842,7 +854,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                 </tbody>
               </table>
 
-              {/* === ★ 超高密度！スマホ向けリスト表示 (md未満で表示) === */}
               <div className="md:hidden divide-y divide-gray-200 bg-white pb-20">
                 {sortedData.map((item: any, idx: number) => (
                   <div key={item.id || idx} className={`p-2.5 flex flex-col gap-1 active:bg-gray-50 transition-colors ${activeTab === 'WIRES' && String(item.showOnWeb) === 'false' ? 'opacity-60 bg-gray-100' : ''}`}>
@@ -866,7 +877,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                             <span className="font-mono bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">{formatSqDisplay(item.sq)}/{formatCoreDisplay(item.core)}</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            {/* ★ 画像スロットをショートカットボタンとして並べる */}
                             <button onClick={() => handleOpenModal(item)} className="flex gap-0.5 items-center bg-gray-50 p-1 rounded-sm border border-gray-200 active:bg-gray-100 transition-colors" title="タップして画像編集">
                               {[11, 12, 13, 14, 15].map(colIdx => {
                                 const img = item[`image${colIdx-10}`];
@@ -1133,7 +1143,22 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 items-end">
                                 <div className="w-full"><label className="block text-[9px] md:text-[10px] font-bold text-gray-600 mb-1 uppercase tracking-widest">全体重量(g)</label><input type="number" step="0.001" className="w-full border border-gray-300 shadow-sm p-2.5 md:p-3 rounded-sm font-mono text-base md:text-xl outline-none focus:border-gray-900 text-right bg-white font-bold tabular-nums" value={sampleTotal} onChange={e => handleSampleTotalChange(e.target.value)} placeholder="0.000" /></div>
                                 <div className="w-full"><label className="block text-[9px] md:text-[10px] font-bold text-[#D32F2F] mb-1 uppercase tracking-widest">純銅重量(g)</label><input type="number" step="0.001" className="w-full border border-gray-300 shadow-sm p-2.5 md:p-3 rounded-sm font-mono text-base md:text-xl outline-none focus:border-[#D32F2F] text-right bg-white font-bold tabular-nums" value={sampleCopper} onChange={e => handleSampleCopperChange(e.target.value)} placeholder="0.000" /></div>
-                                <div className="w-full"><label className="block text-[9px] md:text-[10px] font-bold text-gray-600 mb-1 uppercase tracking-widest">被覆重量(g)</label><input type="number" step="0.001" className="w-full border border-gray-300 shadow-sm p-2.5 md:p-3 rounded-sm font-mono text-base md:text-xl outline-none focus:border-gray-900 text-right bg-white font-bold tabular-nums" value={sampleCover} onChange={e => handleSampleCoverChange(e.target.value)} placeholder="0.000" /></div>
+                                
+                                {/* ★ 修正: 被覆重量の自動計算表示 */}
+                                <div className="w-full">
+                                    <label className="block text-[9px] md:text-[10px] font-bold text-gray-600 mb-1 uppercase tracking-widest flex justify-between items-end">
+                                        <span>被覆重量(g)</span>
+                                        <span className="text-[8px] text-gray-400 font-normal normal-case">※省略時は自動算出</span>
+                                    </label>
+                                    <input 
+                                        type="number" step="0.001" 
+                                        className="w-full border border-gray-300 shadow-sm p-2.5 md:p-3 rounded-sm font-mono text-base md:text-xl outline-none focus:border-gray-900 text-right bg-white font-bold tabular-nums placeholder:text-gray-300 placeholder:text-xs" 
+                                        value={sampleCover} 
+                                        onChange={e => handleSampleCoverChange(e.target.value)} 
+                                        placeholder={sampleTotal && sampleCopper && !sampleCover ? `(自動) ${getAutoCoverWeight()}` : "0.000"} 
+                                    />
+                                </div>
+                                
                                 <div className="w-full flex flex-col gap-1.5 md:gap-2">
                                     <div className="bg-white border border-gray-300 shadow-sm p-1.5 md:p-2 rounded-sm flex justify-between items-center"><span className="text-[9px] md:text-[10px] font-bold text-gray-500 uppercase tracking-widest">ダスト</span><span className="font-mono text-sm md:text-base font-bold text-gray-800 tabular-nums">{getJuteWeight()}g</span></div>
                                     <div className="bg-gray-900 border border-black shadow-inner p-1.5 md:p-2 rounded-sm flex justify-between items-center relative"><span className="text-[9px] md:text-[10px] font-bold text-gray-300 uppercase tracking-widest">歩留まり</span>{editingItem.aiEstimatedRatio && !sampleTotal && <span className="absolute -top-2 -right-2 text-[8px] bg-gray-500 text-white px-1.5 py-0.5 rounded shadow animate-pulse">AI</span>}<span className="font-mono text-lg md:text-xl font-black text-white tabular-nums">{editingItem.ratio || '---'}%</span></div>
