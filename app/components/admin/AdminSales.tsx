@@ -30,7 +30,7 @@ const ProvenanceBadge = ({ type }: { type: 'HUMAN' | 'AI_AUTO' | 'CO_OP' }) => {
     switch (type) {
         case 'HUMAN': return <span className={`${baseStyle} bg-gray-900`} title="実測・確定データ">HUMAN</span>;
         case 'CO_OP': return <span className={`${baseStyle} bg-gray-600`} title="AI＋人間 協調データ">CO-P</span>;
-        case 'AI_AUTO': return <span className={`${baseStyle} bg-gray-400`} title="AI予測・推論データ">AI</span>;
+        case 'AI_AUTO': return <span className={`${baseStyle} bg-blue-600`} title="AI予測・推論データ">AI抽出</span>;
         default: return null;
     }
 };
@@ -42,8 +42,10 @@ export const AdminSales = ({ data }: { data: any }) => {
   
   const [isAiPanelOpen, setIsAiPanelOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [targetArea, setTargetArea] = useState('北海道札幌市');
-  const [targetIndustry, setTargetIndustry] = useState('電気工事業、解体業');
+  
+  // ★ 初期値を「苫小牧」「解体・電気工事（中規模以上）」に設定
+  const [targetArea, setTargetArea] = useState('北海道苫小牧市');
+  const [targetIndustry, setTargetIndustry] = useState('解体工事業、電気工事業（中規模以上）');
   const [targetCount, setTargetCount] = useState(5);
 
   const targets = data?.salesTargets || [];
@@ -68,7 +70,6 @@ export const AdminSales = ({ data }: { data: any }) => {
       finally { setIsGenerating(false); }
   };
 
-  // ★ 追加: ステータス更新処理
   const handleStatusChange = async (id: string, newStatus: string) => {
       try {
           await fetch('/api/gas', {
@@ -79,7 +80,17 @@ export const AdminSales = ({ data }: { data: any }) => {
       } catch(e) { alert('ステータスの更新に失敗しました'); }
   };
 
-  // ★ 追加: 顧客マスターへの昇格処理
+  // ★ メモの更新処理 (onBlurでサイレント更新)
+  const handleMemoChange = async (id: string, newMemo: string) => {
+      try {
+          await fetch('/api/gas', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'UPDATE_DB_RECORD', sheetName: 'SalesTargets', recordId: id, updates: { 13: newMemo } }) // 13 is memo column
+          });
+          console.log(`Memo updated for ${id}`);
+      } catch(e) { console.error('メモの更新に失敗しました'); }
+  };
+
   const handlePromoteToClient = async (id: string, company: string) => {
       if (!confirm(`「${company}」を既存取引先（顧客マスター）に昇格させますか？\n※昇格後はPOSレジの顧客一覧に表示されます。`)) return;
       try {
@@ -98,9 +109,9 @@ export const AdminSales = ({ data }: { data: any }) => {
         <div>
             <h2 className="text-2xl font-black text-gray-900 flex items-center gap-2 font-serif">
                 <span className="w-1.5 h-6 bg-[#D32F2F]"></span>
-                営業・ターゲット管理
+                仕入パイプライン管理
             </h2>
-            <p className="text-xs text-gray-500 mt-1 font-mono tracking-wider ml-3">SALES & CRM</p>
+            <p className="text-xs text-gray-500 mt-1 font-mono tracking-wider ml-3">SOURCING PIPELINE & CRM</p>
         </div>
         <div className="flex gap-2">
             <button 
@@ -118,8 +129,9 @@ export const AdminSales = ({ data }: { data: any }) => {
               <h3 className="font-bold text-blue-900 flex items-center gap-2 mb-2">
                   <Icons.Brain /> ディープリサーチ・パラメータ設定
               </h3>
-              <p className="text-xs text-gray-600 mb-6 max-w-2xl">
-                  既存の優良顧客（SUPPLIER）の特性データを教師とし、類似する見込み客をGemini 2.5 Proがウェブ上から自動抽出します。
+              <p className="text-xs text-gray-600 mb-6 max-w-2xl leading-relaxed">
+                  Web上の企業情報をAIが分析し、中規模以上の「廃電線・非鉄スクラップを定期的に排出する企業」をリストアップします。<br/>
+                  <span className="font-bold text-blue-800">※まずは足元の「苫小牧エリア」の優良顧客を一本釣りする戦略を推奨します。</span>
               </p>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -127,22 +139,22 @@ export const AdminSales = ({ data }: { data: any }) => {
                       <label className="block text-xs font-bold text-gray-700 mb-1">ターゲットエリア</label>
                       <div className="relative">
                           <div className="absolute left-3 top-1/2 -translate-y-1/2"><Icons.MapPin /></div>
-                          <input type="text" value={targetArea} onChange={e => setTargetArea(e.target.value)} className="w-full pl-9 p-2.5 border border-blue-200 rounded-sm text-sm outline-none focus:border-blue-500 bg-white shadow-sm" placeholder="例: 北海道苫小牧市" disabled={isGenerating} />
+                          <input type="text" value={targetArea} onChange={e => setTargetArea(e.target.value)} className="w-full pl-9 p-2.5 border border-blue-200 rounded-sm text-sm outline-none focus:border-blue-500 bg-white shadow-sm font-bold" placeholder="例: 北海道苫小牧市" disabled={isGenerating} />
                       </div>
                   </div>
                   <div>
                       <label className="block text-xs font-bold text-gray-700 mb-1">対象業種キーワード</label>
                       <div className="relative">
                           <div className="absolute left-3 top-1/2 -translate-y-1/2"><Icons.Briefcase /></div>
-                          <input type="text" value={targetIndustry} onChange={e => setTargetIndustry(e.target.value)} className="w-full pl-9 p-2.5 border border-blue-200 rounded-sm text-sm outline-none focus:border-blue-500 bg-white shadow-sm" placeholder="例: 電気工事, 解体業" disabled={isGenerating} />
+                          <input type="text" value={targetIndustry} onChange={e => setTargetIndustry(e.target.value)} className="w-full pl-9 p-2.5 border border-blue-200 rounded-sm text-sm outline-none focus:border-blue-500 bg-white shadow-sm font-bold" placeholder="例: 解体工事業、電気工事業" disabled={isGenerating} />
                       </div>
                   </div>
                   <div>
                       <label className="block text-xs font-bold text-gray-700 mb-1">抽出件数</label>
                       <select value={targetCount} onChange={e => setTargetCount(Number(e.target.value))} className="w-full p-2.5 border border-blue-200 rounded-sm text-sm outline-none focus:border-blue-500 bg-white shadow-sm font-mono font-bold" disabled={isGenerating}>
-                          <option value={5}>5件 (高速)</option>
-                          <option value={10}>10件 (標準)</option>
-                          <option value={20}>20件 (ディープ)</option>
+                          <option value={5}>5件 (質の高い順)</option>
+                          <option value={10}>10件 (標準・推奨)</option>
+                          <option value={20}>20件 (広範囲)</option>
                       </select>
                   </div>
               </div>
@@ -178,24 +190,24 @@ export const AdminSales = ({ data }: { data: any }) => {
             </select>
             <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="border border-gray-300 rounded-sm py-2 px-3 text-sm focus:outline-none focus:border-[#D32F2F] bg-white font-bold text-gray-700">
                 <option value="ALL">全ステータス</option>
-                <option value="確認中">確認中 (未着手)</option>
-                <option value="アプローチ中">アプローチ中</option>
+                <option value="確認中">潜在リード (未着手)</option>
+                <option value="アプローチ中">アプローチ中 (育成)</option>
                 <option value="見送り">見送り</option>
-                <option value="既存取引先">既存取引先 (昇格済)</option>
+                <option value="既存取引先">既存顧客 (刈り取り済)</option>
             </select>
         </div>
       </div>
 
       <div className="bg-white border border-gray-200 rounded-sm shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[900px]">
+            <table className="w-full text-left border-collapse min-w-[1000px]">
                 <thead className="bg-gray-100 text-gray-600 text-[10px] font-bold uppercase tracking-widest border-b border-gray-200">
                     <tr>
                         <th className="p-4 w-[25%]">企業名 / エリア</th>
-                        <th className="p-4 w-[10%] text-center">ランク</th>
-                        <th className="p-4 w-[20%]">アプローチ根拠</th>
-                        <th className="p-4 w-[25%]">AI提案シナリオ</th>
-                        <th className="p-4 w-[20%] text-right">進捗ステータス</th>
+                        <th className="p-4 w-[5%] text-center">ランク</th>
+                        <th className="p-4 w-[20%]">営業根拠 (なぜ狙うか)</th>
+                        <th className="p-4 w-[20%]">AI提案シナリオ</th>
+                        <th className="p-4 w-[30%]">進捗ステータス / アプローチ履歴</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 text-sm">
@@ -226,7 +238,7 @@ export const AdminSales = ({ data }: { data: any }) => {
                                         </span>
                                     </td>
                                     <td className="p-4 align-top">
-                                        <p className="text-xs text-gray-700 leading-relaxed font-medium line-clamp-3 group-hover:line-clamp-none transition-all">
+                                        <p className="text-xs text-gray-700 leading-relaxed font-medium line-clamp-4 group-hover:line-clamp-none transition-all">
                                             {t.reason || '-'}
                                         </p>
                                     </td>
@@ -234,39 +246,51 @@ export const AdminSales = ({ data }: { data: any }) => {
                                         <div className="bg-blue-50/50 p-3 rounded-sm border border-blue-100">
                                             <p className="text-xs text-blue-900 leading-relaxed font-bold flex gap-1">
                                                 <Icons.Brain />
-                                                <span className="line-clamp-3 group-hover:line-clamp-none transition-all">{t.proposal || '-'}</span>
+                                                <span className="line-clamp-4 group-hover:line-clamp-none transition-all">{t.proposal || '-'}</span>
                                             </p>
                                         </div>
                                     </td>
-                                    <td className="p-4 align-top text-right">
-                                        <div className="flex flex-col items-end gap-2">
-                                            {/* ★ ステータス変更プルダウン */}
-                                            <select 
-                                                value={t.status || '確認中'} 
-                                                onChange={(e) => handleStatusChange(t.id, e.target.value)}
-                                                disabled={isClient}
-                                                className={`p-2 text-xs font-bold rounded-sm border outline-none cursor-pointer shadow-sm ${
-                                                    t.status === 'アプローチ中' ? 'bg-yellow-50 border-yellow-300 text-yellow-800' :
-                                                    t.status === '見送り' ? 'bg-gray-100 border-gray-300 text-gray-500' :
-                                                    isClient ? 'bg-green-50 border-green-300 text-green-800' :
-                                                    'bg-white border-gray-300 text-gray-800'
-                                                }`}
-                                            >
-                                                <option value="確認中">未着手 (確認中)</option>
-                                                <option value="アプローチ中">アプローチ中</option>
-                                                <option value="見送り">見送り</option>
-                                                {isClient && <option value="既存取引先">既存取引先</option>}
-                                            </select>
-
-                                            {/* ★ 顧客マスターへ昇格ボタン */}
-                                            {!isClient && (
-                                                <button 
-                                                    onClick={() => handlePromoteToClient(t.id, t.company)}
-                                                    className="mt-2 text-[10px] bg-gray-900 text-white px-3 py-1.5 rounded-sm font-bold shadow-sm hover:bg-[#D32F2F] transition flex items-center gap-1"
+                                    
+                                    {/* ★ ステータスとメモ欄を統合した実戦的UI */}
+                                    <td className="p-4 align-top">
+                                        <div className="flex flex-col gap-2 h-full">
+                                            <div className="flex items-center justify-between">
+                                                <select 
+                                                    value={t.status || '確認中'} 
+                                                    onChange={(e) => handleStatusChange(t.id, e.target.value)}
+                                                    disabled={isClient}
+                                                    className={`p-2 text-xs font-bold rounded-sm border outline-none cursor-pointer shadow-sm w-3/5 ${
+                                                        t.status === 'アプローチ中' ? 'bg-yellow-50 border-yellow-300 text-yellow-800' :
+                                                        t.status === '見送り' ? 'bg-gray-100 border-gray-300 text-gray-500' :
+                                                        isClient ? 'bg-green-50 border-green-300 text-green-800' :
+                                                        'bg-white border-gray-300 text-gray-800'
+                                                    }`}
                                                 >
-                                                    <Icons.ArrowUp /> 顧客マスターへ昇格
-                                                </button>
-                                            )}
+                                                    <option value="確認中">潜在リード (未着手)</option>
+                                                    <option value="アプローチ中">アプローチ中 (育成)</option>
+                                                    <option value="見送り">見送り</option>
+                                                    {isClient && <option value="既存取引先">既存顧客 (刈り取り済)</option>}
+                                                </select>
+                                                
+                                                {!isClient && (
+                                                    <button 
+                                                        onClick={() => handlePromoteToClient(t.id, t.company)}
+                                                        className="text-[10px] bg-gray-900 text-white px-2 py-2 rounded-sm font-bold shadow-sm hover:bg-[#D32F2F] transition flex items-center gap-1"
+                                                    >
+                                                        <Icons.ArrowUp /> 顧客へ昇格
+                                                    </button>
+                                                )}
+                                            </div>
+                                            
+                                            <div className="flex-1 flex flex-col mt-1">
+                                                <textarea 
+                                                    defaultValue={t.memo === '🤖 AIによる自動抽出ターゲット' || t.memo === '🤖 AIスナイパー' ? '' : t.memo}
+                                                    placeholder="電話した結果や、次回訪問予定などを記録..."
+                                                    onBlur={(e) => handleMemoChange(t.id, e.target.value)}
+                                                    disabled={isClient}
+                                                    className={`w-full flex-1 min-h-[60px] p-2 text-xs border rounded-sm outline-none resize-none shadow-inner leading-relaxed transition-colors ${isClient ? 'bg-gray-100 border-gray-200 text-gray-500' : 'bg-yellow-50/50 border-yellow-200 focus:border-yellow-400 text-gray-800'}`}
+                                                />
+                                            </div>
                                         </div>
                                     </td>
                                 </tr>
