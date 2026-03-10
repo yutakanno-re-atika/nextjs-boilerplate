@@ -670,7 +670,6 @@ export const AdminProduction = ({ data, localReservations }: { data: any, localR
                                                       <option value="被覆C">被覆C (異物付き)</option>
                                                       <option value="鉄">鉄</option>
                                                       <option value="ゴミ">ゴミ・廃棄物</option>
-                                                  </
                                                   </>
                                               )}
                                           </select>
