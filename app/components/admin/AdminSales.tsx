@@ -15,7 +15,8 @@ const Icons = {
   Phone: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>,
   Globe: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>,
   Scale: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>,
-  Trash: () => <svg className="w-4 h-4 inline-block md:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+  Trash: () => <svg className="w-4 h-4 inline-block md:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
+  Plus: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
 };
 
 const formatTimeShort = (timeStr: string) => {
@@ -46,11 +47,15 @@ export const AdminSales = ({ data }: { data: any }) => {
   const [filterStatus, setFilterStatus] = useState('ALL');
   
   const [isAiPanelOpen, setIsAiPanelOpen] = useState(false);
+  const [isManualAddOpen, setIsManualAddOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   
   const [targetArea, setTargetArea] = useState('北海道苫小牧市');
   const [targetIndustry, setTargetIndustry] = useState('解体工事、電気工事、設備工事（地元密着の地場企業）');
   const [targetCount, setTargetCount] = useState(5);
+
+  // 手動追加用のステート
+  const [newTarget, setNewTarget] = useState({ company: '', area: '北海道苫小牧市', industry: '電気設備工事', contact: '', website: '', reason: '' });
 
   const targets = data?.salesTargets || [];
 
@@ -98,11 +103,10 @@ export const AdminSales = ({ data }: { data: any }) => {
       if (!targetArea || !targetIndustry) return alert('エリアと業種を入力してください。');
       setIsGenerating(true);
       
-      // ★ 当社の優良顧客データを教師データとして抽出
       const teacherClients = (data?.clients || [])
           .filter((c:any) => c.rank === 'S' || c.rank === 'A' || c.rank === 'GOLD' || c.rank === 'SILVER')
           .map((c:any) => ({ name: c.name, industry: c.industry, memo: c.memo }))
-          .slice(0, 10); // 上位10社を教師データに
+          .slice(0, 10); 
 
       try {
           const payload = { action: 'GENERATE_LEADS_DYNAMIC', area: targetArea, industry: targetIndustry, count: targetCount, teacherClients };
@@ -110,6 +114,35 @@ export const AdminSales = ({ data }: { data: any }) => {
           const result = await res.json();
           if (result.success) { alert(`成功！ 教師データをもとに ${result.count}件の新規ターゲットを抽出しました。`); window.location.reload(); } 
           else { alert('エラーが発生しました: ' + result.message); }
+      } catch (err) { alert('通信エラーが発生しました。'); } 
+      finally { setIsGenerating(false); }
+  };
+
+  const handleManualAdd = async () => {
+      if (!newTarget.company) return alert('企業名は必須です');
+      setIsGenerating(true);
+      try {
+          const payload = {
+              action: 'ADD_DB_RECORD',
+              sheetName: 'SalesTargets',
+              data: {
+                  company: newTarget.company,
+                  address: newTarget.area,
+                  area: newTarget.area,
+                  priority: 'S', // 手動追加は特級(S)固定
+                  industry: newTarget.industry,
+                  volume: '調査中',
+                  contact: newTarget.contact,
+                  website: newTarget.website,
+                  status: '確認中',
+                  reason: newTarget.reason || '手動で登録された特級ターゲット',
+                  proposal: 'ボスの指示により手動で追加されました。',
+                  memo: ''
+              }
+          };
+          await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+          alert('手動登録が完了しました！');
+          window.location.reload();
       } catch (err) { alert('通信エラーが発生しました。'); } 
       finally { setIsGenerating(false); }
   };
@@ -166,12 +199,19 @@ export const AdminSales = ({ data }: { data: any }) => {
             </h2>
             <p className="text-xs text-gray-500 mt-1 font-mono tracking-wider ml-3">SOURCING PIPELINE & CRM</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+            {/* ★ 個別ターゲット追加ボタン */}
             <button 
-                onClick={() => setIsAiPanelOpen(!isAiPanelOpen)}
+                onClick={() => {setIsManualAddOpen(!isManualAddOpen); setIsAiPanelOpen(false);}}
+                className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-sm shadow-sm transition-colors border ${isManualAddOpen ? 'bg-gray-100 text-gray-900 border-gray-300' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+            >
+                <Icons.Plus /> 個別ターゲット追加
+            </button>
+            <button 
+                onClick={() => {setIsAiPanelOpen(!isAiPanelOpen); setIsManualAddOpen(false);}}
                 className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-sm shadow-sm transition-colors border ${isAiPanelOpen ? 'bg-gray-100 text-gray-900 border-gray-300' : 'bg-gray-900 text-white hover:bg-black border-transparent'}`}
             >
-                <Icons.Target /> AIスナイパー (条件指定抽出)
+                <Icons.Target /> AIスナイパー (自動抽出)
             </button>
         </div>
       </header>
@@ -263,6 +303,52 @@ export const AdminSales = ({ data }: { data: any }) => {
           </div>
       </div>
 
+      {/* ★ 新設：手動ターゲット追加パネル */}
+      {isManualAddOpen && (
+          <div className="mb-8 bg-white border border-gray-200 p-6 rounded-sm shadow-sm relative overflow-hidden animate-in slide-in-from-top-4">
+              <h3 className="font-bold text-gray-900 flex items-center gap-2 mb-4">
+                  <Icons.Plus /> 特級ターゲットの個別登録
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                  <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1">企業名 <span className="text-red-500">*</span></label>
+                      <input type="text" value={newTarget.company} onChange={e => setNewTarget({...newTarget, company: e.target.value})} className="w-full p-2.5 border border-gray-300 rounded-sm text-sm outline-none focus:border-gray-900 font-bold shadow-sm" placeholder="株式会社 瀧澤電気工事" disabled={isGenerating} />
+                  </div>
+                  <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1">エリア / 所在地</label>
+                      <input type="text" value={newTarget.area} onChange={e => setNewTarget({...newTarget, area: e.target.value})} className="w-full p-2.5 border border-gray-300 rounded-sm text-sm outline-none focus:border-gray-900 shadow-sm" placeholder="北海道苫小牧市" disabled={isGenerating} />
+                  </div>
+                  <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1">業種</label>
+                      <input type="text" value={newTarget.industry} onChange={e => setNewTarget({...newTarget, industry: e.target.value})} className="w-full p-2.5 border border-gray-300 rounded-sm text-sm outline-none focus:border-gray-900 shadow-sm" placeholder="電気設備工事" disabled={isGenerating} />
+                  </div>
+                  <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1">連絡先 (電話番号)</label>
+                      <input type="text" value={newTarget.contact} onChange={e => setNewTarget({...newTarget, contact: e.target.value})} className="w-full p-2.5 border border-gray-300 rounded-sm text-sm outline-none focus:border-gray-900 font-mono shadow-sm" placeholder="0144-..." disabled={isGenerating} />
+                  </div>
+                  <div className="lg:col-span-2">
+                      <label className="block text-xs font-bold text-gray-700 mb-1">WebサイトURL</label>
+                      <input type="url" value={newTarget.website} onChange={e => setNewTarget({...newTarget, website: e.target.value})} className="w-full p-2.5 border border-gray-300 rounded-sm text-sm outline-none font-mono focus:border-gray-900 shadow-sm" placeholder="http://..." disabled={isGenerating} />
+                  </div>
+              </div>
+              <div className="mb-4">
+                  <label className="block text-xs font-bold text-gray-700 mb-1">営業根拠・AIへのヒント</label>
+                  <textarea value={newTarget.reason} onChange={e => setNewTarget({...newTarget, reason: e.target.value})} className="w-full p-2.5 border border-gray-300 rounded-sm text-sm outline-none focus:border-gray-900 shadow-sm min-h-[60px]" placeholder="例: 高圧・特別高圧の電気設備工事メイン。太物CV線が大量に出る。社長決裁を狙え。" disabled={isGenerating} />
+              </div>
+
+              <div className="flex justify-end border-t border-gray-200 pt-4">
+                  <button 
+                      onClick={handleManualAdd}
+                      disabled={isGenerating || !newTarget.company}
+                      className="bg-[#D32F2F] text-white px-6 py-2.5 rounded-sm text-sm font-bold shadow-md hover:bg-red-800 transition flex items-center gap-2 disabled:opacity-50"
+                  >
+                      {isGenerating ? <><Icons.Refresh /> 登録中...</> : <><Icons.Plus /> 手動でリストに追加する</>}
+                  </button>
+              </div>
+          </div>
+      )}
+
       {/* AIスナイパー設定パネル */}
       {isAiPanelOpen && (
           <div className="mb-8 bg-gray-50 border border-gray-200 p-6 rounded-sm shadow-inner relative overflow-hidden animate-in slide-in-from-top-4">
@@ -343,7 +429,7 @@ export const AdminSales = ({ data }: { data: any }) => {
       <div className="space-y-4">
           {filteredTargets.length === 0 ? (
               <div className="bg-white border border-gray-200 rounded-sm p-12 text-center text-gray-400 font-bold shadow-sm">
-                  ターゲットが見つかりません。AIスナイパーで抽出してください。
+                  ターゲットが見つかりません。
               </div>
           ) : (
               filteredTargets.reverse().map((t: any) => {
