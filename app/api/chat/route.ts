@@ -1,3 +1,4 @@
+// app/api/chat/route.ts
 import { google } from '@ai-sdk/google';
 import { generateText } from 'ai';
 
@@ -8,29 +9,41 @@ export async function POST(req: Request) {
     const { messages, sessionId } = await req.json();
     const lastUserMessage = messages[messages.length - 1]?.content || "";
 
-    // ★ プログラム側で「電線の話題」かどうかを判定する（AIには判断させない！）
-    const isWireTopic = /(電線|線|ケーブル|VVF|CV|IV|ピカ|高く|理由)/.test(lastUserMessage);
+    // ★ プログラム側で「電線の話題」かどうかを判定する
+    const isWireTopic = /(電線|線|ケーブル|VVF|CV|CVT|IV|VA|ピカ|高く|理由|歩留)/i.test(lastUserMessage);
     
     // 話題に応じて、AIに渡す「自社のアピールポイント」を物理的に切り替える
     const killerPhrase = isWireTopic 
-        ? "【自社の強み】自社にナゲットプラントがあり、中間業者を挟まないため「電線の高価買取」が可能です。この点を自然にアピールしてください。" 
-        : "【自社の強み】丁寧で正確な査定が強みです。（※注意: 今回は電線の話題ではないため、ナゲットプラントや機械の話は絶対にしないでください）";
+        ? "【当社の強み】自社にナゲットプラント（電線の粉砕・分別機）があり、中間コストを極限までカットできるため『電線の圧倒的な高価買取』が可能です。この強みを会話の中で自然にアピールしてください。" 
+        : "【当社の強み】熟練スタッフによる丁寧で正確な査定が強みです。";
 
-    // 1. GASから最新の相場データを取得
-    let marketContext = "現在、価格システムと通信中です。";
+    // 1. GASから最新の相場とマスターデータを取得
+    let marketContext = "現在、最新の価格マスタと通信中です。";
     const gasUrl = "https://script.google.com/macros/s/AKfycbxuE0iPCEruoQLretA8R0cmSnRyZPYT9qd6YqDGVCCCY1h0wRVJX8P-MZF20I1whF7Z/exec"; 
     
     if (gasUrl) {
         try {
-            const gasRes = await fetch(gasUrl);
+            // キャッシュを防いで常に最新のマスターを取得
+            const timestamp = new Date().getTime();
+            const gasRes = await fetch(`${gasUrl}?t=${timestamp}`, { cache: 'no-store' });
             const contentType = gasRes.headers.get("content-type");
-            if (contentType && contentType.includes("text/html")) {
-                 console.error("GAS Auth Error: 権限エラー");
-            } else {
+            
+            if (contentType && !contentType.includes("text/html")) {
                 const gasData = await gasRes.json();
                 if (gasData.status === 'success') {
-                    const config = gasData.config;
-                    marketContext = `本日の参考相場（建値）: 銅=${config.market_price || 0}円/kg, 真鍮=${config.brass_price || 0}円/kg, 亜鉛=${config.zinc_price || 0}円/kg, 鉛=${config.lead_price || 0}円/kg.`;
+                    const config = gasData.config || {};
+                    const copperPrice = Number(config.market_price) || 0;
+                    
+                    marketContext = `【本日の国内建値】\n銅建値=${copperPrice}円/kg, 真鍮建値=${config.brass_price || 0}円/kg, 亜鉛=${config.zinc_price || 0}円/kg, 鉛=${config.lead_price || 0}円/kg.\n\n`;
+                    
+                    // ★ AIのカンペとして、マスターから主要な買取価格を計算して渡す
+                    if (gasData.wires && gasData.wires.length > 0) {
+                        const wireList = gasData.wires.slice(0, 15).map((w: any) => {
+                            const price = Math.floor(copperPrice * (Number(w.ratio)/100) * 0.85);
+                            return `- ${w.name}: 目安単価 ${price}円/kg (歩留まり${w.ratio}%)`;
+                        }).join('\n');
+                        marketContext += `【当社の主要な電線買取単価（税込の目安）】\n${wireList}\n\n※上記以外の品目や、大量持ち込みの場合はさらに良い条件を出せる可能性があります。`;
+                    }
                 }
             }
         } catch (e: any) {
@@ -43,25 +56,19 @@ export async function POST(req: Request) {
       model: google('gemini-2.5-flash'), 
       messages,
       system: `
-      あなたは株式会社月寒製作所（苫小牧工場）の優秀なAIコンシェルジュ（査定人）です。
+      あなたは株式会社月寒製作所（北海道苫小牧市一本松町9-6）の優秀なAIコンシェルジュ（査定人）です。
+      お客様からの質問に対し、以下の【カンペ】の情報を元に、正確かつプロフェッショナルに回答してください。
       
-      【基本情報】
-      1. 役割: 廃電線・非鉄金属の買取査定、持ち込み案内の専門家。
-      2. 所在地: 北海道苫小牧市一本松町9-6 / 営業時間: 8:00〜17:00
+      【最新の相場・価格マスタ（カンペ）】
+      ${marketContext}
       
       ${killerPhrase}
 
-      【査定・検収に関するビジネスルール（厳守事項）】
-      ・お客様から「違う種類の金属が混ざっている」「鉄（ビスなど）が付いている」と相談された場合は、必ず「そのままお持ち込みいただいても買取可能ですが、未選別品や異物付きとして『込（こみ）単価』での買取、またはダスト引き（減額）の対象となります。事前にお客様ご自身で分別・解体していただくと、より高く買取できます」と案内してください。
-
-      【最新相場情報（カンペ）】
-      ${marketContext}
-      
-      【その他ガードレール】
-      盗難品や不審な持ち込み（拾った等）の示唆があった場合、即座に「古物営業法に基づき、盗難品や不審物の買取はお断りしております。身分証明の提示と警察への通報義務があります」と厳格に警告し、買取を拒否してください。
-      
-      【回答スタイル】
-      チャットUIに適した短く簡潔な回答（最大150〜200文字程度）にし、Markdown記法は極力使わないでください。親しみやすく頼りになるトーンを維持し、最後に「工場への持ち込み予約」を促してください。
+      【査定・接客のルール】
+      1. 価格について聞かれたら：カンペの「目安単価」を自信を持って答えてください。「詳しくは現物を見てから…」と逃げ腰になりすぎず、まずは目安価格をバシッと提示してください。
+      2. 混入物・付着物について：鉄やプラスチック、違う金属が混ざっている場合は「そのまま持ち込めますが『込（こみ）単価』やダスト引き（減額）になります。事前に分別すれば高く買えます」と案内してください。
+      3. 盗難品の疑い：出どころ不明なものや盗難の示唆があれば「古物営業法により買取不可・警察へ通報します」と厳格に拒否してください。
+      4. 回答スタイル：最大150〜200文字程度で、チャット画面で読みやすい長さにしてください。Markdownの太字（**）などは使って構いませんが、不自然な長文は避けてください。
       `,
     });
 
@@ -84,7 +91,7 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error("AI Route Error:", error);
     return Response.json({ 
-        text: `【システムエラー報告】\nボス、以下のエラーが発生しました。\n\n${error.message}` 
+        text: `【システムエラー】\n申し訳ありません、現在AIサーバーが混み合っております。\nお急ぎの場合はお電話（0144-55-5544）にてお問い合わせください。` 
     }, { status: 500 });
   }
 }
