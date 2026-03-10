@@ -97,11 +97,18 @@ export const AdminSales = ({ data }: { data: any }) => {
   const handleGenerateLeads = async () => {
       if (!targetArea || !targetIndustry) return alert('エリアと業種を入力してください。');
       setIsGenerating(true);
+      
+      // ★ 当社の優良顧客データを教師データとして抽出
+      const teacherClients = (data?.clients || [])
+          .filter((c:any) => c.rank === 'S' || c.rank === 'A' || c.rank === 'GOLD' || c.rank === 'SILVER')
+          .map((c:any) => ({ name: c.name, industry: c.industry, memo: c.memo }))
+          .slice(0, 10); // 上位10社を教師データに
+
       try {
-          const payload = { action: 'GENERATE_LEADS_DYNAMIC', area: targetArea, industry: targetIndustry, count: targetCount };
-          const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+          const payload = { action: 'GENERATE_LEADS_DYNAMIC', area: targetArea, industry: targetIndustry, count: targetCount, teacherClients };
+          const res = await fetch('/api/lead-gen', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
           const result = await res.json();
-          if (result.status === 'success') { alert(`成功！ ${result.count}件の新規ターゲットを抽出しました。`); window.location.reload(); } 
+          if (result.success) { alert(`成功！ 教師データをもとに ${result.count}件の新規ターゲットを抽出しました。`); window.location.reload(); } 
           else { alert('エラーが発生しました: ' + result.message); }
       } catch (err) { alert('通信エラーが発生しました。'); } 
       finally { setIsGenerating(false); }
@@ -138,7 +145,6 @@ export const AdminSales = ({ data }: { data: any }) => {
       } catch(e) { alert('エラーが発生しました'); }
   };
 
-  // ★ 追加：ターゲットの削除処理
   const handleDeleteTarget = async (id: string) => {
       if (!confirm('このターゲットを削除しますか？\n（見込みがない、または不要なデータの場合）')) return;
       try {
@@ -257,15 +263,16 @@ export const AdminSales = ({ data }: { data: any }) => {
           </div>
       </div>
 
+      {/* AIスナイパー設定パネル */}
       {isAiPanelOpen && (
           <div className="mb-8 bg-gray-50 border border-gray-200 p-6 rounded-sm shadow-inner relative overflow-hidden animate-in slide-in-from-top-4">
               <div className="absolute top-4 right-4"><ProvenanceBadge type="AI_AUTO" /></div>
               <h3 className="font-bold text-gray-900 flex items-center gap-2 mb-2">
-                  <Icons.Brain /> AIスナイパー・パラメータ設定
+                  <Icons.Brain /> 教師データ連動型・AIスナイパー
               </h3>
               <p className="text-xs text-gray-600 mb-6 max-w-2xl leading-relaxed">
-                  Web上の企業情報をAIが詳細に分析し、中規模以上の「廃電線・非鉄スクラップを定期的に排出する企業」をリストアップします。<br/>
-                  <span className="font-bold text-[#D32F2F]">※まずは足元の「苫小牧エリア」の優良顧客を一本釣りする戦略を推奨します。</span>
+                  マスターDBに登録されている当社の<span className="font-bold text-gray-900">「優良顧客（S〜Aランク）」のプロファイルをAIが学習</span>し、それと極めて類似した特徴を持つ「地場の有力企業」をWeb上から自動抽出し、連絡先を特定します。<br/>
+                  <span className="font-bold text-[#D32F2F]">※大手ゼネコンや札幌本社の支店などは自動的に除外されます。</span>
               </p>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -299,7 +306,7 @@ export const AdminSales = ({ data }: { data: any }) => {
                       disabled={isGenerating}
                       className="bg-gray-900 text-white px-6 py-2.5 rounded-sm text-sm font-bold shadow-md hover:bg-black transition flex items-center gap-2 disabled:opacity-50"
                   >
-                      {isGenerating ? <><Icons.Refresh /> リサーチ実行中 (約10〜30秒)...</> : <><Icons.Target /> この条件で抽出を開始する</>}
+                      {isGenerating ? <><Icons.Refresh /> 類似企業のディープリサーチを実行中 (約30〜60秒)...</> : <><Icons.Target /> 教師データをもとに抽出を開始する</>}
                   </button>
               </div>
           </div>
