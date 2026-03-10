@@ -7,9 +7,14 @@ export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
-    const { area, industry, count } = await req.json();
+    const { area, industry, count, teacherClients } = await req.json();
     
     const gasUrl = process.env.GAS_API_URL || "https://script.google.com/macros/s/AKfycbxuE0iPCEruoQLretA8R0cmSnRyZPYT9qd6YqDGVCCCY1h0wRVJX8P-MZF20I1whF7Z/exec";
+
+    // ★ ボスの既存の優良顧客を「教師データ」としてプロンプトに組み込む
+    const teacherContext = teacherClients && teacherClients.length > 0 
+        ? `\n【🧠 教師データ：当社の現在の優良顧客プロファイル】\nAIは以下の企業群の事業構造や特性を分析し、これと『極めて類似した匂いのする企業』を新たなターゲットとして抽出すること。\n` + teacherClients.map((c:any) => `- ${c.name} (業種: ${c.industry})\n  特徴: ${c.memo}`).join('\n')
+        : '';
 
     const { object } = await generateObject({
       model: google('gemini-2.5-flash'), 
@@ -30,6 +35,7 @@ export async function POST(req: Request) {
       prompt: `
         あなたは非鉄金属リサイクル工場「月寒製作所」の超優秀な営業戦略部長です。
         以下の条件に合致する「月に数百kg〜数トンの持ち込みが期待できる、地元密着の優良企業」を${count || 5}件、深くリサーチしてリストアップしてください。
+        ${teacherContext}
         
         【ターゲット条件】
         ・エリア: ${area || '北海道苫小牧市'}
@@ -37,7 +43,7 @@ export async function POST(req: Request) {
         
         【抽出と評価の絶対ルール（超・地場企業特化 ＆ 情報完備）】
         1. 🌟 大手・支店の除外: 全国展開している大手ゼネコン・サブコンの「支店・営業所」や、札幌などに本社がある大企業の支店は【絶対に除外】してください。決裁権が現場になく、既存のしがらみが強いため営業不可能です。
-        2. 🎯 狙うべき企業規模: 従業員数5名〜30名程度で、本社が指定エリアにあり、社長や専務に直接営業の電話が繋がる「地元密着の地場企業（優良中小企業）」のみを厳選してください。
+        2. 🎯 狙うべき企業規模: 教師データに類似する、従業員数5名〜30名程度で、本社が指定エリアにあり、社長や専務に直接営業の電話が繋がる「地元密着の地場企業（優良中小企業）」のみを厳選してください。
         3. 📞 情報の完全性（絶対条件）: 連絡先（電話番号）とWebサイトURLが明確に特定できる企業【のみ】を抽出してください。どちらか一方でも不明な企業は、営業がかけられないためリストに絶対に含めないでください。
         4. 🔍 営業根拠の深掘り: 「地元で長くやっている」「自社の資材置き場を持っていそう」など、スクラップが溜まりやすく、かつ「社長決済で即取引開始できる」理由を具体的に書いてください。
       `
@@ -65,19 +71,12 @@ export async function POST(req: Request) {
         }
       };
 
-      await fetch(gasUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      
+      await fetch(gasUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       await new Promise(resolve => setTimeout(resolve, 500));
     }
 
     return Response.json({ success: true, count: targets.length, targets });
-
   } catch (error: any) {
-    console.error("Lead Gen Error:", error);
     return Response.json({ success: false, message: error.message }, { status: 500 });
   }
 }
