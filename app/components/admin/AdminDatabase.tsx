@@ -185,28 +185,33 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     setEditingItem(null); setSampleTotal(''); setSampleCopper(''); setSampleCover(''); setIsModalOpen(false);
   };
 
-  // ★ 修正：AIに現在の業種とメモも渡して、トンチンカンな推測を防ぐ
-  const handleEnrichClient = async () => {
-      if(!editingItem.name) return alert("企業名を入力してください");
+  // ★ AIディープリサーチ処理（引数を正しく渡す）
+  const handleEnrichClient = async (targetItem?: any) => {
+      const itemToEnrich = targetItem || editingItem;
+      if(!itemToEnrich || !itemToEnrich.name) return alert("企業名がありません");
       setIsSubmitting(true);
       try {
           const res = await fetch('/api/enrich-client', {
               method:'POST', headers:{'Content-Type':'application/json'},
               body: JSON.stringify({ 
-                  companyName: editingItem.name, 
-                  address: editingItem.address,
-                  industry: editingItem.industry,
-                  currentMemo: editingItem.memo
+                  companyName: itemToEnrich.name, 
+                  address: itemToEnrich.address,
+                  industry: itemToEnrich.industry,
+                  currentMemo: itemToEnrich.memo
               })
           });
           const d = await res.json();
           if(d.success) {
               setEditingItem({
-                  ...editingItem,
+                  ...itemToEnrich,
                   industry: d.data.industry,
                   memo: `${d.data.memo}`.trim()
               });
-              alert("AIが企業情報を深掘りし、データを補完しました！");
+              if (!targetItem) {
+                  // モーダルを開いていない状態で呼ばれた場合は、モーダルを開く
+                  setIsModalOpen(true);
+              }
+              alert("AIが企業情報を深掘りし、データを補完しました！\n「マスター登録」を押して保存してください。");
           } else {
               alert("情報の取得に失敗しました");
           }
@@ -214,7 +219,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
           alert("通信エラー");
       }
       setIsSubmitting(false);
-  }
+  };
 
   const calculateRatio = (total: number | '', copper: number | '') => {
       if (total && copper && Number(total) > 0) return ((Number(copper) / Number(total)) * 100).toFixed(2);
@@ -447,6 +452,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       recognition.start();
   };
 
+  // ★ 修正：AI登録（VISION_AI_REGISTER）の呼び出しを明示
   const runAiExtraction = async () => {
     if (!imgData1) return alert('最低1枚の画像（断面など）をアップロードしてください');
     
@@ -459,7 +465,12 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     const progressInterval = setInterval(() => { setAiProgressStep(prev => { if (prev === 1) return 2; if (prev === 2) return 3; return 3; }); }, 2000);
     
     try {
-      const res = await fetch('/api/gas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'VISION_AI_REGISTER', imageData: imgData1, imageData2: imgData2, imageData3: imgData3, imageData4: imgData4, hint: aiHint }) });
+      const res = await fetch('/api/gas', { 
+          method: 'POST', 
+          headers: { 'Content-Type': 'application/json' }, 
+          // ★ action を正しく指定
+          body: JSON.stringify({ action: 'VISION_AI_REGISTER', imageData: imgData1, imageData2: imgData2, imageData3: imgData3, imageData4: imgData4, hint: aiHint }) 
+      });
       const result = await res.json();
       
       clearInterval(progressInterval); setAiProgressStep(4);
@@ -866,6 +877,20 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                           {activeTab === 'UNKNOWN' && (
                               <button onClick={() => handlePromoteToWire(item)} className="px-3 py-1.5 text-white bg-gray-900 hover:bg-black rounded-sm flex items-center gap-1 text-xs font-bold transition shadow-sm"><Icons.ArrowUp /> マスターへ</button>
                           )}
+                          {/* ★ PC版：顧客一覧にAIディープリサーチボタンを追加 */}
+                          {activeTab === 'CLIENTS' && (
+                              <button 
+                                  onClick={() => {
+                                      setEditingItem(item);
+                                      handleEnrichClient(item);
+                                  }} 
+                                  disabled={isSubmitting}
+                                  className="p-2 text-yellow-600 hover:text-yellow-800 hover:bg-yellow-50 border border-transparent hover:border-yellow-200 rounded-sm transition shadow-sm"
+                                  title="AIで企業情報を深掘り"
+                              >
+                                  <Icons.Sparkles />
+                              </button>
+                          )}
                           <button onClick={() => handleOpenModal(item)} className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-200 border border-transparent hover:border-gray-300 rounded-sm transition shadow-sm"><Icons.Edit /></button>
                           <button onClick={() => handleDelete(item.id)} className="p-2 text-gray-400 hover:text-[#D32F2F] hover:bg-red-50 border border-transparent hover:border-red-200 rounded-sm transition shadow-sm"><Icons.Trash /></button>
                         </div>
@@ -966,7 +991,19 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                             <span className="text-[10px] text-gray-900 font-bold">✨ {item.points} pt</span>
                           </div>
                           
+                          {/* ★ スマホ版：AIディープリサーチボタン */}
                           <div className="flex gap-1.5">
+                            <button 
+                                onClick={() => {
+                                    setEditingItem(item);
+                                    handleEnrichClient(item);
+                                }} 
+                                disabled={isSubmitting}
+                                className="p-1.5 text-yellow-600 bg-yellow-50 border border-yellow-200 rounded-sm hover:bg-yellow-100 transition"
+                                title="AIで企業情報を深掘り"
+                            >
+                                <Icons.Sparkles />
+                            </button>
                             <button onClick={() => handleOpenModal(item)} className="p-1.5 text-gray-600 bg-gray-50 border border-gray-200 rounded-sm"><Icons.Edit /></button>
                             <button onClick={() => handleDelete(item.id)} className="p-1.5 text-[#D32F2F] bg-red-50 border border-red-100 rounded-sm"><Icons.Trash /></button>
                           </div>
@@ -1142,8 +1179,17 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                         <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">所在地</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 shadow-sm text-sm" value={editingItem.address || ''} onChange={e => setEditingItem({...editingItem, address: e.target.value})} /></div>
                     </div>
                     <div>
-                        <label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">顧客メモ・AIプロファイル</label>
-                        <textarea className="w-full bg-white border border-gray-300 p-3 rounded-sm min-h-[100px] text-xs md:text-sm outline-none focus:border-gray-900 leading-relaxed shadow-sm whitespace-pre-wrap" value={editingItem.memo || ''} onChange={e => setEditingItem({...editingItem, memo: e.target.value})} />
+                        <label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest flex justify-between items-center">
+                            <span>顧客メモ・AIプロファイル</span>
+                            <button 
+                                onClick={() => handleEnrichClient()} 
+                                disabled={isSubmitting || !editingItem.name}
+                                className="bg-yellow-50 text-yellow-800 border border-yellow-300 px-2 py-1 rounded-sm text-[10px] font-bold flex items-center gap-1 hover:bg-yellow-100 transition disabled:opacity-50"
+                            >
+                                <Icons.Sparkles /> AIで補完
+                            </button>
+                        </label>
+                        <textarea className="w-full bg-white border border-gray-300 p-3 rounded-sm min-h-[120px] text-xs md:text-sm outline-none focus:border-gray-900 leading-relaxed shadow-sm whitespace-pre-wrap" value={editingItem.memo || ''} onChange={e => setEditingItem({...editingItem, memo: e.target.value})} />
                     </div>
                   </div>
                 )}
