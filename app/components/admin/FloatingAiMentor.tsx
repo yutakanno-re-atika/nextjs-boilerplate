@@ -1,3 +1,4 @@
+// app/components/admin/FloatingAiMentor.tsx
 // @ts-nocheck
 import React, { useState, useRef, useEffect } from 'react';
 
@@ -12,15 +13,16 @@ const Icons = {
 export const FloatingAiMentor = ({ 
     onClose, 
     isVoiceOutputEnabled,
-    currentTab = 'HOME',     // ★追加: 現在開いているタブ
-    sessionId = 'TUTOR_001'  // ★追加: 会話履歴紐付け用のID
+    currentTab = 'HOME',     
+    sessionId = 'TUTOR_001'  
 }: { 
     onClose: () => void, 
     isVoiceOutputEnabled?: boolean,
     currentTab?: string,
     sessionId?: string
 }) => {
-  const [pos, setPos] = useState({ x: window.innerWidth - 420, y: window.innerHeight - 620 });
+  const [isMobile, setIsMobile] = useState(false);
+  const [pos, setPos] = useState({ x: 0, y: 0 });
   const [size, setSize] = useState({ width: 380, height: 600 });
   const [isMinimized, setIsMinimized] = useState(false);
 
@@ -29,18 +31,33 @@ export const FloatingAiMentor = ({
   const dragStart = useRef({ x: 0, y: 0, posX: 0, posY: 0 });
   const resizeStart = useRef({ x: 0, y: 0, w: 0, h: 0 });
 
-  const [messages, setMessages] = useState<{role: 'USER' | 'AI', text: string}[]>([
-      { role: 'AI', text: `お疲れ様です！ここは「${currentTab}」画面ですね。現場の作業やシステム操作で分からないことがあれば、なんでも聞いてください。このウィンドウはヘッダーを掴んで自由に移動できますよ！` }
-  ]);
+  const [messages, setMessages] = useState<{role: 'USER' | 'AI', text: string}[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // 初期化：画面サイズを判定してPC/スマホのモードを切り替え、初回メッセージをセット
+  useEffect(() => {
+      const handleResize = () => setIsMobile(window.innerWidth < 768);
+      handleResize();
+      setPos({ x: window.innerWidth - 420, y: window.innerHeight - 620 });
+      
+      setMessages([{ 
+          role: 'AI', 
+          text: `お疲れ様です！ここは「${currentTab}」画面ですね。現場の作業やシステム操作で分からないことがあれば、なんでも聞いてください。\n${window.innerWidth >= 768 ? 'このウィンドウはヘッダーを掴んで自由に移動できますよ！' : 'このまま下の画面もスクロールして操作できます！'}` 
+      }]);
+
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+  }, [currentTab]);
 
   useEffect(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
   useEffect(() => {
+    if (isMobile) return; // スマホ時はドラッグ＆リサイズ処理を無視
+
     const handleMouseMove = (e: MouseEvent) => {
       if (isDragging) {
         const newX = dragStart.current.posX + (e.clientX - dragStart.current.x);
@@ -76,9 +93,10 @@ export const FloatingAiMentor = ({
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, isResizing, size.width]);
+  }, [isDragging, isResizing, size.width, isMobile]);
 
   const onDragStart = (e: React.MouseEvent) => {
+    if (isMobile) return; // スマホ時は移動させない
     if ((e.target as HTMLElement).closest('button')) return;
     setIsDragging(true);
     dragStart.current = { x: e.clientX, y: e.clientY, posX: pos.x, posY: pos.y };
@@ -86,13 +104,13 @@ export const FloatingAiMentor = ({
   };
 
   const onResizeStart = (e: React.MouseEvent) => {
+    if (isMobile) return;
     e.stopPropagation();
     setIsResizing(true);
     resizeStart.current = { x: e.clientX, y: e.clientY, w: size.width, h: size.height };
     document.body.style.userSelect = 'none';
   };
 
-  // ★ 修正：本物のAPI通信ロジックを実装
   const handleSend = async () => {
     if (!input.trim() || isTyping) return;
     const userText = input;
@@ -102,13 +120,11 @@ export const FloatingAiMentor = ({
     setIsTyping(true);
 
     try {
-        // 過去のメッセージ履歴をAPIが読める形に整形
         const apiMessages = newMessages.map(m => ({ 
             role: m.role === 'AI' ? 'assistant' : 'user', 
             content: m.text 
         }));
         
-        // 本物のTutor APIに送信
         const res = await fetch('/api/tutor', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -131,7 +147,15 @@ export const FloatingAiMentor = ({
 
   return (
     <div 
-      style={{ 
+      style={isMobile ? { 
+          position: 'fixed', 
+          left: 0, 
+          bottom: 0, 
+          top: 'auto',
+          width: '100%', 
+          height: isMinimized ? 'auto' : '35vh',
+          zIndex: 9999 
+      } : { 
           position: 'fixed', 
           left: `${pos.x}px`, 
           top: `${pos.y}px`, 
@@ -139,18 +163,18 @@ export const FloatingAiMentor = ({
           height: isMinimized ? 'auto' : `${size.height}px`,
           zIndex: 9999 
       }}
-      className={`flex flex-col bg-white rounded-lg shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-gray-300 overflow-hidden transition-opacity duration-200 ${isDragging || isResizing ? 'opacity-90' : 'opacity-100'}`}
+      className={`flex flex-col bg-white border border-gray-300 overflow-hidden transition-all duration-300 ${isMobile ? 'rounded-t-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.2)]' : 'rounded-lg shadow-[0_20px_50px_rgba(0,0,0,0.3)]'} ${isDragging || isResizing ? 'opacity-90' : 'opacity-100'}`}
     >
       <div 
         onMouseDown={onDragStart}
-        className="bg-gradient-to-r from-blue-900 to-indigo-900 p-3 flex justify-between items-center cursor-move select-none shrink-0"
-        title="ここを掴んで移動できます"
+        className={`bg-gradient-to-r from-blue-900 to-indigo-900 p-3 flex justify-between items-center shrink-0 ${isMobile ? '' : 'cursor-move select-none'}`}
+        title={isMobile ? '' : 'ここを掴んで移動できます'}
       >
         <div className="flex items-center gap-2 pointer-events-none">
             <div className="bg-white/20 p-1.5 rounded-full"><Icons.Sparkles /></div>
             <div>
                 <h3 className="text-white font-bold text-sm leading-none">教育メンター AI</h3>
-                <p className="text-blue-200 text-[10px] mt-0.5">オンライン • ドラッグで移動</p>
+                <p className="text-blue-200 text-[10px] mt-0.5">{isMobile ? 'オンライン • 下部固定' : 'オンライン • ドラッグで移動'}</p>
             </div>
         </div>
         <div className="flex gap-1">
@@ -204,13 +228,15 @@ export const FloatingAiMentor = ({
                     </button>
                 </div>
 
-                <div 
-                    onMouseDown={onResizeStart}
-                    className="absolute bottom-0 right-0 w-5 h-5 cursor-se-resize flex items-end justify-end p-0.5 text-gray-400 hover:text-blue-500 transition-colors"
-                    title="サイズ変更"
-                >
-                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
-                </div>
+                {!isMobile && (
+                  <div 
+                      onMouseDown={onResizeStart}
+                      className="absolute bottom-0 right-0 w-5 h-5 cursor-se-resize flex items-end justify-end p-0.5 text-gray-400 hover:text-blue-500 transition-colors"
+                      title="サイズ変更"
+                  >
+                      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+                  </div>
+                )}
             </div>
           </>
       )}
