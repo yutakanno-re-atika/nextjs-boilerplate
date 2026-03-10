@@ -7,13 +7,14 @@ const Icons = {
   Save: () => <svg className="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>,
   Globe: () => <svg className="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>,
   Refresh: () => <svg className="w-5 h-5 animate-spin inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
-  Target: () => <svg className="w-5 h-5 inline-block text-[#D32F2F]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" /></svg>
+  Target: () => <svg className="w-5 h-5 inline-block text-[#D32F2F]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" /></svg>,
+  Sparkles: () => <svg className="w-5 h-5 inline-block text-yellow-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 8.134a1 1 0 010 1.932l-3.354.933-1.179 4.456a1 1 0 01-1.934 0l-1.179-4.456-3.354-.933a1 1 0 010-1.932l3.354-.933 1.179-4.456A1 1 0 0112 2z" clipRule="evenodd" /></svg>
 };
 
 export const AdminSettings = ({ data }: { data: any }) => {
   const [lpConfig, setLpConfig] = useState({
       autoMarketSync: String(data?.config?.auto_market_sync) !== 'false',
-      autoLeadGen: String(data?.config?.auto_lead_gen) === 'true', // ★追加
+      autoLeadGen: String(data?.config?.auto_lead_gen) === 'true',
       showSimulator: String(data?.config?.show_simulator) !== 'false',
       showFaq: String(data?.config?.show_faq) !== 'false',
       showConcierge: String(data?.config?.show_concierge) !== 'false',
@@ -22,14 +23,14 @@ export const AdminSettings = ({ data }: { data: any }) => {
   });
   
   const [isSavingConfig, setIsSavingConfig] = useState(false);
-  const [isRunningBatch, setIsRunningBatch] = useState<'NONE' | 'MARKET' | 'LEAD' | 'BACKUP'>('NONE');
+  const [isRunningBatch, setIsRunningBatch] = useState<'NONE' | 'MARKET' | 'LEAD' | 'BACKUP' | 'FAQ'>('NONE');
 
   const handleSaveLpConfig = async () => {
     setIsSavingConfig(true);
     try {
       const updates = [
         { key: 'auto_market_sync', value: lpConfig.autoMarketSync ? 'true' : 'false' },
-        { key: 'auto_lead_gen', value: lpConfig.autoLeadGen ? 'true' : 'false' }, // ★追加
+        { key: 'auto_lead_gen', value: lpConfig.autoLeadGen ? 'true' : 'false' },
         { key: 'show_simulator', value: lpConfig.showSimulator ? 'true' : 'false' },
         { key: 'show_faq', value: lpConfig.showFaq ? 'true' : 'false' },
         { key: 'show_concierge', value: lpConfig.showConcierge ? 'true' : 'false' },
@@ -69,6 +70,26 @@ export const AdminSettings = ({ data }: { data: any }) => {
       setIsRunningBatch('NONE');
   };
 
+  // ★ 追加：FAQ生成のバッチ処理
+  const handleGenerateFaq = async () => {
+      if (!confirm("過去のチャットログを分析し、AIによるFAQ生成を開始します。よろしいですか？（約10〜20秒かかります）")) return;
+      setIsRunningBatch('FAQ');
+      try {
+          const res = await fetch('/api/faq', { method: 'POST' });
+          const data = await res.json();
+          if (data.success) {
+              alert("AIによるFAQ生成が完了しました！");
+              window.location.reload(); 
+          } else {
+              alert("エラーが発生しました: " + data.message);
+          }
+      } catch (err) {
+          alert('通信エラーが発生しました。');
+      } finally {
+          setIsRunningBatch('NONE');
+      }
+  };
+
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-500">
       <header className="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
@@ -99,7 +120,6 @@ export const AdminSettings = ({ data }: { data: any }) => {
                           </label>
                       </div>
 
-                      {/* ★ 追加: AIスナイパーの自動実行トグル */}
                       <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 flex justify-between items-center shadow-sm">
                           <div>
                               <h4 className="font-bold text-gray-900 flex items-center gap-2 text-lg">
@@ -112,6 +132,20 @@ export const AdminSettings = ({ data }: { data: any }) => {
                               <input type="checkbox" className="sr-only peer" checked={lpConfig.autoLeadGen} onChange={(e) => setLpConfig({...lpConfig, autoLeadGen: e.target.checked})} />
                               <div className="w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-500"></div>
                           </label>
+                      </div>
+
+                      {/* ★ 追加: AI FAQ自動生成のトリガーボタン */}
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+                          <div>
+                              <h4 className="font-bold text-gray-900 flex items-center gap-2 text-lg">
+                                  <span className="w-3 h-3 rounded-full bg-yellow-500 animate-pulse"></span>
+                                  AI FAQ自動生成 (チャットログ分析)
+                              </h4>
+                              <p className="text-xs text-gray-500 mt-1">最新のカスタマーサポートチャットログをAIが分析し、リアルな「よくある質問」を自動更新します。</p>
+                          </div>
+                          <button onClick={handleGenerateFaq} disabled={isRunningBatch !== 'NONE'} className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-bold flex items-center gap-2 hover:bg-gray-50 transition disabled:opacity-50 whitespace-nowrap">
+                              {isRunningBatch === 'FAQ' ? <><Icons.Refresh /> 生成中...</> : <><Icons.Sparkles /> 今すぐ生成</>}
+                          </button>
                       </div>
 
                       <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
@@ -193,7 +227,7 @@ export const AdminSettings = ({ data }: { data: any }) => {
                       <button 
                           onClick={handleSaveLpConfig} 
                           disabled={isSavingConfig} 
-                          className="bg-gray-900 hover:bg-black text-white font-bold px-8 py-3 rounded-sm shadow-md flex items-center gap-2 transition disabled:opacity-50"
+                          className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-sm shadow-md flex items-center gap-2 transition disabled:opacity-50"
                       >
                           {isSavingConfig ? <span className="animate-spin"><Icons.Refresh /></span> : <Icons.Save />}
                           {isSavingConfig ? '保存中...' : '設定を保存して反映する'}
