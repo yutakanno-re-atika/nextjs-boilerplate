@@ -158,12 +158,13 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
       }
   };
 
+  // ★ 変更: SALES の label を「仕入パイプライン管理」に変更
   const ALL_MENU_ITEMS = [
       { id: 'HOME', icon: Icons.Home, label: 'ダッシュボード', reqRole: 'MANAGER〜' },
       { id: 'OPERATIONS', icon: Icons.Kanban, label: '現場状況管理', reqRole: 'FRONT/PLANT〜' },
       { id: 'POS', icon: Icons.Calc, label: 'POS (受付・計量)', reqRole: 'FRONT〜' },
       { id: 'PRODUCTION', icon: Icons.Factory, label: '製造・在庫管理', reqRole: 'PLANT〜' },
-      { id: 'SALES', icon: Icons.Briefcase, label: '営業・顧客', reqRole: 'SALES〜' },
+      { id: 'SALES', icon: Icons.Briefcase, label: '仕入パイプライン管理', reqRole: 'SALES〜' },
       { id: 'COMPETITOR', icon: Icons.Radar, label: '相場レーダー', reqRole: 'MANAGER〜' },
       { id: 'DATABASE', icon: Icons.Database, label: 'マスターDB', reqRole: 'MANAGER〜' },
       { id: 'SETTINGS', icon: Icons.Settings, label: 'システム設定', reqRole: 'MANAGER〜' },
@@ -261,7 +262,6 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
         </div>
       </aside>
 
-      {/* ★ 修正: isLearningModeの時はスマホでのスクロールが隠れないように、下部余白(pb-[40vh])を追加 */}
       <main className={`flex-1 overflow-y-auto bg-[#FFFFFF] p-4 md:p-8 lg:p-10 flex flex-col relative w-full selection:bg-red-100 selection:text-red-900 ${isLearningMode ? 'pb-[40vh] md:pb-10' : 'pb-32 md:pb-10'}`}>
          {adminTab === 'HOME' && <AdminHome data={data} localReservations={localReservations} onNavigate={handleNavigate} />}
          {adminTab === 'OPERATIONS' && <AdminKanban data={data} localReservations={localReservations} onUpdateStatus={handleUpdateStatus} onEditReservation={(id) => handleNavigate('POS', id)} />}
