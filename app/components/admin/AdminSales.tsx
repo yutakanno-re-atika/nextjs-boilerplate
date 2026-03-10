@@ -14,7 +14,8 @@ const Icons = {
   Chart: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>,
   Phone: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>,
   Globe: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>,
-  Scale: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>
+  Scale: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>,
+  Trash: () => <svg className="w-4 h-4 inline-block md:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
 };
 
 const formatTimeShort = (timeStr: string) => {
@@ -47,7 +48,6 @@ export const AdminSales = ({ data }: { data: any }) => {
   const [isAiPanelOpen, setIsAiPanelOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   
-  // ★ 初期値を「地元密着の地場企業」に変更
   const [targetArea, setTargetArea] = useState('北海道苫小牧市');
   const [targetIndustry, setTargetIndustry] = useState('解体工事、電気工事、設備工事（地元密着の地場企業）');
   const [targetCount, setTargetCount] = useState(5);
@@ -136,6 +136,18 @@ export const AdminSales = ({ data }: { data: any }) => {
           alert('顧客マスターへの昇格が完了しました！');
           window.location.reload();
       } catch(e) { alert('エラーが発生しました'); }
+  };
+
+  // ★ 追加：ターゲットの削除処理
+  const handleDeleteTarget = async (id: string) => {
+      if (!confirm('このターゲットを削除しますか？\n（見込みがない、または不要なデータの場合）')) return;
+      try {
+          await fetch('/api/gas', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'DELETE_DB_RECORD', sheetName: 'SalesTargets', recordId: id }) 
+          });
+          window.location.reload();
+      } catch(e) { alert('削除に失敗しました'); }
   };
 
   return (
@@ -245,7 +257,6 @@ export const AdminSales = ({ data }: { data: any }) => {
           </div>
       </div>
 
-      {/* AIスナイパー設定パネル */}
       {isAiPanelOpen && (
           <div className="mb-8 bg-gray-50 border border-gray-200 p-6 rounded-sm shadow-inner relative overflow-hidden animate-in slide-in-from-top-4">
               <div className="absolute top-4 right-4"><ProvenanceBadge type="AI_AUTO" /></div>
@@ -371,12 +382,21 @@ export const AdminSales = ({ data }: { data: any }) => {
                                   </select>
                                   
                                   {!isClient && (
-                                      <button 
-                                          onClick={() => handlePromoteToClient(t.id, t.company)}
-                                          className="text-xs bg-white text-gray-700 border border-gray-300 px-3 py-2 rounded-sm font-bold shadow-sm hover:bg-gray-100 hover:text-gray-900 transition flex items-center gap-1"
-                                      >
-                                          <Icons.ArrowUp /> 顧客へ昇格
-                                      </button>
+                                      <>
+                                          <button 
+                                              onClick={() => handlePromoteToClient(t.id, t.company)}
+                                              className="text-xs bg-white text-gray-700 border border-gray-300 px-3 py-2 rounded-sm font-bold shadow-sm hover:bg-gray-100 hover:text-gray-900 transition flex items-center gap-1"
+                                          >
+                                              <Icons.ArrowUp /> 顧客へ昇格
+                                          </button>
+                                          <button 
+                                              onClick={() => handleDeleteTarget(t.id)}
+                                              className="text-xs bg-white text-red-600 border border-red-200 px-3 py-2 rounded-sm font-bold shadow-sm hover:bg-red-50 hover:border-red-300 transition flex items-center gap-1"
+                                              title="このターゲットを削除"
+                                          >
+                                              <Icons.Trash />
+                                          </button>
+                                      </>
                                   )}
                               </div>
                           </div>
