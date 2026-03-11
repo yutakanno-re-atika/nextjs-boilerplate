@@ -11,13 +11,14 @@ const Icons = {
   MapPin: () => <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
   Briefcase: () => <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2-2v10a2 2 0 002 2z" /></svg>,
   ArrowUp: () => <svg className="w-4 h-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>,
-  Chart: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>,
+  Chart: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>,
   Phone: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>,
   Globe: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>,
   Scale: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>,
   Trash: () => <svg className="w-4 h-4 inline-block md:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
   Plus: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>,
   Sparkles: () => <svg className="w-4 h-4 md:w-5 md:h-5 inline-block" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 8.134a1 1 0 010 1.932l-3.354.933-1.179 4.456a1 1 0 01-1.934 0l-1.179-4.456-3.354-.933a1 1 0 010-1.932l3.354-.933 1.179-4.456A1 1 0 0112 2z" clipRule="evenodd" /></svg>,
+  Document: () => <svg className="w-4 h-4 inline-block text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
 };
 
 const formatTimeShort = (timeStr: string) => {
@@ -37,7 +38,7 @@ const ProvenanceBadge = ({ type }: { type: 'HUMAN' | 'AI_AUTO' | 'CO_OP' }) => {
     switch (type) {
         case 'HUMAN': return <span className={`${baseStyle} bg-gray-900`} title="実測・確定データ">HUMAN</span>;
         case 'CO_OP': return <span className={`${baseStyle} bg-gray-600`} title="AI＋人間 協調データ">CO-P</span>;
-        case 'AI_AUTO': return <span className={`${baseStyle} bg-gray-900`} title="AI予測・推論データ">AI抽出</span>;
+        case 'AI_AUTO': return <span className={`${baseStyle} bg-gray-900`} title="AI抽出（法人番号検証済）">AI抽出/検証済</span>;
         default: return null;
     }
 };
@@ -108,7 +109,7 @@ export const AdminSales = ({ data }: { data: any }) => {
           .slice(0, 10); 
   };
 
-  // ★ 変更: URLやテキスト（名簿コピペ）からのAI一発登録
+  // URLやテキスト（名簿コピペ）からのAI一発登録
   const handleCatchLead = async () => {
       if (!catchInput) return alert("名簿のテキストやURLなどを貼り付けてください。");
       setIsGenerating(true);
@@ -117,7 +118,7 @@ export const AdminSales = ({ data }: { data: any }) => {
           const payload = { 
             mode: 'catch', 
             inputText: catchInput, 
-            area: newTarget.area, // 補足情報として画面のエリア・業種も渡す
+            area: newTarget.area, 
             industry: newTarget.industry,
             teacherClients: getTeacherClients() 
           };
@@ -125,7 +126,7 @@ export const AdminSales = ({ data }: { data: any }) => {
           const result = await res.json();
           
           if (result.success) { 
-              alert(`成功！ AIがテキストを分析し、${result.count}件の有望ターゲットを抽出・登録しました。`); 
+              alert(`成功！ AIがテキストを分析し、法人番号を確認した上で ${result.count}件 の有望ターゲットを抽出・登録しました。`); 
               setCatchInput('');
               window.location.reload(); 
           } else { 
@@ -343,14 +344,14 @@ export const AdminSales = ({ data }: { data: any }) => {
               {/* AI一発登録（名簿コピペ）枠 */}
               <div className="bg-gray-50 border border-gray-200 p-4 rounded-sm mb-6 shadow-inner">
                   <label className="block text-xs font-bold text-gray-700 mb-2 flex items-center gap-1">
-                     <Icons.Brain /> 【名簿スクリーニング】 役場や商工会議所の名簿をガサッと貼り付けるだけ
+                     <Icons.Brain /> 【名簿スクリーニング】 ツクリンク等の検索結果をガサッと貼り付けるだけ
                   </label>
                   <p className="text-[10px] text-gray-500 mb-3">
-                      貼り付けられた大量のテキストの中から、AIが有望な企業を<strong>「最大5件」</strong>ピックアップし、Google検索で住所・電話番号の裏取りを行ってからリストに一括登録します。
+                      貼り付けられた大量のテキストの中から、AIが有望な企業を<strong>「最大5件」</strong>ピックアップし、<strong className="text-gray-900 border-b border-gray-300">国税庁の法人番号</strong>と<strong className="text-gray-900 border-b border-gray-300">Google検索</strong>で実在確認・裏取りを行ってからリストに一括登録します。
                   </p>
                   <textarea 
                       className="w-full p-3 border border-gray-300 rounded-sm text-xs outline-none focus:border-gray-900 shadow-sm min-h-[100px] leading-relaxed" 
-                      placeholder="例：浦河町商工会議所の名簿ページを全選択（Ctrl+A）して、ここにコピー＆ペースト..." 
+                      placeholder="例：ツクリンクの検索結果ページでテキストを全選択（Ctrl+A）して、ここにコピー＆ペースト..." 
                       value={catchInput} 
                       onChange={e => setCatchInput(e.target.value)} 
                       disabled={isGenerating} 
@@ -361,7 +362,7 @@ export const AdminSales = ({ data }: { data: any }) => {
                           disabled={isGenerating || !catchInput}
                           className="bg-[#D32F2F] text-white px-6 py-3 rounded-sm text-sm font-bold shadow-md hover:bg-red-800 transition flex items-center gap-2 disabled:opacity-50"
                       >
-                          {isGenerating ? <><Icons.Refresh /> 最大1分かかります...</> : <><Icons.Sparkles /> 名簿から有望ターゲットを抽出し登録</>}
+                          {isGenerating ? <><Icons.Refresh /> 情報を精査中 (最大60秒)...</> : <><Icons.Sparkles /> テキストから実在する企業を抽出・登録</>}
                       </button>
                   </div>
               </div>
@@ -495,10 +496,21 @@ export const AdminSales = ({ data }: { data: any }) => {
               </div>
           ) : (
               filteredTargets.reverse().map((t: any) => {
-                  // AIかどうかの判定に新しいメモ内容も追加
-                  const isAi = t.memo?.includes('AI_AUTO') || t.source === 'AI_AUTO' || t.memo?.includes('AIスナイパー') || t.memo?.includes('AI自動抽出') || t.memo?.includes('AI名簿') || t.memo?.includes('AIディープリサーチ') || !t.memo;
+                  // AIかどうかの判定
+                  const isAi = t.memo?.includes('AI_AUTO') || t.source === 'AI_AUTO' || t.memo?.includes('AIスナイパー') || t.memo?.includes('AI名簿') || t.memo?.includes('AIディープリサーチ') || !t.memo;
                   const isClient = t.status === '既存取引先';
                   
+                  // メモから法人番号とDM文面を抽出（雑な正規表現で表示用に分ける）
+                  const hasCorpNumber = t.memo?.includes('【法人番号】');
+                  let displayMemo = t.memo;
+                  let dmText = '';
+                  
+                  if (hasCorpNumber) {
+                      const splitMemo = t.memo.split('【🤖 AI作成 DM・FAX送信用原稿】');
+                      displayMemo = splitMemo[0];
+                      if (splitMemo.length > 1) dmText = splitMemo[1].split('(監査:')[0].trim();
+                  }
+
                   return (
                       <div key={t.id} className={`bg-white border rounded-sm shadow-sm overflow-hidden flex flex-col group transition-all duration-300 ${isClient ? 'border-gray-200 opacity-70 bg-gray-50' : 'border-gray-300 hover:border-gray-500 hover:shadow-md'}`}>
                           
@@ -562,7 +574,14 @@ export const AdminSales = ({ data }: { data: any }) => {
                           <div className="flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-gray-100">
                               
                               {/* 左：基本スペック */}
-                              <div className="w-full lg:w-1/3 p-4 bg-white space-y-4 shrink-0">
+                              <div className="w-full lg:w-1/3 p-4 bg-white space-y-4 shrink-0 relative">
+                                  {/* ★ 法人番号バッジ */}
+                                  {hasCorpNumber && (
+                                      <div className="absolute top-2 right-2 bg-green-50 border border-green-200 text-green-700 px-2 py-1 rounded-sm text-[9px] font-bold flex items-center gap-1 shadow-sm">
+                                          <Icons.CheckCircle /> 実在証明済
+                                      </div>
+                                  )}
+
                                   <div>
                                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 flex items-center gap-1"><Icons.Scale /> 月間見込み排出量</p>
                                       <p className="text-base font-black text-[#D32F2F] bg-red-50/50 p-2 rounded-sm border border-red-100">{t.volume || 'データなし (AI推測不可)'}</p>
@@ -608,6 +627,23 @@ export const AdminSales = ({ data }: { data: any }) => {
                               </div>
                           </div>
 
+                          {/* ★ 追加：DM原稿表示アコーディオン */}
+                          {dmText && (
+                              <details className="bg-blue-50/50 border-t border-blue-100 group">
+                                  <summary className="p-3 text-xs font-bold text-blue-800 cursor-pointer hover:bg-blue-50 select-none flex items-center gap-2">
+                                      <Icons.Document /> 自動生成されたDM・FAX送信用原稿を表示
+                                  </summary>
+                                  <div className="p-4 pt-0">
+                                      <textarea 
+                                          readOnly 
+                                          className="w-full h-32 p-3 text-xs text-gray-700 bg-white border border-blue-200 rounded-sm outline-none resize-y"
+                                          value={dmText}
+                                      />
+                                      <p className="text-[9px] text-gray-500 mt-1">※この文章をコピーして、相手のお問い合わせフォーム等に貼り付けてください。</p>
+                                  </div>
+                              </details>
+                          )}
+
                           {/* 3. フッター：営業メモ入力欄 */}
                           <div className="p-4 border-t border-gray-200 bg-gray-50">
                               <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 flex items-center justify-between">
@@ -615,7 +651,7 @@ export const AdminSales = ({ data }: { data: any }) => {
                                   <span className="text-gray-400 font-normal">※入力後、枠外をタップで自動保存</span>
                               </p>
                               <textarea 
-                                  defaultValue={t.memo || ''}
+                                  defaultValue={displayMemo || ''}
                                   placeholder={isClient ? "この企業は顧客マスターへ昇格済みです。" : "電話をかけた結果や、次回訪問予定などを記録してください..."}
                                   onBlur={(e) => handleMemoChange(t.id, e.target.value)}
                                   disabled={isClient}
