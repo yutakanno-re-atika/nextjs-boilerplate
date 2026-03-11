@@ -11,14 +11,16 @@ const Icons = {
   MapPin: () => <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
   Briefcase: () => <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2-2v10a2 2 0 002 2z" /></svg>,
   ArrowUp: () => <svg className="w-4 h-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>,
-  Chart: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>,
+  Chart: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>,
   Phone: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>,
   Globe: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>,
   Scale: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>,
   Trash: () => <svg className="w-4 h-4 inline-block md:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
   Plus: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>,
   Sparkles: () => <svg className="w-4 h-4 md:w-5 md:h-5 inline-block" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 8.134a1 1 0 010 1.932l-3.354.933-1.179 4.456a1 1 0 01-1.934 0l-1.179-4.456-3.354-.933a1 1 0 010-1.932l3.354-.933 1.179-4.456A1 1 0 0112 2z" clipRule="evenodd" /></svg>,
-  Document: () => <svg className="w-4 h-4 inline-block text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+  Document: () => <svg className="w-4 h-4 inline-block text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
+  // ★ 欠落していたアイコンを追加
+  CheckCircle: () => <svg className="w-4 h-4 md:w-5 md:h-5 inline-block text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
 };
 
 const formatTimeShort = (timeStr: string) => {
@@ -56,7 +58,6 @@ export const AdminSales = ({ data }: { data: any }) => {
   const [targetIndustry, setTargetIndustry] = useState('解体工事、電気工事、設備工事（地元密着の地場企業）');
   const [targetCount, setTargetCount] = useState(1);
 
-  // 手動追加＆AI名簿スクリーニング用
   const [catchInput, setCatchInput] = useState('');
   const [newTarget, setNewTarget] = useState({ company: '', area: '北海道苫小牧市', industry: '電気設備工事', contact: '', website: '', reason: '' });
 
@@ -109,7 +110,6 @@ export const AdminSales = ({ data }: { data: any }) => {
           .slice(0, 10); 
   };
 
-  // URLやテキスト（名簿コピペ）からのAI一発登録
   const handleCatchLead = async () => {
       if (!catchInput) return alert("名簿のテキストやURLなどを貼り付けてください。");
       setIsGenerating(true);
@@ -404,7 +404,7 @@ export const AdminSales = ({ data }: { data: any }) => {
                           <button 
                               onClick={handleManualAdd}
                               disabled={isGenerating || !newTarget.company}
-                              className="bg-gray-900 text-white px-6 py-2.5 rounded-sm text-sm font-bold shadow-md hover:bg-black transition flex items-center gap-2 disabled:opacity-50"
+                              className="bg-[#D32F2F] text-white px-6 py-2.5 rounded-sm text-sm font-bold shadow-md hover:bg-red-800 transition flex items-center gap-2 disabled:opacity-50"
                           >
                               {isGenerating ? <><Icons.Refresh /> 登録中...</> : <><Icons.Plus /> 手動でリストに追加する</>}
                           </button>
@@ -496,19 +496,20 @@ export const AdminSales = ({ data }: { data: any }) => {
               </div>
           ) : (
               filteredTargets.reverse().map((t: any) => {
-                  // AIかどうかの判定
                   const isAi = t.memo?.includes('AI_AUTO') || t.source === 'AI_AUTO' || t.memo?.includes('AIスナイパー') || t.memo?.includes('AI名簿') || t.memo?.includes('AIディープリサーチ') || !t.memo;
                   const isClient = t.status === '既存取引先';
                   
-                  // メモから法人番号とDM文面を抽出（雑な正規表現で表示用に分ける）
+                  // ★ メモから法人番号とDM文面を安全に抽出
                   const hasCorpNumber = t.memo?.includes('【法人番号】');
-                  let displayMemo = t.memo;
+                  let displayMemo = t.memo || '';
                   let dmText = '';
                   
                   if (hasCorpNumber) {
                       const splitMemo = t.memo.split('【🤖 AI作成 DM・FAX送信用原稿】');
                       displayMemo = splitMemo[0];
-                      if (splitMemo.length > 1) dmText = splitMemo[1].split('(監査:')[0].trim();
+                      if (splitMemo.length > 1) {
+                          dmText = splitMemo[1].split('(監査:')[0]?.trim() || '';
+                      }
                   }
 
                   return (
@@ -575,7 +576,7 @@ export const AdminSales = ({ data }: { data: any }) => {
                               
                               {/* 左：基本スペック */}
                               <div className="w-full lg:w-1/3 p-4 bg-white space-y-4 shrink-0 relative">
-                                  {/* ★ 法人番号バッジ */}
+                                  {/* 法人番号バッジ */}
                                   {hasCorpNumber && (
                                       <div className="absolute top-2 right-2 bg-green-50 border border-green-200 text-green-700 px-2 py-1 rounded-sm text-[9px] font-bold flex items-center gap-1 shadow-sm">
                                           <Icons.CheckCircle /> 実在証明済
@@ -627,7 +628,7 @@ export const AdminSales = ({ data }: { data: any }) => {
                               </div>
                           </div>
 
-                          {/* ★ 追加：DM原稿表示アコーディオン */}
+                          {/* DM原稿表示アコーディオン */}
                           {dmText && (
                               <details className="bg-blue-50/50 border-t border-blue-100 group">
                                   <summary className="p-3 text-xs font-bold text-blue-800 cursor-pointer hover:bg-blue-50 select-none flex items-center gap-2">
