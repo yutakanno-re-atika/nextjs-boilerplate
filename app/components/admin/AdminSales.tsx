@@ -16,6 +16,8 @@ const Icons = {
   Globe: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>,
   Scale: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>,
   Trash: () => <svg className="w-4 h-4 inline-block md:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
+  // ★ 欠落していた Plus アイコンを復活
+  Plus: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>,
   Sparkles: () => <svg className="w-4 h-4 md:w-5 md:h-5 inline-block" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 8.134a1 1 0 010 1.932l-3.354.933-1.179 4.456a1 1 0 01-1.934 0l-1.179-4.456-3.354-.933a1 1 0 010-1.932l3.354-.933 1.179-4.456A1 1 0 0112 2z" clipRule="evenodd" /></svg>,
   Document: () => <svg className="w-4 h-4 inline-block text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
   CheckCircle: () => <svg className="w-4 h-4 md:w-5 md:h-5 inline-block text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
@@ -59,7 +61,6 @@ export const AdminSales = ({ data }: { data: any }) => {
   }, [targets]);
 
   const areaStats = useMemo(() => {
-      // 0件でも綺麗に表示されるように初期値を設定
       const areas = {
           '道北': { count: 0, color: 'bg-gray-300', top: '15%', left: '55%' },
           '道東': { count: 0, color: 'bg-gray-400', top: '35%', left: '85%' },
@@ -92,7 +93,6 @@ export const AdminSales = ({ data }: { data: any }) => {
       return (data?.clients || []).filter((c:any) => c.rank === 'S' || c.rank === 'A').map((c:any) => ({ name: c.name, industry: c.industry })); 
   };
 
-  // ★ 新設：エリアと業種からの一括抽出（AUTOモード）
   const handleAutoGenerate = async () => {
       if (!targetArea || !targetIndustry) return alert('エリアと業種を入力してください。');
       setIsGenerating(true);
@@ -220,7 +220,6 @@ export const AdminSales = ({ data }: { data: any }) => {
               </h3>
               <div className="flex flex-col md:flex-row gap-6 items-center">
                   <div className="relative w-full md:w-1/2 aspect-[4/3] bg-gray-50 rounded-sm border border-gray-200 overflow-hidden shadow-inner">
-                      {/* 北海道の簡易的なパスガイド */}
                       <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
                           <line x1="55" y1="15" x2="40" y2="45" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="2 2" />
                           <line x1="40" y1="45" x2="85" y2="35" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="2 2" />
@@ -230,7 +229,6 @@ export const AdminSales = ({ data }: { data: any }) => {
                       </svg>
                       {Object.entries(areaStats.areas).map(([label, d]) => (
                           <div key={label} className="absolute flex flex-col items-center justify-center transform -translate-x-1/2 -translate-y-1/2 transition-all duration-500 cursor-default group" style={{ top: d.top, left: d.left }}>
-                              {/* 0件でもグレーの丸を表示して地図感を出す */}
                               <div className={`w-3 h-3 md:w-4 md:h-4 rounded-full shadow-md mb-0.5 transition-transform group-hover:scale-125 ${d.count > 0 ? d.color : 'bg-gray-200 border border-gray-300'}`} />
                               <span className={`text-[8px] md:text-[9px] font-bold bg-white/70 px-1 rounded-sm ${d.count > 0 ? 'text-gray-900' : 'text-gray-400'}`}>{label}</span>
                               {d.count > 0 && <span className="bg-white border border-gray-200 px-1 py-0.5 text-[8px] font-black rounded-sm shadow-sm mt-0.5 tabular-nums text-gray-800">{d.count}</span>}
@@ -242,7 +240,6 @@ export const AdminSales = ({ data }: { data: any }) => {
                           <div key={label} className="flex items-center gap-2">
                               <span className={`text-[10px] font-bold w-16 truncate ${d.count > 0 ? 'text-gray-900' : 'text-gray-400'}`}>{label}</span>
                               <div className="flex-1 h-2 md:h-3 bg-gray-100 rounded-sm overflow-hidden flex shadow-inner">
-                                  {/* 0件の場合はグレーのバーすら出さないか、ごく薄くする */}
                                   <div className={`h-full ${d.color} transition-all duration-1000`} style={{ width: `${Math.max(2, (d.count / Math.max(1, pipelineStats.total)) * 100)}%`, opacity: d.count > 0 ? 1 : 0 }}></div>
                               </div>
                               <span className={`text-[10px] font-mono tabular-nums w-6 text-right ${d.count > 0 ? 'text-gray-900 font-bold' : 'text-gray-400'}`}>{d.count}</span>
@@ -253,7 +250,7 @@ export const AdminSales = ({ data }: { data: any }) => {
           </div>
       </div>
 
-      {/* ★ 新機能：エリア一括抽出（AUTOモード）パネル */}
+      {/* エリア一括抽出（AUTOモード）パネル */}
       {isAutoModeOpen && (
           <div className="mb-8 bg-gray-900 border border-gray-800 p-6 rounded-sm shadow-xl relative overflow-hidden animate-in slide-in-from-top-4 text-white">
               <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none"><Icons.Target /></div>
@@ -297,15 +294,15 @@ export const AdminSales = ({ data }: { data: any }) => {
       {isCatchModeOpen && (
           <div className="mb-8 bg-white border border-gray-200 p-6 rounded-sm shadow-sm relative overflow-hidden animate-in slide-in-from-top-4">
               <h3 className="font-bold text-gray-900 flex items-center gap-2 mb-4">
-                  <Icons.Brain /> 名簿テキスト 一発登録
+                  <Icons.Brain /> 名簿テキスト 一発登録 (法人番号ぶっこ抜き)
               </h3>
               <div className="bg-gray-50 border border-gray-200 p-4 rounded-sm shadow-inner">
                   <p className="text-[10px] text-gray-500 mb-3">
-                      貼り付けられたテキストの中からAIが企業名を抽出し、<strong className="text-gray-900 border-b border-gray-300">経産省の法人データベース(gBizINFO)</strong>で実在確認を行ってからリストに一括登録します。
+                      Googleで <code>site:info.gbiz.go.jp 北海道浦河郡 電気工事</code> と検索し、その結果のテキストをここに貼り付けてください。13桁の法人番号を瞬時に引き抜いて登録します。
                   </p>
                   <textarea 
                       className="w-full p-3 border border-gray-300 rounded-sm text-xs outline-none focus:border-gray-900 shadow-sm min-h-[120px] leading-relaxed" 
-                      placeholder="例：ツクリンクや役場の検索結果ページでテキストを全選択（Ctrl+A）して、ここにコピー＆ペースト..." 
+                      placeholder="Googleの検索結果テキストを全選択（Ctrl+A）して、ここにコピー＆ペースト..." 
                       value={catchInput} 
                       onChange={e => setCatchInput(e.target.value)} 
                       disabled={isGenerating} 
