@@ -6,52 +6,38 @@ import { z } from 'zod';
 export const maxDuration = 60; 
 
 // ============================================================================
-// 🏛️ 経済産業省 gBizINFO API ヘルパー関数 (ハルシネーション率0%)
+// 🏛️ 経済産業省 gBizINFO API ヘルパー関数
 // ============================================================================
-async function fetchGBizInfo(corporateNumber: string | undefined, companyName: string, areaHint: string) {
+
+// 1. 法人番号(ID)で直接叩く（最強・最速・100%正確）
+async function fetchGBizInfoById(corporateNumber: string) {
   const token = "X6icE1bjfNf7BUB5iZSBuOPnuOlysZb4";
-  
-  // 1. 法人番号（13桁）が抽出できている場合は、APIを「ID直叩き」する（これが最強・最速・100%正確）
-  if (corporateNumber && corporateNumber.length === 13 && /^\d+$/.test(corporateNumber)) {
-     try {
-       const res = await fetch(`https://info.gbiz.go.jp/hojin/v1/hojin/${corporateNumber}`, { headers: { 'Accept': 'application/json', 'X-hojinInfo-api-token': token } });
-       if (res.ok) {
-          const data = await res.json();
-          if (data['hojin-infos'] && data['hojin-infos'].length > 0) return data['hojin-infos'][0];
-       }
-     } catch(e) {}
-  }
-
-  // 2. 法人番号がない場合は「企業名」で検索するが、エリア絞り込みを極限まで強化する
-  if (!companyName) return null;
-  const cleanName = companyName.replace(/(株式会社|有限会社|合同会社|一般社団法人|財団法人)/g, '').trim();
-  const url = `https://info.gbiz.go.jp/hojin/v1/hojin?name=${encodeURIComponent(cleanName)}`;
-  
   try {
-    const res = await fetch(url, { headers: { 'Accept': 'application/json', 'X-hojinInfo-api-token': token } });
-    if (!res.ok) return null;
-    const data = await res.json();
-    const infos = data['hojin-infos'];
-    
-    if (infos && infos.length > 0) {
-      // "北海道浦河郡" -> ["北海", "浦河"] に分解し、一番後ろの「市町村名」を重視してマッチング
-      const keywords = (areaHint || '').replace(/[都道府県市区町村郡]/g, ' ').split(' ').filter(k => k.length > 1);
-      
-      let matched = infos.find((i: any) => {
-         if (!i.location) return false;
-         if (keywords.length === 0) return true;
-         // 最後のキーワード（例：浦河）が住所に含まれているか
-         return i.location.includes(keywords[keywords.length - 1]);
-      });
+     const res = await fetch(`https://info.gbiz.go.jp/hojin/v1/hojin/${corporateNumber}`, { 
+         headers: { 'Accept': 'application/json', 'X-hojinInfo-api-token': token } 
+     });
+     if (res.ok) {
+        const data = await res.json();
+        if (data['hojin-infos'] && data['hojin-infos'].length > 0) return data['hojin-infos'][0];
+     }
+  } catch(e) {}
+  return null;
+}
 
-      if (!matched) {
-         // エリアが合わなければ、全国の大企業の支店の可能性を排除するため、名前の完全一致を条件とする
-         matched = infos.find((i:any) => i.name === companyName || i.name.includes(cleanName));
-      }
-      return matched || null; // 無関係な企業が混ざるのを防ぐため、一致しなければ捨てる
+// 2. 企業名で検索する（IDがない場合のフォールバック）
+async function fetchGBizInfoByName(companyName: string) {
+  const token = "X6icE1bjfNf7BUB5iZSBuOPnuOlysZb4";
+  const cleanName = companyName.replace(/(株式会社|有限会社|合同会社|一般社団法人|財団法人)/g, '').trim();
+  try {
+    const res = await fetch(`https://info.gbiz.go.jp/hojin/v1/hojin?name=${encodeURIComponent(cleanName)}`, { 
+        headers: { 'Accept': 'application/json', 'X-hojinInfo-api-token': token } 
+    });
+    if (res.ok) {
+        const data = await res.json();
+        if (data['hojin-infos'] && data['hojin-infos'].length > 0) return data['hojin-infos'][0];
     }
-    return null;
-  } catch (e) { return null; }
+  } catch(e) {}
+  return null;
 }
 
 export async function POST(req: Request) {
@@ -64,7 +50,7 @@ export async function POST(req: Request) {
     const teacherContext = teacherClients.length > 0 ? `\n【参考】当社の優良顧客: ` + teacherClients.map((c:any) => c.name).join(', ') : '';
 
     // ============================================================================
-    // 🧠 共通のAI分析・GAS登録処理
+    // 🧠 共通のAI分析・GAS登録処理（RAGの後半部分）
     // ============================================================================
     const analyzeAndSaveTargets = async (gBizDatas: any[], searchArea: string, searchIndustry: string) => {
         const analysisPromises = gBizDatas.map(async (gBizData: any) => {
@@ -110,87 +96,72 @@ export async function POST(req: Request) {
               }
             };
             await fetch(gasUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise(resolve => setTimeout(resolve, 500)); // スプレッドシートの書き込み負荷軽減
         }
         return processedTargets;
     };
 
     // ============================================================================
-    // 🎯 モード: AUTO (エリア一括抽出)
-    // ============================================================================
-    if (mode === 'auto') {
-      const { area, industry } = body;
-
-      // ★ Googleの site: 検索機能を使って、経産省のDBの中から法人番号を直接引き抜くようAIに指示
-      const extraction = await generateObject({
-        // @ts-ignore
-        model: google('gemini-2.5-pro', { useSearchGrounding: true }), temperature: 0.1,
-        schema: z.object({ 
-            companies: z.array(z.object({
-                name: z.string().describe("企業名"),
-                corporateNumber: z.string().describe("【重要】判明した13桁の法人番号").optional().catch("")
-            })).max(10) 
-        }),
-        prompt: `あなたはリサーチャーです。Google検索を使い、「${area || '北海道'}」で「${industry || '電気工事'}」を営む実在の法人を最大10社リストアップしてください。
-        【🚨最重要指令】
-        ただ検索するのではなく、「site:info.gbiz.go.jp ${area || '北海道'} ${industry || '電気工事'}` + `」というクエリで検索し、
-        経産省のデータベース(gBizINFO)に登録されている企業の【13桁の法人番号】を確実に取得してください。`
-      });
-
-      const candidates = extraction.object.companies;
-      if (!candidates || candidates.length === 0) return Response.json({ success: false, message: "該当エリアに企業が見つかりませんでした。" });
-
-      // 抽出した法人番号・企業名から、経産省APIを直叩き
-      const validGBizDatas = [];
-      for (const c of candidates) {
-          const gBizData = await fetchGBizInfo(c.corporateNumber, c.name, area || '北海道');
-          if (gBizData) validGBizDatas.push(gBizData);
-      }
-
-      if (validGBizDatas.length === 0) return Response.json({ success: false, message: `国のデータベースで実在確認できた法人がありませんでした。検索条件を変えてみてください。` });
-
-      const processedTargets = await analyzeAndSaveTargets(validGBizDatas, area || '北海道', industry || '不明');
-      return Response.json({ success: true, count: processedTargets.length, targets: processedTargets });
-    }
-
-    // ============================================================================
-    // 🎯 モード: CATCH (名簿コピペ登録・PDF対応)
+    // 🎯 モード: CATCH (法人番号 直接ぶっこ抜き RAG)
     // ============================================================================
     if (mode === 'catch') {
       const { inputText, area, industry } = body;
       
-      // コピペされたテキスト（PDF内容など）から、法人番号があれば直接抜くように変更
-      const extraction = await generateObject({
-        // @ts-ignore
-        model: google('gemini-2.5-pro'), temperature: 0,
-        schema: z.object({ 
-            companies: z.array(z.object({
-                name: z.string(),
-                corporateNumber: z.string().optional().catch("")
-            })).max(10) 
-        }),
-        prompt: `以下のテキストから「${industry || '電気工事等'}」に関連しそうな企業を最大10件抽出してください。
-        【重要】テキスト内に「法人番号（13桁）」の記載があれば、必ずそれも抽出してください。\n\n${inputText}`
-      });
-
-      const candidates = extraction.object.companies;
-      if (!candidates || candidates.length === 0) return Response.json({ success: false, message: "企業名が見つかりませんでした。" });
-
-      const validGBizDatas = [];
-      for (const c of candidates) {
-          const gBizData = await fetchGBizInfo(c.corporateNumber, c.name, area || '北海道');
-          if (gBizData) validGBizDatas.push(gBizData);
+      let gBizDatas = [];
+      
+      // 💡 超高速・確実なアプローチ：テキストから「13桁の数字」を正規表現で直接ぶっこ抜く
+      const corporateNumbers = inputText.match(/\b[1-9]\d{12}\b/g) || [];
+      const uniqueNumbers = [...new Set(corporateNumbers)].slice(0, 10); // Vercelのタイムアウト対策で最大10件
+      
+      if (uniqueNumbers.length > 0) {
+          // 法人番号が見つかった場合、AIを使わずに経産省APIを直叩きして確定データを取得
+          console.log("法人番号を検出:", uniqueNumbers);
+          const promises = uniqueNumbers.map(num => fetchGBizInfoById(num));
+          const results = await Promise.all(promises);
+          gBizDatas = results.filter(data => data !== null);
+      } else {
+          // 法人番号がないテキストの場合は、従来のAIによる企業名抽出にフォールバック
+          const extraction = await generateObject({
+            // @ts-ignore
+            model: google('gemini-2.5-pro'), temperature: 0,
+            schema: z.object({ companies: z.array(z.string()).max(10) }),
+            prompt: `以下のテキストから企業名（株式会社〇〇など）だけを最大10件抽出してください。\n${inputText}`
+          });
+          const extractedNames = extraction.object.companies || [];
+          const promises = extractedNames.map(name => fetchGBizInfoByName(name));
+          const results = await Promise.all(promises);
+          gBizDatas = results.filter(data => data !== null);
       }
 
-      if (validGBizDatas.length === 0) return Response.json({ success: false, message: "抽出した企業は国のデータベース上で実在確認できませんでした。" });
+      if (gBizDatas.length === 0) return Response.json({ success: false, message: "抽出した企業は国のデータベース上で実在確認できませんでした。" });
 
-      const processedTargets = await analyzeAndSaveTargets(validGBizDatas, area || '北海道', industry || '不明');
+      // 確定データをAIに渡して分析＆DB登録
+      const processedTargets = await analyzeAndSaveTargets(gBizDatas, area || '北海道', industry || '不明');
       return Response.json({ success: true, count: processedTargets.length, targets: processedTargets });
     }
 
     // ============================================================================
-    // 🔄 モード: SYNC (既存リスト一括同期) は文字数制限のため省略（前回と同じです）
+    // 🔄 モード: SYNC (既存リスト一括同期) 
     // ============================================================================
+    if (mode === 'sync') {
+      const { targets } = body; 
+      let syncCount = 0;
+
+      for (const t of targets) {
+        const gBizData = await fetchGBizInfoByName(t.company);
+        if (gBizData) {
+          const updates = {
+            1: gBizData.corporate_number || '', 3: gBizData.location || '', 4: gBizData.representative_name || '',
+            5: gBizData.capital_stock ? `${gBizData.capital_stock.toLocaleString()}円` : '', 6: gBizData.employee_number ? `${gBizData.employee_number}名` : '',
+            7: gBizData.date_of_establishment || gBizData.founding_year || '', 8: gBizData.business_summary || '', 12: gBizData.company_url || ''
+          };
+          await fetch(gasUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'UPDATE_DB_RECORD', sheetName: 'SalesTargets', recordId: t.id, updates }) });
+          syncCount++;
+          await new Promise(resolve => setTimeout(resolve, 300)); 
+        }
+      }
+      return Response.json({ success: true, message: `${syncCount}件の企業データをgBizINFOの公式データで上書き・補完しました！` });
+    }
 
   } catch (error: any) {
     console.error("Lead Gen Error:", error);
