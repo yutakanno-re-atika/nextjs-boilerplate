@@ -30,8 +30,7 @@ export async function POST(req: Request) {
         schema: z.object({
           targets: z.array(z.object({
             company: z.string().describe("企業名（株式会社などの法人格を正確に）"),
-            // ★ 追加：法人番号による実在証明
-            corporateNumber: z.string().describe("【重要】国税庁登録の13桁の法人番号（法人の場合は必須。どうしても見つからない個人事業主などの場合は「個人事業主等」とする）"),
+            corporateNumber: z.string().describe("【重要】国税庁登録の13桁の法人番号（法人の場合は必須。どうしても見つからない場合は「個人事業主等」とする）"),
             address: z.string().describe("所在地（都道府県から番地まで正確に）"),
             area: z.string().describe("市町村レベルのエリア名"),
             contact: z.string().describe("電話番号（不明な場合は「不明」）"),
@@ -40,8 +39,9 @@ export async function POST(req: Request) {
             volume: z.string().describe("事業規模から推測される月間見込み排出量"),
             priority: z.enum(['S', 'A', 'B']).describe("S: 自社置き場ありそう, A: 一般的, B: 小規模"),
             reason: z.string().describe("なぜこの企業を選んだか。営業をかけるべき理由"),
-            // ★ 追加：そのまま使えるDM文面
-            salesPitch: z.string().describe("この企業のお問い合わせフォームやFAXにそのまま送れる、カスタマイズされた営業メッセージ（挨拶、相手の事業内容への言及、当社ナゲットプラントの強みを含む300字程度の文章）")
+            // ★ 修正: proposal を復活させました
+            proposal: z.string().describe("当社の強み（ナゲットプラント）を活かした提案シナリオ"),
+            salesPitch: z.string().describe("この企業のお問い合わせフォームやFAXにそのまま送れる、カスタマイズされた営業メッセージ（挨拶、事業への言及、当社ナゲットプラントの強みを含む300字程度）")
           })).max(5).describe("入力テキストの中から、有望な企業を最大5件まで抽出すること")
         }),
         prompt: `
@@ -118,7 +118,7 @@ export async function POST(req: Request) {
       temperature: 0,
       schema: z.object({
         address: z.string(), contact: z.string(), website: z.string().optional().catch(""),
-        volume: z.string(), priority: z.enum(['S', 'A', 'B']), reason: z.string(), proposal: z.string(),
+        volume: z.string(), priority: z.enum(['S', 'A', 'B']), reason: z.string(), proposal: z.string(), // ★ 修正
         corporateNumber: z.string().describe("国税庁登録の13桁の法人番号（法人の場合必須）"),
         salesPitch: z.string().describe("DM・FAX用のパーソナライズされた営業文章")
       }),
