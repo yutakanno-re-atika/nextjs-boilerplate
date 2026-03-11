@@ -145,13 +145,12 @@ export async function POST(req: Request) {
       
       let gBizDatas = [];
       
-      // ★修正箇所: Array.fromと型指定を使い、TypeScriptエラーを解消
-      const corporateNumbers = inputText.match(/\b[1-9]\d{12}\b/g) || [];
-      const uniqueNumbers: string[] = Array.from(new Set(corporateNumbers)).slice(0, 10); 
+      // ★修正箇所: String型の配列であることをTypeScriptに完全に明示
+      const corporateNumbers: string[] = (inputText.match(/\b[1-9]\d{12}\b/g) || []) as string[];
+      const uniqueNumbers: string[] = Array.from(new Set<string>(corporateNumbers)).slice(0, 10);
       
       if (uniqueNumbers.length > 0) {
           console.log("法人番号を検出:", uniqueNumbers);
-          // 型がstring[]に確定しているため、エラーなくAPIを叩ける
           const promises = uniqueNumbers.map((num: string) => fetchGBizInfoById(num));
           const results = await Promise.all(promises);
           gBizDatas = results.filter(data => data !== null);
@@ -162,8 +161,8 @@ export async function POST(req: Request) {
             schema: z.object({ companies: z.array(z.string()).max(10) }),
             prompt: `以下のテキストから企業名（株式会社〇〇など）だけを最大10件抽出してください。\n${inputText}`
           });
-          const extractedNames = extraction.object.companies || [];
-          const promises = extractedNames.map(name => fetchGBizInfoByName(name));
+          const extractedNames: string[] = extraction.object.companies || [];
+          const promises = extractedNames.map((name: string) => fetchGBizInfoByName(name));
           const results = await Promise.all(promises);
           gBizDatas = results.filter(data => data !== null);
       }
