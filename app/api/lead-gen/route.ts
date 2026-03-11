@@ -1,48 +1,75 @@
 // app/api/lead-gen/route.ts
 import { NextResponse } from 'next/server';
 
-export const maxDuration = 60; 
+export const maxDuration = 60; // タイムアウトを最大60秒に設定
 
 export async function POST(req: Request) {
   try {
-    const { area, keyword } = await req.json();
-    const token = "X6icE1bjfNf7BUB5iZSBuOPnuOlysZb4"; // ユーザーから提供された本物のAPIトークン
+    const { area, keyword, apiToken } = await req.json();
     const gasUrl = process.env.GAS_API_URL || "https://script.google.com/macros/s/AKfycbxuE0iPCEruoQLretA8R0cmSnRyZPYT9qd6YqDGVCCCY1h0wRVJX8P-MZF20I1whF7Z/exec";
 
+    if (!apiToken) {
+      return NextResponse.json({ success: false, message: "APIトークンを入力してください。" });
+    }
     if (!keyword) {
-      return NextResponse.json({ success: false, message: "検索キーワード（業種や企業名の一部など）を入力してください。" });
+      return NextResponse.json({ success: false, message: "検索キーワード（法人名の一部など）を入力してください。" });
     }
 
-    // 1. gBizINFO APIに直接リクエストを投げる
-    // ※APIの仕様上、名前（キーワード）での検索を軸にし、取得後にエリアで確実にフィルタリングします
-    const url = `https://info.gbiz.go.jp/hojin/v1/hojin?name=${encodeURIComponent(keyword)}`;
-    const res = await fetch(url, {
-      headers: {
-        'Accept': 'application/json',
-        'X-hojinInfo-api-token': token
+    let allInfos: any[] = [];
+    let page = 1;
+    const maxPages = 20; // 全国から最大2,000件（100件×20ページ）まで一気に取得する
+
+    // 1. APIのページネーションをループで回し、全国の該当企業をごっそり取得
+    while (page <= maxPages) {
+      const url = `https://info.gbiz.go.jp/hojin/v1/hojin?name=${encodeURIComponent(keyword)}&page=${page}`;
+      const res = await fetch(url, {
+        headers: {
+          'Accept': 'application/json',
+          'X-hojinInfo-api-token': apiToken
+        }
+      });
+
+      if (res.status === 401) {
+          return NextResponse.json({ success: false, message: "APIトークンが無効です（401エラー）。トークンを確認してください。" });
       }
-    });
+      if (!res.ok) {
+          break; // その他のエラー時はループを抜ける
+      }
 
-    if (!res.ok) {
-      return NextResponse.json({ success: false, message: `gBizINFO APIからの応答エラーです (ステータス: ${res.status})` });
+      const data = await res.json();
+      const infos = data['hojin-infos'];
+      
+      if (!infos || infos.length === 0) {
+          break; // データが尽きたら終了
+      }
+
+      allInfos = allInfos.concat(infos);
+
+      if (data.totalPage && page >= data.totalPage) {
+          break; // 最終ページに達したら終了
+      }
+      
+      page++;
+      // 連続リクエストによるAPIサーバーへの負荷を抑える
+      await new Promise(resolve => setTimeout(resolve, 100)); 
     }
 
-    const data = await res.json();
-    let infos = data['hojin-infos'] || [];
-
-    // 2. 指定されたエリア（所在地）で完全フィルタリング
-    if (area && infos.length > 0) {
-      // 例: "北海道浦河郡" などの入力に対して、文字列が含まれる法人のみを残す
-      infos = infos.filter((info: any) => info.location && info.location.includes(area));
+    // 2. 全取得したデータの中から、目的の「エリア」で正確にフィルタリング
+    let targetInfos = allInfos;
+    if (area) {
+      targetInfos = targetInfos.filter(info => info.location && info.location.includes(area));
     }
 
-    if (infos.length === 0) {
-      return NextResponse.json({ success: false, message: "APIからデータを取得しましたが、指定エリアに合致する企業はありませんでした。" });
+    if (targetInfos.length === 0) {
+      return NextResponse.json({ 
+          success: false, 
+          message: `全国で ${allInfos.length} 件の「${keyword}」を取得しましたが、エリア「${area}」に一致する企業は含まれていませんでした。` 
+      });
     }
 
-    // 3. 取得した確実な公式データを、AIを介さずに直接DB（スプレッドシート）へ格納する
+    // 3. 抽出された確実なデータをデータベース（スプレッドシート）に保存
     let savedCount = 0;
-    for (const info of infos) {
+    for (const info of targetInfos) {
       const payload = {
         action: 'ADD_DB_RECORD',
         sheetName: 'SalesTargets',
@@ -61,35 +88,33 @@ export async function POST(req: Request) {
           website: info.company_url || '',
           volume: '',
           priority: '',
-          status: '生データ (AI未分析)', 
+          status: 'API抽出データ', 
           reason: '',
           proposal: '',
-          memo: 'gBizINFO APIからの一括取得データ'
+          memo: 'gBizINFO APIからの全件抽出'
         }
       };
       
       await fetch(gasUrl, { 
-        method: 'POST', 
-        headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify(payload) 
+          method: 'POST', 
+          headers: { 'Content-Type': 'application/json' }, 
+          body: JSON.stringify(payload) 
       });
       
       savedCount++;
-      // APIやDBの書き込み上限・タイムアウト（60秒）を防ぐため、最大50件で安全に停止
-      if (savedCount >= 50) break;
-      
-      // 連続書き込みの負荷軽減
+      // Vercelのタイムアウト（60秒）を防ぐため、1回の処理での最大保存件数を制限
+      if (savedCount >= 30) break;
       await new Promise(resolve => setTimeout(resolve, 200)); 
     }
 
     return NextResponse.json({ 
       success: true, 
       count: savedCount, 
-      message: `gBizINFOから ${savedCount} 件の公式データをぶっこ抜き、データベースに格納しました。` 
+      message: `全国 ${allInfos.length} 件のデータからエリアを絞り込み、${savedCount} 件の企業をDBにぶっこ抜きました！` 
     });
 
   } catch (error: any) {
-    console.error("gBizINFO Fetch Error:", error);
+    console.error("GBiz API Error:", error);
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }
