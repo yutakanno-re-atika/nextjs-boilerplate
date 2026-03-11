@@ -96,10 +96,46 @@ export async function POST(req: Request) {
               }
             };
             await fetch(gasUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-            await new Promise(resolve => setTimeout(resolve, 500)); // スプレッドシートの書き込み負荷軽減
+            await new Promise(resolve => setTimeout(resolve, 500)); 
         }
         return processedTargets;
     };
+
+    // ============================================================================
+    // 🎯 モード: AUTO (エリア一括抽出)
+    // ============================================================================
+    if (mode === 'auto') {
+      const { area, industry } = body;
+
+      const extraction = await generateObject({
+        // @ts-ignore
+        model: google('gemini-2.5-pro', { useSearchGrounding: true }), temperature: 0.1,
+        schema: z.object({ 
+            companies: z.array(z.object({
+                name: z.string().describe("企業名"),
+                corporateNumber: z.string().describe("【重要】判明した13桁の法人番号").optional().catch("")
+            })).max(10) 
+        }),
+        prompt: `あなたはリサーチャーです。Google検索を使い、「${area || '北海道'}」で「${industry || '電気工事'}」を営む実在の法人を最大10社リストアップしてください。
+        【🚨最重要指令】
+        ただ検索するのではなく、「site:info.gbiz.go.jp ${area || '北海道'} ${industry || '電気工事'}` + `」というクエリで検索し、
+        経産省のデータベース(gBizINFO)に登録されている企業の【13桁の法人番号】を確実に取得してください。`
+      });
+
+      const candidates = extraction.object.companies;
+      if (!candidates || candidates.length === 0) return Response.json({ success: false, message: "該当エリアに企業が見つかりませんでした。" });
+
+      const validGBizDatas = [];
+      for (const c of candidates) {
+          const gBizData = await fetchGBizInfoById(c.corporateNumber || '') || await fetchGBizInfoByName(c.name);
+          if (gBizData) validGBizDatas.push(gBizData);
+      }
+
+      if (validGBizDatas.length === 0) return Response.json({ success: false, message: `国のデータベースで実在確認できた法人がありませんでした。検索条件を変えてみてください。` });
+
+      const processedTargets = await analyzeAndSaveTargets(validGBizDatas, area || '北海道', industry || '不明');
+      return Response.json({ success: true, count: processedTargets.length, targets: processedTargets });
+    }
 
     // ============================================================================
     // 🎯 モード: CATCH (法人番号 直接ぶっこ抜き RAG)
@@ -109,18 +145,17 @@ export async function POST(req: Request) {
       
       let gBizDatas = [];
       
-      // 💡 超高速・確実なアプローチ：テキストから「13桁の数字」を正規表現で直接ぶっこ抜く
+      // ★修正箇所: Array.fromと型指定を使い、TypeScriptエラーを解消
       const corporateNumbers = inputText.match(/\b[1-9]\d{12}\b/g) || [];
-      const uniqueNumbers = [...new Set(corporateNumbers)].slice(0, 10); // Vercelのタイムアウト対策で最大10件
+      const uniqueNumbers: string[] = Array.from(new Set(corporateNumbers)).slice(0, 10); 
       
       if (uniqueNumbers.length > 0) {
-          // 法人番号が見つかった場合、AIを使わずに経産省APIを直叩きして確定データを取得
           console.log("法人番号を検出:", uniqueNumbers);
-          const promises = uniqueNumbers.map(num => fetchGBizInfoById(num));
+          // 型がstring[]に確定しているため、エラーなくAPIを叩ける
+          const promises = uniqueNumbers.map((num: string) => fetchGBizInfoById(num));
           const results = await Promise.all(promises);
           gBizDatas = results.filter(data => data !== null);
       } else {
-          // 法人番号がないテキストの場合は、従来のAIによる企業名抽出にフォールバック
           const extraction = await generateObject({
             // @ts-ignore
             model: google('gemini-2.5-pro'), temperature: 0,
@@ -135,7 +170,6 @@ export async function POST(req: Request) {
 
       if (gBizDatas.length === 0) return Response.json({ success: false, message: "抽出した企業は国のデータベース上で実在確認できませんでした。" });
 
-      // 確定データをAIに渡して分析＆DB登録
       const processedTargets = await analyzeAndSaveTargets(gBizDatas, area || '北海道', industry || '不明');
       return Response.json({ success: true, count: processedTargets.length, targets: processedTargets });
     }
