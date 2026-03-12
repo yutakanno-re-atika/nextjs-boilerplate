@@ -1,6 +1,7 @@
 // app/components/admin/AdminDatabase.tsx
 // @ts-nocheck
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { AdminDatabaseSpecs } from './AdminDatabaseSpecs';
 
 // ============================================================================
 // ⚠️ 重要：スプレッドシートの設定
@@ -136,7 +137,7 @@ const getCategory = (name: string) => {
 
 export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoiceOutputEnabled?: boolean }) => {
   // ★ タブに 'DOJO' を追加
-  const [activeTab, setActiveTab] = useState<'WIRES' | 'UNKNOWN' | 'CASTINGS' | 'CLIENTS' | 'STAFF' | 'DOJO'>('WIRES');
+  const [activeTab, setActiveTab] = useState<'WIRES' | 'UNKNOWN' | 'CASTINGS' | 'CLIENTS' | 'STAFF' | 'DOJO' | 'SPECS'>('WIRES');
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('すべて');
