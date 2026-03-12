@@ -664,7 +664,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     if (activeTab !== 'WIRES') return [];
     const groups: { [key: string]: { captain: any, members: any[], allIds: string[] } } = {};
     
-sorted.forEach(w => {
+sortedData.forEach(w => {
       // 💡 名前だけでなく、独立している電圧やスケアの情報も合体させて「一意のキー」を作る
       const name = w.name || '名称未設定';
       const voltage = w.voltage ? ` (${w.voltage})` : '';
