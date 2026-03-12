@@ -2,6 +2,13 @@
 // @ts-nocheck
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 
+// ============================================================================
+// ⚠️ 重要：スプレッドシートの設定
+// 追加した「status」列が、A列から数えて何番目かを指定してください。
+// （既存の getUpdatesMap を見ると20番目まで使われているため、デフォルトを21にしています）
+// ============================================================================
+const STATUS_COLUMN_INDEX = 21; 
+
 const Icons = {
   Plus: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>,
   Edit: () => <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>,
@@ -21,7 +28,9 @@ const Icons = {
   SortDesc: () => <svg className="w-3 h-3 inline-block ml-1 text-[#D32F2F]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" /></svg>,
   SortNone: () => <svg className="w-3 h-3 inline-block ml-1 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" /></svg>,
   Mic: () => <svg className="w-4 h-4 md:w-5 md:h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>,
-  AlertTriangle: () => <svg className="w-3 h-3 md:w-4 md:h-4 inline-block text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+  AlertTriangle: () => <svg className="w-3 h-3 md:w-4 md:h-4 inline-block text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
+  Cpu: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" /></svg>,
+  Users: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
 };
 
 const formatTimeShort = (timeStr: string) => {
@@ -111,7 +120,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const [editingItem, setEditingItem] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // ★ AIアシスト登録モーダルのステート
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [aiStatus, setAiStatus] = useState<'IDLE' | 'ANALYZING'>('IDLE');
   const [aiProgressStep, setAiProgressStep] = useState(0); 
@@ -122,6 +130,11 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const [aiHint, setAiHint] = useState<string>('');
   const [isListeningHint, setIsListeningHint] = useState(false);
   const hintRecognitionRef = useRef<any>(null);
+
+  // ★ AIマージ（重複統合）用ステート
+  const [analyzingName, setAnalyzingName] = useState<string | null>(null);
+  const [mergeProposal, setMergeProposal] = useState<any>(null);
+  const [isMerging, setIsMerging] = useState(false);
   
   const [sampleTotal, setSampleTotal] = useState<number | ''>('');
   const [sampleCopper, setSampleCopper] = useState<number | ''>('');
@@ -193,30 +206,15 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       try {
           const res = await fetch('/api/enrich-client', {
               method:'POST', headers:{'Content-Type':'application/json'},
-              body: JSON.stringify({ 
-                  companyName: itemToEnrich.name, 
-                  address: itemToEnrich.address,
-                  industry: itemToEnrich.industry,
-                  currentMemo: itemToEnrich.memo
-              })
+              body: JSON.stringify({ companyName: itemToEnrich.name, address: itemToEnrich.address, industry: itemToEnrich.industry, currentMemo: itemToEnrich.memo })
           });
           const d = await res.json();
           if(d.success) {
-              setEditingItem({
-                  ...itemToEnrich,
-                  industry: d.data.industry,
-                  memo: `${d.data.memo}`.trim()
-              });
-              if (!targetItem) {
-                  setIsModalOpen(true);
-              }
+              setEditingItem({ ...itemToEnrich, industry: d.data.industry, memo: `${d.data.memo}`.trim() });
+              if (!targetItem) setIsModalOpen(true);
               alert("AIが企業情報を深掘りし、データを補完しました！\n「マスター登録」を押して保存してください。");
-          } else {
-              alert("情報の取得に失敗しました");
-          }
-      } catch(e) {
-          alert("通信エラー");
-      }
+          } else { alert("情報の取得に失敗しました"); }
+      } catch(e) { alert("通信エラー"); }
       setIsSubmitting(false);
   };
 
@@ -232,9 +230,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const getJuteWeight = () => {
       if (sampleTotal && sampleCopper) {
           const coverVal = Number(sampleCover) || 0;
-          if (coverVal === 0) {
-              return '0.000'; 
-          }
+          if (coverVal === 0) return '0.000'; 
           const jute = (Number(sampleTotal) || 0) - (Number(sampleCopper) || 0) - coverVal;
           return jute > 0 ? jute.toFixed(3) : '0.000';
       }
@@ -329,12 +325,14 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
   const getUpdatesMap = (item: any, tab: string) => {
     if (tab === 'WIRES') {
+        // ★ STATUS_COLUMN_INDEX にステータスを登録
         const updates: any = { 1: item.maker, 2: item.name, 3: item.year, 4: item.sq, 5: item.sampleTotal, 6: item.sampleCopper, 7: item.core, 8: item.conductor, 9: item.ratio, 10: item.memo, 18: item.material, 19: item.sampleCover, 20: item.showOnWeb };
         if (item.image1 !== undefined) updates[11] = item.image1;
         if (item.image2 !== undefined) updates[12] = item.image2;
         if (item.image3 !== undefined) updates[13] = item.image3;
         if (item.image4 !== undefined) updates[14] = item.image4;
         if (item.image5 !== undefined) updates[15] = item.image5;
+        if (item.status !== undefined) updates[STATUS_COLUMN_INDEX] = item.status;
         return updates;
     }
     if (tab === 'UNKNOWN') return { 1: item.name, 2: item.ratio, 3: item.reason, 9: item.material }; 
@@ -342,6 +340,69 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     if (tab === 'CLIENTS') return { 1: item.name, 2: item.rank, 4: item.phone, 5: item.loginId, 6: item.password, 7: item.points, 8: item.memo, 9: item.address, 10: item.industry };
     if (tab === 'STAFF') return { 1: item.name, 2: item.role, 3: item.rate, 4: item.status, 5: item.loginId, 6: item.password };
     return {};
+  };
+
+  // ★ AI重複マージの実行
+  const handleAiMergeAnalyze = async (wireName: string, groupData: any) => {
+    setAnalyzingName(wireName);
+    const records = [groupData.captain, ...groupData.members];
+    try {
+      const res = await fetch('/api/ai-merge', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetName: wireName, records })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMergeProposal({ name: wireName, records, allIds: groupData.allIds, ...data.result });
+      } else {
+        alert("分析エラー: " + data.message);
+      }
+    } catch (e) {
+      alert("通信エラーが発生しました。");
+    } finally {
+      setAnalyzingName(null);
+    }
+  };
+
+  const handleApplyMerge = async () => {
+    if (!confirm('統合データをマスターとして新規登録しますか？\n（元のデータは全てアーカイブとして保持されます）')) return;
+    setIsMerging(true);
+    const gasUrl = "/api/gas"; 
+
+    try {
+      // 1. 既存の全データを 'archived' に更新
+      const updatePromises = mergeProposal.allIds.map((id: string) => {
+        return fetch(gasUrl, { 
+          method: 'POST', 
+          headers: { 'Content-Type': 'application/json' }, 
+          body: JSON.stringify({ action: 'UPDATE_DB_RECORD', sheetName: 'Products_Wire', recordId: id, updates: { [STATUS_COLUMN_INDEX]: 'archived' } }) 
+        });
+      });
+      await Promise.all(updatePromises);
+
+      // 2. 新しい統合データ（最強のゴールデンレコード）を追加
+      const baseItem = mergeProposal.records[0];
+      const payload = {
+        action: 'ADD_DB_RECORD',
+        sheetName: 'Products_Wire',
+        data: {
+          ...baseItem,
+          name: mergeProposal.name,
+          ratio: mergeProposal.mergedYieldRate,
+          memo: `【AI統合データ】\n${mergeProposal.mergedDescription}\n\n※過去${mergeProposal.records.length}件のデータを統合。`,
+          status: 'active'
+        }
+      };
+      delete payload.data.id; delete payload.data.createdAt; delete payload.data.updatedAt;
+
+      await fetch(gasUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      
+      alert("✨ マージ完了！統合データを作成し、過去のデータは教師データとして保持しました。");
+      window.location.reload();
+    } catch (e) {
+      alert("マージ処理中にエラーが発生しました。");
+      setIsMerging(false);
+    }
   };
 
   const compressImage = (file: File, isDetailMode: boolean = true): Promise<string> => {
@@ -598,6 +659,37 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       });
   }
 
+  // ★ 線種データを名前でグループ化（キャプテンとメンバーに分ける）
+  const groupedWires = useMemo(() => {
+    if (activeTab !== 'WIRES') return [];
+    const groups: { [key: string]: { captain: any, members: any[], allIds: string[] } } = {};
+    
+    sortedData.forEach(w => {
+      const name = w.name || '名称未設定';
+      if (!groups[name]) groups[name] = { captain: null, members: [], allIds: [] };
+      groups[name].allIds.push(w.id);
+
+      if (w.status !== 'archived') {
+        if (!groups[name].captain) {
+          groups[name].captain = w; 
+        } else {
+          groups[name].members.push(w); 
+        }
+      } else {
+        groups[name].members.push(w);
+      }
+    });
+
+    Object.keys(groups).forEach(name => {
+      if (!groups[name].captain && groups[name].members.length > 0) {
+         groups[name].captain = groups[name].members[0];
+         groups[name].members = groups[name].members.slice(1);
+      }
+    });
+
+    return Object.entries(groups).map(([name, data]) => ({ name, ...data }));
+  }, [sortedData, activeTab]);
+
   const ImageSlot = ({ title, imageKey, colIdx, pendingKey }: { title: string, imageKey: string, colIdx: number, pendingKey: string }) => {
     const savedImage = editingItem[imageKey];
     const pendingImage = editingItem[pendingKey];
@@ -789,243 +881,322 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                             <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('status')}>ステータス <SortIcon columnKey="status" /></th>
                         </>
                     )}
-                    {activeTab !== 'UNKNOWN' && (
+                    {activeTab !== 'UNKNOWN' && activeTab !== 'WIRES' && (
                       <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('updatedAt')}>登録/更新 <SortIcon columnKey="updatedAt" /></th>
                     )}
                     <th className="p-3 text-right font-bold">操作</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 bg-white">
-                  {sortedData.map((item: any, idx: number) => (
-                    <tr key={item.id || idx} className={`hover:bg-gray-50 transition ${activeTab === 'WIRES' && String(item.showOnWeb) === 'false' ? 'opacity-50 bg-gray-100' : ''}`}>
-                      {activeTab === 'WIRES' && (
-                        <>
-                          <td className="p-3 text-center">
-                              {String(item.showOnWeb) === 'false' ? <span className="text-gray-400" title="Web非表示"><Icons.EyeOff /></span> : <span className="text-gray-900" title="Web表示中"><Icons.Globe /></span>}
-                          </td>
-                          <td className="p-3 font-bold text-gray-700">{item.maker || '-'}</td>
-                          <td className="p-3 font-black text-gray-900 text-base">
-                              {item.name}
-                              {item.material === '錫メッキ' && <span className="ml-2 inline-flex items-center gap-0.5 bg-[#D32F2F] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-sm whitespace-nowrap shadow-sm"><Icons.AlertTriangle /> 錫</span>}
-                              {item.material === 'アルミ' && <span className="ml-2 inline-flex items-center gap-0.5 bg-gray-700 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-sm whitespace-nowrap shadow-sm">アルミ</span>}
-                          </td>
-                          <td className="p-3 text-gray-600">{item.year || '-'}</td>
-                          <td className="p-3 text-gray-600 font-mono font-bold text-xs">{formatSqDisplay(item.sq)} / {formatCoreDisplay(item.core)}</td>
-                          <td className="p-3 font-mono font-black text-gray-900 text-lg">{item.ratio}%</td>
-                          <td className="p-3">
-                              <div className="flex gap-2 justify-center">
-                                  {[11, 12, 13, 14, 15].map(colIdx => {
-                                      const hasImage = !!item[`image${colIdx-10}`];
-                                      return (
-                                          <div key={colIdx} className="flex flex-col gap-1 items-center w-10">
-                                              <div className={`relative w-full h-8 border ${hasImage ? 'border-gray-400' : 'border-gray-200 border-dashed'} rounded-sm overflow-hidden bg-gray-100 flex items-center justify-center group shadow-sm`}>
-                                                  {hasImage ? (
-                                                      <a href={getDriveViewUrl(item[`image${colIdx-10}`])} target="_blank" rel="noopener noreferrer" className="w-full h-full block">
-                                                          <img src={getDriveImageUrl(item[`image${colIdx-10}`])} referrerPolicy="no-referrer" className="w-full h-full object-cover group-hover:scale-110 transition-transform cursor-zoom-in" />
-                                                      </a>
-                                                  ) : ( <span className="text-[8px] text-gray-300 font-bold">空</span> )}
-                                              </div>
-                                          </div>
-                                      );
-                                  })}
-                              </div>
-                          </td>
-                        </>
-                      )}
+                  {/* ★ WIRES の場合はチーム型グループ展開で描画する */}
+                  {activeTab === 'WIRES' ? (
+                    groupedWires.map((group, idx) => {
+                      const item = group.captain;
+                      if (!item) return null;
+                      const members = group.members;
+                      const needsMerge = members.filter(m => m.status !== 'archived').length > 0;
 
+                      return (
+                        <React.Fragment key={item.id || idx}>
+                          <tr className={`hover:bg-gray-50 transition ${String(item.showOnWeb) === 'false' ? 'opacity-50 bg-gray-100' : ''} ${needsMerge ? 'bg-blue-50/20' : ''}`}>
+                            <td className="p-3 text-center">
+                                {String(item.showOnWeb) === 'false' ? <span className="text-gray-400" title="Web非表示"><Icons.EyeOff /></span> : <span className="text-gray-900" title="Web表示中"><Icons.Globe /></span>}
+                            </td>
+                            <td className="p-3 font-bold text-gray-700">{item.maker || '-'}</td>
+                            <td className="p-3 font-black text-gray-900 text-base">
+                                <div className="flex items-center gap-2">
+                                    {item.name}
+                                    {item.material === '錫メッキ' && <span className="inline-flex items-center gap-0.5 bg-[#D32F2F] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-sm whitespace-nowrap shadow-sm"><Icons.AlertTriangle /> 錫</span>}
+                                    {item.material === 'アルミ' && <span className="inline-flex items-center gap-0.5 bg-gray-700 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-sm whitespace-nowrap shadow-sm">アルミ</span>}
+                                    {needsMerge && <span className="bg-red-100 text-red-700 border border-red-200 px-1.5 py-0.5 rounded text-[9px] font-bold animate-pulse">重複検知</span>}
+                                </div>
+                            </td>
+                            <td className="p-3 text-gray-600">{item.year || '-'}</td>
+                            <td className="p-3 text-gray-600 font-mono font-bold text-xs">{formatSqDisplay(item.sq)} / {formatCoreDisplay(item.core)}</td>
+                            <td className="p-3 font-mono font-black text-gray-900 text-lg">{item.ratio}%</td>
+                            <td className="p-3">
+                                <div className="flex gap-2 justify-center">
+                                    {[11, 12, 13, 14, 15].map(colIdx => {
+                                        const hasImage = !!item[`image${colIdx-10}`];
+                                        return (
+                                            <div key={colIdx} className="flex flex-col gap-1 items-center w-10">
+                                                <div className={`relative w-full h-8 border ${hasImage ? 'border-gray-400' : 'border-gray-200 border-dashed'} rounded-sm overflow-hidden bg-gray-100 flex items-center justify-center group shadow-sm`}>
+                                                    {hasImage ? (
+                                                        <a href={getDriveViewUrl(item[`image${colIdx-10}`])} target="_blank" rel="noopener noreferrer" className="w-full h-full block">
+                                                            <img src={getDriveImageUrl(item[`image${colIdx-10}`])} referrerPolicy="no-referrer" className="w-full h-full object-cover group-hover:scale-110 transition-transform cursor-zoom-in" />
+                                                        </a>
+                                                    ) : ( <span className="text-[8px] text-gray-300 font-bold">空</span> )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </td>
+                            <td className="p-3 text-right align-top">
+                              <div className="flex flex-col items-end gap-1.5">
+                                <div className="flex gap-2">
+                                  <button onClick={() => handleOpenModal(item)} className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-200 border border-transparent hover:border-gray-300 rounded-sm transition shadow-sm"><Icons.Edit /></button>
+                                  <button onClick={() => handleDelete(item.id)} className="p-1.5 text-gray-400 hover:text-[#D32F2F] hover:bg-red-50 border border-transparent hover:border-red-200 rounded-sm transition shadow-sm"><Icons.Trash /></button>
+                                </div>
+                                {needsMerge && (
+                                  <button onClick={() => handleAiMergeAnalyze(group.name, group)} className="text-[10px] bg-blue-700 hover:bg-blue-800 text-white px-2 py-1 rounded-sm shadow-sm flex items-center gap-1">
+                                    <Icons.Cpu /> AIマージ
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                          {/* 過去データの折りたたみ表示 */}
+                          {members.length > 0 && (
+                            <tr className="bg-gray-50/50">
+                              <td colSpan={8} className="p-0 border-b border-gray-200">
+                                <details className="group">
+                                  <summary className="text-[10px] text-gray-500 font-bold p-2 cursor-pointer hover:bg-gray-100 select-none flex items-center gap-2">
+                                     <span className="w-4 text-center">▼</span>
+                                     <Icons.Users /> <span>裏側のチームデータ（AI教師用画像） {members.length}件を表示</span>
+                                  </summary>
+                                  <div className="p-3 flex gap-3 overflow-x-auto bg-gray-100/50">
+                                     {members.map((m: any, i: number) => (
+                                       <div key={m.id || i} className="bg-white border border-gray-300 rounded-sm p-2 flex gap-3 w-56 shrink-0 relative shadow-sm">
+                                          {m.status === 'archived' && <span className="absolute top-0 right-0 bg-gray-200 text-gray-500 text-[8px] font-bold px-1.5 py-0.5 rounded-bl-sm">Archived</span>}
+                                          {m.image1 ? (
+                                              <img src={getDriveImageUrl(m.image1)} className="w-12 h-12 object-cover border border-gray-200 rounded-sm" />
+                                          ) : (
+                                              <div className="w-12 h-12 bg-gray-100 border border-gray-200 rounded-sm flex items-center justify-center text-[8px] text-gray-400">No Image</div>
+                                          )}
+                                          <div className="flex flex-col text-[10px] truncate justify-center">
+                                             <span className="font-black text-gray-800">歩留まり: {m.ratio}%</span>
+                                             <span className="truncate text-gray-500 text-[9px] mt-0.5">{m.memo || 'メモなし'}</span>
+                                          </div>
+                                       </div>
+                                     ))}
+                                  </div>
+                                </details>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      );
+                    })
+                  ) : (
+                    sortedData.map((item: any, idx: number) => (
+                      <tr key={item.id || idx} className="hover:bg-gray-50 transition">
+                        {activeTab === 'UNKNOWN' && (
+                            <>
+                              <td className="p-3 text-xs text-gray-500 font-mono">{formatTimeShort(item.createdAt)}</td>
+                              <td className="p-3 font-bold text-gray-900 flex items-center gap-1"><Icons.Sparkles /> {item.name}</td>
+                              <td className="p-3 font-mono font-black text-gray-900 text-lg">{item.ratio}%</td>
+                              <td className="p-3 text-xs text-gray-700 leading-relaxed bg-gray-50 rounded-sm m-1 whitespace-normal border border-gray-200 shadow-inner">{item.reason}</td>
+                            </>
+                        )}
+                        {activeTab === 'CASTINGS' && (
+                            <>
+                              <td className="p-3 font-bold text-gray-900">{item.name}</td>
+                              <td className="p-3 text-gray-600">{item.type}</td>
+                              <td className="p-3 font-mono font-black text-gray-900 text-lg">{item.ratio}%</td>
+                            </>
+                        )}
+                        {activeTab === 'CLIENTS' && (
+                            <>
+                              <td className="p-3 font-bold text-gray-900">{item.name}</td>
+                              <td className="p-3"><span className="bg-gray-200 px-2 py-1 rounded-sm text-xs font-bold text-gray-800 border border-gray-300">{item.rank}</span></td>
+                              <td className="p-3 font-mono text-gray-600">{item.phone}</td>
+                              <td className="p-3 font-mono text-gray-900 font-bold">{item.points} pt</td>
+                            </>
+                        )}
+                        {activeTab === 'STAFF' && (
+                            <>
+                              <td className="p-3 font-bold text-gray-900">{item.name}</td>
+                              <td className="p-3 text-gray-600">{item.role}</td>
+                              <td className="p-3"><span className={`px-2 py-1 rounded-sm text-xs font-bold text-white shadow-sm ${item.status === 'ACTIVE' ? 'bg-gray-900' : 'bg-gray-400'}`}>{item.status}</span></td>
+                            </>
+                        )}
+                        {activeTab !== 'UNKNOWN' && (
+                            <td className="p-3 text-[10px] text-gray-400 font-mono align-top">
+                                <div className="flex flex-col gap-1"><span title="登録日">➕ {formatTimeShort(item.createdAt)}</span><span title="更新日">🔄 {formatTimeShort(item.updatedAt)}</span></div>
+                            </td>
+                        )}
+
+                        <td className="p-3 text-right align-top">
+                          <div className="flex justify-end gap-2">
+                            {activeTab === 'UNKNOWN' && (
+                                <button onClick={() => handlePromoteToWire(item)} className="px-3 py-1.5 text-white bg-gray-900 hover:bg-black rounded-sm flex items-center gap-1 text-xs font-bold transition shadow-sm"><Icons.ArrowUp /> マスターへ</button>
+                            )}
+                            {activeTab === 'CLIENTS' && (
+                                <button 
+                                    onClick={() => {
+                                        setEditingItem(item);
+                                        handleEnrichClient(item);
+                                    }} 
+                                    disabled={isSubmitting}
+                                    className="p-2 text-yellow-600 hover:text-yellow-800 hover:bg-yellow-50 border border-transparent hover:border-yellow-200 rounded-sm transition shadow-sm"
+                                    title="AIで企業情報を深掘り"
+                                >
+                                    <Icons.Sparkles />
+                                </button>
+                            )}
+                            <button onClick={() => handleOpenModal(item)} className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-200 border border-transparent hover:border-gray-300 rounded-sm transition shadow-sm"><Icons.Edit /></button>
+                            <button onClick={() => handleDelete(item.id)} className="p-2 text-gray-400 hover:text-[#D32F2F] hover:bg-red-50 border border-transparent hover:border-red-200 rounded-sm transition shadow-sm"><Icons.Trash /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+
+              {/* ★ スマホ版レイアウト */}
+              <div className="md:hidden divide-y divide-gray-200 bg-white pb-20">
+                {activeTab === 'WIRES' ? (
+                  groupedWires.map((group, idx) => {
+                    const item = group.captain;
+                    if (!item) return null;
+                    const members = group.members;
+                    const needsMerge = members.filter(m => m.status !== 'archived').length > 0;
+
+                    return (
+                      <div key={item.id || idx} className={`flex flex-col border-b border-gray-200 transition-colors ${String(item.showOnWeb) === 'false' ? 'opacity-60 bg-gray-100' : ''}`}>
+                        <div className={`p-2.5 flex flex-col gap-1 ${needsMerge ? 'bg-blue-50/30' : ''}`}>
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-1.5 overflow-hidden">
+                              {String(item.showOnWeb) === 'false' ? <span className="text-gray-400 shrink-0"><Icons.EyeOff /></span> : <span className="text-gray-900 shrink-0"><Icons.Globe /></span>}
+                              {item.maker && item.maker !== '-' && <span className="text-[9px] bg-gray-100 border border-gray-200 px-1 rounded-sm text-gray-600 whitespace-nowrap shrink-0">{item.maker}</span>}
+                              <span className="text-[13px] font-black text-gray-900 truncate leading-tight">{item.name}</span>
+                              {item.material === '錫メッキ' && <span className="text-[8px] bg-[#D32F2F] text-white px-1 py-0.5 rounded-sm shrink-0">錫</span>}
+                            </div>
+                            <div className="flex items-baseline shrink-0 ml-2">
+                              <span className="text-base font-black text-gray-900 font-mono tracking-tighter">{item.ratio}%</span>
+                            </div>
+                          </div>
+                          
+                          <div className="flex justify-between items-center mt-0.5">
+                            <div className="text-[10px] text-gray-500 flex items-center gap-2">
+                              <span className="font-mono bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">{formatSqDisplay(item.sq)}/{formatCoreDisplay(item.core)}</span>
+                              {needsMerge && <span className="bg-red-100 text-red-700 px-1.5 py-0.5 rounded text-[8px] font-bold">重複あり</span>}
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                              <div className="flex gap-1 border-r border-gray-200 pr-2">
+                                {needsMerge && (
+                                  <button onClick={() => handleAiMergeAnalyze(group.name, group)} className="p-1.5 text-blue-700 bg-blue-50 border border-blue-200 rounded-sm font-bold text-[9px] flex items-center gap-1"><Icons.Cpu /> マージ</button>
+                                )}
+                                <button onClick={() => handleOpenModal(item)} className="p-1.5 text-gray-600 bg-gray-50 border border-gray-200 rounded-sm"><Icons.Edit /></button>
+                                <button onClick={() => handleDelete(item.id)} className="p-1.5 text-[#D32F2F] bg-red-50 border border-red-100 rounded-sm"><Icons.Trash /></button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* スマホ用 メンバーアコーディオン */}
+                        {members.length > 0 && (
+                          <details className="bg-gray-50 group border-t border-gray-100">
+                            <summary className="text-[9px] text-gray-500 font-bold p-2 cursor-pointer hover:bg-gray-100 select-none flex items-center gap-2">
+                              <span>▼ 過去の教師データ {members.length}件</span>
+                            </summary>
+                            <div className="p-2 grid grid-cols-1 gap-2 bg-gray-100/50">
+                               {members.map((m: any, i: number) => (
+                                 <div key={m.id || i} className="bg-white border border-gray-300 rounded-sm p-2 flex gap-3 relative shadow-sm">
+                                    {m.status === 'archived' && <span className="absolute top-0 right-0 bg-gray-200 text-gray-500 text-[8px] font-bold px-1.5 py-0.5 rounded-bl-sm">Archived</span>}
+                                    {m.image1 && <img src={getDriveImageUrl(m.image1)} className="w-10 h-10 object-cover border border-gray-200 rounded-sm shrink-0" />}
+                                    <div className="flex flex-col text-[10px] truncate justify-center min-w-0">
+                                       <span className="font-black text-gray-800">歩留まり: {m.ratio}%</span>
+                                       <span className="truncate text-gray-500 text-[9px]">{m.memo || 'メモなし'}</span>
+                                    </div>
+                                 </div>
+                               ))}
+                            </div>
+                          </details>
+                        )}
+                      </div>
+                    );
+                  })
+                ) : (
+                  sortedData.map((item: any, idx: number) => (
+                    <div key={item.id || idx} className={`p-2.5 flex flex-col gap-1 active:bg-gray-50 transition-colors`}>
+                      
                       {activeTab === 'UNKNOWN' && (
                         <>
-                          <td className="p-3 text-xs text-gray-500 font-mono">{formatTimeShort(item.createdAt)}</td>
-                          <td className="p-3 font-bold text-gray-900 flex items-center gap-1"><Icons.Sparkles /> {item.name}</td>
-                          <td className="p-3 font-mono font-black text-gray-900 text-lg">{item.ratio}%</td>
-                          <td className="p-3 text-xs text-gray-700 leading-relaxed bg-gray-50 rounded-sm m-1 whitespace-normal border border-gray-200 shadow-inner">{item.reason}</td>
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-1 font-bold text-gray-900 text-[13px] truncate"><span className="text-gray-900"><Icons.Sparkles /></span> {item.name}</div>
+                            <span className="text-base font-black text-gray-900 font-mono">{item.ratio}%</span>
+                          </div>
+                          <p className="text-[10px] text-gray-600 bg-gray-50 p-1.5 rounded border border-gray-100 line-clamp-2">{item.reason}</p>
+                          <div className="flex justify-between items-center mt-0.5">
+                            <span className="text-[9px] text-gray-400 font-mono">{formatTimeShort(item.createdAt)}</span>
+                            <div className="flex gap-1.5">
+                              <button onClick={() => handlePromoteToWire(item)} className="px-2 py-1 text-white bg-gray-900 rounded-sm text-[10px] font-bold"><Icons.ArrowUp /> マスターへ</button>
+                              <button onClick={() => handleDelete(item.id)} className="p-1.5 text-[#D32F2F] bg-red-50 rounded-sm border border-red-100"><Icons.Trash /></button>
+                            </div>
+                          </div>
                         </>
-                      )}
-                      {activeTab === 'CASTINGS' && (
-                        <>
-                          <td className="p-3 font-bold text-gray-900">{item.name}</td>
-                          <td className="p-3 text-gray-600">{item.type}</td>
-                          <td className="p-3 font-mono font-black text-gray-900 text-lg">{item.ratio}%</td>
-                        </>
-                      )}
-                      {activeTab === 'CLIENTS' && (
-                        <>
-                          <td className="p-3 font-bold text-gray-900">{item.name}</td>
-                          <td className="p-3"><span className="bg-gray-200 px-2 py-1 rounded-sm text-xs font-bold text-gray-800 border border-gray-300">{item.rank}</span></td>
-                          <td className="p-3 font-mono text-gray-600">{item.phone}</td>
-                          <td className="p-3 font-mono text-gray-900 font-bold">{item.points} pt</td>
-                        </>
-                      )}
-                      {activeTab === 'STAFF' && (
-                        <>
-                          <td className="p-3 font-bold text-gray-900">{item.name}</td>
-                          <td className="p-3 text-gray-600">{item.role}</td>
-                          <td className="p-3"><span className={`px-2 py-1 rounded-sm text-xs font-bold text-white shadow-sm ${item.status === 'ACTIVE' ? 'bg-gray-900' : 'bg-gray-400'}`}>{item.status}</span></td>
-                        </>
-                      )}
-                      {activeTab !== 'UNKNOWN' && (
-                          <td className="p-3 text-[10px] text-gray-400 font-mono align-top">
-                              <div className="flex flex-col gap-1"><span title="登録日">➕ {formatTimeShort(item.createdAt)}</span><span title="更新日">🔄 {formatTimeShort(item.updatedAt)}</span></div>
-                          </td>
                       )}
 
-                      <td className="p-3 text-right align-top">
-                        <div className="flex justify-end gap-2">
-                          {activeTab === 'UNKNOWN' && (
-                              <button onClick={() => handlePromoteToWire(item)} className="px-3 py-1.5 text-white bg-gray-900 hover:bg-black rounded-sm flex items-center gap-1 text-xs font-bold transition shadow-sm"><Icons.ArrowUp /> マスターへ</button>
-                          )}
-                          {/* ★ PC版：顧客一覧にAIディープリサーチボタンを追加 */}
-                          {activeTab === 'CLIENTS' && (
+                      {activeTab === 'CASTINGS' && (
+                        <>
+                          <div className="flex justify-between items-center">
+                            <span className="font-bold text-[13px] text-gray-900 truncate">{item.name}</span>
+                            <span className="text-base font-black text-gray-900 font-mono">{item.ratio}%</span>
+                          </div>
+                          <div className="flex justify-between items-center mt-0.5">
+                            <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">{item.type}</span>
+                            <div className="flex gap-1.5">
+                              <button onClick={() => handleOpenModal(item)} className="p-1.5 text-gray-600 bg-gray-50 border border-gray-200 rounded-sm"><Icons.Edit /></button>
+                              <button onClick={() => handleDelete(item.id)} className="p-1.5 text-[#D32F2F] bg-red-50 border border-red-100 rounded-sm"><Icons.Trash /></button>
+                            </div>
+                          </div>
+                        </>
+                      )}
+
+                      {activeTab === 'CLIENTS' && (
+                        <>
+                          <div className="flex justify-between items-center">
+                            <span className="font-bold text-[13px] text-gray-900 truncate">{item.name}</span>
+                            <span className="text-[9px] font-bold bg-gray-100 border border-gray-200 text-gray-800 px-1.5 py-0.5 rounded-sm">{item.rank}</span>
+                          </div>
+                          <div className="flex justify-between items-center mt-0.5">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] text-gray-500 font-mono">📞 {item.phone}</span>
+                              <span className="text-[10px] text-gray-900 font-bold">✨ {item.points} pt</span>
+                            </div>
+                            
+                            <div className="flex gap-1.5">
                               <button 
                                   onClick={() => {
                                       setEditingItem(item);
                                       handleEnrichClient(item);
                                   }} 
                                   disabled={isSubmitting}
-                                  className="p-2 text-yellow-600 hover:text-yellow-800 hover:bg-yellow-50 border border-transparent hover:border-yellow-200 rounded-sm transition shadow-sm"
+                                  className="p-1.5 text-yellow-600 bg-yellow-50 border border-yellow-200 rounded-sm hover:bg-yellow-100 transition"
                                   title="AIで企業情報を深掘り"
                               >
                                   <Icons.Sparkles />
                               </button>
-                          )}
-                          <button onClick={() => handleOpenModal(item)} className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-200 border border-transparent hover:border-gray-300 rounded-sm transition shadow-sm"><Icons.Edit /></button>
-                          <button onClick={() => handleDelete(item.id)} className="p-2 text-gray-400 hover:text-[#D32F2F] hover:bg-red-50 border border-transparent hover:border-red-200 rounded-sm transition shadow-sm"><Icons.Trash /></button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              <div className="md:hidden divide-y divide-gray-200 bg-white pb-20">
-                {sortedData.map((item: any, idx: number) => (
-                  <div key={item.id || idx} className={`p-2.5 flex flex-col gap-1 active:bg-gray-50 transition-colors ${activeTab === 'WIRES' && String(item.showOnWeb) === 'false' ? 'opacity-60 bg-gray-100' : ''}`}>
-                    
-                    {activeTab === 'WIRES' && (
-                      <>
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-1.5 overflow-hidden">
-                            {String(item.showOnWeb) === 'false' ? <span className="text-gray-400 shrink-0"><Icons.EyeOff /></span> : <span className="text-gray-900 shrink-0"><Icons.Globe /></span>}
-                            {item.maker && item.maker !== '-' && <span className="text-[9px] bg-gray-100 border border-gray-200 px-1 rounded-sm text-gray-600 whitespace-nowrap shrink-0">{item.maker}</span>}
-                            <span className="text-[13px] font-black text-gray-900 truncate leading-tight">{item.name}</span>
-                            {item.material === '錫メッキ' && <span className="text-[8px] bg-[#D32F2F] text-white px-1 py-0.5 rounded-sm shrink-0">錫</span>}
-                            {item.material === 'アルミ' && <span className="text-[8px] bg-gray-600 text-white px-1 py-0.5 rounded-sm shrink-0">Al</span>}
-                          </div>
-                          <div className="flex items-baseline shrink-0 ml-2">
-                            <span className="text-base font-black text-gray-900 font-mono tracking-tighter">{item.ratio}%</span>
-                          </div>
-                        </div>
-                        <div className="flex justify-between items-center mt-0.5">
-                          <div className="text-[10px] text-gray-500 flex items-center">
-                            <span className="font-mono bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">{formatSqDisplay(item.sq)}/{formatCoreDisplay(item.core)}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <button onClick={() => handleOpenModal(item)} className="flex gap-0.5 items-center bg-gray-50 p-1 rounded-sm border border-gray-200 active:bg-gray-100 transition-colors" title="タップして画像編集">
-                              {[11, 12, 13, 14, 15].map(colIdx => {
-                                const img = item[`image${colIdx-10}`];
-                                return (
-                                  <div key={colIdx} className={`w-[18px] h-[18px] rounded-[2px] overflow-hidden flex items-center justify-center border ${img ? 'border-gray-300' : 'border-dashed border-gray-300 bg-white'}`}>
-                                    {img ? (
-                                      <img src={getDriveImageUrl(img)} className="w-full h-full object-cover opacity-80" />
-                                    ) : (
-                                      <span className="text-[8px] text-gray-300 font-bold">+</span>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </button>
-                            <div className="flex gap-1 border-l border-gray-200 pl-2">
-                              <button onClick={() => handleOpenModal(item)} className="p-1.5 text-gray-600 bg-gray-50 border border-gray-200 rounded-sm active:bg-gray-200"><Icons.Edit /></button>
-                              <button onClick={() => handleDelete(item.id)} className="p-1.5 text-[#D32F2F] bg-red-50 border border-red-100 rounded-sm active:bg-red-100"><Icons.Trash /></button>
+                              <button onClick={() => handleOpenModal(item)} className="p-1.5 text-gray-600 bg-gray-50 border border-gray-200 rounded-sm"><Icons.Edit /></button>
+                              <button onClick={() => handleDelete(item.id)} className="p-1.5 text-[#D32F2F] bg-red-50 border border-red-100 rounded-sm"><Icons.Trash /></button>
                             </div>
                           </div>
-                        </div>
-                      </>
-                    )}
+                        </>
+                      )}
 
-                    {activeTab === 'UNKNOWN' && (
-                      <>
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-1 font-bold text-gray-900 text-[13px] truncate"><span className="text-gray-900"><Icons.Sparkles /></span> {item.name}</div>
-                          <span className="text-base font-black text-gray-900 font-mono">{item.ratio}%</span>
-                        </div>
-                        <p className="text-[10px] text-gray-600 bg-gray-50 p-1.5 rounded border border-gray-100 line-clamp-2">{item.reason}</p>
-                        <div className="flex justify-between items-center mt-0.5">
-                          <span className="text-[9px] text-gray-400 font-mono">{formatTimeShort(item.createdAt)}</span>
-                          <div className="flex gap-1.5">
-                            <button onClick={() => handlePromoteToWire(item)} className="px-2 py-1 text-white bg-gray-900 rounded-sm text-[10px] font-bold"><Icons.ArrowUp /> マスターへ</button>
-                            <button onClick={() => handleDelete(item.id)} className="p-1.5 text-[#D32F2F] bg-red-50 rounded-sm border border-red-100"><Icons.Trash /></button>
+                      {activeTab === 'STAFF' && (
+                        <>
+                          <div className="flex justify-between items-center">
+                            <span className="font-bold text-[13px] text-gray-900">{item.name}</span>
+                            <span className={`text-[9px] font-bold text-white px-1.5 py-0.5 rounded-sm ${item.status === 'ACTIVE' ? 'bg-gray-900' : 'bg-gray-400'}`}>{item.status}</span>
                           </div>
-                        </div>
-                      </>
-                    )}
+                          <div className="flex justify-between items-center mt-0.5">
+                            <span className="text-[10px] text-gray-500 bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded">{item.role}</span>
+                            <div className="flex gap-1.5">
+                              <button onClick={() => handleOpenModal(item)} className="p-1.5 text-gray-600 bg-gray-50 border border-gray-200 rounded-sm"><Icons.Edit /></button>
+                              <button onClick={() => handleDelete(item.id)} className="p-1.5 text-[#D32F2F] bg-red-50 border border-red-100 rounded-sm"><Icons.Trash /></button>
+                            </div>
+                          </div>
+                        </>
+                      )}
 
-                    {activeTab === 'CASTINGS' && (
-                      <>
-                        <div className="flex justify-between items-center">
-                          <span className="font-bold text-[13px] text-gray-900 truncate">{item.name}</span>
-                          <span className="text-base font-black text-gray-900 font-mono">{item.ratio}%</span>
-                        </div>
-                        <div className="flex justify-between items-center mt-0.5">
-                          <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">{item.type}</span>
-                          <div className="flex gap-1.5">
-                            <button onClick={() => handleOpenModal(item)} className="p-1.5 text-gray-600 bg-gray-50 border border-gray-200 rounded-sm"><Icons.Edit /></button>
-                            <button onClick={() => handleDelete(item.id)} className="p-1.5 text-[#D32F2F] bg-red-50 border border-red-100 rounded-sm"><Icons.Trash /></button>
-                          </div>
-                        </div>
-                      </>
-                    )}
-
-                    {activeTab === 'CLIENTS' && (
-                      <>
-                        <div className="flex justify-between items-center">
-                          <span className="font-bold text-[13px] text-gray-900 truncate">{item.name}</span>
-                          <span className="text-[9px] font-bold bg-gray-100 border border-gray-200 text-gray-800 px-1.5 py-0.5 rounded-sm">{item.rank}</span>
-                        </div>
-                        <div className="flex justify-between items-center mt-0.5">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] text-gray-500 font-mono">📞 {item.phone}</span>
-                            <span className="text-[10px] text-gray-900 font-bold">✨ {item.points} pt</span>
-                          </div>
-                          
-                          {/* ★ スマホ版：AIディープリサーチボタン */}
-                          <div className="flex gap-1.5">
-                            <button 
-                                onClick={() => {
-                                    setEditingItem(item);
-                                    handleEnrichClient(item);
-                                }} 
-                                disabled={isSubmitting}
-                                className="p-1.5 text-yellow-600 bg-yellow-50 border border-yellow-200 rounded-sm hover:bg-yellow-100 transition"
-                                title="AIで企業情報を深掘り"
-                            >
-                                <Icons.Sparkles />
-                            </button>
-                            <button onClick={() => handleOpenModal(item)} className="p-1.5 text-gray-600 bg-gray-50 border border-gray-200 rounded-sm"><Icons.Edit /></button>
-                            <button onClick={() => handleDelete(item.id)} className="p-1.5 text-[#D32F2F] bg-red-50 border border-red-100 rounded-sm"><Icons.Trash /></button>
-                          </div>
-                        </div>
-                      </>
-                    )}
-
-                    {activeTab === 'STAFF' && (
-                      <>
-                        <div className="flex justify-between items-center">
-                          <span className="font-bold text-[13px] text-gray-900">{item.name}</span>
-                          <span className={`text-[9px] font-bold text-white px-1.5 py-0.5 rounded-sm ${item.status === 'ACTIVE' ? 'bg-gray-900' : 'bg-gray-400'}`}>{item.status}</span>
-                        </div>
-                        <div className="flex justify-between items-center mt-0.5">
-                          <span className="text-[10px] text-gray-500 bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded">{item.role}</span>
-                          <div className="flex gap-1.5">
-                            <button onClick={() => handleOpenModal(item)} className="p-1.5 text-gray-600 bg-gray-50 border border-gray-200 rounded-sm"><Icons.Edit /></button>
-                            <button onClick={() => handleDelete(item.id)} className="p-1.5 text-[#D32F2F] bg-red-50 border border-red-100 rounded-sm"><Icons.Trash /></button>
-                          </div>
-                        </div>
-                      </>
-                    )}
-
-                  </div>
-                ))}
+                    </div>
+                  ))
+                )}
                 {sortedData.length === 0 && (
                    <div className="p-10 text-center text-gray-400 font-bold text-xs">データがありません</div>
                 )}
@@ -1033,6 +1204,47 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
             </div>
         </div>
       </div>
+
+      {/* ★ AIマージ提案のモーダル */}
+      {mergeProposal && (
+        <div className="fixed inset-0 bg-black/60 z-[80] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-sm shadow-2xl max-w-3xl w-full p-6 border-t-4 border-blue-700">
+            <h3 className="text-lg md:text-xl font-black mb-4 flex items-center gap-2 text-blue-900 border-b border-gray-100 pb-3">
+              <Icons.Cpu /> AI統合提案: {mergeProposal.name}
+            </h3>
+            
+            {mergeProposal.alert && (
+              <div className="mb-4 bg-red-50 border border-red-200 p-3 text-red-800 text-sm font-bold flex items-start gap-2 shadow-sm rounded-sm">
+                <Icons.AlertTriangle /> {mergeProposal.alert}
+              </div>
+            )}
+            
+            <div className="space-y-4 text-sm max-h-[60vh] overflow-y-auto">
+              <div className="bg-gray-50 p-4 rounded-sm border border-gray-200 shadow-inner">
+                <p className="text-[10px] text-gray-500 font-bold uppercase mb-2">AIの分析・評価</p>
+                <p className="font-bold text-gray-800 leading-relaxed">{mergeProposal.recommendation}</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-blue-50/50 p-4 border border-blue-200 rounded-sm">
+                  <p className="text-[10px] text-blue-600 font-bold uppercase mb-2">統合後の歩留まり（採用案）</p>
+                  <p className="font-black text-blue-900 text-2xl">{mergeProposal.mergedYieldRate}</p>
+                </div>
+                <div className="bg-blue-50/50 p-4 border border-blue-200 rounded-sm">
+                  <p className="text-[10px] text-blue-600 font-bold uppercase mb-2">統合後の詳細説明（ハイブリッド版）</p>
+                  <p className="font-bold text-gray-800 leading-relaxed">{mergeProposal.mergedDescription}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-gray-100">
+              <button onClick={() => setMergeProposal(null)} disabled={isMerging} className="px-4 py-2 text-gray-500 text-sm font-bold hover:bg-gray-100 rounded-sm disabled:opacity-50">キャンセル</button>
+              <button onClick={handleApplyMerge} disabled={isMerging} className="px-5 py-2 bg-blue-700 text-white text-sm font-bold rounded-sm shadow-md hover:bg-blue-800 disabled:opacity-50 flex items-center gap-2">
+                {isMerging ? <><Icons.Refresh /> マージ実行中...</> : '✨ 承認してゴールデンレコードを作成'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ★ AIアシスト登録モーダル */}
       {isAiModalOpen && (
@@ -1171,7 +1383,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                 {activeTab === 'WIRES' && (editingItem._pendingImageData1 || editingItem._pendingImageData4) && (
                     <div className="bg-blue-50 border border-blue-200 p-2 md:p-3 rounded-sm text-[10px] md:text-xs text-blue-800 font-bold flex flex-col gap-1 shadow-sm">
                         <div className="flex items-center gap-2"><Icons.Sparkles /> 画像からAIが推論結果を自動入力しました。</div>
-                        <div className="text-gray-600 ml-6 font-normal">※ 下の「確定してマスターに登録」を押すと、アップロードした画像も同時に保存されます。</div>
+                        <div className="text-gray-600 ml-6 font-normal">※ 下の「マスター登録」を押すと、アップロードした画像も同時に保存されます。</div>
                     </div>
                 )}
 
@@ -1268,7 +1480,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                     <div>
                         <label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest flex justify-between items-center">
                             <span>顧客メモ・AIプロファイル</span>
-                            {/* スマホ版ディープリサーチボタンは削除（ヘッダーで十分なため） */}
                         </label>
                         <textarea className="w-full bg-white border border-gray-300 p-3 rounded-sm min-h-[120px] text-xs md:text-sm outline-none focus:border-gray-900 leading-relaxed shadow-sm whitespace-pre-wrap" value={editingItem.memo || ''} onChange={e => setEditingItem({...editingItem, memo: e.target.value})} />
                     </div>
