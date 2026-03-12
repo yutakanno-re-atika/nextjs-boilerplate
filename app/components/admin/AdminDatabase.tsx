@@ -1,7 +1,7 @@
 // app/components/admin/AdminDatabase.tsx
 // @ts-nocheck
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { AdminDatabaseSpecs } from './AdminDatabaseSpecs';
+import { AdminDatabaseSpecs } from './AdminDatabaseSpecs'; // ★ カタログコンポーネントを読み込み
 
 // ============================================================================
 // ⚠️ 重要：スプレッドシートの設定
@@ -136,8 +136,8 @@ const getCategory = (name: string) => {
 };
 
 export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoiceOutputEnabled?: boolean }) => {
-  // ★ タブに 'DOJO' を追加
-  const [activeTab, setActiveTab] = useState<'WIRES' | 'UNKNOWN' | 'CASTINGS' | 'CLIENTS' | 'STAFF' | 'DOJO' | 'SPECS'>('WIRES');
+  // ★ タブに 'SPECS' を追加
+  const [activeTab, setActiveTab] = useState<'WIRES' | 'SPECS' | 'UNKNOWN' | 'CASTINGS' | 'CLIENTS' | 'STAFF' | 'DOJO'>('WIRES');
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('すべて');
@@ -172,7 +172,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   
   const [cleansingState, setCleansingState] = useState<{ isRunning: boolean; current: number; total: number }>({ isRunning: false, current: 0, total: 0 });
   
-  // ★ AI道場用ステート
   const [dojoProgress, setDojoProgress] = useState({ isRunning: false, current: 0, total: 0 });
   const aiTrainingHistory = data?.aiTraining || [];
   const recentErrors = aiTrainingHistory.slice(-30).map((t: any) => Number(t.errorMargin || 0));
@@ -904,6 +903,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
           </div>
         </div>
         <div className="flex bg-gray-100 p-1 rounded-sm overflow-x-auto shadow-inner border border-gray-200">
+          {/* ★ SPECS を追加 */}
           {['WIRES', 'SPECS', 'UNKNOWN', 'CASTINGS', 'CLIENTS', 'STAFF', 'DOJO'].map(tab => (
             <button key={tab} onClick={() => handleTabChange(tab as any)} className={`px-3 py-1.5 md:px-4 md:py-2 rounded-sm text-[10px] md:text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1 ${activeTab === tab ? 'bg-white text-gray-900 shadow-sm border border-gray-300' : 'text-gray-500 hover:text-gray-900'}`}>
               {tab === 'WIRES' ? '電線' : tab === 'SPECS' ? '📖 カタログ' : tab === 'UNKNOWN' ? '💡 未知' : tab === 'CASTINGS' ? '非鉄' : tab === 'CLIENTS' ? '顧客' : tab === 'STAFF' ? 'スタッフ' : '🥋 AI道場'}
@@ -937,93 +937,15 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
           </div>
       )}
 
-      {activeTab === 'DOJO' && (
-          <div className="p-4 md:p-6 bg-gray-100 flex-1 overflow-y-auto">
-              <div className="bg-gray-900 text-white p-6 md:p-8 rounded-sm shadow-xl relative overflow-hidden mb-6 border-b-4 border-[#D32F2F]">
-                  <div className="absolute top-0 right-0 p-8 opacity-10 transform scale-150 pointer-events-none"><Icons.Brain /></div>
-                  <h2 className="text-xl md:text-2xl font-black mb-3 flex items-center gap-2 relative z-10"><Icons.Brain /> AI道場 (Teacher-Student Training)</h2>
-                  <p className="text-xs md:text-sm text-gray-300 leading-relaxed max-w-3xl relative z-10 font-bold">
-                      マスターに蓄積された「正解データ（画像と実測歩留まり）」を使って、AIに歩留まり当てクイズをさせます。<br/>
-                      全件総当たりで特訓させることで、AIは独自の視覚的特徴（被覆の厚さや光沢など）と歩留まりの関係性を自己学習します。
-                  </p>
-                  
-                  <div className="mt-6 md:mt-8 flex flex-col sm:flex-row gap-3 relative z-10">
-                      <button onClick={runDojoRandom} disabled={dojoProgress.isRunning} className="bg-white text-gray-900 font-bold px-6 py-3.5 rounded-sm shadow-md hover:bg-gray-100 transition disabled:opacity-50 text-sm flex items-center justify-center gap-2">
-                          🎲 ランダム1件でテスト
-                      </button>
-                      <button onClick={runDojoAll} disabled={dojoProgress.isRunning} className="bg-[#D32F2F] text-white font-bold px-6 py-3.5 rounded-sm shadow-md hover:bg-red-800 transition flex items-center justify-center gap-2 disabled:opacity-50 text-sm">
-                          <Icons.Sparkles /> ⚔️ 全件総当たり特訓 (一晩コース)
-                      </button>
-                  </div>
-                  
-                  {dojoProgress.isRunning && (
-                      <div className="mt-6 relative z-10 bg-gray-800 p-4 rounded-sm border border-gray-700 shadow-inner">
-                          <div className="flex justify-between text-[10px] md:text-xs font-bold text-gray-300 mb-2">
-                              <span className="flex items-center gap-2"><span className="animate-spin"><Icons.Refresh /></span> AI特訓中... (PCと画面を開いたままお待ちください)</span>
-                              <span className="font-mono">{dojoProgress.current} / {dojoProgress.total} 件</span>
-                          </div>
-                          <div className="w-full bg-gray-900 rounded-full h-2.5 overflow-hidden shadow-inner">
-                              <div className="bg-green-500 h-full transition-all duration-500" style={{ width: `${(dojoProgress.current / dojoProgress.total) * 100}%` }}></div>
-                          </div>
-                      </div>
-                  )}
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  <div className="lg:col-span-2 bg-white border border-gray-200 p-5 md:p-6 rounded-sm shadow-sm flex flex-col">
-                      <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 border-b border-gray-100 pb-2">AIの成長チャート (直近30回の推論誤差)</h3>
-                      <div className="flex items-end gap-3 mb-2">
-                          <div className="text-3xl md:text-4xl font-black text-gray-900 tracking-tighter tabular-nums">
-                              平均誤差: <span className={Number(avgError) > 3 ? 'text-[#D32F2F]' : 'text-green-600'}>±{avgError}%</span>
-                          </div>
-                          <div className="text-[10px] md:text-xs text-gray-500 font-bold mb-1 bg-gray-100 px-2 py-1 rounded-sm border border-gray-200">
-                              目標: ±2.0%以内
-                          </div>
-                      </div>
-                      <div className="flex-1 min-h-[150px] bg-gray-50 rounded-sm border border-gray-100 p-2">
-                          <DojoChart errors={recentErrors} />
-                      </div>
-                  </div>
-                  
-                  <div className="bg-white border border-gray-200 p-5 md:p-6 rounded-sm shadow-sm h-[500px] flex flex-col">
-                      <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 border-b border-gray-100 pb-2">最新の特訓ログ</h3>
-                      <div className="flex-1 overflow-y-auto space-y-3 pr-2 no-scrollbar">
-                          {aiTrainingHistory.slice().reverse().slice(0, 50).map((log: any, i: number) => (
-                              <div key={i} className="bg-gray-50 border border-gray-200 p-3 rounded-sm shadow-inner text-xs transition hover:border-gray-400 group">
-                                  <div className="flex justify-between items-start mb-2 border-b border-gray-200 pb-2">
-                                      <div className="font-bold text-gray-900 truncate pr-2 text-[11px]" title={log.wireName}>{log.wireName}</div>
-                                      <div className="font-mono text-[9px] text-gray-500 whitespace-nowrap bg-white px-1.5 py-0.5 rounded border border-gray-100">{formatTimeShort(log.date)}</div>
-                                  </div>
-                                  <div className="grid grid-cols-3 gap-2 mb-2 text-center">
-                                      <div className="bg-white p-1.5 rounded-sm border border-gray-200 shadow-sm">
-                                          <p className="text-[8px] text-gray-500 font-bold mb-0.5">正解</p>
-                                          <p className="font-black text-gray-900 font-mono text-[13px]">{log.actualRatio}%</p>
-                                      </div>
-                                      <div className="bg-white p-1.5 rounded-sm border border-gray-200 shadow-sm">
-                                          <p className="text-[8px] text-gray-500 font-bold mb-0.5">AI推測</p>
-                                          <p className="font-black text-gray-900 font-mono text-[13px]">{log.predictedRatio}%</p>
-                                      </div>
-                                      <div className={`p-1.5 rounded-sm border shadow-sm font-bold text-white flex flex-col justify-center ${Number(log.errorMargin) <= 2.0 ? 'bg-green-500 border-green-600' : Number(log.errorMargin) <= 5.0 ? 'bg-yellow-500 border-yellow-600' : 'bg-red-500 border-red-600'}`}>
-                                          <p className="text-[8px] text-white/80 mb-0.5">誤差</p>
-                                          <p className="font-black font-mono text-[13px]">{log.errorMargin}%</p>
-                                      </div>
-                                  </div>
-                                  <details className="mt-2">
-                                      <summary className="text-[9px] text-gray-500 font-bold cursor-pointer hover:text-gray-900 select-none flex items-center gap-1 opacity-60 group-hover:opacity-100 transition">
-                                          <Icons.Sparkles /> AIの推論理由
-                                      </summary>
-                                      <p className="mt-1.5 text-gray-700 leading-relaxed bg-white p-2 rounded-sm border border-gray-200 shadow-inner whitespace-pre-wrap text-[10px]">{log.reason}</p>
-                                  </details>
-                              </div>
-                          ))}
-                          {aiTrainingHistory.length === 0 && <p className="text-gray-400 text-center py-10 font-bold text-xs">まだ特訓履歴がありません</p>}
-                      </div>
-                  </div>
-              </div>
-          </div>
+      {/* ★ カタログ用UI */}
+      {activeTab === 'SPECS' && (
+        <div className="bg-white border border-gray-200 shadow-sm rounded-sm flex-1 flex flex-col overflow-hidden relative mt-2">
+          <AdminDatabaseSpecs data={data} />
+        </div>
       )}
 
-      {activeTab !== 'DOJO' && (
+      {/* 既存のUI (DOJO以外かつSPECS以外) */}
+      {activeTab !== 'DOJO' && activeTab !== 'SPECS' && (
       <div className="bg-white border border-gray-200 shadow-sm rounded-sm flex-1 flex flex-col overflow-hidden relative mt-2">
         <div className="p-2 md:p-4 border-b border-gray-200 bg-gray-50 flex flex-col gap-2 z-30 relative">
           
@@ -1121,12 +1043,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         </div>
         
         <div className="flex-1 overflow-hidden relative bg-gray-100 md:bg-white">
-          {/* ↓これを追加 */}
-          {activeTab === 'SPECS' ? (
-             <AdminDatabaseSpecs data={data} />
-          ) : (
-             <div className="h-full overflow-y-auto relative">
-               {/* 既存の table や div などのコードはそのまま */}
+            <div className="h-full overflow-y-auto relative">
               
               <table className="hidden md:table w-full text-left border-collapse text-sm">
                 <thead className="bg-gray-100 text-gray-600 uppercase tracking-wider text-xs sticky top-0 z-20 shadow-sm border-b border-gray-300">
@@ -1431,6 +1348,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                                            <span>|</span>
                                            <span className="truncate">{m.maker && m.maker !== '-' ? `【${m.maker}】` : ''}{formatSqDisplay(m.sq)}/{formatCoreDisplay(m.core)}</span>
                                            {m.year && m.year !== '-' && <span>| {m.year}年</span>}
+                                           {m.conductor && m.conductor !== '-' && <span>| {m.conductor}</span>}
                                        </div>
                                        <span className="truncate text-gray-500 text-[9px] mt-0.5 group-hover:text-blue-600">{m.memo || 'メモなし'}</span>
                                     </div>
@@ -1814,7 +1732,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                                 <div className="w-full flex flex-col gap-1.5 md:gap-2">
                                     <div className="bg-white border border-gray-300 shadow-sm p-1.5 md:p-2 rounded-sm flex justify-between items-center"><span className="text-[9px] md:text-[10px] font-bold text-gray-500 uppercase tracking-widest">ダスト</span><span className="font-mono text-sm md:text-base font-bold text-gray-800 tabular-nums">{getJuteWeight()}g</span></div>
                                     <div className="bg-gray-900 border border-black shadow-inner p-1.5 md:p-2 rounded-sm flex justify-between items-center relative"><span className="text-[9px] md:text-[10px] font-bold text-gray-300 uppercase tracking-widest">歩留まり</span>{editingItem.aiEstimatedRatio && !sampleTotal && <span className="absolute -top-2 -right-2 text-[8px] bg-gray-500 text-white px-1.5 py-0.5 rounded shadow animate-pulse">AI</span>}<span className="font-mono text-lg md:text-xl font-black text-white tabular-nums">
-                                      <input type="number" step="0.01" className="w-20 bg-transparent text-right outline-none" value={editingItem.ratio || ''} onChange={e => setEditingItem({...editingItem, ratio: toHalfWidthNumber(e.target.value)})} placeholder="---" />%
+                                        <input type="number" step="0.01" className="w-20 bg-transparent text-right outline-none" value={editingItem.ratio || ''} onChange={e => setEditingItem({...editingItem, ratio: toHalfWidthNumber(e.target.value)})} placeholder="---" />%
                                     </span></div>
                                 </div>
                             </div>
