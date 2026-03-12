@@ -664,21 +664,36 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     if (activeTab !== 'WIRES') return [];
     const groups: { [key: string]: { captain: any, members: any[], allIds: string[] } } = {};
     
-    sortedData.forEach(w => {
+sorted.forEach(w => {
+      // 💡 名前だけでなく、独立している電圧やスケアの情報も合体させて「一意のキー」を作る
       const name = w.name || '名称未設定';
-      if (!groups[name]) groups[name] = { captain: null, members: [], allIds: [] };
-      groups[name].allIds.push(w.id);
+      const voltage = w.voltage ? ` (${w.voltage})` : '';
+      const sq = w.sq ? ` ${w.sq}` : '';
+      const cores = w.cores ? ` ${w.cores}` : '';
+      
+      // 例：「CV線 (6600V) 38sq 3C」という固有のチーム名を作成
+      const groupKey = `${name}${voltage}${sq}${cores}`.trim();
+
+      // もしデータベース上の独立項目ではなく、description（備考）に「6600V」等と書いている場合は、
+      // 簡易的に以下の1行の // を消して有効にすると、備考欄の完全一致で分けることも可能です。
+      // const groupKey = `${name} - ${w.description || ''}`;
+
+      if (!groups[groupKey]) groups[groupKey] = { captain: null, members: [], allIds: [] };
+      
+      groups[groupKey].allIds.push(w.id);
 
       if (w.status !== 'archived') {
-        if (!groups[name].captain) {
-          groups[name].captain = w; 
+        if (!groups[groupKey].captain) {
+          groups[groupKey].captain = w;
         } else {
-          groups[name].members.push(w); 
+          groups[groupKey].members.push(w);
         }
       } else {
-        groups[name].members.push(w);
+        groups[groupKey].members.push(w);
       }
     });
+
+    // ※ 下の Object.keys(groups).forEach(name => { ... の部分の (name =>) はそのまま (groupKey =>) として動作しますので変更不要です。
 
     Object.keys(groups).forEach(name => {
       if (!groups[name].captain && groups[name].members.length > 0) {
