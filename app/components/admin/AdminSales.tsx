@@ -25,7 +25,7 @@ export const AdminSales = ({ data }: { data: any }) => {
 
   const crmTargets = data?.salesTargets || [];
 
-  // コンポーネントマウント時に public/hokkaido_db.json を読み込む（爆速）
+  // コンポーネントマウント時に public/hokkaido_electric.json を読み込む（爆速）
   useEffect(() => {
     fetch('/hokkaido_db.json')
       .then(res => res.json())
