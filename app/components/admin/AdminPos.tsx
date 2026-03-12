@@ -17,7 +17,8 @@ const Icons = {
   CheckCircle: () => <svg className="w-5 h-5 text-green-500 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   AlertTriangle: () => <svg className="w-4 h-4 inline-block text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
   Edit: () => <svg className="w-3 h-3 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>,
-  ChevronDown: () => <svg className="w-3 h-3 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+  ChevronDown: () => <svg className="w-3 h-3 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>,
+  Document: () => <svg className="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg> // ★ 追加
 };
 
 const parseItemsData = (rawItems: any) => {
@@ -144,11 +145,14 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
 
   const addToCart = (product: any, overrideWeight?: number) => {
     const newItemId = Date.now().toString() + Math.random().toString(36).substring(7);
+    const productName = product.isSpec ? `📖[理論値] ${buildProductName(product)}` : buildProductName(product);
+    
     setCart(prev => [...prev, { 
-        id: newItemId, product: buildProductName(product), ratio: product.ratio, 
+        id: newItemId, product: productName, ratio: product.ratio, 
         weight: overrideWeight !== undefined ? overrideWeight : 0, percentage: 0,
         conductor: product.conductor || '', material: product.material || '純銅',
-        chipRatio: product.chipRatio || 85 
+        chipRatio: product.chipRatio || 85,
+        isSpec: product.isSpec || false // ★ カタログ由来のフラグを保持
     }]);
     setSearchTerm('');
   };
@@ -165,7 +169,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
 
   const removeItem = (id: string) => { setCart(prev => prev.filter(item => item.id !== id)); };
 
-  // ★ ハイブリッド・スマート圧縮ロジック（用途によって画質・解像度を切り替える）
   const compressImage = (file: File, isDetailMode: boolean = false): Promise<string> => {
       return new Promise((resolve, reject) => {
           if (!file) return reject(new Error("ファイルがありません"));
@@ -175,9 +178,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
               img.onload = () => {
                   try {
                       const canvas = document.createElement('canvas');
-                      // 印字・断面は1600px、全体・一括は800pxに制限
                       const MAX = isDetailMode ? 1600 : 800; 
-                      // 印字・断面は画質85%、全体・一括は60%に圧縮
                       const quality = isDetailMode ? 0.85 : 0.6; 
                       
                       let w = img.width; let h = img.height;
@@ -203,7 +204,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   const handleAiImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, num: 1 | 2 | 3 | 4) => {
     const file = e.target.files?.[0]; if (!file) return;
     try { 
-        // 1(断面), 3(印字), 4(印字) はディテール（文字・構造）が命なので高画質モード
         const isDetailMode = (num === 1 || num === 3 || num === 4);
         const compressed = await compressImage(file, isDetailMode); 
         
@@ -223,7 +223,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
     const newImages: string[] = [];
     for (let i = 0; i < files.length; i++) { 
         try { 
-            // フレコン一括画像は全体の量感がわかればいいので軽量モード（false）
             newImages.push(await compressImage(files[i], false)); 
         } catch(err) {} 
     }
@@ -235,7 +234,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   const runAiAnalysis = async () => {
     if (!imgData1) return alert('1. 断面画像（必須）をアップロードしてください');
     
-    // ★ 安全装置：通信データの上限（約4MB）を超えないかチェック
     const totalSize = (imgData1.length + imgData2.length + imgData3.length + imgData4.length) * 0.75;
     if (totalSize > 4 * 1024 * 1024) {
         return alert('⚠️ 画像サイズの合計が大きすぎます（通信エラーになります）。\n不要な画像を削除するか、もう少し離れて撮影してください。');
@@ -275,7 +273,6 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   const runBulkAiAnalysis = async () => {
     if (bulkImages.length === 0) return alert('画像をアップロードしてください。');
     
-    // ★ 安全装置：フレコン一括画像の総サイズチェック
     const totalSize = bulkImages.reduce((sum, img) => sum + img.length, 0) * 0.75;
     if (totalSize > 4 * 1024 * 1024) {
         return alert('⚠️ 画像サイズの合計が大きすぎます（通信エラーになります）。\n一度に送る枚数を減らすか、被写体から少し離れて撮影してください。');
@@ -407,7 +404,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
 
   const handlePrepareMasterRegistration = (item: any) => {
       const pendingData = {
-          name: item.product.replace(/💡 AI査定: |📦 AI解析: /, '').trim(),
+          name: item.product.replace(/💡 AI査定: |📦 AI解析: |📖\[理論値\] /, '').trim(),
           ratio: item.ratio, reason: item.reason, conductor: item.conductor, material: item.material,
           image1: item.pendingImg1, 
           image2: item.pendingImg2,
@@ -418,6 +415,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
       showToast('データ転送完了', '左メニューから「マスターDB」を開くと、自動で入力画面が立ち上がります。', 'success');
   };
 
+  // ★ 既存の実測マスターの絞り込み
   const filteredProducts = useMemo(() => {
       return (data?.wires || []).filter((w:any) => {
           if (selectedCategory !== 'すべて' && getCategory(w.name) !== selectedCategory) return false;
@@ -436,6 +434,16 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
           return true;
       });
   }, [data, selectedCategory, selectedMaker, searchTerm]);
+
+  // ★ 新規追加: カタログマスターからのサジェスト検索
+  const filteredSpecs = useMemo(() => {
+      if (!searchTerm) return []; // 検索キーワードが入っている時だけ表示
+      const terms = searchTerm.toLowerCase().replace(/　/g, ' ').split(' ').filter(Boolean);
+      return (data?.wireSpecs || []).filter((s:any) => {
+          const searchTarget = `${s.name} ${s.maker} ${s.size}sq ${s.core}C ${s.size} ${s.core}`.toLowerCase();
+          return terms.every(term => searchTarget.includes(term));
+      });
+  }, [data, searchTerm]);
 
   const simulation = useMemo(() => {
     let totalWeight = 0; 
@@ -497,6 +505,13 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
     if (hasTinPlated) {
         if (!window.confirm("⚠️ 警告 ⚠️\nカート内に「錫メッキ線」が含まれています。\n「別管理（または専用処理）」として受付を確定しますか？")) return;
     }
+    
+    // カタログ理論値が含まれているかチェック
+    const hasSpecItem = cart.some(item => item.isSpec);
+    if (hasSpecItem) {
+        if (!window.confirm("⚠️ お知らせ ⚠️\n実測値のない「カタログ理論値」を含む商品が含まれています。\nこのまま仮査定として受付を確定しますか？\n（後ほど実測してマスターに登録することをお勧めします）")) return;
+    }
+
     setIsProcessing(true);
     
     const finalCart = cart.map(item => ({ 
@@ -595,6 +610,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
         </div>
 
         <div className="flex-1 overflow-y-auto p-3 bg-gray-100/50">
+          {/* 実測マスター */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
             {filteredProducts.map((p:any) => {
               const isTin = p.material === '錫メッキ' || p.name?.includes('錫');
@@ -608,10 +624,37 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                   </button>
               );
             })}
-            {filteredProducts.length === 0 && (
+            {filteredProducts.length === 0 && filteredSpecs.length === 0 && (
                 <div className="col-span-full py-10 text-center text-gray-400 font-bold text-xs">該当する線種が見つかりません</div>
             )}
           </div>
+
+          {/* ★ カタログからのサジェスト表示 */}
+          {filteredSpecs.length > 0 && (
+            <div className="mt-6 mb-2 animate-in fade-in slide-in-from-bottom-2">
+              <h4 className="text-[10px] md:text-xs font-bold text-blue-800 flex items-center gap-1.5 border-b border-blue-200 pb-1.5 mb-3">
+                <Icons.Document /> 仕様書カタログからのサジェスト (理論歩留まり)
+              </h4>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                {filteredSpecs.map((s:any) => (
+                   <button 
+                       key={s.id} 
+                       onClick={() => addToCart({...s, sq: s.size, ratio: s.theoreticalRatio, isSpec: true})} 
+                       className="bg-blue-50 border border-blue-200 p-2.5 rounded-sm shadow-sm hover:shadow-md hover:border-blue-400 text-left transition-all active:scale-95 flex flex-col justify-between min-h-[75px] relative overflow-hidden"
+                   >
+                      <div>
+                         <div className="font-bold text-blue-900 text-[11px] leading-tight line-clamp-2">
+                            {s.maker && s.maker !== '-' ? `【${s.maker}】` : ''}{s.name} {s.size}sq {s.core}C
+                         </div>
+                      </div>
+                      <div className="flex justify-end mt-1">
+                         <span className="font-mono font-black text-blue-700 bg-white px-1.5 py-0.5 rounded-sm text-xs tabular-nums border border-blue-100">{s.theoreticalRatio}%</span>
+                      </div>
+                   </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -653,19 +696,20 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
             <div className="space-y-2 pb-2">
               {cart.map((item, idx) => {
                 const isItemTin = item.material === '錫メッキ' || item.product?.includes('錫');
+                const isSpec = item.isSpec; // カタログデータ判定
                 return (
-                  <div key={item.id} className={`border p-2 rounded-sm flex flex-col gap-1.5 shadow-sm ${item.isNewAi ? 'bg-gray-100 border-gray-300' : isItemTin ? 'bg-red-50 border-red-300' : 'bg-white border-gray-200'}`}>
+                  <div key={item.id} className={`border p-2 rounded-sm flex flex-col gap-1.5 shadow-sm ${item.isNewAi ? 'bg-gray-100 border-gray-300' : isItemTin ? 'bg-red-50 border-red-300' : isSpec ? 'bg-blue-50/30 border-blue-200' : 'bg-white border-gray-200'}`}>
                     
                     <div className="flex flex-col gap-2">
                       <div className="flex justify-between items-start gap-2">
-                          <div className="font-bold text-xs text-gray-900 leading-tight">
+                          <div className={`font-bold text-xs leading-tight ${isSpec ? 'text-blue-900' : 'text-gray-900'}`}>
                               {isItemTin && <span className="bg-[#D32F2F] text-white px-1 py-0.5 rounded-sm text-[8px] mr-1 align-middle">⚠️錫</span>}
                               {posMode === 'BULK' && <span className="text-[10px] text-gray-400 mr-1">{idx+1}.</span>}
                               {item.product}
                           </div>
-                          {item.isNewAi && !String(item.id).startsWith('bulk-') && (
+                          {(item.isNewAi || isSpec) && !String(item.id).startsWith('bulk-') && (
                               <button onClick={() => handlePrepareMasterRegistration(item)} className="text-[9px] text-[#D32F2F] hover:underline flex items-center gap-0.5 px-1.5 py-0.5 bg-red-50 rounded-sm border border-red-100 shrink-0">
-                                  <Icons.Edit /> マスター登録
+                                  <Icons.Edit /> {isSpec ? '実測して確定' : 'マスター登録'}
                               </button>
                           )}
                       </div>
@@ -676,7 +720,7 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
                            <span className="text-[8px] text-gray-400 absolute -top-3 left-0">歩留(銅分)</span>
                            <input 
                               type="number" 
-                              className="w-full p-1 text-right font-mono text-sm font-bold border border-gray-300 rounded-sm outline-none focus:border-[#D32F2F] focus:ring-1 focus:ring-[#D32F2F] tabular-nums" 
+                              className={`w-full p-1 text-right font-mono text-sm font-bold border rounded-sm outline-none focus:border-[#D32F2F] focus:ring-1 focus:ring-[#D32F2F] tabular-nums ${isSpec ? 'bg-blue-50 border-blue-300 text-blue-700' : 'border-gray-300'}`} 
                               value={item.ratio} 
                               onChange={e => updateRatio(item.id, Number(e.target.value))} 
                            />
