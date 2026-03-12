@@ -135,6 +135,7 @@ const getCategory = (name: string) => {
 };
 
 export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoiceOutputEnabled?: boolean }) => {
+  // ★ タブに 'DOJO' を追加
   const [activeTab, setActiveTab] = useState<'WIRES' | 'UNKNOWN' | 'CASTINGS' | 'CLIENTS' | 'STAFF' | 'DOJO'>('WIRES');
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -496,6 +497,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       setDojoProgress({ isRunning: false, current: 0, total: 0 });
   };
 
+  // ★ 修正3：マージ時の統合「品名」がごちゃごちゃにならないようにする
   const handleAiMergeAnalyze = async (wireName: string, groupData: any) => {
     setAnalyzingName(wireName);
     const records = [groupData.captain, ...groupData.members];
@@ -506,7 +508,9 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       });
       const data = await res.json();
       if (data.success) {
-        setMergeProposal({ name: wireName, records, allIds: groupData.allIds, ...data.result });
+        // ★ ここで表示名（wireName）ではなく、captain（ベースデータ）の純粋な name をセットする
+        const pureName = groupData.captain?.name || wireName;
+        setMergeProposal({ name: pureName, records, allIds: groupData.allIds, ...data.result });
       } else {
         alert("分析エラー: " + data.message);
       }
@@ -538,7 +542,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         sheetName: 'Products_Wire',
         data: {
           ...baseItem,
-          name: mergeProposal.name,
+          name: mergeProposal.name, // ★ ここに上で取得した「純粋な品名」が入る
           ratio: mergeProposal.mergedYieldRate,
           memo: `【AI統合データ】\n${mergeProposal.mergedDescription}\n\n※過去${mergeProposal.records.length}件のデータを統合。`,
           status: 'active'
@@ -1085,9 +1089,10 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
               {activeTab !== 'UNKNOWN' && (
                   <div className="flex gap-1.5 w-full md:w-auto shrink-0">
+                    {/* ★ 変更：AI登録ボタンを赤に変更してテキスト変更 */}
                     {activeTab === 'WIRES' && (
-                        <button onClick={() => setIsAiModalOpen(true)} className="flex-1 md:flex-none bg-white text-gray-900 border border-gray-300 px-3 py-1.5 md:px-4 md:py-2 rounded-sm text-xs md:text-sm font-bold hover:bg-gray-100 hover:border-gray-400 transition flex items-center justify-center gap-1 md:gap-2 whitespace-nowrap shadow-sm">
-                            <Icons.Sparkles /> AI登録
+                        <button onClick={() => setIsAiModalOpen(true)} className="flex-1 md:flex-none bg-[#D32F2F] text-white px-3 py-1.5 md:px-4 md:py-2 rounded-sm text-xs md:text-sm font-bold hover:bg-red-800 transition flex items-center justify-center gap-1 md:gap-2 whitespace-nowrap shadow-sm">
+                            <Icons.Plus /> AIアシスト登録
                         </button>
                     )}
                     <button onClick={() => handleOpenModal()} className="flex-1 md:flex-none bg-gray-900 text-white px-3 py-1.5 md:px-5 md:py-2 rounded-sm text-xs md:text-sm font-bold hover:bg-black transition flex items-center justify-center gap-1 md:gap-2 whitespace-nowrap active:scale-95 shadow-sm">
@@ -1159,7 +1164,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                             <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('status')}>ステータス <SortIcon columnKey="status" /></th>
                         </>
                     )}
-                    {/* WIRES でも更新日を表示してソート可能にする */}
                     <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('updatedAt')}>登録/更新 <SortIcon columnKey="updatedAt" /></th>
                     <th className="p-3 text-right font-bold">操作</th>
                   </tr>
@@ -1309,11 +1313,10 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                               <td className="p-3"><span className={`px-2 py-1 rounded-sm text-xs font-bold text-white shadow-sm ${item.status === 'ACTIVE' ? 'bg-gray-900' : 'bg-gray-400'}`}>{item.status}</span></td>
                             </>
                         )}
-                        {activeTab !== 'UNKNOWN' && activeTab !== 'WIRES' && (
-                            <td className="p-3 text-[10px] text-gray-400 font-mono align-top">
-                                <div className="flex flex-col gap-1"><span title="登録日">➕ {formatTimeShort(item.createdAt)}</span><span title="更新日">🔄 {formatTimeShort(item.updatedAt)}</span></div>
-                            </td>
-                        )}
+                        
+                        <td className="p-3 text-[10px] text-gray-400 font-mono align-top">
+                            <div className="flex flex-col gap-1"><span title="登録日">➕ {formatTimeShort(item.createdAt)}</span><span title="更新日">🔄 {formatTimeShort(item.updatedAt)}</span></div>
+                        </td>
 
                         <td className="p-3 text-right align-top">
                           <div className="flex justify-end gap-2">
@@ -1525,7 +1528,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
               </div>
             </div>
         </div>
-      </div>)}
+      )}
 
       {/* ★ AIマージ提案のモーダル */}
       {mergeProposal && (
@@ -1756,7 +1759,14 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                             <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">芯数</label><div className="relative"><input type="number" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-mono pr-8 text-right font-bold shadow-sm text-sm" value={editingItem._coreValue || ''} onChange={e => setEditingItem({...editingItem, _coreValue: toHalfWidthNumber(e.target.value).replace(/\./g, '')})} placeholder="3" /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold pointer-events-none">C</span></div></div>
                             <div>
                                 <label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">導体構成 (構造)</label><input type="text" placeholder="単線/7本より線等" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 shadow-sm text-xs md:text-sm font-bold" value={editingItem.conductor || ''} onChange={e => setEditingItem({...editingItem, conductor: e.target.value})} />
-                                <div className="flex gap-1 mt-1.5"><button onClick={() => setEditingItem({...editingItem, conductor: '単線'})} className="flex-1 bg-gray-100 hover:bg-gray-200 text-[9px] py-1.5 rounded-sm text-gray-600 font-bold border border-gray-200 transition">単線</button><button onClick={() => setEditingItem({...editingItem, conductor: 'より線'})} className="flex-1 bg-gray-100 hover:bg-gray-200 text-[9px] py-1.5 rounded-sm text-gray-600 font-bold border border-gray-200 transition">より線</button></div>
+                                <div className="flex flex-wrap gap-1 mt-1.5">
+                                    <button onClick={() => setEditingItem({...editingItem, conductor: '単線'})} className="bg-gray-100 hover:bg-gray-200 text-[9px] px-2 py-1.5 rounded-sm text-gray-600 font-bold border border-gray-200 transition">単線</button>
+                                    <button onClick={() => setEditingItem({...editingItem, conductor: 'より線'})} className="bg-gray-100 hover:bg-gray-200 text-[9px] px-2 py-1.5 rounded-sm text-gray-600 font-bold border border-gray-200 transition">より線</button>
+                                    {/* ★ 追加: 導体構成のショートカットボタン */}
+                                    <button onClick={() => setEditingItem({...editingItem, conductor: '7本より線'})} className="bg-gray-100 hover:bg-gray-200 text-[9px] px-2 py-1.5 rounded-sm text-gray-600 font-bold border border-gray-200 transition">7本</button>
+                                    <button onClick={() => setEditingItem({...editingItem, conductor: '19本より線'})} className="bg-gray-100 hover:bg-gray-200 text-[9px] px-2 py-1.5 rounded-sm text-gray-600 font-bold border border-gray-200 transition">19本</button>
+                                    <button onClick={() => setEditingItem({...editingItem, conductor: '細線'})} className="bg-gray-100 hover:bg-gray-200 text-[9px] px-2 py-1.5 rounded-sm text-gray-600 font-bold border border-gray-200 transition">細線</button>
+                                </div>
                             </div>
                         </div>
                         
