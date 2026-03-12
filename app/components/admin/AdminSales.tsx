@@ -15,7 +15,11 @@ const Icons = {
 export const AdminSales = ({ data }: { data: any }) => {
   const [localDb, setLocalDb] = useState<any[]>([]);
   const [dbSearchTerm, setDbSearchTerm] = useState('');
+  
+  // ★ エリアと、さらに細かい市町村の絞り込みステート
   const [selectedArea, setSelectedArea] = useState('ALL');
+  const [selectedCity, setSelectedCity] = useState<string | null>(null);
+  
   const [addingId, setAddingId] = useState<string | null>(null);
   
   const [crmSearchTerm, setCrmSearchTerm] = useState('');
@@ -31,13 +35,13 @@ export const AdminSales = ({ data }: { data: any }) => {
   }, []);
 
   const areaStats = useMemo(() => {
-      // ★ エリアをさらに細分化し、日高・浦河エリアなどを独立させました
+      // ★ subKeysを追加し、札幌圏などは「区」レベルでボタン化できるようにしました
       const areas: Record<string, any> = {
           '宗谷・留萌': { count: 0, color: 'bg-slate-500', top: '15%', left: '45%', keys: ['稚内', '留萌', '豊富', '幌延', '羽幌', '増毛', '枝幸'] },
           'オホーツク': { count: 0, color: 'bg-cyan-500', top: '25%', left: '80%', keys: ['北見', '網走', '紋別', '美幌', '遠軽', '斜里', '大空'] },
           '上川(旭川)': { count: 0, color: 'bg-blue-400', top: '35%', left: '55%', keys: ['旭川', '富良野', '名寄', '士別', '上川', '美瑛', '東神楽'] },
           '空知': { count: 0, color: 'bg-indigo-400', top: '45%', left: '45%', keys: ['岩見沢', '滝川', '美唄', '砂川', '深川', '夕張', '赤平', '三笠'] },
-          '札幌圏': { count: 0, color: 'bg-blue-800', top: '55%', left: '38%', keys: ['札幌', '石狩', '江別', '北広島', '恵庭', '千歳'] },
+          '札幌圏': { count: 0, color: 'bg-blue-800', top: '55%', left: '38%', keys: ['札幌', '石狩', '江別', '北広島', '恵庭', '千歳'], subKeys: ['中央区', '北区', '東区', '白石区', '豊平区', '南区', '西区', '厚別区', '手稲区', '清田区', '石狩', '江別', '北広島', '恵庭', '千歳'] },
           '後志(小樽)': { count: 0, color: 'bg-teal-500', top: '55%', left: '23%', keys: ['小樽', '余市', '倶知安', '蘭越', 'ニセコ', '岩内', '寿都'] },
           '十勝(帯広)': { count: 0, color: 'bg-yellow-500', top: '60%', left: '70%', keys: ['帯広', '芽室', '音更', '幕別', '清水', '池田', '本別', '大樹'] },
           '釧路・根室': { count: 0, color: 'bg-green-500', top: '55%', left: '90%', keys: ['釧路', '根室', '厚岸', '白糠', '中標津', '別海', '標茶'] },
@@ -55,19 +59,34 @@ export const AdminSales = ({ data }: { data: any }) => {
       return areas;
   }, [localDb]);
 
+  // ★ サブフィルター(selectedCity)の条件を追加
   const filteredLocalDb = useMemo(() => {
       let filtered = localDb;
       if (selectedArea !== 'ALL') {
-          const keys = areaStats[selectedArea].keys;
-          filtered = filtered.filter(t => keys.some((k: string) => (t.address||'').includes(k)));
+          if (selectedCity) {
+              filtered = filtered.filter(t => (t.address||'').includes(selectedCity));
+          } else {
+              const keys = areaStats[selectedArea].keys;
+              filtered = filtered.filter(t => keys.some((k: string) => (t.address||'').includes(k)));
+          }
       }
       if (dbSearchTerm) {
           filtered = filtered.filter(t => (t.company||'').includes(dbSearchTerm) || (t.address||'').includes(dbSearchTerm));
       }
-      return filtered.slice(0, 50);
-  }, [localDb, selectedArea, dbSearchTerm, areaStats]);
+      return filtered.slice(0, 50); // DOM負荷軽減のため上位50件表示
+  }, [localDb, selectedArea, selectedCity, dbSearchTerm, areaStats]);
 
   const filteredCrm = crmTargets.filter((t: any) => (t.company||'').includes(crmSearchTerm) || (t.address||'').includes(crmSearchTerm));
+
+  const handleAreaClick = (label: string) => {
+      if (selectedArea === label) {
+          setSelectedArea('ALL');
+          setSelectedCity(null);
+      } else {
+          setSelectedArea(label);
+          setSelectedCity(null); // エリア切り替え時はサブフィルターをリセット
+      }
+  };
 
   const handleAddToCrm = async (target: any) => {
       setAddingId(target.id);
@@ -106,7 +125,7 @@ export const AdminSales = ({ data }: { data: any }) => {
                   <h3 className="text-xs font-bold text-gray-500 mb-4 flex items-center gap-1"><Icons.MapPin /> エリア別 分布マップ</h3>
                   <div className="relative w-full h-[350px] bg-white rounded-sm border border-gray-200 overflow-hidden shadow-inner">
                       {Object.entries(areaStats).map(([label, d]) => (
-                          <div key={label} onClick={() => setSelectedArea(selectedArea === label ? 'ALL' : label)} className={`absolute flex flex-col items-center justify-center transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 cursor-pointer group ${selectedArea === label ? 'scale-110 z-10' : 'hover:scale-105'}`} style={{ top: d.top, left: d.left }}>
+                          <div key={label} onClick={() => handleAreaClick(label)} className={`absolute flex flex-col items-center justify-center transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 cursor-pointer group ${selectedArea === label ? 'scale-110 z-10' : 'hover:scale-105'}`} style={{ top: d.top, left: d.left }}>
                               <div className={`w-3 h-3 md:w-4 md:h-4 rounded-full shadow-md mb-0.5 border-2 ${selectedArea === label ? 'border-gray-900 bg-white' : `border-transparent ${d.color}`}`} />
                               <span className={`text-[8px] md:text-[9px] font-bold px-1 rounded-sm shadow-sm whitespace-nowrap ${selectedArea === label ? 'bg-gray-900 text-white' : 'bg-white/90 text-gray-800'}`}>{label}</span>
                               <span className="bg-white border border-gray-200 px-1 md:px-1.5 py-0.5 text-[9px] md:text-[10px] font-black rounded-sm shadow-sm mt-0.5 tabular-nums text-gray-900">{d.count}</span>
@@ -122,13 +141,35 @@ export const AdminSales = ({ data }: { data: any }) => {
                           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400"><Icons.Search /></div>
                           <input type="text" placeholder="企業名や住所で高速検索..." value={dbSearchTerm} onChange={e => setDbSearchTerm(e.target.value)} className="w-full pl-9 p-2 border border-gray-300 rounded-sm text-sm focus:border-blue-700 outline-none" />
                       </div>
-                      <button onClick={() => {setSelectedArea('ALL'); setDbSearchTerm('');}} className="px-4 py-2 bg-gray-100 text-gray-600 border border-gray-300 rounded-sm text-xs font-bold hover:bg-gray-200">リセット</button>
+                      <button onClick={() => {setSelectedArea('ALL'); setSelectedCity(null); setDbSearchTerm('');}} className="px-4 py-2 bg-gray-100 text-gray-600 border border-gray-300 rounded-sm text-xs font-bold hover:bg-gray-200">リセット</button>
                   </div>
                   
                   <div className="flex-1 border border-gray-200 rounded-sm overflow-hidden bg-white flex flex-col">
                       <div className="bg-gray-100 px-4 py-2 text-[10px] font-bold text-gray-500 flex justify-between border-b border-gray-200">
                           <span>{selectedArea !== 'ALL' ? `${selectedArea}の企業` : '全エリア'} (最大50件を表示)</span>
                       </div>
+                      
+                      {/* ★ 新規追加: 市町村・区のサブフィルターボタン群 */}
+                      {selectedArea !== 'ALL' && areaStats[selectedArea] && (
+                          <div className="bg-gray-50 border-b border-gray-200 p-2 flex flex-wrap gap-1.5 shadow-inner">
+                              <button 
+                                  onClick={() => setSelectedCity(null)}
+                                  className={`px-3 py-1.5 text-[10px] font-bold rounded-sm border transition-colors ${!selectedCity ? 'bg-gray-900 text-white border-gray-900 shadow-sm' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-100'}`}
+                              >
+                                  すべて
+                              </button>
+                              {(areaStats[selectedArea].subKeys || areaStats[selectedArea].keys).map((city: string) => (
+                                  <button 
+                                      key={city}
+                                      onClick={() => setSelectedCity(city)}
+                                      className={`px-3 py-1.5 text-[10px] font-bold rounded-sm border transition-colors ${selectedCity === city ? 'bg-[#D32F2F] text-white border-[#D32F2F] shadow-sm' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-100'}`}
+                                  >
+                                      {city}
+                                  </button>
+                              ))}
+                          </div>
+                      )}
+
                       <div className="overflow-y-auto max-h-[400px] divide-y divide-gray-100">
                           {filteredLocalDb.map(t => (
                               <div key={t.id} className="p-3 hover:bg-blue-50/50 transition flex justify-between items-center group">
@@ -136,8 +177,12 @@ export const AdminSales = ({ data }: { data: any }) => {
                                       <p className="text-sm font-black text-gray-900">{t.company}</p>
                                       <p className="text-[10px] text-gray-500 mt-0.5 flex items-center gap-1"><Icons.MapPin /> {t.address}</p>
                                   </div>
-                                  <button onClick={() => handleAddToCrm(t)} disabled={addingId === t.id} className="opacity-0 group-hover:opacity-100 transition px-3 py-1.5 bg-blue-700 text-white text-xs font-bold rounded-sm shadow-sm hover:bg-blue-800 disabled:opacity-50 flex items-center">
+                                  <button onClick={() => handleAddToCrm(t)} disabled={addingId === t.id} className="opacity-0 md:opacity-0 group-hover:opacity-100 transition px-3 py-1.5 bg-blue-700 text-white text-xs font-bold rounded-sm shadow-sm hover:bg-blue-800 disabled:opacity-50 flex items-center md:hidden group-hover:flex">
                                       {addingId === t.id ? <Icons.Refresh /> : <Icons.Plus />} CRMへ登録
+                                  </button>
+                                  {/* スマホ用: 常時表示 */}
+                                  <button onClick={() => handleAddToCrm(t)} disabled={addingId === t.id} className="md:hidden px-3 py-1.5 bg-blue-700 text-white text-[10px] font-bold rounded-sm shadow-sm disabled:opacity-50 flex items-center">
+                                      {addingId === t.id ? <Icons.Refresh /> : <Icons.Plus />} 登録
                                   </button>
                               </div>
                           ))}
