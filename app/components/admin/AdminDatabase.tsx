@@ -1,7 +1,6 @@
 // app/components/admin/AdminDatabase.tsx
 // @ts-nocheck
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { AdminDatabaseSpecs } from './AdminDatabaseSpecs';
 
 // ============================================================================
 // ⚠️ 重要：スプレッドシートの設定
@@ -137,7 +136,7 @@ const getCategory = (name: string) => {
 
 export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoiceOutputEnabled?: boolean }) => {
   // ★ タブに 'DOJO' を追加
-  const [activeTab, setActiveTab] = useState<'WIRES' | 'UNKNOWN' | 'CASTINGS' | 'CLIENTS' | 'STAFF' | 'DOJO' | 'SPECS'>('WIRES');
+  const [activeTab, setActiveTab] = useState<'WIRES' | 'UNKNOWN' | 'CASTINGS' | 'CLIENTS' | 'STAFF' | 'DOJO'>('WIRES');
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('すべて');
@@ -903,10 +902,9 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
             <p className="text-[10px] md:text-xs text-gray-500 mt-0.5 md:mt-1 font-bold">コアデータ管理 / AI推論監視</p>
           </div>
         </div>
-// 変更後（SPECSを追加）
-<div className="flex bg-gray-100 p-1 rounded-sm overflow-x-auto shadow-inner border border-gray-200">
+        <div className="flex bg-gray-100 p-1 rounded-sm overflow-x-auto shadow-inner border border-gray-200">
           {['WIRES', 'UNKNOWN', 'CASTINGS', 'CLIENTS', 'STAFF', 'DOJO'].map(tab => (
-            <button key={tab} onClick={() => handleTabChange(tab as any)} className={`...`}>
+            <button key={tab} onClick={() => handleTabChange(tab as any)} className={`px-3 py-1.5 md:px-4 md:py-2 rounded-sm text-[10px] md:text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1 ${activeTab === tab ? 'bg-white text-gray-900 shadow-sm border border-gray-300' : 'text-gray-500 hover:text-gray-900'}`}>
               {tab === 'WIRES' ? '電線' : tab === 'UNKNOWN' ? '💡 未知' : tab === 'CASTINGS' ? '非鉄' : tab === 'CLIENTS' ? '顧客' : tab === 'STAFF' ? 'スタッフ' : '🥋 AI道場'}
             </button>
           ))}
@@ -1122,13 +1120,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         </div>
         
         <div className="flex-1 overflow-hidden relative bg-gray-100 md:bg-white">
-          {/* ↓これを追加 */}
-          {activeTab === 'SPECS' ? (
-             <AdminDatabaseSpecs data={data} />
-          ) : (
-             <div className="h-full overflow-y-auto relative">
-               {/* 既存の table や div などのコードはそのまま */}
-               
             <div className="h-full overflow-y-auto relative">
               
               <table className="hidden md:table w-full text-left border-collapse text-sm">
