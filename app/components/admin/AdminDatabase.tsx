@@ -1121,7 +1121,12 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         </div>
         
         <div className="flex-1 overflow-hidden relative bg-gray-100 md:bg-white">
-            <div className="h-full overflow-y-auto relative">
+          {/* ↓これを追加 */}
+          {activeTab === 'SPECS' ? (
+             <AdminDatabaseSpecs data={data} />
+          ) : (
+             <div className="h-full overflow-y-auto relative">
+               {/* 既存の table や div などのコードはそのまま */}
               
               <table className="hidden md:table w-full text-left border-collapse text-sm">
                 <thead className="bg-gray-100 text-gray-600 uppercase tracking-wider text-xs sticky top-0 z-20 shadow-sm border-b border-gray-300">
