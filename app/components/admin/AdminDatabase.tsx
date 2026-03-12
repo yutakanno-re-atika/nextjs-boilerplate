@@ -99,6 +99,29 @@ const getDriveViewUrl = (url: string) => {
   return url;
 };
 
+// AI道場のグラフ用コンポーネント
+const DojoChart = ({ errors }: { errors: number[] }) => {
+  if (!errors || errors.length === 0) return <div className="h-32 flex items-center justify-center text-gray-400">データがありません</div>;
+  const max = Math.max(10, ...errors);
+  
+  return (
+    <div className="flex items-end h-32 gap-1 w-full mt-4 border-b border-l border-gray-300 pb-1 pl-1">
+      {errors.map((err, i) => {
+        const height = `${(err / max) * 100}%`;
+        const color = err <= 2.0 ? 'bg-green-500' : err <= 5.0 ? 'bg-yellow-400' : 'bg-red-500';
+        return (
+          <div key={i} className="flex-1 flex flex-col justify-end group relative">
+            <div className={`w-full rounded-t-sm transition-all duration-500 ${color} hover:opacity-80`} style={{ height }}></div>
+            <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded pointer-events-none whitespace-nowrap z-10">
+              誤差 {err}%
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 const CATEGORIES = ['すべて', 'IV線', 'CV・電力線', 'VVF / VV (ネズミ線)', '制御・通信線', 'キャブタイヤ・雑線', 'その他'];
 const getCategory = (name: string) => {
   if (!name) return 'その他';
@@ -112,7 +135,7 @@ const getCategory = (name: string) => {
 };
 
 export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoiceOutputEnabled?: boolean }) => {
-  const [activeTab, setActiveTab] = useState<'WIRES' | 'UNKNOWN' | 'CASTINGS' | 'CLIENTS' | 'STAFF'>('WIRES');
+  const [activeTab, setActiveTab] = useState<'WIRES' | 'UNKNOWN' | 'CASTINGS' | 'CLIENTS' | 'STAFF' | 'DOJO'>('WIRES');
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('すべて');
@@ -124,7 +147,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const [voiceText, setVoiceText] = useState('');
   const recognitionRef = useRef<any>(null);
 
-  // ★ デフォルトで「更新日（updatedAt）」の「新しい順（desc）」にする
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'updatedAt', direction: 'desc' });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -146,9 +168,14 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const [mergeProposal, setMergeProposal] = useState<any>(null);
   const [isMerging, setIsMerging] = useState(false);
   
-  // ★ プログレス表示用のステート
   const [cleansingState, setCleansingState] = useState<{ isRunning: boolean; current: number; total: number }>({ isRunning: false, current: 0, total: 0 });
   
+  // ★ AI道場用ステート
+  const [dojoProgress, setDojoProgress] = useState({ isRunning: false, current: 0, total: 0 });
+  const aiTrainingHistory = data?.aiTraining || [];
+  const recentErrors = aiTrainingHistory.slice(-30).map((t: any) => Number(t.errorMargin || 0));
+  const avgError = recentErrors.length > 0 ? (recentErrors.reduce((a:number,b:number)=>a+b,0) / recentErrors.length).toFixed(2) : '0.00';
+
   const [sampleTotal, setSampleTotal] = useState<number | ''>('');
   const [sampleCopper, setSampleCopper] = useState<number | ''>('');
   const [sampleCover, setSampleCover] = useState<number | ''>('');
@@ -199,7 +226,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
   const handleTabChange = (tab: any) => {
     setActiveTab(tab); setSearchTerm(''); setSelectedCategory('すべて'); setFilterMaker(''); setFilterType(''); 
-    setSortConfig({ key: 'updatedAt', direction: 'desc' }); // タブ切り替え時もデフォルトソートに
+    setSortConfig({ key: 'updatedAt', direction: 'desc' });
     setImageStatusFilter('ALL');
   };
 
@@ -308,7 +335,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const handleSave = async () => {
     let finalItem = { ...editingItem };
     
-    // ★ 保存ボタンを押した瞬間に、全角数字を強制的に半角へ変換（開いてそのまま保存対策）
     if (activeTab === 'WIRES') {
         finalItem.year = finalItem.year ? toHalfWidthNumber(finalItem.year).replace(/\./g, '') : '';
         finalItem._sqValue = finalItem._sqValue ? toHalfWidthNumber(finalItem._sqValue) : '';
@@ -391,9 +417,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     return {};
   };
 
-  // ★ フロントエンド主導のデータクレンジング
   const runDataCleansing = async () => {
-      // 対象：削除されておらず、かつ、断面または剥線画像があり、まだ警告を受けていないデータ
       const targets = wires.filter(w => w.status !== 'archived' && (w.image1 || w.image3) && !(w.memo || '').includes('【AIチェック警告】'));
       if (targets.length === 0) return alert('クレンジングの対象となる未チェックデータがありません。');
       if (!confirm(`全 ${targets.length} 件のデータに対してAIクレンジングを実行します。\n（勝手に上書きはされず、差異があったデータにのみアラートが付きます）\n画面を閉じずにそのままお待ちください。`)) return;
@@ -406,25 +430,13 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
           const target = targets[i];
           try {
               const res = await fetch('/api/gas', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                      action: 'RUN_SINGLE_CLEANSING',
-                      recordId: target.id,
-                      imgUrl1: target.image1,
-                      imgUrl3: target.image3,
-                      currentConductor: target.conductor || '',
-                      currentMaterial: target.material || '純銅',
-                      currentMemo: target.memo || ''
-                  })
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ action: 'RUN_SINGLE_CLEANSING', recordId: target.id, imgUrl1: target.image1, imgUrl3: target.image3, currentConductor: target.conductor || '', currentMaterial: target.material || '純銅', currentMemo: target.memo || '' })
               });
               const json = await res.json();
-              if (json.status === 'success' && json.alerted) {
-                  alertedCount++;
-              }
-          } catch (e) {
-              console.error(`Error processing ${target.id}`, e);
-          }
+              if (json.status === 'success' && json.alerted) alertedCount++;
+          } catch (e) { }
+          await new Promise(resolve => setTimeout(resolve, 3000)); // API制限回避
       }
 
       alert(`クレンジングが完了しました！\n新たに ${alertedCount} 件のデータにアラートが設定されました。`);
@@ -432,6 +444,57 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       window.location.reload();
   };
 
+  // ★ AI道場（総当たり特訓）
+  const runDojoAll = async () => {
+      const targets = wires.filter(w => w.status !== 'archived' && (w.image1 || w.image3) && w.ratio);
+      if (targets.length === 0) return alert('テストできる画像・歩留まり付きのデータがありません。');
+      if (!confirm(`全 ${targets.length} 件のデータで「AI総当たり特訓」を開始しますか？\n※完了まで数十分〜1時間程度かかる場合があります。\n※寝ている間など、PCと画面を開いたまま放置してください。`)) return;
+
+      setDojoProgress({ isRunning: true, current: 0, total: targets.length });
+
+      let successCount = 0;
+      for (let i = 0; i < targets.length; i++) {
+          setDojoProgress({ isRunning: true, current: i + 1, total: targets.length });
+          const target = targets[i];
+          try {
+              const imageUrl = target.image1 || target.image3; 
+              const res = await fetch('/api/ai-training', {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ wireId: target.id, wireName: target.name, imageUrl: imageUrl, actualRatio: Number(target.ratio) })
+              });
+              const json = await res.json();
+              if (json.success) successCount++;
+          } catch (e) { console.error(`Dojo Error on ${target.id}`, e); }
+          
+          await new Promise(resolve => setTimeout(resolve, 4000)); // API制限回避のため4秒待機
+      }
+
+      alert(`全 ${targets.length} 件の特訓が完了しました！（成功: ${successCount}件）`);
+      setDojoProgress({ isRunning: false, current: 0, total: 0 });
+      window.location.reload();
+  };
+
+  // ★ AI道場（ランダム1件テスト）
+  const runDojoRandom = async () => {
+      const targets = wires.filter(w => w.status !== 'archived' && (w.image1 || w.image3) && w.ratio);
+      if (targets.length === 0) return alert('テストできる画像・歩留まり付きのデータがありません。');
+      const target = targets[Math.floor(Math.random() * targets.length)];
+      
+      setDojoProgress({ isRunning: true, current: 1, total: 1 });
+      try {
+          const imageUrl = target.image1 || target.image3; 
+          const res = await fetch('/api/ai-training', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ wireId: target.id, wireName: target.name, imageUrl: imageUrl, actualRatio: Number(target.ratio) })
+          });
+          const json = await res.json();
+          if (json.success) {
+              alert(`ランダムテスト完了！\n\n正解: ${target.ratio}% / AI推測: ${json.result.predictedRatio}%\n誤差: ${json.result.errorMargin}%\n\n【推論理由】\n${json.result.reason}`);
+              window.location.reload();
+          } else { alert('テストに失敗しました: ' + json.message); }
+      } catch (e) { alert('通信エラー'); }
+      setDojoProgress({ isRunning: false, current: 0, total: 0 });
+  };
 
   const handleAiMergeAnalyze = async (wireName: string, groupData: any) => {
     setAnalyzingName(wireName);
@@ -834,37 +897,126 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
           </div>
         </div>
         <div className="flex bg-gray-100 p-1 rounded-sm overflow-x-auto shadow-inner border border-gray-200">
-          {['WIRES', 'UNKNOWN', 'CASTINGS', 'CLIENTS', 'STAFF'].map(tab => (
+          {['WIRES', 'UNKNOWN', 'CASTINGS', 'CLIENTS', 'STAFF', 'DOJO'].map(tab => (
             <button key={tab} onClick={() => handleTabChange(tab as any)} className={`px-3 py-1.5 md:px-4 md:py-2 rounded-sm text-[10px] md:text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1 ${activeTab === tab ? 'bg-white text-gray-900 shadow-sm border border-gray-300' : 'text-gray-500 hover:text-gray-900'}`}>
-              {tab === 'WIRES' ? '電線' : tab === 'UNKNOWN' ? '💡 未知' : tab === 'CASTINGS' ? '非鉄' : tab === 'CLIENTS' ? '顧客' : 'スタッフ'}
+              {tab === 'WIRES' ? '電線' : tab === 'UNKNOWN' ? '💡 未知' : tab === 'CASTINGS' ? '非鉄' : tab === 'CLIENTS' ? '顧客' : tab === 'STAFF' ? 'スタッフ' : '🥋 AI道場'}
             </button>
           ))}
         </div>
       </header>
 
-      {/* ★ AI一括パトロールボタンの追加 */}
-      <div className="bg-gray-900 px-4 py-3 border-b border-gray-800 text-white flex flex-col md:flex-row justify-between items-start md:items-center text-xs shadow-inner gap-3">
-         <div className="flex items-center gap-2">
-            <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span></span>
-            <span className="font-bold text-gray-300">データクレンジング</span>
-         </div>
-         {cleansingState.isRunning ? (
-             <div className="flex items-center gap-3 w-full md:w-auto">
-                 <div className="flex-1 md:w-48 bg-gray-800 rounded-full h-2 overflow-hidden">
-                     <div className="bg-green-500 h-full transition-all duration-300" style={{ width: `${(cleansingState.current / cleansingState.total) * 100}%` }}></div>
-                 </div>
-                 <span className="font-mono text-[10px] text-gray-400">{cleansingState.current} / {cleansingState.total} 件</span>
+      {/* ★ AI一括パトロールボタン (WIRESタブのみ表示) */}
+      {activeTab === 'WIRES' && (
+          <div className="bg-gray-900 px-4 py-3 border-b border-gray-800 text-white flex flex-col md:flex-row justify-between items-start md:items-center text-xs shadow-inner gap-3">
+             <div className="flex items-center gap-2">
+                <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span></span>
+                <span className="font-bold text-gray-300">データクレンジング</span>
              </div>
-         ) : (
-             <button 
-                 onClick={runDataCleansing}
-                 className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-sm font-bold flex items-center gap-1 transition border border-gray-600 shadow-sm"
-             >
-                <Icons.Brain /> 断面・剥線画像から導体構成を再判定する
-             </button>
-         )}
-      </div>
+             {cleansingState.isRunning ? (
+                 <div className="flex items-center gap-3 w-full md:w-auto">
+                     <div className="flex-1 md:w-48 bg-gray-800 rounded-full h-2 overflow-hidden">
+                         <div className="bg-green-500 h-full transition-all duration-300" style={{ width: `${(cleansingState.current / cleansingState.total) * 100}%` }}></div>
+                     </div>
+                     <span className="font-mono text-[10px] text-gray-400">{cleansingState.current} / {cleansingState.total} 件</span>
+                 </div>
+             ) : (
+                 <button 
+                     onClick={runDataCleansing}
+                     className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-sm font-bold flex items-center gap-1 transition border border-gray-600 shadow-sm"
+                 >
+                    <Icons.Brain /> 断面・剥線画像から導体構成を再判定する
+                 </button>
+             )}
+          </div>
+      )}
 
+      {activeTab === 'DOJO' && (
+          <div className="p-4 md:p-6 bg-gray-100 flex-1 overflow-y-auto">
+              <div className="bg-gray-900 text-white p-6 md:p-8 rounded-sm shadow-xl relative overflow-hidden mb-6 border-b-4 border-[#D32F2F]">
+                  <div className="absolute top-0 right-0 p-8 opacity-10 transform scale-150 pointer-events-none"><Icons.Brain /></div>
+                  <h2 className="text-xl md:text-2xl font-black mb-3 flex items-center gap-2 relative z-10"><Icons.Brain /> AI道場 (Teacher-Student Training)</h2>
+                  <p className="text-xs md:text-sm text-gray-300 leading-relaxed max-w-3xl relative z-10 font-bold">
+                      マスターに蓄積された「正解データ（画像と実測歩留まり）」を使って、AIに歩留まり当てクイズをさせます。<br/>
+                      全件総当たりで特訓させることで、AIは独自の視覚的特徴（被覆の厚さや光沢など）と歩留まりの関係性を自己学習します。
+                  </p>
+                  
+                  <div className="mt-6 md:mt-8 flex flex-col sm:flex-row gap-3 relative z-10">
+                      <button onClick={runDojoRandom} disabled={dojoProgress.isRunning} className="bg-white text-gray-900 font-bold px-6 py-3.5 rounded-sm shadow-md hover:bg-gray-100 transition disabled:opacity-50 text-sm flex items-center justify-center gap-2">
+                          🎲 ランダム1件でテスト
+                      </button>
+                      <button onClick={runDojoAll} disabled={dojoProgress.isRunning} className="bg-[#D32F2F] text-white font-bold px-6 py-3.5 rounded-sm shadow-md hover:bg-red-800 transition flex items-center justify-center gap-2 disabled:opacity-50 text-sm">
+                          <Icons.Sparkles /> ⚔️ 全件総当たり特訓 (一晩コース)
+                      </button>
+                  </div>
+                  
+                  {dojoProgress.isRunning && (
+                      <div className="mt-6 relative z-10 bg-gray-800 p-4 rounded-sm border border-gray-700 shadow-inner">
+                          <div className="flex justify-between text-[10px] md:text-xs font-bold text-gray-300 mb-2">
+                              <span className="flex items-center gap-2"><span className="animate-spin"><Icons.Refresh /></span> AI特訓中... (PCと画面を開いたままお待ちください)</span>
+                              <span className="font-mono">{dojoProgress.current} / {dojoProgress.total} 件</span>
+                          </div>
+                          <div className="w-full bg-gray-900 rounded-full h-2.5 overflow-hidden shadow-inner">
+                              <div className="bg-green-500 h-full transition-all duration-500" style={{ width: `${(dojoProgress.current / dojoProgress.total) * 100}%` }}></div>
+                          </div>
+                      </div>
+                  )}
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-2 bg-white border border-gray-200 p-5 md:p-6 rounded-sm shadow-sm flex flex-col">
+                      <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 border-b border-gray-100 pb-2">AIの成長チャート (直近30回の推論誤差)</h3>
+                      <div className="flex items-end gap-3 mb-2">
+                          <div className="text-3xl md:text-4xl font-black text-gray-900 tracking-tighter tabular-nums">
+                              平均誤差: <span className={Number(avgError) > 3 ? 'text-[#D32F2F]' : 'text-green-600'}>±{avgError}%</span>
+                          </div>
+                          <div className="text-[10px] md:text-xs text-gray-500 font-bold mb-1 bg-gray-100 px-2 py-1 rounded-sm border border-gray-200">
+                              目標: ±2.0%以内
+                          </div>
+                      </div>
+                      <div className="flex-1 min-h-[150px] bg-gray-50 rounded-sm border border-gray-100 p-2">
+                          <DojoChart errors={recentErrors} />
+                      </div>
+                  </div>
+                  
+                  <div className="bg-white border border-gray-200 p-5 md:p-6 rounded-sm shadow-sm h-[500px] flex flex-col">
+                      <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 border-b border-gray-100 pb-2">最新の特訓ログ</h3>
+                      <div className="flex-1 overflow-y-auto space-y-3 pr-2 no-scrollbar">
+                          {aiTrainingHistory.slice().reverse().slice(0, 50).map((log: any, i: number) => (
+                              <div key={i} className="bg-gray-50 border border-gray-200 p-3 rounded-sm shadow-inner text-xs transition hover:border-gray-400 group">
+                                  <div className="flex justify-between items-start mb-2 border-b border-gray-200 pb-2">
+                                      <div className="font-bold text-gray-900 truncate pr-2 text-[11px]" title={log.wireName}>{log.wireName}</div>
+                                      <div className="font-mono text-[9px] text-gray-500 whitespace-nowrap bg-white px-1.5 py-0.5 rounded border border-gray-100">{formatTimeShort(log.date)}</div>
+                                  </div>
+                                  <div className="grid grid-cols-3 gap-2 mb-2 text-center">
+                                      <div className="bg-white p-1.5 rounded-sm border border-gray-200 shadow-sm">
+                                          <p className="text-[8px] text-gray-500 font-bold mb-0.5">正解</p>
+                                          <p className="font-black text-gray-900 font-mono text-[13px]">{log.actualRatio}%</p>
+                                      </div>
+                                      <div className="bg-white p-1.5 rounded-sm border border-gray-200 shadow-sm">
+                                          <p className="text-[8px] text-gray-500 font-bold mb-0.5">AI推測</p>
+                                          <p className="font-black text-gray-900 font-mono text-[13px]">{log.predictedRatio}%</p>
+                                      </div>
+                                      <div className={`p-1.5 rounded-sm border shadow-sm font-bold text-white flex flex-col justify-center ${Number(log.errorMargin) <= 2.0 ? 'bg-green-500 border-green-600' : Number(log.errorMargin) <= 5.0 ? 'bg-yellow-500 border-yellow-600' : 'bg-red-500 border-red-600'}`}>
+                                          <p className="text-[8px] text-white/80 mb-0.5">誤差</p>
+                                          <p className="font-black font-mono text-[13px]">{log.errorMargin}%</p>
+                                      </div>
+                                  </div>
+                                  <details className="mt-2">
+                                      <summary className="text-[9px] text-gray-500 font-bold cursor-pointer hover:text-gray-900 select-none flex items-center gap-1 opacity-60 group-hover:opacity-100 transition">
+                                          <Icons.Sparkles /> AIの推論理由
+                                      </summary>
+                                      <p className="mt-1.5 text-gray-700 leading-relaxed bg-white p-2 rounded-sm border border-gray-200 shadow-inner whitespace-pre-wrap text-[10px]">{log.reason}</p>
+                                  </details>
+                              </div>
+                          ))}
+                          {aiTrainingHistory.length === 0 && <p className="text-gray-400 text-center py-10 font-bold text-xs">まだ特訓履歴がありません</p>}
+                      </div>
+                  </div>
+              </div>
+          </div>
+      )}
+
+      {activeTab !== 'DOJO' && (
       <div className="bg-white border border-gray-200 shadow-sm rounded-sm flex-1 flex flex-col overflow-hidden relative mt-2">
         <div className="p-2 md:p-4 border-b border-gray-200 bg-gray-50 flex flex-col gap-2 z-30 relative">
           
@@ -1373,7 +1525,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
               </div>
             </div>
         </div>
-      </div>
+      </div>)}
 
       {/* ★ AIマージ提案のモーダル */}
       {mergeProposal && (
