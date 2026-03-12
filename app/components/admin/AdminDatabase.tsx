@@ -659,24 +659,27 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       });
   }
 
-  // ★ 線種データを名前でグループ化（キャプテンとメンバーに分ける）
+// ★ 線種データを厳密なキーでグループ化（キャプテンとメンバーに分ける）
   const groupedWires = useMemo(() => {
     if (activeTab !== 'WIRES') return [];
     const groups: { [key: string]: { captain: any, members: any[], allIds: string[] } } = {};
     
-sortedData.forEach(w => {
-      // 💡 名前だけでなく、独立している電圧やスケアの情報も合体させて「一意のキー」を作る
+    sortedData.forEach(w => {
+      // 💡 名前、メーカー、電圧、スケア、芯数を合体させて「一意のキー」を作る
+      const maker = w.maker && w.maker !== '-' ? `【${w.maker}】` : '';
       const name = w.name || '名称未設定';
       const voltage = w.voltage ? ` (${w.voltage})` : '';
-      const sq = w.sq ? ` ${w.sq}` : '';
-      const cores = w.cores ? ` ${w.cores}` : '';
+      const sq = w.sq && w.sq !== '-' ? ` ${w.sq}sq` : '';
+      const core = w.core && w.core !== '-' ? ` ${w.core}C` : ''; 
       
-      // 例：「CV線 (6600V) 38sq 3C」という固有のチーム名を作成
-      const groupKey = `${name}${voltage}${sq}${cores}`.trim();
+      // 例：「【矢崎】CV線 (600V) 38sq 3C」
+      let groupKey = `${maker}${name}${voltage}${sq}${core}`.trim();
 
-      // もしデータベース上の独立項目ではなく、description（備考）に「6600V」等と書いている場合は、
-      // 簡易的に以下の1行の // を消して有効にすると、備考欄の完全一致で分けることも可能です。
-      // const groupKey = `${name} - ${w.description || ''}`;
+      // 🚨 安全装置：スケア(sq)が未登録（ハイフン）のデータは、太さが違って歩留まりが激しくブレるため
+      // 勝手に他の「スケア未登録データ」とマージされないように完全に独立（孤立）させる。
+      if (!w.sq || w.sq === '-') {
+         groupKey = `${groupKey}_独自ID:${w.id}`;
+      }
 
       if (!groups[groupKey]) groups[groupKey] = { captain: null, members: [], allIds: [] };
       
@@ -693,12 +696,10 @@ sortedData.forEach(w => {
       }
     });
 
-    // ※ 下の Object.keys(groups).forEach(name => { ... の部分の (name =>) はそのまま (groupKey =>) として動作しますので変更不要です。
-
-    Object.keys(groups).forEach(name => {
-      if (!groups[name].captain && groups[name].members.length > 0) {
-         groups[name].captain = groups[name].members[0];
-         groups[name].members = groups[name].members.slice(1);
+    Object.keys(groups).forEach(key => {
+      if (!groups[key].captain && groups[key].members.length > 0) {
+         groups[key].captain = groups[key].members[0];
+         groups[key].members = groups[key].members.slice(1);
       }
     });
 
