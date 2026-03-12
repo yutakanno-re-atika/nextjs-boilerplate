@@ -4,7 +4,6 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 
 // ============================================================================
 // ⚠️ 重要：スプレッドシートの設定
-// 追加した「status」列が、A列から数えて何番目かを指定してください。
 // ============================================================================
 const STATUS_COLUMN_INDEX = 21; 
 
@@ -14,7 +13,7 @@ const Icons = {
   Trash: () => <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
   Search: () => <svg className="w-4 h-4 md:w-5 md:h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
   Image: () => <svg className="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2-2v12a2 2 0 002 2z" /></svg>,
-  Sparkles: () => <svg className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 8.134a1 1 0 010 1.932l-3.354.933-1.179 4.456a1 1 0 01-1.934 0l-1.179-4.456-3.354-.933a1 1 0 010-1.932l3.354-.933 1.179-4.456A1 1 0 0112 2z" clipRule="evenodd" /></svg>,
+  Sparkles: () => <svg className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 01-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 8.134a1 1 0 010 1.932l-3.354.933-1.179 4.456a1 1 0 01-1.934 0l-1.179-4.456-3.354-.933a1 1 0 010-1.932l3.354-.933 1.179-4.456A1 1 0 0112 2z" clipRule="evenodd" /></svg>,
   ArrowUp: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>,
   Close: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>,
   Refresh: () => <svg className="w-4 h-4 md:w-5 md:h-5 animate-spin inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
@@ -30,6 +29,17 @@ const Icons = {
   AlertTriangle: () => <svg className="w-3 h-3 md:w-4 md:h-4 inline-block text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
   Cpu: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" /></svg>,
   Users: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+};
+
+// ★全角数字・ピリオドを半角に自動変換（サニタイズ）する関数
+const toHalfWidthNumber = (str: any) => {
+  if (str == null) return '';
+  return String(str)
+    .replace(/[０-９．]/g, (s) => {
+      if (s === '．') return '.';
+      return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+    })
+    .replace(/[^0-9.]/g, ''); // 半角数字とピリオド以外を除去
 };
 
 const formatTimeShort = (timeStr: string) => {
@@ -130,7 +140,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const [isListeningHint, setIsListeningHint] = useState(false);
   const hintRecognitionRef = useRef<any>(null);
 
-  // ★ AIマージ（重複統合）用ステート
   const [analyzingName, setAnalyzingName] = useState<string | null>(null);
   const [mergeProposal, setMergeProposal] = useState<any>(null);
   const [isMerging, setIsMerging] = useState(false);
@@ -222,9 +231,24 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       return '';
   };
 
-  const handleSampleTotalChange = (val: string) => { const num = val ? Number(val) : ''; setSampleTotal(num); setEditingItem({...editingItem, sampleTotal: num, ratio: calculateRatio(num, sampleCopper)}); };
-  const handleSampleCopperChange = (val: string) => { const num = val ? Number(val) : ''; setSampleCopper(num); setEditingItem({...editingItem, sampleCopper: num, ratio: calculateRatio(sampleTotal, num)}); };
-  const handleSampleCoverChange = (val: string) => { const num = val ? Number(val) : ''; setSampleCover(num); setEditingItem({...editingItem, sampleCover: num}); };
+  const handleSampleTotalChange = (val: string) => { 
+      const cleanVal = toHalfWidthNumber(val);
+      const num = cleanVal ? Number(cleanVal) : ''; 
+      setSampleTotal(num); 
+      setEditingItem({...editingItem, sampleTotal: num, ratio: calculateRatio(num, sampleCopper)}); 
+  };
+  const handleSampleCopperChange = (val: string) => { 
+      const cleanVal = toHalfWidthNumber(val);
+      const num = cleanVal ? Number(cleanVal) : ''; 
+      setSampleCopper(num); 
+      setEditingItem({...editingItem, sampleCopper: num, ratio: calculateRatio(sampleTotal, num)}); 
+  };
+  const handleSampleCoverChange = (val: string) => { 
+      const cleanVal = toHalfWidthNumber(val);
+      const num = cleanVal ? Number(cleanVal) : ''; 
+      setSampleCover(num); 
+      setEditingItem({...editingItem, sampleCover: num}); 
+  };
 
   const getJuteWeight = () => {
       if (sampleTotal && sampleCopper) {
@@ -257,7 +281,8 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const handleCaliperInput = () => {
       const val = window.prompt("📐 ノギスで実測した「直径(mm)」を入力してください\n例: 2.0 または 3.5");
       if (!val) return;
-      const d = parseFloat(val);
+      const cleanVal = toHalfWidthNumber(val);
+      const d = parseFloat(cleanVal);
       if (isNaN(d) || d <= 0) return alert("正しい数値を入力してください。");
 
       const isSolid = editingItem.conductor && (editingItem.conductor.includes('単線') || editingItem.conductor === 'Solid');
@@ -368,7 +393,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     const gasUrl = "/api/gas"; 
 
     try {
-      // 1. 既存の全データを 'archived' に更新
       const updatePromises = mergeProposal.allIds.map((id: string) => {
         return fetch(gasUrl, { 
           method: 'POST', 
@@ -378,7 +402,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       });
       await Promise.all(updatePromises);
 
-      // 2. 新しい統合データ（最強のゴールデンレコード）を追加
       const baseItem = mergeProposal.records[0];
       const payload = {
         action: 'ADD_DB_RECORD',
@@ -657,25 +680,24 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       });
   }
 
-  // ★ 線種データを厳密なキーでグループ化（キャプテンとメンバーに分ける）
+  // ★ 線種データをさらに厳密なキーでグループ化
   const groupedWires = useMemo(() => {
     if (activeTab !== 'WIRES') return [];
     const groups: { [key: string]: { captain: any, members: any[], allIds: string[] } } = {};
     
     sortedData.forEach(w => {
-      // 💡 名前、メーカー、電圧、スケア、芯数を合体させて「一意のキー」を作る
       const maker = w.maker && w.maker !== '-' ? `【${w.maker}】` : '';
       const name = w.name || '名称未設定';
       const voltage = w.voltage ? ` (${w.voltage})` : '';
       const sq = w.sq && w.sq !== '-' ? ` ${w.sq}sq` : '';
       const core = w.core && w.core !== '-' ? ` ${w.core}C` : ''; 
+      const year = w.year && w.year !== '-' ? ` (${w.year}年)` : '';
+      const conductor = w.conductor && w.conductor !== '-' ? ` [${w.conductor}]` : '';
       
-      // 例：「【矢崎】CV線 (600V) 38sq 3C」
-      let groupKey = `${maker}${name}${voltage}${sq}${core}`.trim();
+      let groupKey = `${maker}${name}${voltage}${sq}${core}${year}${conductor}`.trim();
 
-      // 🚨 安全装置：スケア(sq)が未登録（ハイフン）のデータは、太さが違って歩留まりが激しくブレるため
-      // 勝手に他の「スケア未登録データ」とマージされないように完全に独立（孤立）させる。
-      if (!w.sq || w.sq === '-') {
+      // 🚨 安全装置：スケア(sq)や芯数(core)が未登録のデータは、マージによる破壊を防ぐため完全に孤立させる
+      if (!w.sq || w.sq === '-' || !w.core || w.core === '-') {
          groupKey = `${groupKey}_独自ID:${w.id}`;
       }
 
@@ -926,7 +948,10 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                                 </div>
                             </td>
                             <td className="p-3 text-gray-600">{item.year || '-'}</td>
-                            <td className="p-3 text-gray-600 font-mono font-bold text-xs">{formatSqDisplay(item.sq)} / {formatCoreDisplay(item.core)}</td>
+                            <td className="p-3 text-gray-600 font-mono font-bold text-xs">
+                                {formatSqDisplay(item.sq)} / {formatCoreDisplay(item.core)}
+                                {item.conductor && item.conductor !== '-' && <div className="text-[10px] text-gray-400 font-normal mt-0.5">{item.conductor}</div>}
+                            </td>
                             <td className="p-3 font-mono font-black text-gray-900 text-lg">{item.ratio ? `${item.ratio}%` : '未設定'}</td>
                             <td className="p-3">
                                 <div className="flex gap-2 justify-center">
@@ -984,10 +1009,12 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                                           )}
                                           <div className="flex flex-col text-[10px] min-w-0 justify-center">
                                              <span className="font-bold text-gray-900 truncate pr-8">{m.name}</span>
-                                             <div className="flex items-center gap-1 mt-0.5">
+                                             <div className="flex items-center gap-1 mt-0.5 text-[9px] text-gray-500 font-mono flex-wrap">
                                                  <span className="font-black text-gray-800">歩留: {m.ratio ? `${m.ratio}%` : '未設定'}</span>
-                                                 <span className="text-gray-400 font-mono">|</span>
-                                                 <span className="text-gray-600 font-mono truncate">{formatSqDisplay(m.sq)}/{formatCoreDisplay(m.core)}</span>
+                                                 <span>|</span>
+                                                 <span className="truncate">{m.maker && m.maker !== '-' ? `【${m.maker}】` : ''}{formatSqDisplay(m.sq)}/{formatCoreDisplay(m.core)}</span>
+                                                 {m.year && m.year !== '-' && <span>| {m.year}年</span>}
+                                                 {m.conductor && m.conductor !== '-' && <span>| {m.conductor}</span>}
                                              </div>
                                              <span className="truncate text-gray-500 text-[9px] mt-0.5 group-hover:text-blue-600">{m.memo || 'メモなし'}</span>
                                           </div>
@@ -1034,7 +1061,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                               <td className="p-3"><span className={`px-2 py-1 rounded-sm text-xs font-bold text-white shadow-sm ${item.status === 'ACTIVE' ? 'bg-gray-900' : 'bg-gray-400'}`}>{item.status}</span></td>
                             </>
                         )}
-                        {activeTab !== 'UNKNOWN' && (
+                        {activeTab !== 'UNKNOWN' && activeTab !== 'WIRES' && (
                             <td className="p-3 text-[10px] text-gray-400 font-mono align-top">
                                 <div className="flex flex-col gap-1"><span title="登録日">➕ {formatTimeShort(item.createdAt)}</span><span title="更新日">🔄 {formatTimeShort(item.updatedAt)}</span></div>
                             </td>
@@ -1093,8 +1120,10 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                           </div>
                           
                           <div className="flex justify-between items-center mt-0.5">
-                            <div className="text-[10px] text-gray-500 flex items-center gap-2">
+                            <div className="text-[10px] text-gray-500 flex items-center gap-1.5 flex-wrap">
                               <span className="font-mono bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">{formatSqDisplay(item.sq)}/{formatCoreDisplay(item.core)}</span>
+                              {item.year && item.year !== '-' && <span className="bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">{item.year}年</span>}
+                              {item.conductor && item.conductor !== '-' && <span className="bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">{item.conductor}</span>}
                               {needsMerge && <span className="bg-red-100 text-red-700 px-1.5 py-0.5 rounded text-[8px] font-bold">重複あり</span>}
                             </div>
                             
@@ -1131,10 +1160,11 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                                     )}
                                     <div className="flex flex-col text-[10px] min-w-0 justify-center">
                                        <span className="font-bold text-gray-900 truncate pr-8">{m.name}</span>
-                                       <div className="flex items-center gap-1 mt-0.5">
+                                       <div className="flex items-center gap-1 mt-0.5 text-[9px] text-gray-500 font-mono flex-wrap">
                                            <span className="font-black text-gray-800">歩留: {m.ratio ? `${m.ratio}%` : '未設定'}</span>
-                                           <span className="text-gray-400 font-mono">|</span>
-                                           <span className="text-gray-600 font-mono truncate">{formatSqDisplay(m.sq)}/{formatCoreDisplay(m.core)}</span>
+                                           <span>|</span>
+                                           <span className="truncate">{m.maker && m.maker !== '-' ? `【${m.maker}】` : ''}{formatSqDisplay(m.sq)}/{formatCoreDisplay(m.core)}</span>
+                                           {m.year && m.year !== '-' && <span>| {m.year}年</span>}
                                        </div>
                                        <span className="truncate text-gray-500 text-[9px] mt-0.5 group-hover:text-blue-600">{m.memo || 'メモなし'}</span>
                                     </div>
@@ -1431,12 +1461,12 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                         </div>
 
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-                            <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">製造年</label><input type="text" placeholder="例: 2024" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 shadow-sm text-sm" value={editingItem.year || ''} onChange={e => setEditingItem({...editingItem, year: e.target.value})} /></div>
+                            <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">製造年</label><input type="text" placeholder="例: 2024" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 shadow-sm text-sm" value={editingItem.year || ''} onChange={e => setEditingItem({...editingItem, year: toHalfWidthNumber(e.target.value).replace(/\./g, '')})} /></div>
                             <div>
                                 <label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 flex items-center justify-between uppercase tracking-widest"><span>サイズ</span><button onClick={handleCaliperInput} className="text-gray-700 hover:text-gray-900 flex items-center gap-0.5 bg-gray-100 px-1.5 py-0.5 rounded-sm border border-gray-300 transition shadow-sm"><Icons.Ruler /> <span className="text-[8px] md:text-[9px] font-bold">ノギス</span></button></label>
-                                <div className="flex rounded-sm shadow-sm relative"><input type="number" step="0.01" className="w-full bg-white border-y border-l border-gray-300 p-2.5 md:p-3 rounded-l-sm outline-none focus:border-gray-900 font-mono text-right font-bold text-sm" value={editingItem._sqValue || ''} onChange={e => setEditingItem({...editingItem, _sqValue: e.target.value})} placeholder="2.0" /><select className="border border-gray-300 bg-gray-100 px-1 md:px-2 rounded-r-sm text-[10px] md:text-xs font-bold text-gray-700 outline-none focus:border-gray-900" value={editingItem._sqUnit || 'sq'} onChange={e => setEditingItem({...editingItem, _sqUnit: e.target.value})}><option value="sq">sq</option><option value="mm">mm</option></select></div>
+                                <div className="flex rounded-sm shadow-sm relative"><input type="number" step="0.01" className="w-full bg-white border-y border-l border-gray-300 p-2.5 md:p-3 rounded-l-sm outline-none focus:border-gray-900 font-mono text-right font-bold text-sm" value={editingItem._sqValue || ''} onChange={e => setEditingItem({...editingItem, _sqValue: toHalfWidthNumber(e.target.value)})} placeholder="2.0" /><select className="border border-gray-300 bg-gray-100 px-1 md:px-2 rounded-r-sm text-[10px] md:text-xs font-bold text-gray-700 outline-none focus:border-gray-900" value={editingItem._sqUnit || 'sq'} onChange={e => setEditingItem({...editingItem, _sqUnit: e.target.value})}><option value="sq">sq</option><option value="mm">mm</option></select></div>
                             </div>
-                            <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">芯数</label><div className="relative"><input type="number" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-mono pr-8 text-right font-bold shadow-sm text-sm" value={editingItem._coreValue || ''} onChange={e => setEditingItem({...editingItem, _coreValue: e.target.value.replace(/[^\d]/g, '')})} placeholder="3" /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold pointer-events-none">C</span></div></div>
+                            <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">芯数</label><div className="relative"><input type="number" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-mono pr-8 text-right font-bold shadow-sm text-sm" value={editingItem._coreValue || ''} onChange={e => setEditingItem({...editingItem, _coreValue: toHalfWidthNumber(e.target.value).replace(/\./g, '')})} placeholder="3" /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold pointer-events-none">C</span></div></div>
                             <div>
                                 <label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">導体構成 (構造)</label><input type="text" placeholder="単線/7本より線等" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 shadow-sm text-xs md:text-sm font-bold" value={editingItem.conductor || ''} onChange={e => setEditingItem({...editingItem, conductor: e.target.value})} />
                                 <div className="flex gap-1 mt-1.5"><button onClick={() => setEditingItem({...editingItem, conductor: '単線'})} className="flex-1 bg-gray-100 hover:bg-gray-200 text-[9px] py-1.5 rounded-sm text-gray-600 font-bold border border-gray-200 transition">単線</button><button onClick={() => setEditingItem({...editingItem, conductor: 'より線'})} className="flex-1 bg-gray-100 hover:bg-gray-200 text-[9px] py-1.5 rounded-sm text-gray-600 font-bold border border-gray-200 transition">より線</button></div>
@@ -1476,7 +1506,9 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                                 
                                 <div className="w-full flex flex-col gap-1.5 md:gap-2">
                                     <div className="bg-white border border-gray-300 shadow-sm p-1.5 md:p-2 rounded-sm flex justify-between items-center"><span className="text-[9px] md:text-[10px] font-bold text-gray-500 uppercase tracking-widest">ダスト</span><span className="font-mono text-sm md:text-base font-bold text-gray-800 tabular-nums">{getJuteWeight()}g</span></div>
-                                    <div className="bg-gray-900 border border-black shadow-inner p-1.5 md:p-2 rounded-sm flex justify-between items-center relative"><span className="text-[9px] md:text-[10px] font-bold text-gray-300 uppercase tracking-widest">歩留まり</span>{editingItem.aiEstimatedRatio && !sampleTotal && <span className="absolute -top-2 -right-2 text-[8px] bg-gray-500 text-white px-1.5 py-0.5 rounded shadow animate-pulse">AI</span>}<span className="font-mono text-lg md:text-xl font-black text-white tabular-nums">{editingItem.ratio || '---'}%</span></div>
+                                    <div className="bg-gray-900 border border-black shadow-inner p-1.5 md:p-2 rounded-sm flex justify-between items-center relative"><span className="text-[9px] md:text-[10px] font-bold text-gray-300 uppercase tracking-widest">歩留まり</span>{editingItem.aiEstimatedRatio && !sampleTotal && <span className="absolute -top-2 -right-2 text-[8px] bg-gray-500 text-white px-1.5 py-0.5 rounded shadow animate-pulse">AI</span>}<span className="font-mono text-lg md:text-xl font-black text-white tabular-nums">
+                                      <input type="number" step="0.01" className="w-20 bg-transparent text-right outline-none" value={editingItem.ratio || ''} onChange={e => setEditingItem({...editingItem, ratio: toHalfWidthNumber(e.target.value)})} placeholder="---" />%
+                                    </span></div>
                                 </div>
                             </div>
                         </div>
@@ -1490,7 +1522,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                     <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">品目名</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-bold shadow-sm" value={editingItem.name || ''} onChange={e => setEditingItem({...editingItem, name: e.target.value})} /></div>
                     <div className="grid grid-cols-2 gap-3 md:gap-4 mt-4">
                         <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">種別</label><select className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-bold shadow-sm text-sm" value={editingItem.type || 'BRASS'} onChange={e => setEditingItem({...editingItem, type: e.target.value})}><option value="BRASS">真鍮 (Brass)</option><option value="ZINC">亜鉛 (Zinc)</option><option value="LEAD">鉛 (Lead)</option></select></div>
-                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">歩留まり (%)</label><input type="number" step="0.1" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm font-black text-base md:text-lg text-gray-900 outline-none focus:border-gray-900 shadow-sm text-right tabular-nums" value={editingItem.ratio || ''} onChange={e => setEditingItem({...editingItem, ratio: e.target.value})} /></div>
+                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">歩留まり (%)</label><input type="number" step="0.1" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm font-black text-base md:text-lg text-gray-900 outline-none focus:border-gray-900 shadow-sm text-right tabular-nums" value={editingItem.ratio || ''} onChange={e => setEditingItem({...editingItem, ratio: toHalfWidthNumber(e.target.value)})} /></div>
                     </div>
                   </>
                 )}
@@ -1502,8 +1534,8 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                         <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">ランク</label><select className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-bold shadow-sm text-sm" value={editingItem.rank || 'NORMAL'} onChange={e => setEditingItem({...editingItem, rank: e.target.value})}><option value="NORMAL">一般 (NORMAL)</option><option value="BRONZE">ブロンズ (BRONZE)</option><option value="SILVER">シルバー (SILVER)</option><option value="GOLD">ゴールド (GOLD)</option><option value="VIP">VIP</option></select></div>
                     </div>
                     <div className="grid grid-cols-2 gap-3 md:gap-4">
-                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">電話番号</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-mono shadow-sm text-sm" value={editingItem.phone || ''} onChange={e => setEditingItem({...editingItem, phone: e.target.value})} /></div>
-                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">保有ポイント</label><input type="number" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm font-black text-base md:text-lg text-gray-900 outline-none focus:border-gray-900 shadow-sm text-right tabular-nums" value={editingItem.points || 0} onChange={e => setEditingItem({...editingItem, points: e.target.value})} /></div>
+                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">電話番号</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-mono shadow-sm text-sm" value={editingItem.phone || ''} onChange={e => setEditingItem({...editingItem, phone: toHalfWidthNumber(e.target.value)})} /></div>
+                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">保有ポイント</label><input type="number" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm font-black text-base md:text-lg text-gray-900 outline-none focus:border-gray-900 shadow-sm text-right tabular-nums" value={editingItem.points || 0} onChange={e => setEditingItem({...editingItem, points: toHalfWidthNumber(e.target.value)})} /></div>
                     </div>
                     <div className="grid grid-cols-2 gap-3 md:gap-4">
                         <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">ログインID</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-mono shadow-sm text-sm" value={editingItem.loginId || ''} onChange={e => setEditingItem({...editingItem, loginId: e.target.value})} /></div>
@@ -1530,7 +1562,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                     </div>
                     <div className="grid grid-cols-2 gap-3 md:gap-4">
                         <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">権限 (Role)</label><select className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-bold shadow-sm text-sm" value={editingItem.role || 'FRONT'} onChange={e => setEditingItem({...editingItem, role: e.target.value})}><option value="FRONT">受付 (FRONT)</option><option value="INSPECTION">検収 (INSPECTION)</option><option value="PLANT">工場 (PLANT)</option><option value="MANAGER">工場長 (MANAGER)</option><option value="ALL">管理者 (ALL)</option></select></div>
-                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">時給/単価</label><input type="number" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-mono shadow-sm text-right tabular-nums text-sm" value={editingItem.rate || 0} onChange={e => setEditingItem({...editingItem, rate: e.target.value})} /></div>
+                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">時給/単価</label><input type="number" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-mono shadow-sm text-right tabular-nums text-sm" value={editingItem.rate || 0} onChange={e => setEditingItem({...editingItem, rate: toHalfWidthNumber(e.target.value)})} /></div>
                     </div>
                     <div className="grid grid-cols-2 gap-3 md:gap-4">
                         <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">ログインID</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-mono shadow-sm text-sm" value={editingItem.loginId || ''} onChange={e => setEditingItem({...editingItem, loginId: e.target.value})} /></div>
