@@ -5,7 +5,6 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 // ============================================================================
 // ⚠️ 重要：スプレッドシートの設定
 // 追加した「status」列が、A列から数えて何番目かを指定してください。
-// （既存の getUpdatesMap を見ると20番目まで使われているため、デフォルトを21にしています）
 // ============================================================================
 const STATUS_COLUMN_INDEX = 21; 
 
@@ -15,7 +14,7 @@ const Icons = {
   Trash: () => <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
   Search: () => <svg className="w-4 h-4 md:w-5 md:h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
   Image: () => <svg className="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2-2v12a2 2 0 002 2z" /></svg>,
-  Sparkles: () => <svg className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 01-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 8.134a1 1 0 010 1.932l-3.354.933-1.179 4.456a1 1 0 01-1.934 0l-1.179-4.456-3.354-.933a1 1 0 010-1.932l3.354-.933 1.179-4.456A1 1 0 0112 2z" clipRule="evenodd" /></svg>,
+  Sparkles: () => <svg className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 8.134a1 1 0 010 1.932l-3.354.933-1.179 4.456a1 1 0 01-1.934 0l-1.179-4.456-3.354-.933a1 1 0 010-1.932l3.354-.933 1.179-4.456A1 1 0 0112 2z" clipRule="evenodd" /></svg>,
   ArrowUp: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>,
   Close: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>,
   Refresh: () => <svg className="w-4 h-4 md:w-5 md:h-5 animate-spin inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
@@ -46,59 +45,59 @@ const formatTimeShort = (timeStr: string) => {
 };
 
 const formatSqDisplay = (sq: any) => {
-    if (!sq || sq === '-') return '-';
-    const s = String(sq).toLowerCase();
-    if (s.includes('sq') || s.includes('mm')) return sq;
-    return `${sq} sq`;
+  if (!sq || sq === '-') return '-';
+  const s = String(sq).toLowerCase();
+  if (s.includes('sq') || s.includes('mm')) return sq;
+  return `${sq} sq`;
 };
 const formatCoreDisplay = (core: any) => {
-    if (!core || core === '-') return '-';
-    const c = String(core).toUpperCase();
-    if (c.includes('C') || c.includes('芯')) return core;
-    return `${core}C`;
+  if (!core || core === '-') return '-';
+  const c = String(core).toUpperCase();
+  if (c.includes('C') || c.includes('芯')) return core;
+  return `${core}C`;
 };
 
 const parseSqForInput = (sq: string) => {
-    if (!sq || sq === '-') return { val: '', unit: 'sq' };
-    const str = String(sq).toLowerCase();
-    const match = str.match(/^([\d.]+)\s*(sq|mm)?$/);
-    if (match) return { val: match[1], unit: match[2] || 'sq' };
-    return { val: str, unit: 'sq' };
+  if (!sq || sq === '-') return { val: '', unit: 'sq' };
+  const str = String(sq).toLowerCase();
+  const match = str.match(/^([\d.]+)\s*(sq|mm)?$/);
+  if (match) return { val: match[1], unit: match[2] || 'sq' };
+  return { val: str, unit: 'sq' };
 };
 const parseCoreForInput = (core: string) => {
-    if (!core || core === '-') return '';
-    const match = String(core).match(/(\d+)/);
-    return match ? match[1] : String(core);
+  if (!core || core === '-') return '';
+  const match = String(core).match(/(\d+)/);
+  return match ? match[1] : String(core);
 };
 
 const getDriveImageUrl = (url: string) => {
-    if (!url) return '';
-    const match = url.match(/id=([^&]+)/) || url.match(/file\/d\/([^\/]+)/);
-    if (match && match[1]) {
-        return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1000`;
-    }
-    return url;
+  if (!url) return '';
+  const match = url.match(/id=([^&]+)/) || url.match(/file\/d\/([^\/]+)/);
+  if (match && match[1]) {
+      return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1000`;
+  }
+  return url;
 };
 
 const getDriveViewUrl = (url: string) => {
-    if (!url) return '';
-    const match = url.match(/id=([^&]+)/) || url.match(/file\/d\/([^\/]+)/);
-    if (match && match[1]) {
-        return `https://drive.google.com/file/d/${match[1]}/view`;
-    }
-    return url;
+  if (!url) return '';
+  const match = url.match(/id=([^&]+)/) || url.match(/file\/d\/([^\/]+)/);
+  if (match && match[1]) {
+      return `https://drive.google.com/file/d/${match[1]}/view`;
+  }
+  return url;
 };
 
 const CATEGORIES = ['すべて', 'IV線', 'CV・電力線', 'VVF / VV (ネズミ線)', '制御・通信線', 'キャブタイヤ・雑線', 'その他'];
 const getCategory = (name: string) => {
-    if (!name) return 'その他';
-    const n = name.toUpperCase();
-    if (n.includes('VVF') || n.includes('VA') || n.includes('EEF/F') || (n.includes('VV') && !n.includes('CVV'))) return 'VVF / VV (ネズミ線)';
-    if (n.includes('IV') || n.includes('IE/F')) return 'IV線';
-    if (n.includes('CVT') || (n.includes('CV') && !n.includes('CVV')) || n.includes('CE/F') || n.includes('EM')) return 'CV・電力線';
-    if (n.includes('CVV') || n.includes('AE') || n.includes('通信') || n.includes('LAN') || n.includes('弱電') || n.includes('光')) return '制御・通信線';
-    if (n.includes('VCT') || n.includes('雑線') || n.includes('家電') || n.includes('ハーネス')) return 'キャブタイヤ・雑線';
-    return 'その他';
+  if (!name) return 'その他';
+  const n = name.toUpperCase();
+  if (n.includes('VVF') || n.includes('VA') || n.includes('EEF/F') || (n.includes('VV') && !n.includes('CVV'))) return 'VVF / VV (ネズミ線)';
+  if (n.includes('IV') || n.includes('IE/F')) return 'IV線';
+  if (n.includes('CVT') || (n.includes('CV') && !n.includes('CVV')) || n.includes('CE/F') || n.includes('EM')) return 'CV・電力線';
+  if (n.includes('CVV') || n.includes('AE') || n.includes('通信') || n.includes('LAN') || n.includes('弱電') || n.includes('光')) return '制御・通信線';
+  if (n.includes('VCT') || n.includes('雑線') || n.includes('家電') || n.includes('ハーネス')) return 'キャブタイヤ・雑線';
+  return 'その他';
 };
 
 export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoiceOutputEnabled?: boolean }) => {
@@ -325,7 +324,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
   const getUpdatesMap = (item: any, tab: string) => {
     if (tab === 'WIRES') {
-        // ★ STATUS_COLUMN_INDEX にステータスを登録
         const updates: any = { 1: item.maker, 2: item.name, 3: item.year, 4: item.sq, 5: item.sampleTotal, 6: item.sampleCopper, 7: item.core, 8: item.conductor, 9: item.ratio, 10: item.memo, 18: item.material, 19: item.sampleCover, 20: item.showOnWeb };
         if (item.image1 !== undefined) updates[11] = item.image1;
         if (item.image2 !== undefined) updates[12] = item.image2;
@@ -659,7 +657,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       });
   }
 
-// ★ 線種データを厳密なキーでグループ化（キャプテンとメンバーに分ける）
+  // ★ 線種データを厳密なキーでグループ化（キャプテンとメンバーに分ける）
   const groupedWires = useMemo(() => {
     if (activeTab !== 'WIRES') return [];
     const groups: { [key: string]: { captain: any, members: any[], allIds: string[] } } = {};
@@ -929,7 +927,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                             </td>
                             <td className="p-3 text-gray-600">{item.year || '-'}</td>
                             <td className="p-3 text-gray-600 font-mono font-bold text-xs">{formatSqDisplay(item.sq)} / {formatCoreDisplay(item.core)}</td>
-                            <td className="p-3 font-mono font-black text-gray-900 text-lg">{item.ratio}%</td>
+                            <td className="p-3 font-mono font-black text-gray-900 text-lg">{item.ratio ? `${item.ratio}%` : '未設定'}</td>
                             <td className="p-3">
                                 <div className="flex gap-2 justify-center">
                                     {[11, 12, 13, 14, 15].map(colIdx => {
@@ -962,7 +960,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                               </div>
                             </td>
                           </tr>
-                          {/* 過去データの折りたたみ表示 */}
+                          {/* 過去データの折りたたみ表示 (PC版) */}
                           {members.length > 0 && (
                             <tr className="bg-gray-50/50">
                               <td colSpan={8} className="p-0 border-b border-gray-200">
@@ -973,16 +971,25 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                                   </summary>
                                   <div className="p-3 flex gap-3 overflow-x-auto bg-gray-100/50">
                                      {members.map((m: any, i: number) => (
-                                       <div key={m.id || i} className="bg-white border border-gray-300 rounded-sm p-2 flex gap-3 w-56 shrink-0 relative shadow-sm">
-                                          {m.status === 'archived' && <span className="absolute top-0 right-0 bg-gray-200 text-gray-500 text-[8px] font-bold px-1.5 py-0.5 rounded-bl-sm">Archived</span>}
+                                       <div 
+                                         key={m.id || i} 
+                                         onClick={() => handleOpenModal(m)}
+                                         className="bg-white border border-gray-300 hover:border-blue-400 rounded-sm p-2 flex gap-3 w-64 shrink-0 relative shadow-sm cursor-pointer transition group"
+                                       >
+                                          {m.status === 'archived' && <span className="absolute top-0 right-0 bg-gray-200 text-gray-500 text-[8px] font-bold px-1.5 py-0.5 rounded-bl-sm z-10">Archived</span>}
                                           {m.image1 ? (
-                                              <img src={getDriveImageUrl(m.image1)} className="w-12 h-12 object-cover border border-gray-200 rounded-sm" />
+                                              <img src={getDriveImageUrl(m.image1)} className="w-14 h-14 object-cover border border-gray-200 rounded-sm shrink-0" />
                                           ) : (
-                                              <div className="w-12 h-12 bg-gray-100 border border-gray-200 rounded-sm flex items-center justify-center text-[8px] text-gray-400">No Image</div>
+                                              <div className="w-14 h-14 bg-gray-100 border border-gray-200 rounded-sm flex items-center justify-center text-[8px] text-gray-400 shrink-0">No Image</div>
                                           )}
-                                          <div className="flex flex-col text-[10px] truncate justify-center">
-                                             <span className="font-black text-gray-800">歩留まり: {m.ratio}%</span>
-                                             <span className="truncate text-gray-500 text-[9px] mt-0.5">{m.memo || 'メモなし'}</span>
+                                          <div className="flex flex-col text-[10px] min-w-0 justify-center">
+                                             <span className="font-bold text-gray-900 truncate pr-8">{m.name}</span>
+                                             <div className="flex items-center gap-1 mt-0.5">
+                                                 <span className="font-black text-gray-800">歩留: {m.ratio ? `${m.ratio}%` : '未設定'}</span>
+                                                 <span className="text-gray-400 font-mono">|</span>
+                                                 <span className="text-gray-600 font-mono truncate">{formatSqDisplay(m.sq)}/{formatCoreDisplay(m.core)}</span>
+                                             </div>
+                                             <span className="truncate text-gray-500 text-[9px] mt-0.5 group-hover:text-blue-600">{m.memo || 'メモなし'}</span>
                                           </div>
                                        </div>
                                      ))}
@@ -1081,7 +1088,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                               {item.material === '錫メッキ' && <span className="text-[8px] bg-[#D32F2F] text-white px-1 py-0.5 rounded-sm shrink-0">錫</span>}
                             </div>
                             <div className="flex items-baseline shrink-0 ml-2">
-                              <span className="text-base font-black text-gray-900 font-mono tracking-tighter">{item.ratio}%</span>
+                              <span className="text-base font-black text-gray-900 font-mono tracking-tighter">{item.ratio ? `${item.ratio}%` : '未設定'}</span>
                             </div>
                           </div>
                           
@@ -1111,12 +1118,25 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                             </summary>
                             <div className="p-2 grid grid-cols-1 gap-2 bg-gray-100/50">
                                {members.map((m: any, i: number) => (
-                                 <div key={m.id || i} className="bg-white border border-gray-300 rounded-sm p-2 flex gap-3 relative shadow-sm">
-                                    {m.status === 'archived' && <span className="absolute top-0 right-0 bg-gray-200 text-gray-500 text-[8px] font-bold px-1.5 py-0.5 rounded-bl-sm">Archived</span>}
-                                    {m.image1 && <img src={getDriveImageUrl(m.image1)} className="w-10 h-10 object-cover border border-gray-200 rounded-sm shrink-0" />}
-                                    <div className="flex flex-col text-[10px] truncate justify-center min-w-0">
-                                       <span className="font-black text-gray-800">歩留まり: {m.ratio}%</span>
-                                       <span className="truncate text-gray-500 text-[9px]">{m.memo || 'メモなし'}</span>
+                                 <div 
+                                   key={m.id || i} 
+                                   onClick={() => handleOpenModal(m)}
+                                   className="bg-white border border-gray-300 hover:border-blue-400 rounded-sm p-2 flex gap-3 relative shadow-sm cursor-pointer transition group"
+                                 >
+                                    {m.status === 'archived' && <span className="absolute top-0 right-0 bg-gray-200 text-gray-500 text-[8px] font-bold px-1.5 py-0.5 rounded-bl-sm z-10">Archived</span>}
+                                    {m.image1 ? (
+                                        <img src={getDriveImageUrl(m.image1)} className="w-14 h-14 object-cover border border-gray-200 rounded-sm shrink-0" />
+                                    ) : (
+                                        <div className="w-14 h-14 bg-gray-100 border border-gray-200 rounded-sm flex items-center justify-center text-[8px] text-gray-400 shrink-0">No Image</div>
+                                    )}
+                                    <div className="flex flex-col text-[10px] min-w-0 justify-center">
+                                       <span className="font-bold text-gray-900 truncate pr-8">{m.name}</span>
+                                       <div className="flex items-center gap-1 mt-0.5">
+                                           <span className="font-black text-gray-800">歩留: {m.ratio ? `${m.ratio}%` : '未設定'}</span>
+                                           <span className="text-gray-400 font-mono">|</span>
+                                           <span className="text-gray-600 font-mono truncate">{formatSqDisplay(m.sq)}/{formatCoreDisplay(m.core)}</span>
+                                       </div>
+                                       <span className="truncate text-gray-500 text-[9px] mt-0.5 group-hover:text-blue-600">{m.memo || 'メモなし'}</span>
                                     </div>
                                  </div>
                                ))}
