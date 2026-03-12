@@ -7,7 +7,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 // 追加した「status」列が、A列から数えて何番目かを指定してください。
 // （既存の getUpdatesMap を見ると20番目まで使われているため、デフォルトを21にしています）
 // ============================================================================
-const STATUS_COLUMN_INDEX = 21; 
+const STATUS_COLUMN_INDEX = 22; 
 
 const Icons = {
   Plus: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>,
