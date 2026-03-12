@@ -1416,6 +1416,23 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         </div>
       )}
 
+      {/* ★ AIマージ分析中のローディングモーダル */}
+      {analyzingName && !mergeProposal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[80] flex items-center justify-center p-4">
+          <div className="bg-white rounded-sm shadow-2xl p-8 flex flex-col items-center max-w-sm w-full animate-in zoom-in-95 border-t-4 border-blue-600">
+            <div className="relative w-16 h-16 mb-6">
+                <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
+                <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
+                <div className="absolute inset-0 flex items-center justify-center text-blue-600"><Icons.Cpu /></div>
+            </div>
+            <h3 className="text-lg font-black text-gray-900 mb-2 text-center">AIがデータを分析・統合中</h3>
+            <p className="text-xs text-gray-500 font-bold text-center leading-relaxed">
+              「{analyzingName}」の<br/>複数データを比較し、最適な<br/>ゴールデンレコードを生成しています...
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ★ AIアシスト登録 / 編集モーダル */}
       {isAiModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
