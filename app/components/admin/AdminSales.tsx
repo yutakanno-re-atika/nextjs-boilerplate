@@ -27,7 +27,7 @@ export const AdminSales = ({ data }: { data: any }) => {
 
   // コンポーネントマウント時に public/hokkaido_electric.json を読み込む（爆速）
   useEffect(() => {
-    fetch('/hokkaido_db.json')
+    fetch('/hokkaido_electric.json')
       .then(res => res.json())
       .then(data => setLocalDb(data))
       .catch(err => console.error("ローカルDB読込エラー:", err));
