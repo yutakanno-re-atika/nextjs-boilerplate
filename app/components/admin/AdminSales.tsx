@@ -13,19 +13,16 @@ const Icons = {
 };
 
 export const AdminSales = ({ data }: { data: any }) => {
-  // Tier 1: ローカルDBのステート
   const [localDb, setLocalDb] = useState<any[]>([]);
   const [dbSearchTerm, setDbSearchTerm] = useState('');
   const [selectedArea, setSelectedArea] = useState('ALL');
   const [addingId, setAddingId] = useState<string | null>(null);
   
-  // Tier 2: CRMのステート
   const [crmSearchTerm, setCrmSearchTerm] = useState('');
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
 
   const crmTargets = data?.salesTargets || [];
 
-  // コンポーネントマウント時に public/hokkaido_electric.json を読み込む（爆速）
   useEffect(() => {
     fetch('/hokkaido_electric.json')
       .then(res => res.json())
@@ -33,43 +30,45 @@ export const AdminSales = ({ data }: { data: any }) => {
       .catch(err => console.error("ローカルDB読込エラー:", err));
   }, []);
 
-  // エリア分布の集計（ブラウザメモリで一瞬で計算）
   const areaStats = useMemo(() => {
-      const areas = {
-          '道北': { count: 0, color: 'bg-blue-300', top: '15%', left: '55%', keys: ['旭川', '稚内', '富良野', '留萌'] },
-          '道東': { count: 0, color: 'bg-blue-400', top: '35%', left: '85%', keys: ['帯広', '釧路', '北見', '十勝', '網走', '根室'] },
-          '札幌圏': { count: 0, color: 'bg-blue-700', top: '45%', left: '40%', keys: ['札幌', '石狩', '江別', '恵庭', '千歳', '小樽'] },
-          '苫小牧・室蘭': { count: 0, color: 'bg-[#D32F2F]', top: '65%', left: '50%', keys: ['苫小牧', '室蘭', '登別', '白老', '日高', '浦河'] }, 
-          '道南': { count: 0, color: 'bg-blue-500', top: '80%', left: '15%', keys: ['函館', '北斗', '七飯', '松前'] },
+      // ★ エリアをさらに細分化し、日高・浦河エリアなどを独立させました
+      const areas: Record<string, any> = {
+          '宗谷・留萌': { count: 0, color: 'bg-slate-500', top: '15%', left: '45%', keys: ['稚内', '留萌', '豊富', '幌延', '羽幌', '増毛', '枝幸'] },
+          'オホーツク': { count: 0, color: 'bg-cyan-500', top: '25%', left: '80%', keys: ['北見', '網走', '紋別', '美幌', '遠軽', '斜里', '大空'] },
+          '上川(旭川)': { count: 0, color: 'bg-blue-400', top: '35%', left: '55%', keys: ['旭川', '富良野', '名寄', '士別', '上川', '美瑛', '東神楽'] },
+          '空知': { count: 0, color: 'bg-indigo-400', top: '45%', left: '45%', keys: ['岩見沢', '滝川', '美唄', '砂川', '深川', '夕張', '赤平', '三笠'] },
+          '札幌圏': { count: 0, color: 'bg-blue-800', top: '55%', left: '38%', keys: ['札幌', '石狩', '江別', '北広島', '恵庭', '千歳'] },
+          '後志(小樽)': { count: 0, color: 'bg-teal-500', top: '55%', left: '23%', keys: ['小樽', '余市', '倶知安', '蘭越', 'ニセコ', '岩内', '寿都'] },
+          '十勝(帯広)': { count: 0, color: 'bg-yellow-500', top: '60%', left: '70%', keys: ['帯広', '芽室', '音更', '幕別', '清水', '池田', '本別', '大樹'] },
+          '釧路・根室': { count: 0, color: 'bg-green-500', top: '55%', left: '90%', keys: ['釧路', '根室', '厚岸', '白糠', '中標津', '別海', '標茶'] },
+          '胆振(苫小牧)': { count: 0, color: 'bg-[#D32F2F]', top: '70%', left: '42%', keys: ['苫小牧', '室蘭', '登別', '伊達', '白老', '安平', '厚真', 'むかわ', '洞爺湖'] }, 
+          '日高(浦河)': { count: 0, color: 'bg-orange-500', top: '80%', left: '58%', keys: ['浦河', '新ひだか', '静内', '様似', 'えりも', '日高', '平取', '新冠'] },
+          '道南(函館)': { count: 0, color: 'bg-purple-500', top: '85%', left: '20%', keys: ['函館', '北斗', '七飯', '八雲', '松前', '江差', '長万部', '森町', '知内'] },
       };
       
       localDb.forEach((t: any) => {
           const a = t.address || '';
-          let matched = false;
           for (const [key, val] of Object.entries(areas)) {
-              if (val.keys.some(k => a.includes(k))) { areas[key].count++; matched = true; break; }
+              if (val.keys.some((k: string) => a.includes(k))) { areas[key].count++; break; }
           }
       });
       return areas;
   }, [localDb]);
 
-  // ローカルDBのフィルタリング（上位50件のみ描画して軽くする）
   const filteredLocalDb = useMemo(() => {
       let filtered = localDb;
       if (selectedArea !== 'ALL') {
           const keys = areaStats[selectedArea].keys;
-          filtered = filtered.filter(t => keys.some(k => (t.address||'').includes(k)));
+          filtered = filtered.filter(t => keys.some((k: string) => (t.address||'').includes(k)));
       }
       if (dbSearchTerm) {
           filtered = filtered.filter(t => (t.company||'').includes(dbSearchTerm) || (t.address||'').includes(dbSearchTerm));
       }
-      return filtered.slice(0, 50); // DOMの負荷を下げるため50件表示
+      return filtered.slice(0, 50);
   }, [localDb, selectedArea, dbSearchTerm, areaStats]);
 
-  // CRMのフィルタリング
   const filteredCrm = crmTargets.filter((t: any) => (t.company||'').includes(crmSearchTerm) || (t.address||'').includes(crmSearchTerm));
 
-  // Tier 1 -> Tier 2 への移動処理
   const handleAddToCrm = async (target: any) => {
       setAddingId(target.id);
       try {
@@ -79,7 +78,6 @@ export const AdminSales = ({ data }: { data: any }) => {
       finally { setAddingId(null); }
   };
 
-  // Tier 2 (CRM) 上でのAIエンリッチメント処理
   const handleAnalyze = async (target: any) => {
       setAnalyzingId(target.id);
       try {
@@ -91,7 +89,7 @@ export const AdminSales = ({ data }: { data: any }) => {
   };
 
   return (
-    <div className="animate-in fade-in duration-500 max-w-7xl mx-auto w-full pb-20 space-y-8">
+    <div className="animate-in fade-in duration-500 max-w-7xl mx-auto w-full pb-20 space-y-8 font-sans">
       
       {/* ==========================================
           Tier 1: 潜在リード・データベース
@@ -104,14 +102,14 @@ export const AdminSales = ({ data }: { data: any }) => {
           
           <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* マップUI */}
-              <div className="lg:col-span-1 border border-gray-200 bg-gray-50 rounded-sm p-4 relative">
+              <div className="lg:col-span-1 border border-gray-200 bg-gray-50 rounded-sm p-4 relative min-h-[400px]">
                   <h3 className="text-xs font-bold text-gray-500 mb-4 flex items-center gap-1"><Icons.MapPin /> エリア別 分布マップ</h3>
-                  <div className="relative w-full aspect-[4/3] bg-white rounded-sm border border-gray-200 overflow-hidden shadow-inner">
+                  <div className="relative w-full h-[350px] bg-white rounded-sm border border-gray-200 overflow-hidden shadow-inner">
                       {Object.entries(areaStats).map(([label, d]) => (
                           <div key={label} onClick={() => setSelectedArea(selectedArea === label ? 'ALL' : label)} className={`absolute flex flex-col items-center justify-center transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 cursor-pointer group ${selectedArea === label ? 'scale-110 z-10' : 'hover:scale-105'}`} style={{ top: d.top, left: d.left }}>
-                              <div className={`w-4 h-4 rounded-full shadow-md mb-0.5 border-2 ${selectedArea === label ? 'border-gray-900 bg-white' : `border-transparent ${d.color}`}`} />
-                              <span className="text-[9px] font-bold bg-white/90 px-1 rounded-sm text-gray-800 shadow-sm">{label}</span>
-                              <span className="bg-white border border-gray-200 px-1.5 py-0.5 text-[10px] font-black rounded-sm shadow-sm mt-0.5 tabular-nums text-gray-900">{d.count}</span>
+                              <div className={`w-3 h-3 md:w-4 md:h-4 rounded-full shadow-md mb-0.5 border-2 ${selectedArea === label ? 'border-gray-900 bg-white' : `border-transparent ${d.color}`}`} />
+                              <span className={`text-[8px] md:text-[9px] font-bold px-1 rounded-sm shadow-sm whitespace-nowrap ${selectedArea === label ? 'bg-gray-900 text-white' : 'bg-white/90 text-gray-800'}`}>{label}</span>
+                              <span className="bg-white border border-gray-200 px-1 md:px-1.5 py-0.5 text-[9px] md:text-[10px] font-black rounded-sm shadow-sm mt-0.5 tabular-nums text-gray-900">{d.count}</span>
                           </div>
                       ))}
                   </div>
@@ -121,7 +119,7 @@ export const AdminSales = ({ data }: { data: any }) => {
               <div className="lg:col-span-2 flex flex-col">
                   <div className="flex gap-2 mb-4">
                       <div className="relative flex-1">
-                          <Icons.Search />
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400"><Icons.Search /></div>
                           <input type="text" placeholder="企業名や住所で高速検索..." value={dbSearchTerm} onChange={e => setDbSearchTerm(e.target.value)} className="w-full pl-9 p-2 border border-gray-300 rounded-sm text-sm focus:border-blue-700 outline-none" />
                       </div>
                       <button onClick={() => {setSelectedArea('ALL'); setDbSearchTerm('');}} className="px-4 py-2 bg-gray-100 text-gray-600 border border-gray-300 rounded-sm text-xs font-bold hover:bg-gray-200">リセット</button>
@@ -129,20 +127,23 @@ export const AdminSales = ({ data }: { data: any }) => {
                   
                   <div className="flex-1 border border-gray-200 rounded-sm overflow-hidden bg-white flex flex-col">
                       <div className="bg-gray-100 px-4 py-2 text-[10px] font-bold text-gray-500 flex justify-between border-b border-gray-200">
-                          <span>{selectedArea !== 'ALL' ? `${selectedArea}の企業` : '全エリア'} (上位50件を表示)</span>
+                          <span>{selectedArea !== 'ALL' ? `${selectedArea}の企業` : '全エリア'} (最大50件を表示)</span>
                       </div>
                       <div className="overflow-y-auto max-h-[400px] divide-y divide-gray-100">
                           {filteredLocalDb.map(t => (
                               <div key={t.id} className="p-3 hover:bg-blue-50/50 transition flex justify-between items-center group">
                                   <div>
                                       <p className="text-sm font-black text-gray-900">{t.company}</p>
-                                      <p className="text-[10px] text-gray-500 mt-0.5"><Icons.MapPin /> {t.address}</p>
+                                      <p className="text-[10px] text-gray-500 mt-0.5 flex items-center gap-1"><Icons.MapPin /> {t.address}</p>
                                   </div>
                                   <button onClick={() => handleAddToCrm(t)} disabled={addingId === t.id} className="opacity-0 group-hover:opacity-100 transition px-3 py-1.5 bg-blue-700 text-white text-xs font-bold rounded-sm shadow-sm hover:bg-blue-800 disabled:opacity-50 flex items-center">
                                       {addingId === t.id ? <Icons.Refresh /> : <Icons.Plus />} CRMへ登録
                                   </button>
                               </div>
                           ))}
+                          {filteredLocalDb.length === 0 && (
+                              <div className="p-8 text-center text-gray-400 text-xs font-bold">該当する企業が見つかりません。</div>
+                          )}
                       </div>
                   </div>
               </div>
@@ -165,18 +166,18 @@ export const AdminSales = ({ data }: { data: any }) => {
                   </div>
               ) : (
                   filteredCrm.reverse().map((t: any) => {
-                      const isUnanalyzed = t.status === '未分析';
+                      const isUnanalyzed = t.status === '未分析' || t.status === 'DB格納済 (AI未分析)';
                       return (
                           <div key={t.id} className={`bg-white border rounded-sm shadow-sm overflow-hidden flex flex-col ${isUnanalyzed ? 'border-blue-300' : 'border-gray-300'}`}>
                               <div className="bg-gray-50 border-b border-gray-200 p-4 flex justify-between items-center">
                                   <div>
-                                      <span className="bg-green-700 text-white px-1.5 py-0.5 rounded-sm text-[9px] font-mono font-bold"><Icons.CheckCircle /> {t.corporateNumber}</span>
+                                      <span className="bg-green-700 text-white px-1.5 py-0.5 rounded-sm text-[9px] font-mono font-bold"><Icons.CheckCircle /> {t.corporateNumber || '新規リード'}</span>
                                       <h3 className="text-lg font-black text-gray-900 mt-1">{t.company}</h3>
                                   </div>
                               </div>
                               <div className="p-4 flex flex-col md:flex-row gap-4">
                                   <div className="w-full md:w-1/3">
-                                      <p className="text-[10px] text-gray-500 font-bold mb-1"><Icons.MapPin /> {t.address}</p>
+                                      <p className="text-[10px] text-gray-500 font-bold mb-1 flex items-center gap-1"><Icons.MapPin /> {t.address}</p>
                                       <p className="text-xs text-gray-600 line-clamp-2">{t.businessSummary}</p>
                                   </div>
                                   <div className="w-full md:w-2/3 bg-gray-50 p-4 rounded-sm border border-gray-200 flex flex-col justify-center">
