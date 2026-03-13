@@ -14,7 +14,6 @@ import { AdminClientDetail } from './AdminClientDetail';
 import { AdminSales } from './AdminSales';
 import { FloatingAiMentor } from './FloatingAiMentor';
 import { AdminPhotoUpload } from './AdminPhotoUpload';
-// ★ 神の目（ディープスキャン）コンポーネントをインポート
 import { AdminDeepScout } from './AdminDeepScout';
 
 const Icons = {
@@ -84,7 +83,6 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
   const [isLearningMode, setIsLearningMode] = useState(false); 
   const [tutorSessionId] = useState(`TUTOR_${new Date().getTime().toString().slice(-6)}`);
 
-  // ★ 神の目（Deep Scout）の開閉ステート
   const [isDeepScoutOpen, setIsDeepScoutOpen] = useState(false);
 
   useEffect(() => {
@@ -310,11 +308,12 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
          <Icons.Eye />
       </button>
 
-      {/* ★ ここに追加: 神の目コンポーネント */}
+      {/* ★ ここに追加: 神の目コンポーネント（wiresを渡す） */}
       {isDeepScoutOpen && (
           <AdminDeepScout 
               onClose={() => setIsDeepScoutOpen(false)} 
               wireSpecs={data?.wireSpecs || []} 
+              wires={data?.wires || []} // ★ 追加：実測マスター
           />
       )}
     </div>
