@@ -43,9 +43,11 @@ export const AdminDatabaseSpecs = () => {
   const [specs, setSpecs] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // フィルター用の状態
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMakers, setSelectedMakers] = useState<string[]>([]);
   const [selectedCores, setSelectedCores] = useState<string[]>([]);
+  const [selectedConductors, setSelectedConductors] = useState<string[]>([]); // 追加: 単線/より線のフィルター
   const [sqRange, setSqRange] = useState({ min: '', max: '' });
   const [ratioRange, setRatioRange] = useState({ min: '', max: '' });
   
@@ -75,7 +77,7 @@ export const AdminDatabaseSpecs = () => {
           if (Array.isArray(jsonData)) {
             const defaultMakerName = MAKER_MAP[key] || key;
 
-            // ★ データのクレンジング（表記揺れの吸収と空白の補完）
+            // データのクレンジング
             const cleanedData = jsonData.map(spec => {
               let mName = String(spec.maker || '');
               
@@ -88,7 +90,6 @@ export const AdminDatabaseSpecs = () => {
               } else if (mName.includes('富士電線')) {
                 mName = '富士電線工業';
               }
-              // ※ 他のメーカーも表記揺れがあればここに条件を足せます
 
               return { ...spec, maker: mName };
             });
@@ -111,17 +112,18 @@ export const AdminDatabaseSpecs = () => {
   const filteredAndSortedSpecs = useMemo(() => {
     let result = specs.filter(spec => {
       
-      // ① あいまいキーワード検索 (AND検索)
+      // ① あいまいキーワード検索
       if (searchTerm) {
         const normalizedSearch = normalizeText(searchTerm);
         const terms = normalizedSearch.split(' ').filter(Boolean);
-        // 検索対象の文字も全て正規化して結合
         const target = normalizeText(`${spec.maker} ${spec.name} ${spec.size}sq ${spec.size}mm ${spec.core}c ${spec.core}芯 ${spec.conductor}`);
         if (!terms.every(term => target.includes(term))) return false;
       }
 
+      // ② メーカー
       if (selectedMakers.length > 0 && !selectedMakers.includes(spec.maker)) return false;
 
+      // ③ 芯数
       if (selectedCores.length > 0) {
         const coreVal = parseInt(spec.core);
         const coreMatch = selectedCores.some(c => {
@@ -131,12 +133,24 @@ export const AdminDatabaseSpecs = () => {
         if (!coreMatch) return false;
       }
 
+      // ④ 導体構成 (単線/より線)
+      if (selectedConductors.length > 0) {
+        const cText = String(spec.conductor || '');
+        const strands = parseInt(spec.conductorStrands);
+        // 「単線」の文字があるか、構成素線数が1本の場合は単線判定
+        const isSolid = cText.includes('単線') || strands === 1;
+        const wireType = isSolid ? '単線' : 'より線';
+        if (!selectedConductors.includes(wireType)) return false;
+      }
+
+      // ⑤ SQサイズ
       const sq = parseFloat(spec.size);
       if (!isNaN(sq)) {
         if (sqRange.min && sq < parseFloat(sqRange.min)) return false;
         if (sqRange.max && sq > parseFloat(sqRange.max)) return false;
       }
 
+      // ⑥ 歩留まり
       const ratio = parseFloat(spec.theoreticalRatio);
       if (!isNaN(ratio)) {
         if (ratioRange.min && ratio < parseFloat(ratioRange.min)) return false;
@@ -166,7 +180,7 @@ export const AdminDatabaseSpecs = () => {
     }
 
     return result;
-  }, [specs, searchTerm, selectedMakers, selectedCores, sqRange, ratioRange, sortConfig]);
+  }, [specs, searchTerm, selectedMakers, selectedCores, selectedConductors, sqRange, ratioRange, sortConfig]);
 
   const paginatedSpecs = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -188,7 +202,7 @@ export const AdminDatabaseSpecs = () => {
   };
 
   const clearFilters = () => {
-    setSearchTerm(''); setSelectedMakers([]); setSelectedCores([]); 
+    setSearchTerm(''); setSelectedMakers([]); setSelectedCores([]); setSelectedConductors([]);
     setSqRange({ min: '', max: '' }); setRatioRange({ min: '', max: '' });
     setCurrentPage(1);
   };
@@ -233,6 +247,21 @@ export const AdminDatabaseSpecs = () => {
               <input type="number" placeholder="Min" className="w-full border border-gray-300 rounded p-1.5 text-sm text-center outline-none focus:border-blue-500" value={ratioRange.min} onChange={e => { setRatioRange({...ratioRange, min: e.target.value}); setCurrentPage(1); }} />
               <span className="text-gray-400 font-bold">〜</span>
               <input type="number" placeholder="Max" className="w-full border border-gray-300 rounded p-1.5 text-sm text-center outline-none focus:border-blue-500" value={ratioRange.max} onChange={e => { setRatioRange({...ratioRange, max: e.target.value}); setCurrentPage(1); }} />
+            </div>
+          </div>
+
+          {/* ★ 導体構成 (単線/より線) ボタン */}
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-2">導体構成</label>
+            <div className="flex flex-wrap gap-1.5">
+              {['単線', 'より線'].map(c => (
+                <button
+                  key={c} onClick={() => toggleSelection(selectedConductors, setSelectedConductors, c)}
+                  className={`px-4 py-2 rounded text-xs font-bold transition border shadow-sm ${selectedConductors.includes(c) ? 'bg-gray-900 text-white border-gray-900 shadow-inner' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-100'}`}
+                >
+                  {c}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -320,43 +349,69 @@ export const AdminDatabaseSpecs = () => {
                   <th className="p-2 md:p-3 cursor-pointer hover:bg-gray-200 transition font-bold" onClick={() => handleSort('name')}>品名 <SortIcon columnKey="name" /></th>
                   <th className="p-2 md:p-3 cursor-pointer hover:bg-gray-200 transition font-bold" onClick={() => handleSort('size')}>SQ / 芯数 <SortIcon columnKey="size" /></th>
                   <th className="p-2 md:p-3 cursor-pointer hover:bg-gray-200 transition font-bold" onClick={() => handleSort('conductor')}>導体構成 <SortIcon columnKey="conductor" /></th>
-                  <th className="p-2 md:p-3 cursor-pointer hover:bg-gray-200 transition font-bold text-right" onClick={() => handleSort('weightPerKm')}>質量/外径 <SortIcon columnKey="weightPerKm" /></th>
+                  <th className="p-2 md:p-3 cursor-pointer hover:bg-gray-200 transition font-bold text-right" onClick={() => handleSort('outerDiameter')}>外径/質量 <SortIcon columnKey="outerDiameter" /></th>
                   <th className="p-2 md:p-3 cursor-pointer hover:bg-blue-50 transition font-black text-blue-800 text-right bg-blue-50/30" onClick={() => handleSort('theoreticalRatio')}>理論歩留 <SortIcon columnKey="theoreticalRatio" /></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 text-xs md:text-sm">
-                {paginatedSpecs.map((spec, index) => (
-                  <tr key={index} className="hover:bg-blue-50/30 transition-colors group">
-                    <td className="p-2 md:p-3 text-[9px] md:text-xs text-gray-500 font-bold truncate max-w-[100px]" title={spec.maker}>{spec.maker}</td>
-                    <td className="p-2 md:p-3 font-black text-gray-900">{spec.name}</td>
-                    <td className="p-2 md:p-3 font-mono font-bold text-gray-700">
-                      {spec.size !== '-' ? <span className="bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">{spec.size}sq</span> : '-'} 
-                      <span className="mx-1 text-gray-300">/</span> 
-                      {spec.core !== '-' ? <span className="font-black">{spec.core}C</span> : '-'}
-                    </td>
-                    <td className="p-2 md:p-3">
-                      <div className="flex flex-col gap-0.5">
-                        <span className="font-bold text-gray-700 text-[10px] md:text-xs">{spec.conductor}</span>
-                        {(spec.conductorStrands !== '-' || spec.conductorStrandDia !== '-') && (
-                          <span className="text-[9px] font-mono text-gray-400">
-                            {spec.conductorStrands}本 / {spec.conductorStrandDia}mm
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-2 md:p-3 text-right">
-                      <div className="flex flex-col items-end gap-0.5 font-mono">
-                        <span className="font-bold text-gray-800">{spec.weightPerKm} <span className="text-[9px] text-gray-400 font-normal">kg/km</span></span>
-                        <span className="text-[10px] text-gray-500">外径: {spec.outerDiameter}mm</span>
-                      </div>
-                    </td>
-                    <td className="p-2 md:p-3 text-right bg-blue-50/10 group-hover:bg-transparent transition-colors">
-                      <span className="font-mono font-black text-blue-700 text-base md:text-xl tracking-tighter">
-                        {spec.theoreticalRatio ? `${spec.theoreticalRatio}%` : '-'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                {paginatedSpecs.map((spec, index) => {
+                  // 単線・より線の判定ロジック
+                  const isSolid = spec.conductor && (spec.conductor.includes('単線') || parseInt(spec.conductorStrands) === 1);
+                  
+                  return (
+                    <tr key={index} className="hover:bg-blue-50/30 transition-colors group">
+                      <td className="p-2 md:p-3 text-[9px] md:text-xs text-gray-500 font-bold truncate max-w-[100px]" title={spec.maker}>{spec.maker}</td>
+                      <td className="p-2 md:p-3 font-black text-gray-900">{spec.name}</td>
+                      <td className="p-2 md:p-3 font-mono font-bold text-gray-700">
+                        {spec.size !== '-' ? <span className="bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">{spec.size}sq</span> : '-'} 
+                        <span className="mx-1 text-gray-300">/</span> 
+                        {spec.core !== '-' ? <span className="font-black">{spec.core}C</span> : '-'}
+                      </td>
+                      
+                      {/* ★ 導体構成を強調表示 */}
+                      <td className="p-2 md:p-3">
+                        <div className="flex flex-col gap-1.5">
+                          <div className="flex items-center gap-1.5">
+                            {isSolid ? (
+                              <span className="bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded text-[10px] font-bold border border-orange-200">単線</span>
+                            ) : (
+                              <span className="bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded text-[10px] font-bold border border-blue-200">より線</span>
+                            )}
+                            {spec.conductorStrands !== '-' && spec.conductorStrands && (
+                               <span className="font-black text-gray-900 text-sm md:text-base">{spec.conductorStrands}本</span>
+                            )}
+                          </div>
+                          <div className="text-[10px] text-gray-500 font-mono flex items-center gap-1">
+                            <span className="truncate">{spec.conductor}</span>
+                            {spec.conductorStrandDia !== '-' && <span className="bg-gray-100 px-1 rounded">素線: {spec.conductorStrandDia}mm</span>}
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* ★ 外径と質量のフォントを大きく対等に */}
+                      <td className="p-2 md:p-3 text-right">
+                        <div className="flex flex-col items-end gap-1 font-mono text-xs md:text-sm">
+                          <div>
+                            <span className="text-[10px] text-gray-500 font-bold mr-1">外径:</span>
+                            <span className="font-black text-gray-900">{spec.outerDiameter}</span>
+                            <span className="text-[9px] text-gray-400 font-normal ml-0.5">mm</span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-gray-500 font-bold mr-1">質量:</span>
+                            <span className="font-bold text-gray-800">{spec.weightPerKm}</span>
+                            <span className="text-[9px] text-gray-400 font-normal ml-0.5">kg</span>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className="p-2 md:p-3 text-right bg-blue-50/10 group-hover:bg-transparent transition-colors">
+                        <span className="font-mono font-black text-blue-700 text-base md:text-xl tracking-tighter">
+                          {spec.theoreticalRatio ? `${spec.theoreticalRatio}%` : '-'}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
                 {paginatedSpecs.length === 0 && (
                   <tr>
                     <td colSpan={6} className="p-16 text-center">
