@@ -720,7 +720,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
               const sqFormatted = sqStr && sqStr !== '-' ? `${sqStr}sq ${sqStr}スケ` : '';
               
               const searchTarget = `${w.name} ${w.maker} ${sqFormatted} ${sqStr} ${coreFormatted} ${coreStr} ${w.year}`.toLowerCase();
-              const terms = searchTerm.toLowerCase().replace(/ /g, ' ').split(' ').filter(Boolean);
+              const terms = searchTerm.toLowerCase().replace(/　/g, ' ').split(' ').filter(Boolean);
               return terms.every(term => searchTarget.includes(term));
           }
           return true;
@@ -730,7 +730,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       filteredData = unknownWires.filter((u:any) => {
           if (searchTerm) {
               const searchTarget = `${u.name} ${u.reason}`.toLowerCase();
-              const terms = searchTerm.toLowerCase().replace(/ /g, ' ').split(' ').filter(Boolean);
+              const terms = searchTerm.toLowerCase().replace(/　/g, ' ').split(' ').filter(Boolean);
               return terms.every(term => searchTarget.includes(term));
           }
           return true;
@@ -741,7 +741,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
           if (filterType && c.type !== filterType) return false;
           if (searchTerm) {
               const searchTarget = `${c.name} ${c.type}`.toLowerCase();
-              const terms = searchTerm.toLowerCase().replace(/ /g, ' ').split(' ').filter(Boolean);
+              const terms = searchTerm.toLowerCase().replace(/　/g, ' ').split(' ').filter(Boolean);
               return terms.every(term => searchTarget.includes(term));
           }
           return true;
@@ -751,7 +751,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       filteredData = clients.filter((c:any) => {
           if (searchTerm) {
               const searchTarget = `${c.name} ${c.phone} ${c.rank} ${c.industry}`.toLowerCase();
-              const terms = searchTerm.toLowerCase().replace(/ /g, ' ').split(' ').filter(Boolean);
+              const terms = searchTerm.toLowerCase().replace(/　/g, ' ').split(' ').filter(Boolean);
               return terms.every(term => searchTarget.includes(term));
           }
           return true;
@@ -761,7 +761,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       filteredData = staffs.filter((s:any) => {
           if (searchTerm) {
               const searchTarget = `${s.name} ${s.role}`.toLowerCase();
-              const terms = searchTerm.toLowerCase().replace(/ /g, ' ').split(' ').filter(Boolean);
+              const terms = searchTerm.toLowerCase().replace(/　/g, ' ').split(' ').filter(Boolean);
               return terms.every(term => searchTarget.includes(term));
           }
           return true;
