@@ -1456,7 +1456,68 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
               </div>
             </div>
         </div>
-      </div>)}
+      )}
+
+      {/* ★ AI道場（DOJO）UIの復活 */}
+      {activeTab === 'DOJO' && (
+        <div className="bg-white border border-gray-200 shadow-sm rounded-sm flex-1 flex flex-col p-4 md:p-8 overflow-y-auto mt-2 animate-in fade-in">
+            <div className="max-w-4xl mx-auto w-full space-y-6">
+                <div className="text-center space-y-2">
+                    <h2 className="text-2xl md:text-3xl font-black text-gray-900 flex items-center justify-center gap-2">
+                      <Icons.Brain /> 神の目 AI道場
+                    </h2>
+                    <p className="text-gray-500 font-bold text-sm">マスターデータを使ってAIの推論精度をテスト・評価します</p>
+                </div>
+
+                <div className="bg-gray-50 border border-gray-200 p-6 rounded-sm shadow-inner flex flex-col md:flex-row gap-6 items-center">
+                    <div className="flex-1 text-center md:text-left">
+                        <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1">直近30回の平均誤差</p>
+                        <div className="text-4xl md:text-5xl font-black text-gray-900 font-mono tracking-tighter">
+                            {avgError}<span className="text-lg md:text-2xl text-gray-500">%</span>
+                        </div>
+                    </div>
+                    <div className="w-full md:w-2/3">
+                        <p className="text-[10px] text-gray-400 font-bold mb-2">直近の推論誤差推移 (低いほど優秀)</p>
+                        <DojoChart errors={recentErrors} />
+                    </div>
+                </div>
+
+                {dojoProgress.isRunning ? (
+                    <div className="bg-white border border-blue-200 p-6 rounded-sm shadow-md text-center space-y-4">
+                        <div className="flex justify-center mb-2">
+                            <div className="relative w-16 h-16">
+                                <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
+                                <div className="absolute inset-0 border-4 border-gray-900 rounded-full border-t-transparent animate-spin"></div>
+                                <div className="absolute inset-0 flex items-center justify-center text-gray-900"><Icons.Brain /></div>
+                            </div>
+                        </div>
+                        <h3 className="font-bold text-gray-900">AI猛特訓中... PCを閉じないでください</h3>
+                        <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
+                            <div className="bg-gray-900 h-full transition-all duration-300" style={{ width: `${(dojoProgress.current / dojoProgress.total) * 100}%` }}></div>
+                        </div>
+                        <p className="font-mono text-sm text-gray-500 font-bold">{dojoProgress.current} / {dojoProgress.total} 件 完了</p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                        <button onClick={runDojoRandom} className="bg-white border border-gray-300 hover:border-gray-900 hover:shadow-md text-gray-900 p-6 rounded-sm transition flex flex-col items-center gap-3 group">
+                            <div className="bg-gray-100 p-3 rounded-full group-hover:bg-gray-900 group-hover:text-white transition"><Icons.Sparkles /></div>
+                            <div className="text-center">
+                                <h3 className="font-black text-lg">ランダム1本勝負</h3>
+                                <p className="text-xs text-gray-500 font-bold mt-1">ランダムな画像1枚でAIの推論力をテストします</p>
+                            </div>
+                        </button>
+                        <button onClick={runDojoAll} className="bg-gray-900 hover:bg-black text-white p-6 rounded-sm shadow-md transition flex flex-col items-center gap-3 group border-b-4 border-gray-700 active:border-b-0 active:translate-y-1">
+                            <div className="bg-gray-800 p-3 rounded-full text-white group-hover:animate-spin"><Icons.Refresh /></div>
+                            <div className="text-center">
+                                <h3 className="font-black text-lg">全件総当たり特訓</h3>
+                                <p className="text-xs text-gray-400 font-bold mt-1">登録済みの全画像を使って一斉テストを行います<br/>(※時間がかかります)</p>
+                            </div>
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
+      )}
 
       {/* ★ AIマージ提案のモーダル */}
       {mergeProposal && (
