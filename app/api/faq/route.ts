@@ -1,14 +1,12 @@
 import { google } from '@ai-sdk/google';
 import { generateText } from 'ai';
 
-export const maxDuration = 60; // 分析には時間がかかるのでタイムアウトを長めに設定
+export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
-    // ★ ここにボスのGASのウェブアプリURLを貼り付けてください
-    const gasUrl = "https://script.google.com/macros/s/AKfycbxuE0iPCEruoQLretA8R0cmSnRyZPYT9qd6YqDGVCCCY1h0wRVJX8P-MZF20I1whF7Z/exec"; 
+    const gasUrl = process.env.GAS_API_URL || "https://script.google.com/macros/s/AKfycbxuE0iPCEruoQLretA8R0cmSnRyZPYT9qd6YqDGVCCCY1h0wRVJX8P-MZF20I1whF7Z/exec"; 
 
-    // 1. GASから直近のチャットログを吸い出す (POST)
     const logRes = await fetch(gasUrl, {
         method: 'POST',
         body: JSON.stringify({ action: 'FETCH_CHAT_LOGS' })
@@ -21,22 +19,19 @@ export async function POST(req: Request) {
 
     const logText = logs.map((l: any) => `客: ${l.user}\nAI: ${l.ai}`).join('\n\n');
 
-    // 2. GASから「自社の品目マスタデータ」を吸い出す (GET)
-    // （Products_Casting や Products_Wire のデータをファクトとして取得）
     const masterRes = await fetch(gasUrl);
     const masterData = await masterRes.json();
     
     let productsContext = "取扱銘柄の情報が取得できませんでした。";
     if (masterData.status === 'success') {
-        // AIに食わせるために、マスタデータをテキスト化
         const castings = masterData.castings.map((c: any) => `- ${c.name}: ${c.description || '歩留まり '+c.ratio+'% 相当'}`).join('\n');
         const wires = masterData.wires.map((w: any) => `- ${w.name}: 銅率 ${w.ratio}% 想定`).join('\n');
         productsContext = `【非鉄金属マスタ】\n${castings}\n\n【電線マスタ】\n${wires}`;
     }
 
-    // 3. Geminiにログとマスタと業界知識を分析させ、FAQを生成させる
     const result = await generateText({
-      model: google('gemini-2.5-flash'), 
+      model: google('gemini-2.5-pro'), 
+      temperature: 0.4,
       system: `
       あなたは株式会社月寒製作所（苫小牧工場）の優秀なデータアナリスト兼・非鉄リサイクル業界の専門家（査定人）です。
       以下のカスタマーサポートのチャットログを分析し、お客様がよく疑問に思うポイントを抽出し、実践的でリアルな「よくある質問(FAQ)」を最大5件作成してください。
@@ -71,11 +66,9 @@ export async function POST(req: Request) {
       prompt: `【チャットログ】\n${logText}`
     });
 
-    // 4. JSON文字列をパース
     const jsonString = result.text.replace(/```json/g, '').replace(/```/g, '').trim();
     const faqs = JSON.parse(jsonString);
 
-    // 5. 生成したFAQをGASに保存する
     await fetch(gasUrl, {
         method: 'POST',
         body: JSON.stringify({ action: 'SAVE_AUTO_FAQ', faqs: faqs })
