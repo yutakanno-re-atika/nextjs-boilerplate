@@ -159,9 +159,11 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const [isMerging, setIsMerging] = useState(false);
   const [cleansingState, setCleansingState] = useState<{ isRunning: boolean; current: number; total: number }>({ isRunning: false, current: 0, total: 0 });
   const [dojoProgress, setDojoProgress] = useState({ isRunning: false, current: 0, total: 0 });
+  
   const aiTrainingHistory = data?.aiTraining || [];
   const recentErrors = aiTrainingHistory.slice(-30).map((t: any) => Number(t.errorMargin || 0));
   const avgError = recentErrors.length > 0 ? (recentErrors.reduce((a:number,b:number)=>a+b,0) / recentErrors.length).toFixed(2) : '0.00';
+  
   const [sampleTotal, setSampleTotal] = useState<number | ''>('');
   const [sampleCopper, setSampleCopper] = useState<number | ''>('');
   const [sampleCover, setSampleCover] = useState<number | ''>('');
@@ -1422,6 +1424,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
               </div>
             </div>
         </div>
+      </div>
       )}
 
       {activeTab === 'DOJO' && (
