@@ -1,14 +1,12 @@
 import { google } from '@ai-sdk/google';
 import { generateText } from 'ai';
 
-// Vercelのタイムアウト対策（AIの思考時間を確保）
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
     const { pageName, promptData } = await req.json();
 
-    // 工場長（データマン）に刺さるレポートを書くためのペルソナ設定
     const systemPrompt = `
       あなたは非鉄金属リサイクル工場「月寒製作所」の優秀なAI参謀です。
       数字やデータに基づく論理的な判断を好む「工場長」に提出する、印刷用レポートの『要約・インサイト（洞察）』を作成してください。
@@ -27,9 +25,8 @@ export async function POST(req: Request) {
       上記のデータをもとに、工場長がひと目で現状を把握できる鋭い要約を作成してください。
     `;
 
-    // Geminiに要約を生成させる
     const { text } = await generateText({
-      model: google('gemini-2.5-flash'),
+      model: google('gemini-2.5-pro'),
       system: systemPrompt,
       prompt: userPrompt,
     });
