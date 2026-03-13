@@ -1,12 +1,9 @@
 // app/components/admin/AdminDatabase.tsx
 // @ts-nocheck
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { AdminDatabaseSpecs } from './AdminDatabaseSpecs'; // ★ カタログコンポーネントを読み込み
+import { AdminDatabaseSpecs } from './AdminDatabaseSpecs';
 
-// ============================================================================
-// ⚠️ 重要：スプレッドシートの設定
-// ============================================================================
-const STATUS_COLUMN_INDEX = 21; 
+const STATUS_COLUMN_INDEX = 21;
 
 const Icons = {
   Plus: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>,
@@ -33,7 +30,6 @@ const Icons = {
   Brain: () => <svg className="w-4 h-4 md:w-5 md:h-5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
 };
 
-// ★全角数字・ピリオドを半角に自動変換（サニタイズ）する関数
 const toHalfWidthNumber = (str: any) => {
   if (str == null || str === '') return '';
   return String(str)
@@ -100,7 +96,6 @@ const getDriveViewUrl = (url: string) => {
   return url;
 };
 
-// AI道場のグラフ用コンポーネント
 const DojoChart = ({ errors }: { errors: number[] }) => {
   if (!errors || errors.length === 0) return <div className="h-32 flex items-center justify-center text-gray-400">データがありません</div>;
   const max = Math.max(10, ...errors);
@@ -136,25 +131,19 @@ const getCategory = (name: string) => {
 };
 
 export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoiceOutputEnabled?: boolean }) => {
-  // ★ タブに 'SPECS' を追加
   const [activeTab, setActiveTab] = useState<'WIRES' | 'SPECS' | 'UNKNOWN' | 'CASTINGS' | 'CLIENTS' | 'STAFF' | 'DOJO'>('WIRES');
-  
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('すべて');
   const [filterMaker, setFilterMaker] = useState('');
   const [filterType, setFilterType] = useState('');
   const [imageStatusFilter, setImageStatusFilter] = useState<'ALL' | 'COMPLETE' | 'PARTIAL' | 'NONE'>('ALL');
-
   const [isListening, setIsListening] = useState(false);
   const [voiceText, setVoiceText] = useState('');
   const recognitionRef = useRef<any>(null);
-
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'updatedAt', direction: 'desc' });
-
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [aiStatus, setAiStatus] = useState<'IDLE' | 'ANALYZING'>('IDLE');
   const [aiProgressStep, setAiProgressStep] = useState(0); 
@@ -165,18 +154,14 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const [aiHint, setAiHint] = useState<string>('');
   const [isListeningHint, setIsListeningHint] = useState(false);
   const hintRecognitionRef = useRef<any>(null);
-
   const [analyzingName, setAnalyzingName] = useState<string | null>(null);
   const [mergeProposal, setMergeProposal] = useState<any>(null);
   const [isMerging, setIsMerging] = useState(false);
-  
   const [cleansingState, setCleansingState] = useState<{ isRunning: boolean; current: number; total: number }>({ isRunning: false, current: 0, total: 0 });
-  
   const [dojoProgress, setDojoProgress] = useState({ isRunning: false, current: 0, total: 0 });
   const aiTrainingHistory = data?.aiTraining || [];
   const recentErrors = aiTrainingHistory.slice(-30).map((t: any) => Number(t.errorMargin || 0));
   const avgError = recentErrors.length > 0 ? (recentErrors.reduce((a:number,b:number)=>a+b,0) / recentErrors.length).toFixed(2) : '0.00';
-
   const [sampleTotal, setSampleTotal] = useState<number | ''>('');
   const [sampleCopper, setSampleCopper] = useState<number | ''>('');
   const [sampleCover, setSampleCover] = useState<number | ''>('');
@@ -207,7 +192,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       try {
         const pendingData = JSON.parse(pendingItemStr);
         localStorage.removeItem('factoryOS_pendingAIItem'); 
-
         setActiveTab('WIRES'); 
         setEditingItem({
             maker: '', name: pendingData.name || '', year: '', _sqValue: '', _sqUnit: 'sq', _coreValue: '',
@@ -227,7 +211,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
   const handleTabChange = (tab: any) => {
     setActiveTab(tab); setSearchTerm(''); setSelectedCategory('すべて'); setFilterMaker(''); setFilterType(''); 
-    setSortConfig({ key: 'updatedAt', direction: 'desc' }); // タブ切り替え時もデフォルトソートに
+    setSortConfig({ key: 'updatedAt', direction: 'desc' });
     setImageStatusFilter('ALL');
   };
 
@@ -336,7 +320,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const handleSave = async () => {
     let finalItem = { ...editingItem };
     
-    // ★ 改善：保存ボタンを押した瞬間に、全角数字を強制的に半角へ変換
     if (activeTab === 'WIRES') {
         finalItem.year = finalItem.year ? toHalfWidthNumber(finalItem.year).replace(/\./g, '') : '';
         finalItem._sqValue = finalItem._sqValue ? toHalfWidthNumber(finalItem._sqValue) : '';
@@ -419,7 +402,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     return {};
   };
 
-  // ★ フロントエンド主導のデータクレンジング
   const runDataCleansing = async () => {
       const targets = wires.filter(w => w.status !== 'archived' && (w.image1 || w.image3) && !(w.memo || '').includes('【AIチェック警告】'));
       if (targets.length === 0) return alert('クレンジングの対象となる未チェックデータがありません。');
@@ -439,7 +421,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
               const json = await res.json();
               if (json.status === 'success' && json.alerted) alertedCount++;
           } catch (e) { }
-          await new Promise(resolve => setTimeout(resolve, 3000)); // API制限回避
+          await new Promise(resolve => setTimeout(resolve, 3000)); 
       }
 
       alert(`クレンジングが完了しました！\n新たに ${alertedCount} 件のデータにアラートが設定されました。`);
@@ -447,7 +429,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       window.location.reload();
   };
 
-  // ★ AI道場（総当たり特訓）
   const runDojoAll = async () => {
       const targets = wires.filter(w => w.status !== 'archived' && (w.image1 || w.image3) && w.ratio);
       if (targets.length === 0) return alert('テストできる画像・歩留まり付きのデータがありません。');
@@ -469,7 +450,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
               if (json.success) successCount++;
           } catch (e) { console.error(`Dojo Error on ${target.id}`, e); }
           
-          await new Promise(resolve => setTimeout(resolve, 4000)); // API制限回避のため4秒待機
+          await new Promise(resolve => setTimeout(resolve, 4000)); 
       }
 
       alert(`全 ${targets.length} 件の特訓が完了しました！（成功: ${successCount}件）`);
@@ -477,7 +458,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       window.location.reload();
   };
 
-  // ★ AI道場（ランダム1件テスト）
   const runDojoRandom = async () => {
       const targets = wires.filter(w => w.status !== 'archived' && (w.image1 || w.image3) && w.ratio);
       if (targets.length === 0) return alert('テストできる画像・歩留まり付きのデータがありません。');
@@ -499,7 +479,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       setDojoProgress({ isRunning: false, current: 0, total: 0 });
   };
 
-  // ★ 修正3：マージ時の統合「品名」がごちゃごちゃにならないようにする
   const handleAiMergeAnalyze = async (wireName: string, groupData: any) => {
     setAnalyzingName(wireName);
     const records = [groupData.captain, ...groupData.members];
@@ -510,7 +489,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       });
       const data = await res.json();
       if (data.success) {
-        // ★ ここで表示名（wireName）ではなく、captain（ベースデータ）の純粋な name をセットする
         const pureName = groupData.captain?.name || wireName;
         setMergeProposal({ name: pureName, records, allIds: groupData.allIds, ...data.result });
       } else {
@@ -544,7 +522,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         sheetName: 'Products_Wire',
         data: {
           ...baseItem,
-          name: mergeProposal.name, // ★ ここに上で取得した「純粋な品名」が入る
+          name: mergeProposal.name,
           ratio: mergeProposal.mergedYieldRate,
           memo: `【AI統合データ】\n${mergeProposal.mergedDescription}\n\n※過去${mergeProposal.records.length}件のデータを統合。`,
           status: 'active'
@@ -816,7 +794,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       });
   }
 
-  // ★ 線種データをさらに厳密なキーでグループ化
   const groupedWires = useMemo(() => {
     if (activeTab !== 'WIRES') return [];
     const groups: { [key: string]: { captain: any, members: any[], allIds: string[] } } = {};
@@ -832,7 +809,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       
       let groupKey = `${maker}${name}${voltage}${sq}${core}${year}${conductor}`.trim();
 
-      // 🚨 安全装置：スケア(sq)や芯数(core)が未登録のデータは、マージによる破壊を防ぐため完全に孤立させる
       if (!w.sq || w.sq === '-' || !w.core || w.core === '-') {
          groupKey = `${groupKey}_独自ID:${w.id}`;
       }
@@ -893,7 +869,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   };
 
   return (
-  <div className="flex flex-col h-full animate-in fade-in duration-500 font-sans">
+    <div className="flex flex-col h-full animate-in fade-in duration-500 font-sans">
       <header className="mb-2 md:mb-4 flex flex-col md:flex-row md:justify-between md:items-end gap-3 shrink-0">
         <div className="flex items-center gap-2">
           <span className="w-1.5 h-5 md:h-6 bg-[#D32F2F] block"></span>
@@ -903,7 +879,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
           </div>
         </div>
         <div className="flex bg-gray-100 p-1 rounded-sm overflow-x-auto shadow-inner border border-gray-200">
-          {/* ★ SPECS を追加 */}
           {['WIRES', 'SPECS', 'UNKNOWN', 'CASTINGS', 'CLIENTS', 'STAFF', 'DOJO'].map(tab => (
             <button key={tab} onClick={() => handleTabChange(tab as any)} className={`px-3 py-1.5 md:px-4 md:py-2 rounded-sm text-[10px] md:text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1 ${activeTab === tab ? 'bg-white text-gray-900 shadow-sm border border-gray-300' : 'text-gray-500 hover:text-gray-900'}`}>
               {tab === 'WIRES' ? '電線' : tab === 'SPECS' ? '📖 カタログ' : tab === 'UNKNOWN' ? '💡 未知' : tab === 'CASTINGS' ? '非鉄' : tab === 'CLIENTS' ? '顧客' : tab === 'STAFF' ? 'スタッフ' : '🥋 AI道場'}
@@ -912,7 +887,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         </div>
       </header>
 
-      {/* ★ AI一括パトロールボタン (WIRESタブのみ表示) */}
       {activeTab === 'WIRES' && (
           <div className="bg-gray-900 px-4 py-3 border-b border-gray-800 text-white flex flex-col md:flex-row justify-between items-start md:items-center text-xs shadow-inner gap-3">
              <div className="flex items-center gap-2">
@@ -937,14 +911,12 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
           </div>
       )}
 
-      {/* ★ カタログ用UI */}
       {activeTab === 'SPECS' && (
         <div className="bg-white border border-gray-200 shadow-sm rounded-sm flex-1 flex flex-col overflow-hidden relative mt-2">
           <AdminDatabaseSpecs data={data} />
         </div>
       )}
 
-      {/* 既存のUI (DOJO以外かつSPECS以外) */}
       {activeTab !== 'DOJO' && activeTab !== 'SPECS' && (
       <div className="bg-white border border-gray-200 shadow-sm rounded-sm flex-1 flex flex-col overflow-hidden relative mt-2">
         <div className="p-2 md:p-4 border-b border-gray-200 bg-gray-50 flex flex-col gap-2 z-30 relative">
@@ -1014,7 +986,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
               {activeTab !== 'UNKNOWN' && (
                   <div className="flex gap-1.5 w-full md:w-auto shrink-0">
-                    {/* ★ 変更：AI登録ボタンを赤に変更してテキスト変更 */}
                     {activeTab === 'WIRES' && (
                         <button onClick={() => setIsAiModalOpen(true)} className="flex-1 md:flex-none bg-[#D32F2F] text-white px-3 py-1.5 md:px-4 md:py-2 rounded-sm text-xs md:text-sm font-bold hover:bg-red-800 transition flex items-center justify-center gap-1 md:gap-2 whitespace-nowrap shadow-sm">
                             <Icons.Plus /> AIアシスト登録
@@ -1089,13 +1060,11 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                             <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('status')}>ステータス <SortIcon columnKey="status" /></th>
                         </>
                     )}
-                    {/* WIRES でも更新日を表示してソート可能にする */}
                     <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('updatedAt')}>登録/更新 <SortIcon columnKey="updatedAt" /></th>
                     <th className="p-3 text-right font-bold">操作</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 bg-white">
-                  {/* ★ WIRES の場合はチーム型グループ展開で描画する */}
                   {activeTab === 'WIRES' ? (
                     groupedWires.map((group, idx) => {
                       const item = group.captain;
@@ -1163,7 +1132,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                               </div>
                             </td>
                           </tr>
-                          {/* 過去データの折りたたみ表示 (PC版) */}
                           {members.length > 0 && (
                             <tr className="bg-gray-50/50">
                               <td colSpan={9} className="p-0 border-b border-gray-200">
@@ -1273,7 +1241,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                 </tbody>
               </table>
 
-              {/* ★ スマホ版レイアウト */}
               <div className="md:hidden divide-y divide-gray-200 bg-white pb-20">
                 {activeTab === 'WIRES' ? (
                   groupedWires.map((group, idx) => {
@@ -1322,7 +1289,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                           </div>
                         </div>
 
-                        {/* スマホ用 メンバーアコーディオン */}
                         {members.length > 0 && (
                           <details className="bg-gray-50 group border-t border-gray-100">
                             <summary className="text-[9px] text-gray-500 font-bold p-2 cursor-pointer hover:bg-gray-100 select-none flex items-center gap-2">
@@ -1458,7 +1424,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         </div>
       )}
 
-      {/* ★ AI道場（DOJO）UIの復活 */}
       {activeTab === 'DOJO' && (
         <div className="bg-white border border-gray-200 shadow-sm rounded-sm flex-1 flex flex-col p-4 md:p-8 overflow-y-auto mt-2 animate-in fade-in">
             <div className="max-w-4xl mx-auto w-full space-y-6">
@@ -1519,7 +1484,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         </div>
       )}
 
-      {/* ★ AIマージ提案のモーダル */}
       {mergeProposal && (
         <div className="fixed inset-0 bg-black/60 z-[80] flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-white rounded-sm shadow-2xl max-w-3xl w-full p-6 border-t-4 border-blue-700">
@@ -1560,7 +1524,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         </div>
       )}
 
-      {/* ★ AIマージ分析中のローディングモーダル */}
       {analyzingName && !mergeProposal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[80] flex items-center justify-center p-4">
           <div className="bg-white rounded-sm shadow-2xl p-8 flex flex-col items-center max-w-sm w-full animate-in zoom-in-95 border-t-4 border-blue-600">
@@ -1577,7 +1540,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         </div>
       )}
 
-      {/* ★ AIアシスト登録 / 編集モーダル */}
       {isAiModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-4xl rounded-sm shadow-2xl animate-in zoom-in-95 border-t-4 border-[#D32F2F] overflow-hidden flex flex-col max-h-[90vh]">
@@ -1657,7 +1619,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         </div>
       )}
 
-      {/* ★ 手動編集・新規登録モーダル */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] flex items-center justify-center p-2 md:p-0">
           <div className="bg-white w-full max-w-4xl rounded-sm shadow-2xl animate-in zoom-in-95 duration-200 border-t-4 border-gray-900 overflow-hidden flex flex-col max-h-[95vh]">
@@ -1667,7 +1628,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                   {editingItem?.id ? 'データ編集' : '新規マスター登録'}
               </h3>
               <div className="flex gap-2">
-                  {/* PC版：AIディープリサーチボタン */}
                   {activeTab === 'CLIENTS' && editingItem?.name && (
                       <button 
                           onClick={() => handleEnrichClient()}
@@ -1683,7 +1643,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
             
             <div className="p-4 md:p-6 overflow-y-auto space-y-4 bg-white flex-1">
                 
-                {/* ★ 改善：AIクレンジングのアラート表示 */}
                 {editingItem?.memo?.includes('【AIチェック警告】') && (
                    <div className="bg-yellow-50 border border-yellow-400 p-3 md:p-4 rounded-sm mb-4 shadow-sm relative overflow-hidden">
                        <div className="absolute top-0 right-0 bg-yellow-400 text-yellow-900 text-[8px] md:text-[10px] font-bold px-2 py-0.5 rounded-bl-sm">AI検知</div>
@@ -1751,7 +1710,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                                 <div className="flex flex-wrap gap-1 mt-1.5">
                                     <button onClick={() => setEditingItem({...editingItem, conductor: '単線'})} className="bg-gray-100 hover:bg-gray-200 text-[9px] px-2 py-1.5 rounded-sm text-gray-600 font-bold border border-gray-200 transition">単線</button>
                                     <button onClick={() => setEditingItem({...editingItem, conductor: 'より線'})} className="bg-gray-100 hover:bg-gray-200 text-[9px] px-2 py-1.5 rounded-sm text-gray-600 font-bold border border-gray-200 transition">より線</button>
-                                    {/* ★ 追加: 導体構成のショートカットボタン */}
                                     <button onClick={() => setEditingItem({...editingItem, conductor: '7本より線'})} className="bg-gray-100 hover:bg-gray-200 text-[9px] px-2 py-1.5 rounded-sm text-gray-600 font-bold border border-gray-200 transition">7本</button>
                                     <button onClick={() => setEditingItem({...editingItem, conductor: '19本より線'})} className="bg-gray-100 hover:bg-gray-200 text-[9px] px-2 py-1.5 rounded-sm text-gray-600 font-bold border border-gray-200 transition">19本</button>
                                     <button onClick={() => setEditingItem({...editingItem, conductor: '細線'})} className="bg-gray-100 hover:bg-gray-200 text-[9px] px-2 py-1.5 rounded-sm text-gray-600 font-bold border border-gray-200 transition">細線</button>
