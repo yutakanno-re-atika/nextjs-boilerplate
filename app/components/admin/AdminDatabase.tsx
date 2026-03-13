@@ -893,7 +893,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   };
 
   return (
-    <div className="flex flex-col h-full animate-in fade-in duration-500 font-sans">
+  <div className="flex flex-col h-full animate-in fade-in duration-500 font-sans">
       <header className="mb-2 md:mb-4 flex flex-col md:flex-row md:justify-between md:items-end gap-3 shrink-0">
         <div className="flex items-center gap-2">
           <span className="w-1.5 h-5 md:h-6 bg-[#D32F2F] block"></span>
