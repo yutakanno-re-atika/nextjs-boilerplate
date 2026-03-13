@@ -10,14 +10,13 @@ const Icons = {
   Trash: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
 };
 
-export const AdminDeepScout = ({ onClose, wireSpecs }: { onClose: () => void, wireSpecs: any[] }) => {
+// ★ wires（実測マスター）を受け取るように追加
+export const AdminDeepScout = ({ onClose, wireSpecs, wires }: { onClose: () => void, wireSpecs: any[], wires: any[] }) => {
   const [images, setImages] = useState<string[]>([]);
   const [hint, setHint] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<any>(null);
 
-  // 分析に特化するため、高解像度（最大2000px）、高画質（0.92）で圧縮。
-  // ただし、通信量制限を考慮し、Vercelのペイロードリミットに注意。
   const compressImageHighRes = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -32,7 +31,6 @@ export const AdminDeepScout = ({ onClose, wireSpecs }: { onClose: () => void, wi
           const ctx = canvas.getContext('2d');
           if(!ctx) return reject();
           ctx.drawImage(img, 0, 0, w, h);
-          // プレフィックス(data:image/jpeg;base64,)を外して返す
           const base64 = canvas.toDataURL('image/jpeg', 0.92).split(',')[1];
           resolve(base64);
         };
@@ -46,11 +44,9 @@ export const AdminDeepScout = ({ onClose, wireSpecs }: { onClose: () => void, wi
   const handleCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-    
     try {
       const newImages = [];
       for(let i=0; i<files.length; i++) {
-        // 画像は最大4枚程度に制限（ペイロード対策）
         if(images.length + i >= 4) {
           alert("通信制限のため、画像は最大4枚までにしてください。");
           break;
@@ -70,8 +66,17 @@ export const AdminDeepScout = ({ onClose, wireSpecs }: { onClose: () => void, wi
     setIsAnalyzing(true);
     setResult(null);
 
-    // カタログデータをプロンプトに仕込む（多すぎるとエラーになるため上位50件程度に絞るか、要約する）
-    const specsContext = wireSpecs.slice(0, 50).map(s => 
+    // ★ 自社の実測マスターをコンテキスト化（最強のカンペ）
+    const masterContext = (wires || []).map(w => {
+      let name = w.name;
+      if (w.sq && w.sq !== '-') name += ` ${w.sq}sq`;
+      if (w.core && w.core !== '-') name += ` ${w.core}C`;
+      const maker = w.maker && w.maker !== '-' ? `【${w.maker}】` : '';
+      return `- ${maker}${name} (実測歩留: ${w.ratio}%, 導体: ${w.conductor || '不明'})`;
+    }).join('\n');
+
+    // カタログデータをコンテキスト化
+    const specsContext = (wireSpecs || []).slice(0, 50).map(s => 
       `[${s.maker}] ${s.name} ${s.size}sq ${s.core}C - 外径${s.outerDiameter}mm 質量${s.weightPerKm}kg/km 理論歩留${s.theoreticalRatio}%`
     ).join('\n');
 
@@ -79,7 +84,7 @@ export const AdminDeepScout = ({ onClose, wireSpecs }: { onClose: () => void, wi
       const res = await fetch('/api/deep-scout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ images, hint, specsContext })
+        body: JSON.stringify({ images, hint, specsContext, masterContext }) // ★ masterContextを送信
       });
       const data = await res.json();
       if(data.success) {
@@ -150,7 +155,7 @@ export const AdminDeepScout = ({ onClose, wireSpecs }: { onClose: () => void, wi
               <Icons.Eye />
             </div>
             <h3 className="text-xl font-bold tracking-widest text-red-500 mb-2">DEEP SCANNING...</h3>
-            <p className="text-sm text-gray-400">画像エンハンスメント及びカタログ照合中</p>
+            <p className="text-sm text-gray-400">自社マスター及びカタログと照合中</p>
           </div>
         )}
 
@@ -174,7 +179,7 @@ export const AdminDeepScout = ({ onClose, wireSpecs }: { onClose: () => void, wi
 
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="bg-black/50 p-4 rounded-xl border border-gray-800 text-center">
-                  <p className="text-[10px] text-gray-500 font-bold mb-1">カタログ理論値</p>
+                  <p className="text-[10px] text-gray-500 font-bold mb-1">理論/基準値</p>
                   <p className="text-2xl font-mono text-gray-300">{result.theoreticalYield ? `${result.theoreticalYield}%` : '---'}</p>
                 </div>
                 <div className="bg-red-900/20 p-4 rounded-xl border border-red-900/50 text-center shadow-[inset_0_0_15px_rgba(220,38,38,0.1)]">
