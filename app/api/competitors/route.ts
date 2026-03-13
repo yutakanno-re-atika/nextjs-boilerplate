@@ -63,7 +63,6 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const target = TARGETS[body.targetKey];
-    // ★ フロントから送られてくる「ボスの教科書」を受け取る
     const customPrompt = body.customPrompt || ""; 
 
     if (!target) return Response.json({ status: 'error', message: 'Invalid target' }, { status: 400 });
@@ -73,9 +72,8 @@ export async function POST(req: Request) {
 
     const nowStr = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
 
-    // ★ 基本プロンプトに「ボスの教科書」を結合してAIに渡す
     const { object } = await generateObject({
-      model: google('gemini-2.5-flash'),
+      model: google('gemini-2.5-pro'),
       schema: priceSchema,
       prompt: `
       あなたは非鉄金属スクラップ業界のプロの査定員です。
