@@ -10,7 +10,6 @@ const Icons = {
   Trash: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
 };
 
-// ★ wires（実測マスター）を受け取るように追加
 export const AdminDeepScout = ({ onClose, wireSpecs, wires }: { onClose: () => void, wireSpecs: any[], wires: any[] }) => {
   const [images, setImages] = useState<string[]>([]);
   const [hint, setHint] = useState('');
@@ -66,7 +65,6 @@ export const AdminDeepScout = ({ onClose, wireSpecs, wires }: { onClose: () => v
     setIsAnalyzing(true);
     setResult(null);
 
-    // ★ 自社の実測マスターをコンテキスト化（最強のカンペ）
     const masterContext = (wires || []).map(w => {
       let name = w.name;
       if (w.sq && w.sq !== '-') name += ` ${w.sq}sq`;
@@ -75,7 +73,6 @@ export const AdminDeepScout = ({ onClose, wireSpecs, wires }: { onClose: () => v
       return `- ${maker}${name} (実測歩留: ${w.ratio}%, 導体: ${w.conductor || '不明'})`;
     }).join('\n');
 
-    // カタログデータをコンテキスト化
     const specsContext = (wireSpecs || []).slice(0, 50).map(s => 
       `[${s.maker}] ${s.name} ${s.size}sq ${s.core}C - 外径${s.outerDiameter}mm 質量${s.weightPerKm}kg/km 理論歩留${s.theoreticalRatio}%`
     ).join('\n');
@@ -84,7 +81,13 @@ export const AdminDeepScout = ({ onClose, wireSpecs, wires }: { onClose: () => v
       const res = await fetch('/api/deep-scout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ images, hint, specsContext, masterContext }) // ★ masterContextを送信
+        body: JSON.stringify({ 
+          images, 
+          hint, 
+          specsContext, 
+          masterContext,
+          rawWires: wires // ★ これを追加してAPIに投げる
+        })
       });
       const data = await res.json();
       if(data.success) {
@@ -155,7 +158,7 @@ export const AdminDeepScout = ({ onClose, wireSpecs, wires }: { onClose: () => v
               <Icons.Eye />
             </div>
             <h3 className="text-xl font-bold tracking-widest text-red-500 mb-2">DEEP SCANNING...</h3>
-            <p className="text-sm text-gray-400">自社マスター及びカタログと照合中</p>
+            <p className="text-sm text-gray-400">マスター画像を取得し、視覚比較中</p>
           </div>
         )}
 
@@ -179,7 +182,7 @@ export const AdminDeepScout = ({ onClose, wireSpecs, wires }: { onClose: () => v
 
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="bg-black/50 p-4 rounded-xl border border-gray-800 text-center">
-                  <p className="text-[10px] text-gray-500 font-bold mb-1">理論/基準値</p>
+                  <p className="text-[10px] text-gray-500 font-bold mb-1">カタログ理論値</p>
                   <p className="text-2xl font-mono text-gray-300">{result.theoreticalYield ? `${result.theoreticalYield}%` : '---'}</p>
                 </div>
                 <div className="bg-red-900/20 p-4 rounded-xl border border-red-900/50 text-center shadow-[inset_0_0_15px_rgba(220,38,38,0.1)]">
