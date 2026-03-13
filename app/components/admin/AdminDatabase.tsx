@@ -159,9 +159,11 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const [isMerging, setIsMerging] = useState(false);
   const [cleansingState, setCleansingState] = useState<{ isRunning: boolean; current: number; total: number }>({ isRunning: false, current: 0, total: 0 });
   const [dojoProgress, setDojoProgress] = useState({ isRunning: false, current: 0, total: 0 });
+  
   const aiTrainingHistory = data?.aiTraining || [];
   const recentErrors = aiTrainingHistory.slice(-30).map((t: any) => Number(t.errorMargin || 0));
   const avgError = recentErrors.length > 0 ? (recentErrors.reduce((a:number,b:number)=>a+b,0) / recentErrors.length).toFixed(2) : '0.00';
+  
   const [sampleTotal, setSampleTotal] = useState<number | ''>('');
   const [sampleCopper, setSampleCopper] = useState<number | ''>('');
   const [sampleCover, setSampleCover] = useState<number | ''>('');
@@ -403,7 +405,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   };
 
   const runDataCleansing = async () => {
-      const targets = wires.filter(w => w.status !== 'archived' && (w.image1 || w.image3) && !(w.memo || '').includes('【AIチェック警告】'));
+      const targets = wires.filter((w:any) => w.status !== 'archived' && (w.image1 || w.image3) && !(w.memo || '').includes('【AIチェック警告】'));
       if (targets.length === 0) return alert('クレンジングの対象となる未チェックデータがありません。');
       if (!confirm(`全 ${targets.length} 件のデータに対してAIクレンジングを実行します。\n（勝手に上書きはされず、差異があったデータにのみアラートが付きます）\n画面を閉じずにそのままお待ちください。`)) return;
 
@@ -430,7 +432,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   };
 
   const runDojoAll = async () => {
-      const targets = wires.filter(w => w.status !== 'archived' && (w.image1 || w.image3) && w.ratio);
+      const targets = wires.filter((w:any) => w.status !== 'archived' && (w.image1 || w.image3) && w.ratio);
       if (targets.length === 0) return alert('テストできる画像・歩留まり付きのデータがありません。');
       if (!confirm(`全 ${targets.length} 件のデータで「AI総当たり特訓」を開始しますか？\n※完了まで数十分〜1時間程度かかる場合があります。\n※寝ている間など、PCと画面を開いたまま放置してください。`)) return;
 
@@ -459,7 +461,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   };
 
   const runDojoRandom = async () => {
-      const targets = wires.filter(w => w.status !== 'archived' && (w.image1 || w.image3) && w.ratio);
+      const targets = wires.filter((w:any) => w.status !== 'archived' && (w.image1 || w.image3) && w.ratio);
       if (targets.length === 0) return alert('テストできる画像・歩留まり付きのデータがありません。');
       const target = targets[Math.floor(Math.random() * targets.length)];
       
@@ -838,9 +840,9 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     return Object.entries(groups).map(([name, data]) => ({ name, ...data }));
   }, [sortedData, activeTab]);
 
-  const ImageSlot = ({ title, imageKey, colIdx, pendingKey }: { title: string, imageKey: string, colIdx: number, pendingKey: string }) => {
-    const savedImage = editingItem[imageKey];
-    const pendingImage = editingItem[pendingKey];
+  const renderImageSlot = (title: string, imageKey: string, colIdx: number, pendingKey: string) => {
+    const savedImage = editingItem?.[imageKey];
+    const pendingImage = editingItem?.[pendingKey];
     const hasImage = !!savedImage || !!pendingImage;
 
     return (
@@ -1675,11 +1677,11 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                     <div className="bg-gray-50 p-3 md:p-4 border border-gray-200 rounded-sm">
                         <label className="block text-[10px] md:text-xs font-bold text-gray-600 mb-2 uppercase tracking-widest">マスター画像 (全5枠)</label>
                         <div className="grid grid-cols-3 md:grid-cols-5 gap-2 md:gap-3">
-                            <ImageSlot title="① 断面" imageKey="image1" colIdx={11} pendingKey="_pendingImageData1" />
-                            <ImageSlot title="② 全体" imageKey="image2" colIdx={12} pendingKey="_pendingImageData2" />
-                            <ImageSlot title="④ 剥線" imageKey="image3" colIdx={13} pendingKey="_pendingImageData3" />
-                            <ImageSlot title="③ 印字UP1" imageKey="image4" colIdx={14} pendingKey="_pendingImageData4" />
-                            <ImageSlot title="③ 印字UP2" imageKey="image5" colIdx={15} pendingKey="_pendingImageData5" />
+                            {renderImageSlot('① 断面', 'image1', 11, '_pendingImageData1')}
+                            {renderImageSlot('② 全体', 'image2', 12, '_pendingImageData2')}
+                            {renderImageSlot('④ 剥線', 'image3', 13, '_pendingImageData3')}
+                            {renderImageSlot('③ 印字UP1', 'image4', 14, '_pendingImageData4')}
+                            {renderImageSlot('③ 印字UP2', 'image5', 15, '_pendingImageData5')}
                         </div>
                     </div>
                 )}
