@@ -29,13 +29,13 @@ const MAKER_MAP: Record<string, string> = {
 const MAKER_FILES = Object.keys(MAKER_MAP);
 const ITEMS_PER_PAGE = 100;
 
-// ★ あいまい検索用の正規化関数（全角半角・大文字小文字・スペース統一）
+// ★ あいまい検索用の正規化関数
 const normalizeText = (text: string) => {
   if (!text) return '';
   return String(text)
     .normalize('NFKC') // 全角英数→半角、半角カナ→全角に統一
     .toLowerCase()     // 大文字→小文字
-    .replace(/[\s　]+/g, ' ') // 全角スペースや連続する空白を半角スペース1つに
+    .replace(/[\s　]+/g, ' ') // 全角・半角スペースを統一
     .trim();
 };
 
@@ -47,7 +47,7 @@ export const AdminDatabaseSpecs = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMakers, setSelectedMakers] = useState<string[]>([]);
   const [selectedCores, setSelectedCores] = useState<string[]>([]);
-  const [selectedConductors, setSelectedConductors] = useState<string[]>([]); // 追加: 単線/より線のフィルター
+  const [selectedConductors, setSelectedConductors] = useState<string[]>([]);
   const [sqRange, setSqRange] = useState({ min: '', max: '' });
   const [ratioRange, setRatioRange] = useState({ min: '', max: '' });
   
@@ -77,21 +77,34 @@ export const AdminDatabaseSpecs = () => {
           if (Array.isArray(jsonData)) {
             const defaultMakerName = MAKER_MAP[key] || key;
 
-            // データのクレンジング
+            // ★ データの強力なクレンジング
             const cleanedData = jsonData.map(spec => {
               let mName = String(spec.maker || '');
+              let cName = String(spec.name || '');
               
+              // ① メーカー名の浄化
               if (!mName || mName === '-' || mName.trim() === '') {
                 mName = defaultMakerName;
               } else if (mName.includes('矢崎') || mName.toLowerCase().includes('yazaki')) {
                 mName = '矢崎エナジーシステム';
               } else if (mName.includes('フジクラ') || mName.toLowerCase().includes('fujikura') || mName.includes('ダイヤケーブル')) {
                 mName = 'フジクラ・ダイヤケーブル';
-              } else if (mName.includes('富士電線')) {
+              } else if (mName.includes('富士電線') || mName.toUpperCase().includes('FUJI ELECTRIC')) {
                 mName = '富士電線工業';
               }
 
-              return { ...spec, maker: mName };
+              // ② 品名の浄化（長すぎる英語や特殊文字のカット）
+              if (cName.includes('Class2 Natural Rubber') || cName.includes('2CT Class2')) {
+                cName = '2種天然ゴム絶縁キャブタイヤケーブル (2CT)';
+              } else if (cName.includes('200Type') || cName.includes('200タイプ')) {
+                cName = cName.replace(/200Type|200タイプ/g, '200V用').trim();
+              }
+              // ③ アース付きセパレート線などを強引に「メインの線」だけの名前にする
+              if (cName.includes('+') || cName.toLowerCase().includes('separate')) {
+                cName = cName.split('+')[0].replace(/Separate type/i, '').trim();
+              }
+
+              return { ...spec, maker: mName, name: cName };
             });
 
             allData = allData.concat(cleanedData);
@@ -112,7 +125,7 @@ export const AdminDatabaseSpecs = () => {
   const filteredAndSortedSpecs = useMemo(() => {
     let result = specs.filter(spec => {
       
-      // ① あいまいキーワード検索
+      // あいまいキーワード検索
       if (searchTerm) {
         const normalizedSearch = normalizeText(searchTerm);
         const terms = normalizedSearch.split(' ').filter(Boolean);
@@ -120,10 +133,8 @@ export const AdminDatabaseSpecs = () => {
         if (!terms.every(term => target.includes(term))) return false;
       }
 
-      // ② メーカー
       if (selectedMakers.length > 0 && !selectedMakers.includes(spec.maker)) return false;
 
-      // ③ 芯数
       if (selectedCores.length > 0) {
         const coreVal = parseInt(spec.core);
         const coreMatch = selectedCores.some(c => {
@@ -133,24 +144,20 @@ export const AdminDatabaseSpecs = () => {
         if (!coreMatch) return false;
       }
 
-      // ④ 導体構成 (単線/より線)
       if (selectedConductors.length > 0) {
         const cText = String(spec.conductor || '');
         const strands = parseInt(spec.conductorStrands);
-        // 「単線」の文字があるか、構成素線数が1本の場合は単線判定
         const isSolid = cText.includes('単線') || strands === 1;
         const wireType = isSolid ? '単線' : 'より線';
         if (!selectedConductors.includes(wireType)) return false;
       }
 
-      // ⑤ SQサイズ
       const sq = parseFloat(spec.size);
       if (!isNaN(sq)) {
         if (sqRange.min && sq < parseFloat(sqRange.min)) return false;
         if (sqRange.max && sq > parseFloat(sqRange.max)) return false;
       }
 
-      // ⑥ 歩留まり
       const ratio = parseFloat(spec.theoreticalRatio);
       if (!isNaN(ratio)) {
         if (ratioRange.min && ratio < parseFloat(ratioRange.min)) return false;
@@ -250,7 +257,7 @@ export const AdminDatabaseSpecs = () => {
             </div>
           </div>
 
-          {/* ★ 導体構成 (単線/より線) ボタン */}
+          {/* 導体構成 (単線/より線) ボタン */}
           <div>
             <label className="block text-xs font-bold text-gray-700 mb-2">導体構成</label>
             <div className="flex flex-wrap gap-1.5">
@@ -355,7 +362,6 @@ export const AdminDatabaseSpecs = () => {
               </thead>
               <tbody className="divide-y divide-gray-100 text-xs md:text-sm">
                 {paginatedSpecs.map((spec, index) => {
-                  // 単線・より線の判定ロジック
                   const isSolid = spec.conductor && (spec.conductor.includes('単線') || parseInt(spec.conductorStrands) === 1);
                   
                   return (
@@ -367,8 +373,6 @@ export const AdminDatabaseSpecs = () => {
                         <span className="mx-1 text-gray-300">/</span> 
                         {spec.core !== '-' ? <span className="font-black">{spec.core}C</span> : '-'}
                       </td>
-                      
-                      {/* ★ 導体構成を強調表示 */}
                       <td className="p-2 md:p-3">
                         <div className="flex flex-col gap-1.5">
                           <div className="flex items-center gap-1.5">
@@ -387,8 +391,6 @@ export const AdminDatabaseSpecs = () => {
                           </div>
                         </div>
                       </td>
-
-                      {/* ★ 外径と質量のフォントを大きく対等に */}
                       <td className="p-2 md:p-3 text-right">
                         <div className="flex flex-col items-end gap-1 font-mono text-xs md:text-sm">
                           <div>
@@ -403,7 +405,6 @@ export const AdminDatabaseSpecs = () => {
                           </div>
                         </div>
                       </td>
-
                       <td className="p-2 md:p-3 text-right bg-blue-50/10 group-hover:bg-transparent transition-colors">
                         <span className="font-mono font-black text-blue-700 text-base md:text-xl tracking-tighter">
                           {spec.theoreticalRatio ? `${spec.theoreticalRatio}%` : '-'}
