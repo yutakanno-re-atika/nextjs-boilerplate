@@ -46,7 +46,8 @@ export async function POST(req: Request) {
     if (mode === 'analyze') {
       const { object } = await generateObject({
         // @ts-ignore
-        model: google('gemini-2.5-flash'),
+        model: google('gemini-2.5-pro'), // ★ flash から pro に格上げ
+        temperature: 0.2, // 分析系なので温度は低め
         schema: z.object({
           volume: z.string().describe("事業内容や規模から推測される銅線等の想定排出量（例: 月間500kg, 小規模, 不明 など）"),
           priority: z.string().describe("S, A, B, C のいずれか（当社のナゲット機のベース原料になりそうなら高く評価）"),
@@ -56,7 +57,7 @@ export async function POST(req: Request) {
         }),
         prompt: `
         あなたは非鉄金属リサイクル工場（自社にナゲットプラントあり）の凄腕営業部長です。
-        以下のターゲット企業の事業情報を分析し、銅線や非鉄スクラップの排出ポテンシャルを見極め、営業戦略を立案してください。
+        以下のターゲット企業の事業情報を深く分析し、銅線や非鉄スクラップの排出ポテンシャルを見極め、営業戦略を立案してください。
 
         【ターゲット企業】
         企業名: ${target.company}
@@ -70,7 +71,6 @@ export async function POST(req: Request) {
       });
 
       // GASの SalesTargets シートの列インデックスに合わせた更新用マップ
-      // 4: priority, 6: volume, 7: reason, 8: proposal, 10: status, 11: contact
       const payload = {
         action: 'UPDATE_DB_RECORD',
         sheetName: 'SalesTargets',
@@ -90,12 +90,7 @@ export async function POST(req: Request) {
       return NextResponse.json(result);
     }
 
-    // ============================================================================
-    // モード3: SPARQLによるデータ抽出 (APIキーを使用した直接検索用)
-    // ============================================================================
     if (!apiToken) return NextResponse.json({ success: false, message: "APIトークンを入力してください。" });
-    // （※既存のSPARQL検索を利用する場合はここのコードを拡張しますが、今回はローカルDBで完結しているため省略します）
-    
     return NextResponse.json({ success: false, message: "無効なリクエストです。" });
 
   } catch (error: any) {
