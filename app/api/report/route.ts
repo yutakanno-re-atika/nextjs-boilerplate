@@ -1,7 +1,6 @@
 import { google } from '@ai-sdk/google';
 import { generateText } from 'ai';
 
-// Vercelのタイムアウト対策（長めの思考時間を許可）
 export const maxDuration = 60; 
 
 export async function POST(req: Request) {
@@ -28,7 +27,7 @@ export async function POST(req: Request) {
 `;
 
     const result = await generateText({
-      model: google('gemini-2.5-flash'),
+      model: google('gemini-2.5-pro'),
       system: "あなたは非鉄金属リサイクル工場のAI参謀です。データに基づき、利益を最大化するための冷徹かつ的確なアドバイスを行います。",
       prompt: prompt,
     });
