@@ -13,46 +13,90 @@ const Icons = {
   Refresh: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
 };
 
-// 読み込む可能性のあるJSONファイル名（拡張子なし）。今後メーカーが増えたらここに足すだけ！
-const MAKER_FILES = ['yazaki', 'fujikura', 'sumitomo', 'furukawa', 'swcc', 'proterial', 'fuji', 'yasaka', 'kawai', 'suganami'];
-const ITEMS_PER_PAGE = 100; // 1ページあたりの表示件数（ブラウザクラッシュ防止）
+// 対象ファイル名と、それに紐づく公式メーカー名
+const MAKER_MAP: Record<string, string> = {
+  yazaki: '矢崎エナジーシステム',
+  fujikura: 'フジクラ・ダイヤケーブル',
+  sumitomo: '住友電工',
+  furukawa: '古河電工',
+  swcc: 'SWCC',
+  proterial: 'プロテリアル',
+  fuji: '富士電線工業',
+  yasaka: '弥栄電線',
+  kawai: 'カワイ電線',
+  suganami: '菅波電線'
+};
+const MAKER_FILES = Object.keys(MAKER_MAP);
+const ITEMS_PER_PAGE = 100;
+
+// ★ あいまい検索用の正規化関数（全角半角・大文字小文字・スペース統一）
+const normalizeText = (text: string) => {
+  if (!text) return '';
+  return String(text)
+    .normalize('NFKC') // 全角英数→半角、半角カナ→全角に統一
+    .toLowerCase()     // 大文字→小文字
+    .replace(/[\s　]+/g, ' ') // 全角スペースや連続する空白を半角スペース1つに
+    .trim();
+};
 
 export const AdminDatabaseSpecs = () => {
   const [specs, setSpecs] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // フィルター用の状態
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMakers, setSelectedMakers] = useState<string[]>([]);
-  const [selectedCores, setSelectedCores] = useState<string[]>([]); // '1', '2', '3', '4', '5+'
+  const [selectedCores, setSelectedCores] = useState<string[]>([]);
   const [sqRange, setSqRange] = useState({ min: '', max: '' });
   const [ratioRange, setRatioRange] = useState({ min: '', max: '' });
   
-  // ソート・ページネーション
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // 1. データの読み込み (複数ファイル合体)
+  // 1. データの読み込みと自動クレンジング
   useEffect(() => {
     const fetchAllSpecs = async () => {
       setIsLoading(true);
       let allData: any[] = [];
 
-      // Promise.allSettledで、存在するファイルだけを安全に読み込む
-      const fetchPromises = MAKER_FILES.map(maker => 
-        fetch(`/specs/${maker}.json`).then(res => {
+      const fetchPromises = MAKER_FILES.map(makerKey => 
+        fetch(`/specs/${makerKey}.json`).then(res => {
           if (!res.ok) throw new Error('Not found');
-          return res.json();
+          return { key: makerKey, data: res.json() };
         })
       );
 
       const results = await Promise.allSettled(fetchPromises);
       
-      results.forEach(result => {
-        if (result.status === 'fulfilled' && Array.isArray(result.value)) {
-          allData = allData.concat(result.value);
+      for (const result of results) {
+        if (result.status === 'fulfilled') {
+          const { key, data } = result.value;
+          const jsonData = await data;
+          
+          if (Array.isArray(jsonData)) {
+            const defaultMakerName = MAKER_MAP[key] || key;
+
+            // ★ データのクレンジング（表記揺れの吸収と空白の補完）
+            const cleanedData = jsonData.map(spec => {
+              let mName = String(spec.maker || '');
+              
+              if (!mName || mName === '-' || mName.trim() === '') {
+                mName = defaultMakerName;
+              } else if (mName.includes('矢崎') || mName.toLowerCase().includes('yazaki')) {
+                mName = '矢崎エナジーシステム';
+              } else if (mName.includes('フジクラ') || mName.toLowerCase().includes('fujikura') || mName.includes('ダイヤケーブル')) {
+                mName = 'フジクラ・ダイヤケーブル';
+              } else if (mName.includes('富士電線')) {
+                mName = '富士電線工業';
+              }
+              // ※ 他のメーカーも表記揺れがあればここに条件を足せます
+
+              return { ...spec, maker: mName };
+            });
+
+            allData = allData.concat(cleanedData);
+          }
         }
-      });
+      }
 
       setSpecs(allData);
       setIsLoading(false);
@@ -61,23 +105,23 @@ export const AdminDatabaseSpecs = () => {
     fetchAllSpecs();
   }, []);
 
-  // フィルターに使う選択肢の抽出
-  const availableMakers = useMemo(() => Array.from(new Set(specs.map(s => s.maker).filter(m => m && m !== '-'))).sort(), [specs]);
+  const availableMakers = useMemo(() => Array.from(new Set(specs.map(s => s.maker).filter(Boolean))).sort(), [specs]);
 
-  // 2. フィルタリングとソートの適用 (useMemoで高速化)
+  // 2. フィルタリングとソート
   const filteredAndSortedSpecs = useMemo(() => {
     let result = specs.filter(spec => {
-      // ① キーワード検索 (AND検索)
+      
+      // ① あいまいキーワード検索 (AND検索)
       if (searchTerm) {
-        const terms = searchTerm.toLowerCase().split(' ').filter(Boolean);
-        const target = `${spec.maker} ${spec.name} ${spec.size}sq ${spec.core}c ${spec.conductor}`.toLowerCase();
+        const normalizedSearch = normalizeText(searchTerm);
+        const terms = normalizedSearch.split(' ').filter(Boolean);
+        // 検索対象の文字も全て正規化して結合
+        const target = normalizeText(`${spec.maker} ${spec.name} ${spec.size}sq ${spec.size}mm ${spec.core}c ${spec.core}芯 ${spec.conductor}`);
         if (!terms.every(term => target.includes(term))) return false;
       }
 
-      // ② メーカー絞り込み
       if (selectedMakers.length > 0 && !selectedMakers.includes(spec.maker)) return false;
 
-      // ③ 芯数絞り込み
       if (selectedCores.length > 0) {
         const coreVal = parseInt(spec.core);
         const coreMatch = selectedCores.some(c => {
@@ -87,14 +131,12 @@ export const AdminDatabaseSpecs = () => {
         if (!coreMatch) return false;
       }
 
-      // ④ SQサイズ範囲絞り込み
       const sq = parseFloat(spec.size);
       if (!isNaN(sq)) {
         if (sqRange.min && sq < parseFloat(sqRange.min)) return false;
         if (sqRange.max && sq > parseFloat(sqRange.max)) return false;
       }
 
-      // ⑤ 歩留まり範囲絞り込み
       const ratio = parseFloat(spec.theoreticalRatio);
       if (!isNaN(ratio)) {
         if (ratioRange.min && ratio < parseFloat(ratioRange.min)) return false;
@@ -104,13 +146,11 @@ export const AdminDatabaseSpecs = () => {
       return true;
     });
 
-    // ソート処理
     if (sortConfig) {
       result.sort((a, b) => {
         let aVal = a[sortConfig.key];
         let bVal = b[sortConfig.key];
         
-        // 数値として扱えるものは数値で比較
         const aNum = parseFloat(aVal);
         const bNum = parseFloat(bVal);
         if (!isNaN(aNum) && !isNaN(bNum)) {
@@ -128,7 +168,6 @@ export const AdminDatabaseSpecs = () => {
     return result;
   }, [specs, searchTerm, selectedMakers, selectedCores, sqRange, ratioRange, sortConfig]);
 
-  // 3. ページネーション用のデータ切り出し
   const paginatedSpecs = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     return filteredAndSortedSpecs.slice(startIndex, startIndex + ITEMS_PER_PAGE);
@@ -136,12 +175,11 @@ export const AdminDatabaseSpecs = () => {
 
   const totalPages = Math.ceil(filteredAndSortedSpecs.length / ITEMS_PER_PAGE);
 
-  // ソート制御関数
   const handleSort = (key: string) => {
     let direction: 'asc' | 'desc' = 'asc';
     if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') direction = 'desc';
     setSortConfig({ key, direction });
-    setCurrentPage(1); // ソートしたら1ページ目に戻す
+    setCurrentPage(1);
   };
 
   const SortIcon = ({ columnKey }: { columnKey: string }) => {
@@ -164,11 +202,11 @@ export const AdminDatabaseSpecs = () => {
   return (
     <div className="flex flex-col md:flex-row h-full bg-white animate-in fade-in duration-500 overflow-hidden">
       
-      {/* 🟢 左側：検索・フィルターパネル（SUUMO風） */}
+      {/* 🟢 左側：検索・フィルターパネル */}
       <div className="w-full md:w-72 bg-gray-50 border-r border-gray-200 shrink-0 flex flex-col h-full overflow-y-auto">
         <div className="p-4 bg-gray-900 text-white flex justify-between items-center sticky top-0 z-10 shadow-md">
           <div className="font-black flex items-center gap-2"><Icons.Filter /> 絞り込み検索</div>
-          <button onClick={clearFilters} className="text-xs text-gray-300 hover:text-white flex items-center gap-1 font-bold bg-gray-800 px-2 py-1 rounded">
+          <button onClick={clearFilters} className="text-xs text-gray-300 hover:text-white flex items-center gap-1 font-bold bg-gray-800 px-2 py-1 rounded transition">
             <Icons.Refresh /> クリア
           </button>
         </div>
@@ -180,11 +218,12 @@ export const AdminDatabaseSpecs = () => {
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Icons.Search /></div>
               <input
-                type="text" placeholder="例: VVF 22sq..."
+                type="text" placeholder="例: ＣＶ 22sq..."
                 className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded bg-white text-sm focus:border-blue-500 outline-none shadow-inner"
                 value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
               />
             </div>
+            <p className="text-[9px] text-gray-400 mt-1.5">※全角/半角、大文字/小文字を自動で吸収します</p>
           </div>
 
           {/* 歩留まりレンジ */}
@@ -244,7 +283,6 @@ export const AdminDatabaseSpecs = () => {
 
       {/* 🟢 右側：結果一覧テーブル */}
       <div className="flex-1 flex flex-col min-w-0 bg-white relative">
-        {/* ヘッダー情報とページネーション */}
         <div className="p-3 bg-white border-b border-gray-200 flex flex-col md:flex-row justify-between items-center gap-3 shadow-sm z-10 shrink-0">
           <div className="text-sm">
             <span className="font-bold text-gray-500">該当件数: </span>
@@ -253,7 +291,6 @@ export const AdminDatabaseSpecs = () => {
             <span className="text-[10px] text-gray-400 ml-2 font-mono">/ 全 {specs.length} 件</span>
           </div>
 
-          {/* ページネーション */}
           {totalPages > 1 && (
             <div className="flex items-center gap-2 font-mono text-sm bg-gray-50 rounded border border-gray-200 p-1">
               <button 
@@ -269,12 +306,11 @@ export const AdminDatabaseSpecs = () => {
           )}
         </div>
 
-        {/* テーブル本体 */}
         <div className="flex-1 overflow-auto bg-gray-100">
           {isLoading ? (
             <div className="flex flex-col justify-center items-center h-full text-gray-400 font-bold gap-3">
                <div className="animate-spin text-blue-600"><Icons.Refresh /></div>
-               <p>複数のメーカーカタログを統合中...</p>
+               <p>複数のメーカーカタログを統合・クレンジング中...</p>
             </div>
           ) : (
             <table className="w-full text-left border-collapse text-sm whitespace-nowrap bg-white">
