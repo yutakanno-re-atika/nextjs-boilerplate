@@ -14,6 +14,8 @@ import { AdminClientDetail } from './AdminClientDetail';
 import { AdminSales } from './AdminSales';
 import { FloatingAiMentor } from './FloatingAiMentor';
 import { AdminPhotoUpload } from './AdminPhotoUpload';
+// ★ 神の目（ディープスキャン）コンポーネントをインポート
+import { AdminDeepScout } from './AdminDeepScout';
 
 const Icons = {
   Home: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
@@ -33,7 +35,8 @@ const Icons = {
   ExternalLink: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>,
   RefreshIcon: () => <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
   CheckCircle: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-  AlertTriangle: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+  AlertTriangle: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
+  Eye: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>,
 };
 
 const ROLE_PERMISSIONS = {
@@ -80,6 +83,9 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
   const [isVoiceOutputEnabled, setIsVoiceOutputEnabled] = useState(true); 
   const [isLearningMode, setIsLearningMode] = useState(false); 
   const [tutorSessionId] = useState(`TUTOR_${new Date().getTime().toString().slice(-6)}`);
+
+  // ★ 神の目（Deep Scout）の開閉ステート
+  const [isDeepScoutOpen, setIsDeepScoutOpen] = useState(false);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -158,7 +164,6 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
       }
   };
 
-  // ★ 変更: SALES の label を「仕入パイプライン管理」に変更
   const ALL_MENU_ITEMS = [
       { id: 'HOME', icon: Icons.Home, label: 'ダッシュボード', reqRole: 'MANAGER〜' },
       { id: 'OPERATIONS', icon: Icons.Kanban, label: '現場状況管理', reqRole: 'FRONT/PLANT〜' },
@@ -293,6 +298,23 @@ export const AdminDashboard = ({ user, data, setView, onLogout }: { user?: any; 
               isVoiceOutputEnabled={isVoiceOutputEnabled}
               currentTab={adminTab}
               sessionId={tutorSessionId}
+          />
+      )}
+
+      {/* ★ ここに追加: 「神の目」起動ボタン (FAB) */}
+      <button
+         onClick={() => setIsDeepScoutOpen(true)}
+         className="fixed bottom-6 right-6 md:bottom-10 md:right-10 z-[90] bg-[#D32F2F] text-white w-14 h-14 md:w-16 md:h-16 rounded-full shadow-[0_0_20px_rgba(211,47,47,0.6)] hover:scale-110 transition-transform flex items-center justify-center group border-2 border-white"
+         title="神の目 (Deep Scout) を起動"
+      >
+         <Icons.Eye />
+      </button>
+
+      {/* ★ ここに追加: 神の目コンポーネント */}
+      {isDeepScoutOpen && (
+          <AdminDeepScout 
+              onClose={() => setIsDeepScoutOpen(false)} 
+              wireSpecs={data?.wireSpecs || []} 
           />
       )}
     </div>
