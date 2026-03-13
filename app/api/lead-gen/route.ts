@@ -1,108 +1,105 @@
 // app/api/lead-gen/route.ts
 import { NextResponse } from 'next/server';
+import { google } from '@ai-sdk/google';
+import { generateObject } from 'ai';
+import { z } from 'zod';
 
 export const maxDuration = 60; // タイムアウトを最大60秒に設定
 
-// 法人番号で標準APIを直叩きして詳細データを取得する
-async function fetchGBizInfoById(corporateNumber: string, token: string) {
-  const res = await fetch(`https://info.gbiz.go.jp/hojin/v1/hojin/${corporateNumber}`, { 
-      headers: { 'Accept': 'application/json', 'X-hojinInfo-api-token': token } 
-  });
-  if (res.status === 401) throw new Error("401_UNAUTHORIZED");
-  if (res.ok) {
-      const data = await res.json();
-      if (data['hojin-infos'] && data['hojin-infos'].length > 0) return data['hojin-infos'][0];
-  }
-  return null;
-}
-
 export async function POST(req: Request) {
   try {
-    const { area, keyword, apiToken } = await req.json();
+    const body = await req.json();
+    const { mode, target, area, keyword, apiToken } = body;
     const gasUrl = process.env.GAS_API_URL || "https://script.google.com/macros/s/AKfycbxuE0iPCEruoQLretA8R0cmSnRyZPYT9qd6YqDGVCCCY1h0wRVJX8P-MZF20I1whF7Z/exec";
 
-    if (!apiToken) return NextResponse.json({ success: false, message: "APIトークンを入力してください。" });
-    if (!area || !keyword) return NextResponse.json({ success: false, message: "エリアとキーワードを入力してください。" });
-
     // ============================================================================
-    // STEP 1: SPARQL APIを使って「エリア」×「キーワード」で法人番号を全件抽出
+    // モード1: 潜在リードDBからCRM（アクティブ・パイプライン）への追加
     // ============================================================================
-    // 所在地が一致し、かつ名前か事業概要にキーワードが含まれるものを探す強力なクエリ
-    const sparqlQuery = `
-      PREFIX hj: <https://info.gbiz.go.jp/hojin/ontology/hojin#>
-      SELECT DISTINCT ?corporateNumber
-      WHERE {
-        ?s a hj:Corporation .
-        ?s hj:corporateNumber ?corporateNumber .
-        ?s hj:location ?location .
-        FILTER(contains(str(?location), "${area}"))
-        ?s hj:corporateName ?name .
-        OPTIONAL { ?s hj:businessSummary ?biz . }
-        FILTER(contains(str(?name), "${keyword}") || contains(str(?biz), "${keyword}"))
-      }
-      LIMIT 50
-    `;
-
-    const sparqlRes = await fetch('https://info.gbiz.go.jp/sparql', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Accept': 'application/sparql-results+json'
-      },
-      body: `query=${encodeURIComponent(sparqlQuery)}`
-    });
-
-    if (!sparqlRes.ok) {
-      throw new Error(`SPARQLエンドポイントエラー (ステータス: ${sparqlRes.status})`);
-    }
-
-    const sparqlData = await sparqlRes.json();
-    const bindings = sparqlData.results?.bindings || [];
-    
-    // 返ってきた結果から13桁の法人番号だけをリスト化
-    const uniqueNumbers = bindings
-        .map((b: any) => b.corporateNumber?.value)
-        .filter((num: string) => /^\d{13}$/.test(num));
-
-    if (uniqueNumbers.length === 0) {
-        return NextResponse.json({ success: false, message: `SPARQL検索の結果、「${area}」で「${keyword}」に関連する企業は見つかりませんでした。` });
-    }
-
-    // ============================================================================
-    // STEP 2: 抽出した法人番号を使って標準APIから詳細データを取得し、DBへ格納
-    // ============================================================================
-    let savedCount = 0;
-    for (const num of uniqueNumbers) {
-        let info;
-        try {
-            info = await fetchGBizInfoById(num, apiToken);
-        } catch (e: any) {
-            if (e.message === "401_UNAUTHORIZED") return NextResponse.json({ success: false, message: "APIトークンが無効です（401エラー）。" });
+    if (mode === 'add_to_crm') {
+      const payload = {
+        action: 'ADD_DB_RECORD',
+        sheetName: 'SalesTargets',
+        data: {
+          company: target.company || '',
+          address: target.address || '',
+          area: target.address ? target.address.substring(0, 10) : '北海道',
+          priority: 'C',
+          industry: target.businessSummary ? target.businessSummary.substring(0, 20) : '電気・通信・設備',
+          volume: '未定',
+          reason: 'ローカルDBからの手動追加',
+          proposal: '',
+          status: '未分析',
+          contact: target.representative || '',
+          website: target.website || '',
+          memo: `資本金: ${target.capital || '-'} / 従業員: ${target.employees || '-'} / 設立: ${target.founded || '-'}`
         }
-        
-        if (!info) continue;
-
-        const payload = {
-          action: 'ADD_DB_RECORD',
-          sheetName: 'SalesTargets',
-          data: {
-            corporateNumber: info.corporate_number || '', company: info.name || '', address: info.location || '',
-            representative: info.representative_name || '', capital: info.capital_stock ? `${info.capital_stock.toLocaleString()}円` : '',
-            employees: info.employee_number ? `${info.employee_number}名` : '', founded: info.date_of_establishment || info.founding_year || '',
-            businessSummary: info.business_summary || '', area: area, industry: keyword, contact: '', website: info.company_url || '',
-            volume: '', priority: '', status: 'DB格納済 (AI未分析)', reason: '', proposal: '', memo: 'SPARQL抽出エンジンからの取得'
-          }
-        };
-        
-        await fetch(gasUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-        savedCount++;
-        await new Promise(resolve => setTimeout(resolve, 300)); // DB書き込みの負荷軽減
+      };
+      
+      const gasRes = await fetch(gasUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const result = await gasRes.json();
+      return NextResponse.json(result);
     }
 
-    return NextResponse.json({ success: true, count: savedCount, message: `SPARQLエンジンによる高度な検索で、${savedCount} 件の企業データをDBにぶっこ抜きました！` });
+    // ============================================================================
+    // モード2: AIによるターゲットの事業内容分析と営業戦略の立案
+    // ============================================================================
+    if (mode === 'analyze') {
+      const { object } = await generateObject({
+        // @ts-ignore
+        model: google('gemini-2.5-flash'),
+        schema: z.object({
+          volume: z.string().describe("事業内容や規模から推測される銅線等の想定排出量（例: 月間500kg, 小規模, 不明 など）"),
+          priority: z.string().describe("S, A, B, C のいずれか（当社のナゲット機のベース原料になりそうなら高く評価）"),
+          proposal: z.string().describe("当社の強み（ナゲット処理による中間マージンカット）を活かした、具体的なアプローチの提案（80文字程度）"),
+          reason: z.string().describe("その評価とした理由"),
+          contact: z.string().describe("連絡先（テキスト内になければ「要Web検索」）")
+        }),
+        prompt: `
+        あなたは非鉄金属リサイクル工場（自社にナゲットプラントあり）の凄腕営業部長です。
+        以下のターゲット企業の事業情報を分析し、銅線や非鉄スクラップの排出ポテンシャルを見極め、営業戦略を立案してください。
+
+        【ターゲット企業】
+        企業名: ${target.company}
+        住所: ${target.address}
+        事業概要: ${target.businessSummary || target.memo || '詳細不明'}
+        
+        【思考プロセス】
+        - 通信・弱電工事なら「LANケーブルや細線」、解体業なら「CV線や雑線」、配電盤製造なら「IV線や銅ブスバー」が出る可能性が高い。
+        - 資本金や従業員数などの規模が大きければSやAランク。
+        `
+      });
+
+      // GASの SalesTargets シートの列インデックスに合わせた更新用マップ
+      // 4: priority, 6: volume, 7: reason, 8: proposal, 10: status, 11: contact
+      const payload = {
+        action: 'UPDATE_DB_RECORD',
+        sheetName: 'SalesTargets',
+        recordId: target.id,
+        updates: {
+          4: object.priority,
+          6: object.volume,
+          7: object.reason,
+          8: object.proposal,
+          10: '分析完了',
+          11: object.contact === '要Web検索' ? (target.contact || '要検索') : object.contact
+        }
+      };
+      
+      const gasRes = await fetch(gasUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const result = await gasRes.json();
+      return NextResponse.json(result);
+    }
+
+    // ============================================================================
+    // モード3: SPARQLによるデータ抽出 (APIキーを使用した直接検索用)
+    // ============================================================================
+    if (!apiToken) return NextResponse.json({ success: false, message: "APIトークンを入力してください。" });
+    // （※既存のSPARQL検索を利用する場合はここのコードを拡張しますが、今回はローカルDBで完結しているため省略します）
+    
+    return NextResponse.json({ success: false, message: "無効なリクエストです。" });
 
   } catch (error: any) {
-    console.error("SPARQL Extraction Error:", error);
+    console.error("API Error:", error);
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }
