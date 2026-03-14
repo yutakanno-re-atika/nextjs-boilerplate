@@ -9,15 +9,12 @@ export async function POST(req: Request) {
     const { messages, sessionId } = await req.json();
     const lastUserMessage = messages[messages.length - 1]?.content || "";
 
-    // プログラム側で「電線の話題」かどうかを判定する
     const isWireTopic = /(電線|線|ケーブル|VVF|CV|CVT|IV|VA|ピカ|高く|理由|歩留)/i.test(lastUserMessage);
     
-    // 話題に応じて、AIに渡す「自社のアピールポイント」を物理的に切り替える
     const killerPhrase = isWireTopic 
         ? "【当社の強み】自社にナゲットプラント（電線の粉砕・分別機）があり、中間コストを極限までカットできるため『電線の圧倒的な高価買取』が可能です。この強みを会話の中で自然にアピールしてください。" 
         : "【当社の強み】熟練スタッフによる丁寧で正確な査定が強みです。";
 
-    // 1. GASから最新の相場とマスターデータを取得
     let marketContext = "現在、最新の価格マスタと通信中です。";
     const gasUrl = process.env.GAS_API_URL || "https://script.google.com/macros/s/AKfycbxuE0iPCEruoQLretA8R0cmSnRyZPYT9qd6YqDGVCCCY1h0wRVJX8P-MZF20I1whF7Z/exec"; 
     
@@ -35,7 +32,6 @@ export async function POST(req: Request) {
                     
                     marketContext = `【本日の国内建値】\n銅建値=${copperPrice}円/kg, 真鍮建値=${config.brass_price || 0}円/kg, 亜鉛=${config.zinc_price || 0}円/kg, 鉛=${config.lead_price || 0}円/kg.\n\n`;
                     
-                    // AIのカンペとして、マスターから主要な買取価格を計算して渡す
                     if (gasData.wires && gasData.wires.length > 0) {
                         const wireList = gasData.wires.slice(0, 15).map((w: any) => {
                             const price = Math.floor(copperPrice * (Number(w.ratio)/100) * 0.85);
@@ -50,9 +46,8 @@ export async function POST(req: Request) {
         }
     }
 
-    // 2. Gemini 3.1 Pro で回答を生成（★Google検索グラウンディングをON）
     const result = await generateText({
-      // ★ 最新モデルを指定し、useSearchGrounding を true にしてGoogle検索と連動させる
+      // ★ 3.1 Pro ＆ Google検索機能（Grounding）をON
       model: google('gemini-3.1-pro-preview', { useSearchGrounding: true }), 
       messages,
       system: `
@@ -75,7 +70,6 @@ export async function POST(req: Request) {
 
     const botResponse = result.text;
 
-    // 3. 顧客インサイトの蓄積
     if (gasUrl && !gasUrl.includes('XXXXXXXXXXXXXXXXXXXXX')) {
         fetch(gasUrl, {
             method: 'POST',
