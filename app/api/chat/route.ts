@@ -46,9 +46,8 @@ export async function POST(req: Request) {
         }
     }
 
-    const result = await generateText({
-      // ★ 3.1 Pro ＆ Google検索機能（Grounding）をON
-      model: google('gemini-3.1-pro-preview', { useSearchGrounding: true }), 
+const result = await generateText({
+      model: google('gemini-3.1-pro-preview'), 
       messages,
       system: `
       あなたは株式会社月寒製作所（北海道苫小牧市一本松町9-6）の優秀なAIコンシェルジュ（査定人）です。
