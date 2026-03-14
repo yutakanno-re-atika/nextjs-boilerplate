@@ -3,66 +3,82 @@ import { google } from '@ai-sdk/google';
 import { generateObject } from 'ai';
 import { z } from 'zod';
 import { NextResponse } from 'next/server';
+import fs from 'fs';
+import path from 'path';
 
 export const maxDuration = 60;
+
+function loadCatalogData() {
+    let allCatalogs: any[] = [];
+    try {
+        const publicDir = path.join(process.cwd(), 'public');
+        const files = fs.readdirSync(publicDir).filter(f => f.endsWith('.json') && f !== 'hokkaido_electric.json');
+        for (const file of files) {
+            allCatalogs = allCatalogs.concat(JSON.parse(fs.readFileSync(path.join(publicDir, file), 'utf8')));
+        }
+    } catch (e) {}
+    return allCatalogs;
+}
 
 export async function POST(req: Request) {
   try {
     const { wireId, wireName, imageUrl, actualRatio } = await req.json();
-
     if (!imageUrl) throw new Error("画像がありません");
 
-    // 1. Google DriveのURLから画像を直接ダウンロードしてBase64に変換
     const match = imageUrl.match(/id=([^&]+)/) || imageUrl.match(/file\/d\/([^\/]+)/);
     if (!match) throw new Error("無効な画像URLです");
     const fileId = match[1];
     
-    // Driveからバイナリを取得
     const imgRes = await fetch(`https://drive.google.com/uc?export=download&id=${fileId}`);
     if (!imgRes.ok) throw new Error("画像の取得に失敗しました");
     const arrayBuffer = await imgRes.arrayBuffer();
     const base64Data = Buffer.from(arrayBuffer).toString('base64');
 
-    // 2. 💡 マスターの「正解歩留まり」は隠したまま、AIに推論させる
+    // ★ RAGコンテキスト生成
+    const catalogs = loadCatalogData();
+    const validCatalogs = catalogs.filter(c => c.theoreticalRatio && c.theoreticalRatio !== '-');
+    const keywords = wireName.split(/[\s　]+/);
+    let filteredCatalogs = validCatalogs.filter(c => keywords.some(k => (c.name + c.maker).includes(k)));
+    if (filteredCatalogs.length === 0) filteredCatalogs = validCatalogs.slice(0, 100);
+
+    const catalogContext = filteredCatalogs.slice(0, 50).map(c => 
+        `[${c.maker}] ${c.name} (サイズ:${c.size}) -> 理論歩留:${c.theoreticalRatio}%`
+    ).join('\n');
+
     const analysis = await generateObject({
-      // @ts-ignore
-      model: google('gemini-3.1-pro-preview'), // ★ 3.1 Proに進化
-      temperature: 0.1, // 精度を高めるため温度は低め
+      model: google('gemini-2.5-pro'),
+      temperature: 0.1, 
       schema: z.object({
-        predictedRatio: z.number().describe("推測した銅分率（歩留まり）の数値。0〜100の間。"),
-        reason: z.string().describe("推測の論理的な根拠。被覆の厚さ、導体の太さ、芯数などからどう計算したかを簡潔に。")
+        predictedRatio: z.number().describe("推測した銅分率。小数点第1位まで。"),
+        reason: z.string().describe("推論の論理的な根拠。カタログの理論値の引用、または面積比と比重(銅8.96:PVC1.35)の計算過程を記載すること。")
       }),
       prompt: `あなたは凄腕のスクラップ査定士です。提供されたケーブルの断面（または外観）画像から、純粋な銅分率（歩留まり%）を推測してください。
-      このケーブルの名称は「${wireName}」です。
-      
-      【ルール】
-      過去のデータや検索結果に頼らず、画像の「メジャーのスケール（太さ）」や「被覆と銅の面積比」から物理的に計算・推論してください。`
+このケーブルのマスター登録名称は「${wireName}」です。
+
+【参考カタログデータ（理論値）】
+${catalogContext}
+
+【ルール】
+カタログデータに合致するものがあればその理論値をベースにし、画像から劣化や介在物のノイズ分を減算してください。
+該当がない場合は、画像内の銅と被覆の「面積比」を割り出し、比重（銅8.96、被覆1.35等）を掛け合わせて重量比率を算出して答えを出してください。`
     });
 
-    // 3. 実際の歩留まりとの誤差（絶対値）を計算して採点
     const predicted = analysis.object.predictedRatio;
     const errorMargin = Number(Math.abs(predicted - actualRatio).toFixed(2));
 
-    // 4. GASに結果を送信して、隔離された「AITraining」シートに記録
     const gasUrl = process.env.GAS_API_URL || "https://script.google.com/macros/s/AKfycbxuE0iPCEruoQLretA8R0cmSnRyZPYT9qd6YqDGVCCCY1h0wRVJX8P-MZF20I1whF7Z/exec";
     await fetch(gasUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             action: 'SAVE_AI_TRAINING',
-            wireId,
-            wireName,
-            predictedRatio: predicted,
-            actualRatio,
-            errorMargin,
-            reason: analysis.object.reason
+            wireId, wireName, predictedRatio: predicted, actualRatio, errorMargin, reason: analysis.object.reason
         })
     });
 
     return NextResponse.json({ success: true, result: { ...analysis.object, actualRatio, errorMargin } });
 
   } catch (error: any) {
-    console.error("AI Training Error:", error);
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }
