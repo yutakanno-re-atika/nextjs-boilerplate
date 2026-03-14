@@ -10,7 +10,6 @@ export async function POST(req: Request) {
   try {
     const { targetName, records } = await req.json();
 
-    // ★ 修正：ボスのデータベースの正しいキー（ratio, memo, image1）を取得するように変更！
     const recordsText = records.map((r: any, index: number) => {
       return `【データ${index + 1}】
 歩留まり: ${r.ratio ? r.ratio + '%' : '不明'}
@@ -20,8 +19,8 @@ export async function POST(req: Request) {
 
     const analysis = await generateObject({
       // @ts-ignore
-      model: google('gemini-2.5-pro'),
-      temperature: 0.1, // 計算を正確にするため温度を下げる
+      model: google('gemini-3.1-pro-preview'), // ★ 3.1 Proに進化
+      temperature: 0.1, 
       schema: z.object({
         recommendation: z.string().describe("統合の評価理由。歩留まりが近い場合は「誤差の範囲内であり統合を推奨します」等と前向きに記載し、再計測は絶対に促さないこと。"),
         mergedYieldRate: z.string().describe("統合後の最適な歩留まり。既存データの【平均値】を計算して数値のみ（例: 45.2）を出力すること。"),
