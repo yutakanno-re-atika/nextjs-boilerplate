@@ -26,7 +26,7 @@ export async function POST(req: Request) {
     // 2. 💡 マスターの「正解歩留まり」は隠したまま、AIに推論させる
     const analysis = await generateObject({
       // @ts-ignore
-      model: google('gemini-2.5-pro'),
+      model: google('gemini-3.1-pro-preview'), // ★ 3.1 Proに進化
       temperature: 0.1, // 精度を高めるため温度は低め
       schema: z.object({
         predictedRatio: z.number().describe("推測した銅分率（歩留まり）の数値。0〜100の間。"),
