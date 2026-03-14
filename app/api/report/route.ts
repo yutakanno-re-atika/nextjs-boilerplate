@@ -27,7 +27,8 @@ export async function POST(req: Request) {
 `;
 
     const result = await generateText({
-      model: google('gemini-2.5-pro'),
+      // ★ 経営参謀を 3.1 Pro に昇格
+      model: google('gemini-3.1-pro-preview'),
       system: "あなたは非鉄金属リサイクル工場のAI参謀です。データに基づき、利益を最大化するための冷徹かつ的確なアドバイスを行います。",
       prompt: prompt,
     });
