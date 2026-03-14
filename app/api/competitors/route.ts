@@ -73,7 +73,8 @@ export async function POST(req: Request) {
     const nowStr = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
 
     const { object } = await generateObject({
-      model: google('gemini-2.5-pro'),
+      // ★ 3.1 Flashに進化
+      model: google('gemini-3.1-flash-preview'),
       schema: priceSchema,
       prompt: `
       あなたは非鉄金属スクラップ業界のプロの査定員です。
