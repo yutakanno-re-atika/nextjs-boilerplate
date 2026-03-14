@@ -1,15 +1,12 @@
 import { google } from '@ai-sdk/google';
 import { generateText } from 'ai';
 
-// Vercelのタイムアウト対策（長めの思考時間を許可）
 export const maxDuration = 60; 
 
 export async function POST(req: Request) {
   try {
-    // ボスのGAS API URL
     const gasUrl = "https://script.google.com/macros/s/AKfycbxuE0iPCEruoQLretA8R0cmSnRyZPYT9qd6YqDGVCCCY1h0wRVJX8P-MZF20I1whF7Z/exec"; 
 
-    // 1. GASから最新マスタデータを取得
     const masterRes = await fetch(gasUrl);
     const masterData = await masterRes.json();
     
@@ -25,17 +22,14 @@ export async function POST(req: Request) {
        productions = masterData.productions || [];
     }
 
-    // 2. ペルソナの動的生成（ボスのアイデア：実データへの憑依）
     let persona = "";
     let personaName = "";
     const rand = Math.random();
     
     if (rand < 0.4 && clients.length > 0) {
-        // ▼ パターンA: 既存顧客への憑依 (40%の確率)
         const targetClient = clients[Math.floor(Math.random() * clients.length)];
         personaName = targetClient.name;
         
-        // 過去の歩留まり傾向を計算（あれば）
         const clientProds = productions.filter((p:any) => p.memberName === targetClient.name);
         let yieldTendency = "";
         if (clientProds.length > 0) {
@@ -50,7 +44,6 @@ export async function POST(req: Request) {
 この背景を踏まえ、本日の相場確認や、次回の持ち込みに関する単価交渉、またはマニアックな非鉄金属の買取可否について、スクラップ業者らしい口調で質問してください。`;
 
     } else if (rand < 0.8 && salesTargets.length > 0) {
-        // ▼ パターンB: 営業ターゲットへの憑依 (40%の確率)
         const targetSales = salesTargets[Math.floor(Math.random() * salesTargets.length)];
         personaName = targetSales.company;
         
@@ -64,7 +57,6 @@ export async function POST(req: Request) {
 上記の背景を踏まえ、買取価格の比較、受け入れ条件、または自社の排出物（${targetSales.industry}由来のスクラップ）が高く売れるのかどうか、少し疑り深いトーンで質問してください。`;
 
     } else {
-        // ▼ パターンC: 汎用ペルソナ（20%の確率）
         const personas = [
           { name: "解体業者の親方", desc: "せっかちな解体業者の親方。大量のCV線や太線を持っており、歩留まりの評価やダスト引きに厳しい。他社の価格を引き合いに出して単価交渉を仕掛けてくる。" },
           { name: "若手電気工事士", desc: "初めて持ち込む20代の若手電気工事士。VVFケーブルの切れ端が軽トラに乗っている。必要な手続きや、皮を剥いた方が高く売れるのか等、基本的なことを聞いてくる。" },
@@ -80,21 +72,19 @@ export async function POST(req: Request) {
     let chatHistory = "";
     const logEntries = [];
 
-    // AI vs AI の対話ループ（3往復）
-    // 1. 顧客（AI）の最初の発言
     let result = await generateText({
-      model: google('gemini-2.5-flash'), 
+      // ★ 3.1 Flashに進化
+      model: google('gemini-3.1-flash-preview'), 
       system: `あなたは以下の設定のお客様です。\n【設定】${persona}\n\nスクラップ買取の「月寒製作所 苫小牧工場」のチャットに最初の質問を投げかけてください。100文字以内で、実際のチャットのようなリアルな口調で。`,
       prompt: "最初の質問を作成してください。"
     });
     let lastMessage = result.text;
     chatHistory += `👤 客 (${personaName}): ${lastMessage}\n\n`;
 
-    // 2. 対話ループ
     for (let i = 0; i < 3; i++) {
-        // コンシェルジュ（AI）の返答
         result = await generateText({
-            model: google('gemini-2.5-flash'), 
+            // ★ 3.1 Flashに進化
+            model: google('gemini-3.1-flash-preview'), 
             system: `あなたは株式会社月寒製作所（苫小牧工場）の優秀なAIコンシェルジュです。
             【強み】自社にナゲットプラントがあり「電線の高価買取」が可能。
             【最新相場情報】${marketContext}
@@ -104,7 +94,6 @@ export async function POST(req: Request) {
         const botResponse = result.text;
         chatHistory += `🤖 ＡＩ: ${botResponse}\n\n`;
         
-        // ログに保存する配列に追加
         logEntries.push({
             action: 'SAVE_CHAT_LOG',
             sessionId: sessionId,
@@ -112,10 +101,10 @@ export async function POST(req: Request) {
             botResponse: botResponse
         });
 
-        // 顧客（AI）の追撃質問（最後以外）
         if (i < 2) {
             result = await generateText({
-                model: google('gemini-2.5-flash'), 
+                // ★ 3.1 Flashに進化
+                model: google('gemini-3.1-flash-preview'), 
                 system: `あなたは以下の設定のお客様です。\n【設定】${persona}\n\nこれまでの会話を踏まえ、AIの回答に対してさらに突っ込んだ質問や交渉、あるいは納得した旨を短く返信してください。`,
                 prompt: `これまでの会話:\n${chatHistory}\n\n次のあなたの発言を作成してください。`
             });
@@ -124,7 +113,6 @@ export async function POST(req: Request) {
         }
     }
 
-    // 生成した会話ログを順番にGASへPOST（少し待機を入れてGASの書き込みエラーを防ぐ）
     for (const entry of logEntries) {
         await fetch(gasUrl, {
             method: 'POST',
@@ -133,7 +121,6 @@ export async function POST(req: Request) {
         await new Promise(resolve => setTimeout(resolve, 500));
     }
 
-    // 結果のポップアップ用に、誰をシミュレートしたかを分かりやすく返す
     const displayPersona = `【AIが憑依したターゲット】\n${personaName}\n\n【裏側で与えられたコンテキスト】\n${persona}`;
 
     return Response.json({ success: true, chatHistory: chatHistory, persona: displayPersona });
