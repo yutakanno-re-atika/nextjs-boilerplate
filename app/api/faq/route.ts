@@ -1,11 +1,11 @@
 import { google } from '@ai-sdk/google';
 import { generateText } from 'ai';
 
-export const maxDuration = 60;
+export const maxDuration = 60; 
 
 export async function POST(req: Request) {
   try {
-    const gasUrl = process.env.GAS_API_URL || "https://script.google.com/macros/s/AKfycbxuE0iPCEruoQLretA8R0cmSnRyZPYT9qd6YqDGVCCCY1h0wRVJX8P-MZF20I1whF7Z/exec"; 
+    const gasUrl = "https://script.google.com/macros/s/AKfycbxuE0iPCEruoQLretA8R0cmSnRyZPYT9qd6YqDGVCCCY1h0wRVJX8P-MZF20I1whF7Z/exec"; 
 
     const logRes = await fetch(gasUrl, {
         method: 'POST',
@@ -30,8 +30,8 @@ export async function POST(req: Request) {
     }
 
     const result = await generateText({
-      model: google('gemini-2.5-pro'), 
-      temperature: 0.4,
+      // ★ 3.1 Flashに進化
+      model: google('gemini-3.1-flash-preview'), 
       system: `
       あなたは株式会社月寒製作所（苫小牧工場）の優秀なデータアナリスト兼・非鉄リサイクル業界の専門家（査定人）です。
       以下のカスタマーサポートのチャットログを分析し、お客様がよく疑問に思うポイントを抽出し、実践的でリアルな「よくある質問(FAQ)」を最大5件作成してください。
