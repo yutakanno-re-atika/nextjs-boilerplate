@@ -4,7 +4,6 @@ import { generateText } from 'ai';
 
 export const maxDuration = 60;
 
-// ★ ボスのGAS URL
 const GAS_URL = process.env.GAS_API_URL || 'https://script.google.com/macros/s/AKfycbxuE0iPCEruoQLretA8R0cmSnRyZPYT9qd6YqDGVCCCY1h0wRVJX8P-MZF20I1whF7Z/exec';
 
 export async function POST(req: Request) {
@@ -12,7 +11,6 @@ export async function POST(req: Request) {
     const { messages, currentTab, sessionId } = await req.json();
     const lastUserMessage = messages[messages.length - 1]?.content || "";
 
-    // ★ 修正：HOME画面の「AIコンシェルジュ稼働」と「仮想トレーニング」の真の役割を明記
     const systemPrompt = `
     あなたは非鉄金属リサイクル工場「月寒製作所」のシステム「FACTORY OS」の新人教育用AIメンターです。
     新米スタッフからのシステムの使い方や、業界用語に関する質問に対して、優しく、分かりやすく、簡潔に答えてください。
@@ -44,14 +42,14 @@ export async function POST(req: Request) {
     `;
 
     const result = await generateText({
-      model: google('gemini-2.5-flash'),
+      // ★ 3.1 Flashに進化
+      model: google('gemini-3.1-flash-preview'),
       messages,
       system: systemPrompt,
     });
 
     const botResponse = result.text;
 
-    // ★ 教育メンターとのやり取りをGASに保存
     try {
       await fetch(GAS_URL, {
         method: 'POST',
