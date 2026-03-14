@@ -9,16 +9,19 @@ export async function POST(req: Request) {
     const { messages, sessionId } = await req.json();
     const lastUserMessage = messages[messages.length - 1]?.content || "";
 
+    // プログラム側で「電線の話題」かどうかを判定する
     const isWireTopic = /(電線|線|ケーブル|VVF|CV|CVT|IV|VA|ピカ|高く|理由|歩留)/i.test(lastUserMessage);
     
+    // 話題に応じて、AIに渡す「自社のアピールポイント」を物理的に切り替える
     const killerPhrase = isWireTopic 
         ? "【当社の強み】自社にナゲットプラント（電線の粉砕・分別機）があり、中間コストを極限までカットできるため『電線の圧倒的な高価買取』が可能です。この強みを会話の中で自然にアピールしてください。" 
         : "【当社の強み】熟練スタッフによる丁寧で正確な査定が強みです。";
 
+    // 1. GASから最新の相場とマスターデータを取得
     let marketContext = "現在、最新の価格マスタと通信中です。";
-    const gasUrl = "https://script.google.com/macros/s/AKfycbxuE0iPCEruoQLretA8R0cmSnRyZPYT9qd6YqDGVCCCY1h0wRVJX8P-MZF20I1whF7Z/exec"; 
+    const gasUrl = process.env.GAS_API_URL || "https://script.google.com/macros/s/AKfycbxuE0iPCEruoQLretA8R0cmSnRyZPYT9qd6YqDGVCCCY1h0wRVJX8P-MZF20I1whF7Z/exec"; 
     
-    if (gasUrl) {
+    if (gasUrl && !gasUrl.includes('XXXXXXXXXXXXXXXXXXXXX')) {
         try {
             const timestamp = new Date().getTime();
             const gasRes = await fetch(`${gasUrl}?t=${timestamp}`, { cache: 'no-store' });
@@ -32,6 +35,7 @@ export async function POST(req: Request) {
                     
                     marketContext = `【本日の国内建値】\n銅建値=${copperPrice}円/kg, 真鍮建値=${config.brass_price || 0}円/kg, 亜鉛=${config.zinc_price || 0}円/kg, 鉛=${config.lead_price || 0}円/kg.\n\n`;
                     
+                    // AIのカンペとして、マスターから主要な買取価格を計算して渡す
                     if (gasData.wires && gasData.wires.length > 0) {
                         const wireList = gasData.wires.slice(0, 15).map((w: any) => {
                             const price = Math.floor(copperPrice * (Number(w.ratio)/100) * 0.85);
@@ -46,14 +50,15 @@ export async function POST(req: Request) {
         }
     }
 
-    // 2. Geminiで回答を生成
+    // 2. Gemini 3.1 Pro で回答を生成（★Google検索グラウンディングをON）
     const result = await generateText({
-      model: google('gemini-2.5-pro'), // ★ flash から pro に格上げ。接客の知能が跳ね上がります。
-      temperature: 0.4, // 接客なので少しだけ人間味（ゆらぎ）を持たせる
+      // ★ 最新モデルを指定し、useSearchGrounding を true にしてGoogle検索と連動させる
+      model: google('gemini-3.1-pro-preview', { useSearchGrounding: true }), 
       messages,
       system: `
       あなたは株式会社月寒製作所（北海道苫小牧市一本松町9-6）の優秀なAIコンシェルジュ（査定人）です。
       お客様からの質問に対し、以下の【カンペ】の情報を元に、正確かつプロフェッショナルに回答してください。
+      また、カンペにない最新情報（今日のニュースや天気、一般的な相場動向など）を聞かれた場合は、あなたの持つGoogle検索能力を使って正確に答えてください。
       
       【最新の相場・価格マスタ（カンペ）】
       ${marketContext}
@@ -71,7 +76,7 @@ export async function POST(req: Request) {
     const botResponse = result.text;
 
     // 3. 顧客インサイトの蓄積
-    if (gasUrl) {
+    if (gasUrl && !gasUrl.includes('XXXXXXXXXXXXXXXXXXXXX')) {
         fetch(gasUrl, {
             method: 'POST',
             body: JSON.stringify({
