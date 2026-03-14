@@ -10,14 +10,15 @@ export async function POST(req: Request) {
     const { companyName, address, industry, currentMemo } = await req.json();
 
     const { object } = await generateObject({
-      model: google('gemini-2.5-pro'), 
+      // ★ 最新の 3.1 Pro モデルを指定し、営業戦略の立案精度を極限まで高める
+      model: google('gemini-3.1-pro-preview'), 
       schema: z.object({
         industry: z.string().describe("詳細な業種（例：非鉄金属リサイクル業、総合解体業、高圧電気設備工事など）"),
         memo: z.string().describe("[属性] [排出特性または機能] [当社シナジー] [AI指示] のフォーマットに則ったプロファイルメモ"),
       }),
       prompt: `
-        あなたは株式会社月寒製作所（非鉄金属リサイクル工場）の凄腕データアナリストです。
-        以下の既存取引先について、Web上の情報や企業名から推測される事業特性を深掘りし、当社にとってどのような立ち位置の顧客かをプロファイリングしてください。
+        あなたは株式会社月寒製作所（非鉄金属リサイクル工場）の凄腕データアナリスト兼・トップ営業マンです。
+        以下の既存取引先について、企業名から推測される事業特性を深掘りし、当社にとってどのような立ち位置の顧客かをプロファイリングしてください。
 
         【調査対象】
         企業名: ${companyName}
