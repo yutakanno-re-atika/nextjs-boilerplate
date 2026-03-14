@@ -26,7 +26,8 @@ export async function POST(req: Request) {
     `;
 
     const { text } = await generateText({
-      model: google('gemini-2.5-pro'),
+      // ★ 3.1 Flashに進化
+      model: google('gemini-3.1-flash-preview'),
       system: systemPrompt,
       prompt: userPrompt,
     });
