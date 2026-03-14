@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     // メーカー名が印字で見えればそれもキーワードに含めるよう指示
     // =========================================================================
     const { text: searchKeyword } = await generateText({
-      model: google('gemini-2.5-flash'),
+      model: google('gemini-3-flash-preview'),
       messages: [
         {
           role: "user",
