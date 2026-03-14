@@ -10,7 +10,7 @@ export async function POST(req: Request) {
     const { companyName, address, industry, currentMemo } = await req.json();
 
     const { object } = await generateObject({
-      // ★ 最新の 3.1 Pro モデルを指定し、営業戦略の立案精度を極限まで高める
+      // ★ 3.1 Proに進化
       model: google('gemini-3.1-pro-preview'), 
       schema: z.object({
         industry: z.string().describe("詳細な業種（例：非鉄金属リサイクル業、総合解体業、高圧電気設備工事など）"),
