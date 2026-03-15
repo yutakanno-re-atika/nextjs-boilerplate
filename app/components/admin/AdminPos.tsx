@@ -69,10 +69,22 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   const [isProcessingVoice, setIsProcessingVoice] = useState(false);
   const recognitionRef = useRef<any>(null);
 
-  const [isListeningHint, setIsListeningHint] = useState(false);
+const [isListeningHint, setIsListeningHint] = useState(false);
   const hintRecognitionRef = useRef<any>(null);
 
-  const [simConfig, setSimConfig] = useState({ 
+  const [catalogsData, setCatalogsData] = useState<any[]>([]);
+  useEffect(() => {
+      const fetchAllCatalogs = async () => {
+          const CATALOG_FILES = ['/specs/yazaki.json', '/specs/fujikura.json', '/specs/sumitomo.json', '/specs/hst.json', '/specs/swcc.json', '/specs/fuji.json'];
+          try {
+              const responses = await Promise.all(CATALOG_FILES.map(file => fetch(file).then(res => res.ok ? res.json() : [])));
+              setCatalogsData(responses.flat());
+          } catch(e) {}
+      };
+      fetchAllCatalogs();
+  }, []);
+
+  const [simConfig, setSimConfig] = useState({
       chipCostPerKg: 30,         
       juteCostPerKg: 50,         
       laborCostPerHour: 2515,     
@@ -231,9 +243,10 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
   };
   const removeBulkImage = (index: number) => setBulkImages(prev => prev.filter((_, i) => i !== index));
 
-  const runAiAnalysis = async () => {
+const runAiAnalysis = async () => {
     if (!imgData1) return alert('1. 断面画像（必須）をアップロードしてください');
     
+    // ★ 安全装置：通信データの上限（約4MB）を超えないかチェック
     const totalSize = (imgData1.length + imgData2.length + imgData3.length + imgData4.length) * 0.75;
     if (totalSize > 4 * 1024 * 1024) {
         return alert('⚠️ 画像サイズの合計が大きすぎます（通信エラーになります）。\n不要な画像を削除するか、もう少し離れて撮影してください。');
@@ -243,9 +256,10 @@ export const AdminPos = ({ data, editingResId, localReservations, onSuccess, onC
     const progressInterval = setInterval(() => { setAiProgressStep(prev => prev < 3 ? prev + 1 : 3); }, 2000);
 
     try {
+      const catalogContext = catalogsData.map(c => `- ${c.maker} ${c.name} ${c.size} ${c.core} (外径:${c.outerDiameter}mm, 理論歩留:${c.theoreticalRatio}%)`).join('\n');
       const res = await fetch('/api/gas', { 
           method: 'POST', headers: { 'Content-Type': 'application/json' }, 
-          body: JSON.stringify({ action: 'VISION_AI_ASSESS', imageData: imgData1, imageData2: imgData2, imageData3: imgData3, imageData4: imgData4, hint: aiHint }) 
+          body: JSON.stringify({ action: 'VISION_AI_ASSESS', imageData: imgData1, imageData2: imgData2, imageData3: imgData3, imageData4: imgData4, hint: aiHint, catalogData: catalogContext }) 
       });
       const result = await res.json();
       clearInterval(progressInterval); setAiProgressStep(4); 
