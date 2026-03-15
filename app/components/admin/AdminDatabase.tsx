@@ -819,7 +819,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
             return dateB - dateA;
         });
     }
-
     return sorted;
   }, [activeTab, wires, unknownWires, castings, clients, staffs, selectedCategory, filterMaker, filterType, imageStatusFilter, searchTerm, sortConfig]);
 
@@ -870,7 +869,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   }, [sortedData, activeTab]);
 
   // ★ 修復：コンポーネント内定義のアンチパターンを排除し、純粋なレンダリング関数化
-  const renderImageSlot = (title: string, imageKey: string, colIdx: number, pendingKey: string) => {
+  const renderImageSlot = (title: string, imageKey: string, pendingKey: string) => {
     const savedImage = editingItem?.[imageKey];
     const pendingImage = editingItem?.[pendingKey];
     const hasImage = !!savedImage || !!pendingImage;
@@ -1216,4 +1215,681 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                                     {[11, 12, 13, 14, 15].map(colIdx => {
                                         const hasImage = !!item[`image${colIdx-10}`];
                                         return (
-                                            <div key={col
+                                            <div key={colIdx} className="flex flex-col gap-1 items-center w-10">
+                                                <div className={`relative w-full h-8 border ${hasImage ? 'border-gray-400' : 'border-gray-200 border-dashed'} rounded-sm overflow-hidden bg-gray-100 flex items-center justify-center group shadow-sm`}>
+                                                    {hasImage ? (
+                                                        <a href={getDriveViewUrl(item[`image${colIdx-10}`])} target="_blank" rel="noopener noreferrer" className="w-full h-full block">
+                                                            <img src={getDriveImageUrl(item[`image${colIdx-10}`])} referrerPolicy="no-referrer" className="w-full h-full object-cover group-hover:scale-110 transition-transform cursor-zoom-in" />
+                                                        </a>
+                                                    ) : ( <span className="text-[8px] text-gray-300 font-bold">空</span> )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </td>
+                            
+                            <td className="p-3 text-[10px] text-gray-400 font-mono align-top">
+                                <div className="flex flex-col gap-1"><span title="登録日">➕ {formatTimeShort(item.createdAt)}</span><span title="更新日">🔄 {formatTimeShort(item.updatedAt)}</span></div>
+                            </td>
+
+                            <td className="p-3 text-right align-top">
+                              <div className="flex flex-col items-end gap-1.5">
+                                <div className="flex gap-2">
+                                  <button onClick={() => handleOpenModal(item)} className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-200 border border-transparent hover:border-gray-300 rounded-sm transition shadow-sm"><Icons.Edit /></button>
+                                  <button onClick={() => handleDelete(item.id)} className="p-1.5 text-gray-400 hover:text-[#D32F2F] hover:bg-red-50 border border-transparent hover:border-red-200 rounded-sm transition shadow-sm"><Icons.Trash /></button>
+                                </div>
+                                {needsMerge && (
+                                  <button onClick={() => handleAiMergeAnalyze(group.name, group)} className="text-[10px] bg-blue-700 hover:bg-blue-800 text-white px-2 py-1 rounded-sm shadow-sm flex items-center gap-1">
+                                    <Icons.Cpu /> AIマージ
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                          {/* 過去データの折りたたみ表示 (PC版) */}
+                          {members.length > 0 && (
+                            <tr className="bg-gray-50/50">
+                              <td colSpan={9} className="p-0 border-b border-gray-200">
+                                <details className="group">
+                                  <summary className="text-[10px] text-gray-500 font-bold p-2 cursor-pointer hover:bg-gray-100 select-none flex items-center gap-2">
+                                      <span className="w-4 text-center">▼</span>
+                                      <Icons.Users /> <span>裏側のチームデータ（AI教師用画像） {members.length}件を表示</span>
+                                  </summary>
+                                  <div className="p-3 flex gap-3 overflow-x-auto bg-gray-100/50">
+                                     {members.map((m: any, i: number) => (
+                                       <div 
+                                         key={m.id || i} 
+                                         onClick={() => handleOpenModal(m)}
+                                         className="bg-white border border-gray-300 hover:border-blue-400 rounded-sm p-2 flex gap-3 w-64 shrink-0 relative shadow-sm cursor-pointer transition group"
+                                       >
+                                          {m.status === 'archived' && <span className="absolute top-0 right-0 bg-gray-200 text-gray-500 text-[8px] font-bold px-1.5 py-0.5 rounded-bl-sm z-10">Archived</span>}
+                                          {m.image1 ? (
+                                              <img src={getDriveImageUrl(m.image1)} className="w-14 h-14 object-cover border border-gray-200 rounded-sm shrink-0" />
+                                          ) : (
+                                              <div className="w-14 h-14 bg-gray-100 border border-gray-200 rounded-sm flex items-center justify-center text-[8px] text-gray-400 shrink-0">No Image</div>
+                                          )}
+                                          <div className="flex flex-col text-[10px] min-w-0 justify-center">
+                                             <span className="font-bold text-gray-900 truncate pr-8">{m.name}</span>
+                                             <div className="flex items-center gap-1 mt-0.5 text-[9px] text-gray-500 font-mono flex-wrap">
+                                                 <span className="font-black text-gray-800">歩留: {m.ratio ? `${m.ratio}%` : '未設定'}</span>
+                                                 <span>|</span>
+                                                 <span className="truncate">{m.maker && m.maker !== '-' ? `【${m.maker}】` : ''}{formatSqDisplay(m.sq)}/{formatCoreDisplay(m.core)}</span>
+                                                 {m.year && m.year !== '-' && <span>| {m.year}年</span>}
+                                                 {m.conductor && m.conductor !== '-' && <span>| {m.conductor}</span>}
+                                             </div>
+                                             <span className="truncate text-gray-500 text-[9px] mt-0.5 group-hover:text-blue-600">{m.memo || 'メモなし'}</span>
+                                          </div>
+                                       </div>
+                                     ))}
+                                  </div>
+                                </details>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      );
+                    })
+                  ) : (
+                    sortedData.map((item: any, idx: number) => (
+                      <tr key={item.id || idx} className="hover:bg-gray-50 transition">
+                        {activeTab === 'UNKNOWN' && (
+                            <>
+                              <td className="p-3 text-xs text-gray-500 font-mono">{formatTimeShort(item.createdAt)}</td>
+                              <td className="p-3 font-bold text-gray-900 flex items-center gap-1"><Icons.Sparkles /> {item.name}</td>
+                              <td className="p-3 font-mono font-black text-gray-900 text-lg">{item.ratio}%</td>
+                              <td className="p-3 text-xs text-gray-700 leading-relaxed bg-gray-50 rounded-sm m-1 whitespace-normal border border-gray-200 shadow-inner">{item.reason}</td>
+                            </>
+                        )}
+                        {activeTab === 'CASTINGS' && (
+                            <>
+                              <td className="p-3 font-bold text-gray-900">{item.name}</td>
+                              <td className="p-3 text-gray-600">{item.type}</td>
+                              <td className="p-3 font-mono font-black text-gray-900 text-lg">{item.ratio}%</td>
+                            </>
+                        )}
+                        {activeTab === 'CLIENTS' && (
+                            <>
+                              <td className="p-3 font-bold text-gray-900">{item.name}</td>
+                              <td className="p-3"><span className="bg-gray-200 px-2 py-1 rounded-sm text-xs font-bold text-gray-800 border border-gray-300">{item.rank}</span></td>
+                              <td className="p-3 font-mono text-gray-600">{item.phone}</td>
+                              <td className="p-3 font-mono text-gray-900 font-bold">{item.points} pt</td>
+                            </>
+                        )}
+                        {activeTab === 'STAFF' && (
+                            <>
+                              <td className="p-3 font-bold text-gray-900">{item.name}</td>
+                              <td className="p-3 text-gray-600">{item.role}</td>
+                              <td className="p-3"><span className={`px-2 py-1 rounded-sm text-xs font-bold text-white shadow-sm ${item.status === 'ACTIVE' ? 'bg-gray-900' : 'bg-gray-400'}`}>{item.status}</span></td>
+                            </>
+                        )}
+                        {activeTab !== 'UNKNOWN' && activeTab !== 'WIRES' && (
+                            <td className="p-3 text-[10px] text-gray-400 font-mono align-top">
+                                <div className="flex flex-col gap-1"><span title="登録日">➕ {formatTimeShort(item.createdAt)}</span><span title="更新日">🔄 {formatTimeShort(item.updatedAt)}</span></div>
+                            </td>
+                        )}
+
+                        <td className="p-3 text-right align-top">
+                          <div className="flex justify-end gap-2">
+                            {activeTab === 'UNKNOWN' && (
+                                <button onClick={() => handlePromoteToWire(item)} className="px-3 py-1.5 text-white bg-gray-900 hover:bg-black rounded-sm flex items-center gap-1 text-xs font-bold transition shadow-sm"><Icons.ArrowUp /> マスターへ</button>
+                            )}
+                            {activeTab === 'CLIENTS' && (
+                                <button 
+                                    onClick={() => {
+                                        setEditingItem(item);
+                                        handleEnrichClient(item);
+                                    }} 
+                                    disabled={isSubmitting}
+                                    className="p-2 text-yellow-600 hover:text-yellow-800 hover:bg-yellow-50 border border-transparent hover:border-yellow-200 rounded-sm transition shadow-sm"
+                                    title="AIで企業情報を深掘り"
+                                >
+                                    <Icons.Sparkles />
+                                </button>
+                            )}
+                            <button onClick={() => handleOpenModal(item)} className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-200 border border-transparent hover:border-gray-300 rounded-sm transition shadow-sm"><Icons.Edit /></button>
+                            <button onClick={() => handleDelete(item.id)} className="p-2 text-gray-400 hover:text-[#D32F2F] hover:bg-red-50 border border-transparent hover:border-red-200 rounded-sm transition shadow-sm"><Icons.Trash /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+
+              {/* ★ スマホ版レイアウト */}
+              <div className="md:hidden divide-y divide-gray-200 bg-white pb-20">
+                {activeTab === 'WIRES' ? (
+                  groupedWires.map((group, idx) => {
+                    const item = group.captain;
+                    if (!item) return null;
+                    const members = group.members;
+                    const needsMerge = members.filter(m => m.status !== 'archived').length > 0;
+                    const hasAiAlert = item.memo && item.memo.includes('【AIチェック警告】');
+
+                    return (
+                      <div key={item.id || idx} className={`flex flex-col border-b border-gray-200 transition-colors ${String(item.showOnWeb) === 'false' ? 'opacity-60 bg-gray-100' : ''} ${hasAiAlert ? 'bg-yellow-50/30' : ''}`}>
+                        <div className={`p-2.5 flex flex-col gap-1 ${needsMerge ? 'bg-blue-50/30' : ''}`}>
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-1.5 overflow-hidden">
+                              {String(item.showOnWeb) === 'false' ? <span className="text-gray-400 shrink-0"><Icons.EyeOff /></span> : <span className="text-gray-900 shrink-0"><Icons.Globe /></span>}
+                              {item.maker && item.maker !== '-' && <span className="text-[9px] bg-gray-100 border border-gray-200 px-1 rounded-sm text-gray-600 whitespace-nowrap shrink-0">{item.maker}</span>}
+                              <span className="text-[13px] font-black text-gray-900 truncate leading-tight">{item.name}</span>
+                              {item.material === '錫メッキ' && <span className="text-[8px] bg-[#D32F2F] text-white px-1 py-0.5 rounded-sm shrink-0">錫</span>}
+                            </div>
+                            <div className="flex items-baseline shrink-0 ml-2">
+                              <span className="text-base font-black text-gray-900 font-mono tracking-tighter">{item.ratio ? `${item.ratio}%` : '未設定'}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="flex justify-between items-center mt-0.5">
+                            <div className="text-[10px] text-gray-500 flex flex-col gap-1">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-mono bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">{formatSqDisplay(item.sq)}/{formatCoreDisplay(item.core)}</span>
+                                {item.year && item.year !== '-' && <span className="bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">{item.year}年</span>}
+                                {item.conductor && item.conductor !== '-' && <span className="bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">{item.conductor}</span>}
+                                {needsMerge && <span className="bg-red-100 text-red-700 px-1.5 py-0.5 rounded text-[8px] font-bold">重複あり</span>}
+                              </div>
+                              {hasAiAlert && <span className="bg-yellow-100 text-yellow-800 border border-yellow-300 px-1.5 py-0.5 rounded-sm font-bold flex items-center gap-0.5 shadow-sm w-max animate-pulse"><Icons.AlertTriangle /> AI再確認要</span>}
+                              <div className="text-[9px] text-gray-400 font-mono mt-0.5">更新: {formatTimeShort(item.updatedAt || item.createdAt)}</div>
+                            </div>
+                            
+                            <div className="flex items-end gap-2 h-full">
+                              <div className="flex gap-1 border-r border-gray-200 pr-2">
+                                {needsMerge && (
+                                  <button onClick={() => handleAiMergeAnalyze(group.name, group)} className="p-1.5 text-blue-700 bg-blue-50 border border-blue-200 rounded-sm font-bold text-[9px] flex items-center gap-1"><Icons.Cpu /> マージ</button>
+                                )}
+                                <button onClick={() => handleOpenModal(item)} className="p-1.5 text-gray-600 bg-gray-50 border border-gray-200 rounded-sm"><Icons.Edit /></button>
+                                <button onClick={() => handleDelete(item.id)} className="p-1.5 text-[#D32F2F] bg-red-50 border border-red-100 rounded-sm"><Icons.Trash /></button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* スマホ用 メンバーアコーディオン */}
+                        {members.length > 0 && (
+                          <details className="bg-gray-50 group border-t border-gray-100">
+                            <summary className="text-[9px] text-gray-500 font-bold p-2 cursor-pointer hover:bg-gray-100 select-none flex items-center gap-2">
+                              <span>▼ 過去の教師データ {members.length}件</span>
+                            </summary>
+                            <div className="p-2 grid grid-cols-1 gap-2 bg-gray-100/50">
+                               {members.map((m: any, i: number) => (
+                                 <div 
+                                   key={m.id || i} 
+                                   onClick={() => handleOpenModal(m)}
+                                   className="bg-white border border-gray-300 hover:border-blue-400 rounded-sm p-2 flex gap-3 relative shadow-sm cursor-pointer transition group"
+                                 >
+                                    {m.status === 'archived' && <span className="absolute top-0 right-0 bg-gray-200 text-gray-500 text-[8px] font-bold px-1.5 py-0.5 rounded-bl-sm z-10">Archived</span>}
+                                    {m.image1 ? (
+                                        <img src={getDriveImageUrl(m.image1)} className="w-14 h-14 object-cover border border-gray-200 rounded-sm shrink-0" />
+                                    ) : (
+                                        <div className="w-14 h-14 bg-gray-100 border border-gray-200 rounded-sm flex items-center justify-center text-[8px] text-gray-400 shrink-0">No Image</div>
+                                    )}
+                                    <div className="flex flex-col text-[10px] min-w-0 justify-center">
+                                       <span className="font-bold text-gray-900 truncate pr-8">{m.name}</span>
+                                       <div className="flex items-center gap-1 mt-0.5 text-[9px] text-gray-500 font-mono flex-wrap">
+                                           <span className="font-black text-gray-800">歩留: {m.ratio ? `${m.ratio}%` : '未設定'}</span>
+                                           <span>|</span>
+                                           <span className="truncate">{m.maker && m.maker !== '-' ? `【${m.maker}】` : ''}{formatSqDisplay(m.sq)}/{formatCoreDisplay(m.core)}</span>
+                                           {m.year && m.year !== '-' && <span>| {m.year}年</span>}
+                                           {m.conductor && m.conductor !== '-' && <span>| {m.conductor}</span>}
+                                       </div>
+                                       <span className="truncate text-gray-500 text-[9px] mt-0.5 group-hover:text-blue-600">{m.memo || 'メモなし'}</span>
+                                    </div>
+                                 </div>
+                               ))}
+                            </div>
+                          </details>
+                        )}
+                      </div>
+                    );
+                  })
+                ) : (
+                  sortedData.map((item: any, idx: number) => (
+                    <div key={item.id || idx} className={`p-2.5 flex flex-col gap-1 active:bg-gray-50 transition-colors`}>
+                      
+                      {activeTab === 'UNKNOWN' && (
+                        <>
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-1 font-bold text-gray-900 text-[13px] truncate"><span className="text-gray-900"><Icons.Sparkles /></span> {item.name}</div>
+                            <span className="text-base font-black text-gray-900 font-mono">{item.ratio}%</span>
+                          </div>
+                          <p className="text-[10px] text-gray-600 bg-gray-50 p-1.5 rounded border border-gray-100 line-clamp-2">{item.reason}</p>
+                          <div className="flex justify-between items-center mt-0.5">
+                            <span className="text-[9px] text-gray-400 font-mono">{formatTimeShort(item.createdAt)}</span>
+                            <div className="flex gap-1.5">
+                              <button onClick={() => handlePromoteToWire(item)} className="px-2 py-1 text-white bg-gray-900 rounded-sm text-[10px] font-bold"><Icons.ArrowUp /> マスターへ</button>
+                              <button onClick={() => handleDelete(item.id)} className="p-1.5 text-[#D32F2F] bg-red-50 rounded-sm border border-red-100"><Icons.Trash /></button>
+                            </div>
+                          </div>
+                        </>
+                      )}
+
+                      {activeTab === 'CASTINGS' && (
+                        <>
+                          <div className="flex justify-between items-center">
+                            <span className="font-bold text-[13px] text-gray-900 truncate">{item.name}</span>
+                            <span className="text-base font-black text-gray-900 font-mono">{item.ratio}%</span>
+                          </div>
+                          <div className="flex justify-between items-center mt-0.5">
+                            <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">{item.type}</span>
+                            <div className="flex gap-1.5">
+                              <button onClick={() => handleOpenModal(item)} className="p-1.5 text-gray-600 bg-gray-50 border border-gray-200 rounded-sm"><Icons.Edit /></button>
+                              <button onClick={() => handleDelete(item.id)} className="p-1.5 text-[#D32F2F] bg-red-50 border border-red-100 rounded-sm"><Icons.Trash /></button>
+                            </div>
+                          </div>
+                        </>
+                      )}
+
+                      {activeTab === 'CLIENTS' && (
+                        <>
+                          <div className="flex justify-between items-center">
+                            <span className="font-bold text-[13px] text-gray-900 truncate">{item.name}</span>
+                            <span className="text-[9px] font-bold bg-gray-100 border border-gray-200 text-gray-800 px-1.5 py-0.5 rounded-sm">{item.rank}</span>
+                          </div>
+                          <div className="flex justify-between items-center mt-0.5">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] text-gray-500 font-mono">📞 {item.phone}</span>
+                              <span className="text-[10px] text-gray-900 font-bold">✨ {item.points} pt</span>
+                            </div>
+                            
+                            <div className="flex gap-1.5">
+                              <button 
+                                  onClick={() => {
+                                      setEditingItem(item);
+                                      handleEnrichClient(item);
+                                  }} 
+                                  disabled={isSubmitting}
+                                  className="p-1.5 text-yellow-600 bg-yellow-50 border border-yellow-200 rounded-sm hover:bg-yellow-100 transition"
+                                  title="AIで企業情報を深掘り"
+                              >
+                                  <Icons.Sparkles />
+                              </button>
+                              <button onClick={() => handleOpenModal(item)} className="p-1.5 text-gray-600 bg-gray-50 border border-gray-200 rounded-sm"><Icons.Edit /></button>
+                              <button onClick={() => handleDelete(item.id)} className="p-1.5 text-[#D32F2F] bg-red-50 border border-red-100 rounded-sm"><Icons.Trash /></button>
+                            </div>
+                          </div>
+                        </>
+                      )}
+
+                      {activeTab === 'STAFF' && (
+                        <>
+                          <div className="flex justify-between items-center">
+                            <span className="font-bold text-[13px] text-gray-900">{item.name}</span>
+                            <span className={`text-[9px] font-bold text-white px-1.5 py-0.5 rounded-sm ${item.status === 'ACTIVE' ? 'bg-gray-900' : 'bg-gray-400'}`}>{item.status}</span>
+                          </div>
+                          <div className="flex justify-between items-center mt-0.5">
+                            <div className="flex flex-col gap-1">
+                               <span className="text-[10px] text-gray-500 bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded w-max">{item.role}</span>
+                               <span className="text-[9px] text-gray-400 font-mono">更新: {formatTimeShort(item.updatedAt || item.createdAt)}</span>
+                            </div>
+                            <div className="flex gap-1.5 items-end">
+                              <button onClick={() => handleOpenModal(item)} className="p-1.5 text-gray-600 bg-gray-50 border border-gray-200 rounded-sm"><Icons.Edit /></button>
+                              <button onClick={() => handleDelete(item.id)} className="p-1.5 text-[#D32F2F] bg-red-50 border border-red-100 rounded-sm"><Icons.Trash /></button>
+                            </div>
+                          </div>
+                        </>
+                      )}
+
+                    </div>
+                  ))
+                )}
+                {sortedData.length === 0 && (
+                   <div className="p-10 text-center text-gray-400 font-bold text-xs">データがありません</div>
+                )}
+              </div>
+            </div>
+        </div>
+      </div>)}
+
+      {/* ★ AIマージ提案のモーダル */}
+      {mergeProposal && (
+        <div className="fixed inset-0 bg-black/60 z-[80] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-sm shadow-2xl max-w-3xl w-full p-6 border-t-4 border-blue-700">
+            <h3 className="text-lg md:text-xl font-black mb-4 flex items-center gap-2 text-blue-900 border-b border-gray-100 pb-3">
+              <Icons.Cpu /> AI統合提案: {mergeProposal.name}
+            </h3>
+            
+            {mergeProposal.alert && (
+              <div className="mb-4 bg-red-50 border border-red-200 p-3 text-red-800 text-sm font-bold flex items-start gap-2 shadow-sm rounded-sm">
+                <Icons.AlertTriangle /> {mergeProposal.alert}
+              </div>
+            )}
+            
+            <div className="space-y-4 text-sm max-h-[60vh] overflow-y-auto">
+              <div className="bg-gray-50 p-4 rounded-sm border border-gray-200 shadow-inner">
+                <p className="text-[10px] text-gray-500 font-bold uppercase mb-2">AIの分析・評価</p>
+                <p className="font-bold text-gray-800 leading-relaxed">{mergeProposal.recommendation}</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-blue-50/50 p-4 border border-blue-200 rounded-sm">
+                  <p className="text-[10px] text-blue-600 font-bold uppercase mb-2">統合後の歩留まり（採用案）</p>
+                  <p className="font-black text-blue-900 text-2xl">{mergeProposal.mergedYieldRate}</p>
+                </div>
+                <div className="bg-blue-50/50 p-4 border border-blue-200 rounded-sm">
+                  <p className="text-[10px] text-blue-600 font-bold uppercase mb-2">統合後の詳細説明（ハイブリッド版）</p>
+                  <p className="font-bold text-gray-800 leading-relaxed">{mergeProposal.mergedDescription}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-gray-100">
+              <button onClick={() => setMergeProposal(null)} disabled={isMerging} className="px-4 py-2 text-gray-500 text-sm font-bold hover:bg-gray-100 rounded-sm disabled:opacity-50">キャンセル</button>
+              <button onClick={handleApplyMerge} disabled={isMerging} className="px-5 py-2 bg-blue-700 text-white text-sm font-bold rounded-sm shadow-md hover:bg-blue-800 disabled:opacity-50 flex items-center gap-2">
+                {isMerging ? <><Icons.Refresh /> マージ実行中...</> : '✨ 承認してゴールデンレコードを作成'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ★ AIマージ分析中のローディングモーダル */}
+      {analyzingName && !mergeProposal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[80] flex items-center justify-center p-4">
+          <div className="bg-white rounded-sm shadow-2xl p-8 flex flex-col items-center max-w-sm w-full animate-in zoom-in-95 border-t-4 border-blue-600">
+            <div className="relative w-16 h-16 mb-6">
+                <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
+                <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
+                <div className="absolute inset-0 flex items-center justify-center text-blue-600"><Icons.Cpu /></div>
+            </div>
+            <h3 className="text-lg font-black text-gray-900 mb-2 text-center">AIがデータを分析・統合中</h3>
+            <p className="text-xs text-gray-500 font-bold text-center leading-relaxed">
+              「{analyzingName}」の<br/>複数データを比較し、最適な<br/>ゴールデンレコードを生成しています...
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ★ AIアシスト登録 / 編集モーダル */}
+      {isAiModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-4xl rounded-sm shadow-2xl animate-in zoom-in-95 border-t-4 border-[#D32F2F] overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+              <h3 className="font-black text-gray-900 flex items-center gap-2">
+                <Icons.Sparkles /> AI マスター登録アシスタント
+              </h3>
+              {aiStatus !== 'ANALYZING' && <button onClick={() => setIsAiModalOpen(false)} className="text-gray-400 hover:text-gray-900"><Icons.Close /></button>}
+            </div>
+            
+            <div className="p-6 overflow-y-auto">
+              {aiStatus === 'ANALYZING' ? (
+                <div className="py-8 flex flex-col items-center animate-in fade-in zoom-in duration-500">
+                    <div className="relative w-20 h-20 mb-8">
+                        <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
+                        <div className="absolute inset-0 border-4 border-gray-900 rounded-full border-t-transparent animate-spin"></div>
+                        <div className="absolute inset-0 flex items-center justify-center text-gray-900"><Icons.Sparkles /></div>
+                    </div>
+                    <div className="space-y-5 w-full max-w-xs font-bold text-sm">
+                        <div className={`flex items-center gap-4 transition-all duration-500 ${aiProgressStep >= 1 ? 'text-gray-900 translate-x-0 opacity-100' : 'text-gray-300 -translate-x-4 opacity-0'}`}>
+                            <span className="w-6 text-center text-xl">{aiProgressStep >= 2 ? '✅' : aiProgressStep === 1 ? '🔄' : '・'}</span>
+                            <span>画像をサーバーへ送信中...</span>
+                        </div>
+                        <div className={`flex items-center gap-4 transition-all duration-500 delay-300 ${aiProgressStep >= 2 ? 'text-gray-900 translate-x-0 opacity-100' : 'text-gray-300 -translate-x-4 opacity-0'}`}>
+                            <span className="w-6 text-center text-xl">{aiProgressStep >= 3 ? '✅' : aiProgressStep === 2 ? '🔄' : '・'}</span>
+                            <span>AIが画像を解析・特徴抽出中...</span>
+                        </div>
+                        <div className={`flex items-center gap-4 transition-all duration-500 delay-300 ${aiProgressStep >= 3 ? 'text-gray-900 translate-x-0 opacity-100' : 'text-gray-300 -translate-x-4 opacity-0'}`}>
+                            <span className="w-6 text-center text-xl">{aiProgressStep >= 4 ? '✅' : aiProgressStep === 3 ? '🔄' : '・'}</span>
+                            <span>マスターデータと照合・推論中...</span>
+                        </div>
+                        <div className={`flex items-center gap-4 transition-all duration-500 delay-300 ${aiProgressStep >= 4 ? 'text-green-600 scale-110 translate-x-0 opacity-100' : 'text-gray-300 -translate-x-4 opacity-0'}`}>
+                            <span className="w-6 text-center text-xl">{aiProgressStep >= 4 ? '✨' : '・'}</span>
+                            <span>解析完了！結果を出力します</span>
+                        </div>
+                    </div>
+                </div>
+              ) : (
+                <div className="animate-in fade-in">
+                    <p className="text-xs md:text-sm text-gray-600 mb-4 leading-relaxed font-bold bg-gray-50 p-3 rounded-sm border border-gray-200">
+                        未知の線種をマスターに登録します。<br/>
+                        最大4枚の画像をアップロードしてAIに解析させてください。<br/>
+                    </p>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                        <div className="flex flex-col p-2 border-2 border-dashed border-gray-300 bg-gray-50 rounded-sm h-28">
+                            {imgData1 ? ( <div className="relative w-full h-full"><img src={`data:image/jpeg;base64,${imgData1}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData1('')} className="absolute top-1 right-1 bg-[#D32F2F] text-white p-1 rounded-sm shadow-md"><Icons.Trash/></button><span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">①断面</span></div> ) : ( <><p className="text-[10px] font-bold text-gray-900 mb-1.5 text-center">① 断面 (必須)</p><div className="flex gap-1.5 h-full"><label className="flex-1 bg-white border border-gray-300 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.Camera /><span className="text-[8px] mt-1 font-bold">カメラ</span><input type="file" onChange={e=>handleAiImageUpload(e,1)} className="hidden" accept="image/*" capture="environment"/></label><label className="flex-1 bg-white border border-gray-300 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.UploadCloud /><span className="text-[8px] mt-1 font-bold">フォルダ</span><input type="file" onChange={e=>handleAiImageUpload(e,1)} className="hidden" accept="image/*"/></label></div></> )}
+                        </div>
+                        <div className="flex flex-col p-2 border-2 border-dashed border-gray-300 bg-gray-50 rounded-sm h-28">
+                            {imgData2 ? ( <div className="relative w-full h-full"><img src={`data:image/jpeg;base64,${imgData2}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData2('')} className="absolute top-1 right-1 bg-[#D32F2F] text-white p-1 rounded-sm shadow-md"><Icons.Trash/></button><span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">②全体</span></div> ) : ( <><p className="text-[10px] font-bold text-gray-500 mb-1.5 text-center">② 全体・被覆</p><div className="flex gap-1.5 h-full"><label className="flex-1 bg-white border border-gray-300 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.Camera /><span className="text-[8px] mt-1 font-bold">カメラ</span><input type="file" onChange={e=>handleAiImageUpload(e,2)} className="hidden" accept="image/*" capture="environment"/></label><label className="flex-1 bg-white border border-gray-300 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.UploadCloud /><span className="text-[8px] mt-1 font-bold">フォルダ</span><input type="file" onChange={e=>handleAiImageUpload(e,2)} className="hidden" accept="image/*"/></label></div></> )}
+                        </div>
+                        <div className="flex flex-col p-2 border-2 border-dashed border-gray-300 bg-gray-50 rounded-sm h-28">
+                            {imgData3 ? ( <div className="relative w-full h-full"><img src={`data:image/jpeg;base64,${imgData3}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData3('')} className="absolute top-1 right-1 bg-[#D32F2F] text-white p-1 rounded-sm shadow-md"><Icons.Trash/></button><span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">③印字1</span></div> ) : ( <><p className="text-[10px] font-bold text-gray-500 mb-1.5 text-center">③ 印字アップ1</p><div className="flex gap-1.5 h-full"><label className="flex-1 bg-white border border-gray-300 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.Camera /><span className="text-[8px] mt-1 font-bold">カメラ</span><input type="file" onChange={e=>handleAiImageUpload(e,3)} className="hidden" accept="image/*" capture="environment"/></label><label className="flex-1 bg-white border border-gray-300 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.UploadCloud /><span className="text-[8px] mt-1 font-bold">フォルダ</span><input type="file" onChange={e=>handleAiImageUpload(e,3)} className="hidden" accept="image/*"/></label></div></> )}
+                        </div>
+                        <div className="flex flex-col p-2 border-2 border-dashed border-gray-300 bg-gray-50 rounded-sm h-28">
+                            {imgData4 ? ( <div className="relative w-full h-full"><img src={`data:image/jpeg;base64,${imgData4}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData4('')} className="absolute top-1 right-1 bg-[#D32F2F] text-white p-1 rounded-sm shadow-md"><Icons.Trash/></button><span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">④印字2</span></div> ) : ( <><p className="text-[10px] font-bold text-gray-500 mb-1.5 text-center">④ 印字アップ2</p><div className="flex gap-1.5 h-full"><label className="flex-1 bg-white border border-gray-300 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.Camera /><span className="text-[8px] mt-1 font-bold">カメラ</span><input type="file" onChange={e=>handleAiImageUpload(e,4)} className="hidden" accept="image/*" capture="environment"/></label><label className="flex-1 bg-white border border-gray-300 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.UploadCloud /><span className="text-[8px] mt-1 font-bold">フォルダ</span><input type="file" onChange={e=>handleAiImageUpload(e,4)} className="hidden" accept="image/*"/></label></div></> )}
+                        </div>
+                    </div>
+
+                    <div className="mb-6 bg-gray-50 border border-gray-200 p-3 rounded-sm relative shadow-inner">
+                        <label className="block text-xs font-bold text-gray-700 mb-2 flex items-center justify-between">
+                            <span>🗣️ AIへのヒント・補足（任意）</span>
+                            <button onClick={toggleHintVoiceInput} className={`p-1.5 rounded-sm transition ${isListeningHint ? 'bg-[#D32F2F] text-white animate-pulse shadow-inner' : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}>
+                                <Icons.Mic />
+                            </button>
+                        </label>
+                        <textarea className="w-full bg-white border border-gray-300 rounded-sm text-sm text-gray-900 p-3 outline-none focus:border-gray-900 min-h-[60px] shadow-sm" placeholder="例: 中身は細線の束、かなり重い、雑線は入っていない等..." value={aiHint} onChange={e => setAiHint(e.target.value)} />
+                    </div>
+
+                    <button onClick={runAiExtraction} disabled={!imgData1 && !aiHint} className="w-full bg-gray-900 hover:bg-black text-white font-bold py-3 md:py-4 rounded-sm flex justify-center items-center gap-2 disabled:bg-gray-400 transition shadow-md text-base md:text-lg">
+                        <Icons.Sparkles />解析してデータを埋める
+                    </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ★ 手動編集・新規登録モーダル */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] flex items-center justify-center p-2 md:p-0">
+          <div className="bg-white w-full max-w-4xl rounded-sm shadow-2xl animate-in zoom-in-95 duration-200 border-t-4 border-gray-900 overflow-hidden flex flex-col max-h-[95vh]">
+            <div className="p-3 md:p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50 shrink-0">
+              <h3 className="font-black text-gray-900 text-base md:text-lg flex items-center gap-2">
+                  {editingItem?.id ? <Icons.Edit /> : <Icons.Plus />}
+                  {editingItem?.id ? 'データ編集' : '新規マスター登録'}
+              </h3>
+              <div className="flex gap-2">
+                  {/* PC版：AIディープリサーチボタン */}
+                  {activeTab === 'CLIENTS' && editingItem?.name && (
+                      <button 
+                          onClick={() => handleEnrichClient()}
+                          disabled={isSubmitting}
+                          className="bg-yellow-50 text-yellow-800 border border-yellow-300 px-3 py-1.5 rounded-sm text-xs font-bold flex items-center gap-1 hover:bg-yellow-100 transition disabled:opacity-50"
+                      >
+                          <Icons.Sparkles /> AIディープリサーチで補完
+                      </button>
+                  )}
+                  <button onClick={handleCloseModal} className="text-gray-400 hover:text-gray-900 bg-white border border-gray-200 p-1.5 rounded-sm shadow-sm"><Icons.Close /></button>
+              </div>
+            </div>
+            
+            <div className="p-4 md:p-6 overflow-y-auto space-y-4 bg-white flex-1">
+                
+                {/* ★ 改善：AIクレンジングのアラート表示 */}
+                {editingItem?.memo?.includes('【AIチェック警告】') && (
+                   <div className="bg-yellow-50 border border-yellow-400 p-3 md:p-4 rounded-sm mb-4 shadow-sm relative overflow-hidden">
+                       <div className="absolute top-0 right-0 bg-yellow-400 text-yellow-900 text-[8px] md:text-[10px] font-bold px-2 py-0.5 rounded-bl-sm">AI検知</div>
+                       <h4 className="font-bold text-yellow-900 text-xs md:text-sm flex items-center gap-1.5 mb-2"><Icons.Sparkles /> 導体・材質の修正提案</h4>
+                       <p className="text-[10px] md:text-xs text-yellow-800 leading-relaxed font-bold whitespace-pre-wrap">{editingItem.memo.split('【AIチェック警告】')[1]}</p>
+                       <div className="mt-3 flex justify-end">
+                           <button onClick={() => {
+                               setEditingItem({...editingItem, memo: editingItem.memo.replace(/【AIチェック警告】[\s\S]*?(?=\n\n|$)/, '').trim()});
+                           }} className="text-[10px] font-bold bg-white border border-yellow-300 text-yellow-700 px-3 py-1.5 rounded hover:bg-yellow-100 shadow-sm transition">警告をクリアしてメモを綺麗にする</button>
+                       </div>
+                   </div>
+                )}
+
+                {activeTab === 'WIRES' && (
+                    <div className="bg-gray-50 border border-gray-200 p-3 md:p-4 rounded-sm flex justify-between items-center shadow-inner mb-2">
+                        <div>
+                            <h4 className="font-bold text-gray-900 text-sm md:text-base flex items-center gap-2">
+                                <Icons.Globe /> LPの価格表に表示する
+                            </h4>
+                            <p className="text-[9px] md:text-[10px] text-gray-500 mt-1 font-bold">OFFにすると社内システム専用になります。</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" className="sr-only peer" checked={String(editingItem.showOnWeb) !== 'false'} onChange={(e) => setEditingItem({...editingItem, showOnWeb: e.target.checked})} />
+                            <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-900"></div>
+                        </label>
+                    </div>
+                )}
+
+                {activeTab === 'WIRES' && (
+                    <div className="bg-gray-50 p-3 md:p-4 border border-gray-200 rounded-sm">
+                        <label className="block text-[10px] md:text-xs font-bold text-gray-600 mb-2 uppercase tracking-widest">マスター画像 (全5枠)</label>
+                        <div className="grid grid-cols-3 md:grid-cols-5 gap-2 md:gap-3">
+                            {renderImageSlot("① 断面", "image1", "_pendingImageData1")}
+                            {renderImageSlot("② 全体", "image2", "_pendingImageData2")}
+                            {renderImageSlot("④ 剥線", "image3", "_pendingImageData3")}
+                            {renderImageSlot("③ 印字UP1", "image4", "_pendingImageData4")}
+                            {renderImageSlot("③ 印字UP2", "image5", "_pendingImageData5")}
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'WIRES' && (editingItem._pendingImageData1 || editingItem._pendingImageData4) && (
+                    <div className="bg-blue-50 border border-blue-200 p-2 md:p-3 rounded-sm text-[10px] md:text-xs text-blue-800 font-bold flex flex-col gap-1 shadow-sm">
+                        <div className="flex items-center gap-2"><Icons.Sparkles /> 画像からAIが推論結果を自動入力しました。</div>
+                        <div className="text-gray-600 ml-6 font-normal">※ 下の「マスター登録」を押すと、アップロードした画像も同時に保存されます。</div>
+                    </div>
+                )}
+
+                {activeTab === 'WIRES' && (
+                    <>
+                        <div className="grid grid-cols-2 gap-3 md:gap-4 mt-4">
+                            <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">メーカー</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-bold shadow-sm text-sm" value={editingItem.maker || ''} onChange={e => setEditingItem({...editingItem, maker: e.target.value})} /></div>
+                            <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">品名</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-black text-base md:text-lg shadow-sm" value={editingItem.name || ''} onChange={e => setEditingItem({...editingItem, name: e.target.value})} /></div>
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                            <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">製造年</label><input type="text" placeholder="例: 2024" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 shadow-sm text-sm tabular-nums" value={editingItem.year || ''} onChange={e => setEditingItem({...editingItem, year: toHalfWidthNumber(e.target.value).replace(/\./g, '')})} /></div>
+                            <div>
+                                <label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 flex items-center justify-between uppercase tracking-widest"><span>サイズ</span><button onClick={handleCaliperInput} className="text-gray-700 hover:text-gray-900 flex items-center gap-0.5 bg-gray-100 px-1.5 py-0.5 rounded-sm border border-gray-300 transition shadow-sm"><Icons.Ruler /> <span className="text-[8px] md:text-[9px] font-bold">ノギス</span></button></label>
+                                <div className="flex rounded-sm shadow-sm relative"><input type="number" step="0.01" className="w-full bg-white border-y border-l border-gray-300 p-2.5 md:p-3 rounded-l-sm outline-none focus:border-gray-900 font-mono text-right font-bold text-sm" value={editingItem._sqValue || ''} onChange={e => setEditingItem({...editingItem, _sqValue: toHalfWidthNumber(e.target.value)})} placeholder="2.0" /><select className="border border-gray-300 bg-gray-100 px-1 md:px-2 rounded-r-sm text-[10px] md:text-xs font-bold text-gray-700 outline-none focus:border-gray-900" value={editingItem._sqUnit || 'sq'} onChange={e => setEditingItem({...editingItem, _sqUnit: e.target.value})}><option value="sq">sq</option><option value="mm">mm</option></select></div>
+                            </div>
+                            <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">芯数</label><div className="relative"><input type="number" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-mono pr-8 text-right font-bold shadow-sm text-sm" value={editingItem._coreValue || ''} onChange={e => setEditingItem({...editingItem, _coreValue: toHalfWidthNumber(e.target.value).replace(/\./g, '')})} placeholder="3" /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold pointer-events-none">C</span></div></div>
+                            <div>
+                                <label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">導体構成 (構造)</label><input type="text" placeholder="単線/7本より線等" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 shadow-sm text-xs md:text-sm font-bold" value={editingItem.conductor || ''} onChange={e => setEditingItem({...editingItem, conductor: e.target.value})} />
+                                <div className="flex flex-wrap gap-1 mt-1.5">
+                                    <button onClick={() => setEditingItem({...editingItem, conductor: '単線'})} className="bg-gray-100 hover:bg-gray-200 text-[9px] px-2 py-1.5 rounded-sm text-gray-600 font-bold border border-gray-200 transition">単線</button>
+                                    <button onClick={() => setEditingItem({...editingItem, conductor: 'より線'})} className="bg-gray-100 hover:bg-gray-200 text-[9px] px-2 py-1.5 rounded-sm text-gray-600 font-bold border border-gray-200 transition">より線</button>
+                                    {/* ★ 追加: 導体構成のショートカットボタン */}
+                                    <button onClick={() => setEditingItem({...editingItem, conductor: '7本より線'})} className="bg-gray-100 hover:bg-gray-200 text-[9px] px-2 py-1.5 rounded-sm text-gray-600 font-bold border border-gray-200 transition">7本</button>
+                                    <button onClick={() => setEditingItem({...editingItem, conductor: '19本より線'})} className="bg-gray-100 hover:bg-gray-200 text-[9px] px-2 py-1.5 rounded-sm text-gray-600 font-bold border border-gray-200 transition">19本</button>
+                                    <button onClick={() => setEditingItem({...editingItem, conductor: '細線'})} className="bg-gray-100 hover:bg-gray-200 text-[9px] px-2 py-1.5 rounded-sm text-gray-600 font-bold border border-gray-200 transition">細線</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div className="bg-gray-100 p-3 md:p-6 rounded-sm border border-gray-300 mt-4 md:mt-6 relative shadow-inner">
+                            <span className="absolute top-0 right-0 bg-gray-900 text-white text-[8px] md:text-[9px] font-bold tracking-widest px-2 py-1 rounded-bl-sm">HUMAN REQUIRED</span>
+                            <label className="block text-xs md:text-sm font-black text-gray-900 mb-3 border-b border-gray-300 pb-2">⚖️ サンプル実測 (人間による確定)</label>
+                            
+                            <div className="mb-4 bg-white p-3 md:p-4 rounded-sm border border-gray-200 shadow-sm">
+                                <label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-2 uppercase tracking-widest">成分要素 (材質)</label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    <button onClick={() => setEditingItem({...editingItem, material: '純銅'})} className={`py-1.5 md:py-2 rounded-sm text-xs md:text-sm font-bold border transition ${editingItem.material === '純銅' ? 'bg-orange-50 border-orange-400 text-orange-800' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'}`}>純銅</button>
+                                    <button onClick={() => setEditingItem({...editingItem, material: '錫メッキ'})} className={`py-1.5 md:py-2 rounded-sm text-xs md:text-sm font-bold border transition ${editingItem.material === '錫メッキ' ? 'bg-red-50 border-[#D32F2F] text-[#D32F2F] animate-pulse' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'}`}>⚠️錫メッキ</button>
+                                    <button onClick={() => setEditingItem({...editingItem, material: 'アルミ'})} className={`py-1.5 md:py-2 rounded-sm text-xs md:text-sm font-bold border transition ${editingItem.material === 'アルミ' ? 'bg-blue-50 border-blue-400 text-blue-800' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'}`}>アルミ</button>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 items-end">
+                                <div className="w-full"><label className="block text-[9px] md:text-[10px] font-bold text-gray-600 mb-1 uppercase tracking-widest">全体重量(g)</label><input type="number" step="0.001" className="w-full border border-gray-300 shadow-sm p-2.5 md:p-3 rounded-sm font-mono text-base md:text-xl outline-none focus:border-gray-900 text-right bg-white font-bold tabular-nums" value={sampleTotal} onChange={e => handleSampleTotalChange(e.target.value)} placeholder="0.000" /></div>
+                                <div className="w-full"><label className="block text-[9px] md:text-[10px] font-bold text-[#D32F2F] mb-1 uppercase tracking-widest">純銅重量(g)</label><input type="number" step="0.001" className="w-full border border-gray-300 shadow-sm p-2.5 md:p-3 rounded-sm font-mono text-base md:text-xl outline-none focus:border-[#D32F2F] text-right bg-white font-bold tabular-nums" value={sampleCopper} onChange={e => handleSampleCopperChange(e.target.value)} placeholder="0.000" /></div>
+                                
+                                <div className="w-full">
+                                    <label className="block text-[9px] md:text-[10px] font-bold text-gray-600 mb-1 uppercase tracking-widest flex justify-between items-end">
+                                        <span>被覆重量(g)</span>
+                                        <span className="text-[8px] text-gray-400 font-normal normal-case">※省略時は自動算出</span>
+                                    </label>
+                                    <input 
+                                        type="number" step="0.001" 
+                                        className="w-full border border-gray-300 shadow-sm p-2.5 md:p-3 rounded-sm font-mono text-base md:text-xl outline-none focus:border-gray-900 text-right bg-white font-bold tabular-nums placeholder:text-gray-300 placeholder:text-xs" 
+                                        value={sampleCover} 
+                                        onChange={e => handleSampleCoverChange(e.target.value)} 
+                                        placeholder={sampleTotal && sampleCopper && !sampleCover ? `(自動) ${getAutoCoverWeight()}` : "0.000"} 
+                                    />
+                                </div>
+                                
+                                <div className="w-full flex flex-col gap-1.5 md:gap-2">
+                                    <div className="bg-white border border-gray-300 shadow-sm p-1.5 md:p-2 rounded-sm flex justify-between items-center"><span className="text-[9px] md:text-[10px] font-bold text-gray-500 uppercase tracking-widest">ダスト</span><span className="font-mono text-sm md:text-base font-bold text-gray-800 tabular-nums">{getJuteWeight()}g</span></div>
+                                    <div className="bg-gray-900 border border-black shadow-inner p-1.5 md:p-2 rounded-sm flex justify-between items-center relative"><span className="text-[9px] md:text-[10px] font-bold text-gray-300 uppercase tracking-widest">歩留まり</span>{editingItem.aiEstimatedRatio && !sampleTotal && <span className="absolute -top-2 -right-2 text-[8px] bg-gray-500 text-white px-1.5 py-0.5 rounded shadow animate-pulse">AI</span>}<span className="font-mono text-lg md:text-xl font-black text-white tabular-nums">
+                                      <input type="number" step="0.01" className="w-20 bg-transparent text-right outline-none" value={editingItem.ratio || ''} onChange={e => setEditingItem({...editingItem, ratio: toHalfWidthNumber(e.target.value)})} placeholder="---" />%
+                                    </span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-4"><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">メモ / 特記事項</label><textarea className="w-full bg-white border border-gray-300 p-3 rounded-sm h-24 text-xs md:text-sm outline-none focus:border-gray-900 leading-relaxed shadow-sm whitespace-pre-wrap" value={editingItem.memo || editingItem.reason || ''} onChange={e => setEditingItem({...editingItem, memo: e.target.value, reason: e.target.value})} /></div>
+                    </>
+                )}
+
+                {activeTab === 'CASTINGS' && (
+                  <>
+                    <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">品目名</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-bold shadow-sm" value={editingItem.name || ''} onChange={e => setEditingItem({...editingItem, name: e.target.value})} /></div>
+                    <div className="grid grid-cols-2 gap-3 md:gap-4 mt-4">
+                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">種別</label><select className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-bold shadow-sm text-sm" value={editingItem.type || 'BRASS'} onChange={e => setEditingItem({...editingItem, type: e.target.value})}><option value="BRASS">真鍮 (Brass)</option><option value="ZINC">亜鉛 (Zinc)</option><option value="LEAD">鉛 (Lead)</option></select></div>
+                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">歩留まり (%)</label><input type="number" step="0.1" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm font-black text-base md:text-lg text-gray-900 outline-none focus:border-gray-900 shadow-sm text-right tabular-nums" value={editingItem.ratio || ''} onChange={e => setEditingItem({...editingItem, ratio: toHalfWidthNumber(e.target.value)})} /></div>
+                    </div>
+                  </>
+                )}
+
+                {activeTab === 'CLIENTS' && (
+                  <div className="space-y-3 md:space-y-4">
+                    <div className="grid grid-cols-2 gap-3 md:gap-4">
+                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">業者名</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-bold shadow-sm text-sm" value={editingItem.name || ''} onChange={e => setEditingItem({...editingItem, name: e.target.value})} /></div>
+                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">ランク</label><select className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-bold shadow-sm text-sm" value={editingItem.rank || 'NORMAL'} onChange={e => setEditingItem({...editingItem, rank: e.target.value})}><option value="NORMAL">一般 (NORMAL)</option><option value="BRONZE">ブロンズ (BRONZE)</option><option value="SILVER">シルバー (SILVER)</option><option value="GOLD">ゴールド (GOLD)</option><option value="VIP">VIP</option></select></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 md:gap-4">
+                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">電話番号</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-mono shadow-sm text-sm" value={editingItem.phone || ''} onChange={e => setEditingItem({...editingItem, phone: toHalfWidthNumber(e.target.value)})} /></div>
+                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">保有ポイント</label><input type="number" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm font-black text-base md:text-lg text-gray-900 outline-none focus:border-gray-900 shadow-sm text-right tabular-nums" value={editingItem.points || 0} onChange={e => setEditingItem({...editingItem, points: toHalfWidthNumber(e.target.value)})} /></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 md:gap-4">
+                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">ログインID</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-mono shadow-sm text-sm" value={editingItem.loginId || ''} onChange={e => setEditingItem({...editingItem, loginId: e.target.value})} /></div>
+                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">パスワード</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-mono shadow-sm text-sm" value={editingItem.password || ''} onChange={e => setEditingItem({...editingItem, password: e.target.value})} /></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 md:gap-4">
+                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">業種</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 shadow-sm text-sm" value={editingItem.industry || ''} onChange={e => setEditingItem({...editingItem, industry: e.target.value})} /></div>
+                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">所在地</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 shadow-sm text-sm" value={editingItem.address || ''} onChange={e => setEditingItem({...editingItem, address: e.target.value})} /></div>
+                    </div>
+                    <div>
+                        <label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest flex justify-between items-center">
+                            <span>顧客メモ・AIプロファイル</span>
+                        </label>
+                        <textarea className="w-full bg-white border border-gray-300 p-3 rounded-sm min-h-[120px] text-xs md:text-sm outline-none focus:border-gray-900 leading-relaxed shadow-sm whitespace-pre-wrap" value={editingItem.memo || ''} onChange={e => setEditingItem({...editingItem, memo: e.target.value})} />
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'STAFF' && (
+                  <div className="space-y-3 md:space-y-4">
+                    <div className="grid grid-cols-2 gap-3 md:gap-4">
+                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">スタッフ名</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-bold shadow-sm text-sm" value={editingItem.name || ''} onChange={e => setEditingItem({...editingItem, name: e.target.value})} /></div>
+                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">ステータス</label><select className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-bold shadow-sm text-sm" value={editingItem.status || 'ACTIVE'} onChange={e => setEditingItem({...editingItem, status: e.target.value})}><option value="ACTIVE">有効 (ACTIVE)</option><option value="INACTIVE">停止 (INACTIVE)</option></select></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 md:gap-4">
+                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">権限 (Role)</label><select className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-bold shadow-sm text-sm" value={editingItem.role || 'FRONT'} onChange={e => setEditingItem({...editingItem, role: e.target.value})}><option value="FRONT">受付 (FRONT)</option><option value="INSPECTION">検収 (INSPECTION)</option><option value="PLANT">工場 (PLANT)</option><option value="MANAGER">工場長 (MANAGER)</option><option value="ALL">管理者 (ALL)</option></select></div>
+                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">時給/単価</label><input type="number" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-mono shadow-sm text-right tabular-nums text-sm" value={editingItem.rate || 0} onChange={e => setEditingItem({...editingItem, rate: toHalfWidthNumber(e.target.value)})} /></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 md:gap-4">
+                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">ログインID</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-mono shadow-sm text-sm" value={editingItem.loginId || ''} onChange={e => setEditingItem({...editingItem, loginId: e.target.value})} /></div>
+                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">パスワード</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-mono shadow-sm text-sm" value={editingItem.password || ''} onChange={e => setEditingItem({...editingItem, password: e.target.value})} /></div>
+                    </div>
+                  </div>
+                )}
+            </div>
+            
+            <div className="p-3 md:p-4 border-t border-gray-200 flex justify-end gap-2 md:gap-3 bg-gray-50 shrink-0">
+              <button onClick={handleCloseModal} className="px-4 py-2 md:px-6 md:py-3 text-xs md:text-sm text-gray-600 font-bold hover:bg-gray-200 rounded-sm transition">キャンセル</button>
+              <button onClick={handleSave} disabled={isSubmitting} className="px-5 py-2 md:px-8 md:py-3 bg-[#D32F2F] text-white font-bold rounded-sm hover:bg-red-800 transition disabled:opacity-50 flex items-center gap-1 md:gap-2 shadow-md active:scale-95 text-sm md:text-lg">
+                {isSubmitting ? '保存中...' : 'マスター登録'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
