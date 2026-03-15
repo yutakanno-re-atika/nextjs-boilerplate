@@ -1,7 +1,11 @@
 // app/components/admin/AdminDatabase.tsx
+// @ts-nocheck
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 
-const STATUS_COLUMN_INDEX = 21;
+// ============================================================================
+// ⚠️ 重要：スプレッドシートの設定
+// ============================================================================
+const STATUS_COLUMN_INDEX = 21; 
 
 const Icons = {
   Plus: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>,
@@ -9,7 +13,7 @@ const Icons = {
   Trash: () => <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
   Search: () => <svg className="w-4 h-4 md:w-5 md:h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
   Image: () => <svg className="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2-2v12a2 2 0 002 2z" /></svg>,
-  Sparkles: () => <svg className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 110 2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 8.134a1 1 0 010 1.932l-3.354.933-1.179 4.456a1 1 0 01-1.934 0l-1.179-4.456-3.354-.933a1 1 0 010-1.932l3.354-.933 1.179-4.456A1 1 0 0112 2z" clipRule="evenodd" /></svg>,
+  Sparkles: () => <svg className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 8.134a1 1 0 010 1.932l-3.354.933-1.179 4.456a1 1 0 01-1.934 0l-1.179-4.456-3.354-.933a1 1 0 010-1.932l3.354-.933 1.179-4.456A1 1 0 0112 2z" clipRule="evenodd" /></svg>,
   ArrowUp: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>,
   Close: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>,
   Refresh: () => <svg className="w-4 h-4 md:w-5 md:h-5 animate-spin inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
@@ -25,40 +29,51 @@ const Icons = {
   AlertTriangle: () => <svg className="w-3 h-3 md:w-4 md:h-4 inline-block text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
   Cpu: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" /></svg>,
   Users: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
-  Brain: () => <svg className="w-4 h-4 md:w-5 md:h-5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>,
-  Radar: () => <svg className="w-4 h-4 md:w-5 md:h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>,
-  Filter: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
+  Brain: () => <svg className="w-4 h-4 md:w-5 md:h-5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
 };
 
+// ★全角数字・ピリオドを半角に自動変換（サニタイズ）する関数
 const toHalfWidthNumber = (str: any) => {
   if (str == null || str === '') return '';
-  return String(str).replace(/[０-９．]/g, (s) => s === '．' ? '.' : String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/[^0-9.]/g, ''); 
+  return String(str)
+    .replace(/[０-９．]/g, (s) => {
+      if (s === '．') return '.';
+      return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+    })
+    .replace(/[^0-9.]/g, ''); 
 };
 
 const formatTimeShort = (timeStr: string) => {
   if (!timeStr) return '-';
   const str = String(timeStr);
   const match = str.match(/(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})[T\s](\d{1,2}):(\d{1,2})/);
-  if (match) return `${match[1].substring(2)}/${match[2].padStart(2, '0')}/${match[3].padStart(2, '0')} ${match[4].padStart(2, '0')}:${match[5].padStart(2, '0')}`;
+  if (match) {
+    const YY = match[1].substring(2); const MM = match[2].padStart(2, '0'); const DD = match[3].padStart(2, '0');
+    const HH = match[4].padStart(2, '0'); const mm = match[5].padStart(2, '0');
+    return `${YY}/${MM}/${DD} ${HH}:${mm}`;
+  }
   return str.substring(0, 16);
 };
 
 const formatSqDisplay = (sq: any) => {
   if (!sq || sq === '-') return '-';
   const s = String(sq).toLowerCase();
-  return s.includes('sq') || s.includes('mm') ? sq : `${sq} sq`;
+  if (s.includes('sq') || s.includes('mm')) return sq;
+  return `${sq} sq`;
 };
 const formatCoreDisplay = (core: any) => {
   if (!core || core === '-') return '-';
   const c = String(core).toUpperCase();
-  return c.includes('C') || c.includes('芯') ? core : `${core}C`;
+  if (c.includes('C') || c.includes('芯')) return core;
+  return `${core}C`;
 };
 
 const parseSqForInput = (sq: string) => {
   if (!sq || sq === '-') return { val: '', unit: 'sq' };
   const str = String(sq).toLowerCase();
   const match = str.match(/^([\d.]+)\s*(sq|mm)?$/);
-  return match ? { val: match[1], unit: match[2] || 'sq' } : { val: str, unit: 'sq' };
+  if (match) return { val: match[1], unit: match[2] || 'sq' };
+  return { val: str, unit: 'sq' };
 };
 const parseCoreForInput = (core: string) => {
   if (!core || core === '-') return '';
@@ -69,18 +84,26 @@ const parseCoreForInput = (core: string) => {
 const getDriveImageUrl = (url: string) => {
   if (!url) return '';
   const match = url.match(/id=([^&]+)/) || url.match(/file\/d\/([^\/]+)/);
-  return match && match[1] ? `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1000` : url;
+  if (match && match[1]) {
+      return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1000`;
+  }
+  return url;
 };
 
 const getDriveViewUrl = (url: string) => {
   if (!url) return '';
   const match = url.match(/id=([^&]+)/) || url.match(/file\/d\/([^\/]+)/);
-  return match && match[1] ? `https://drive.google.com/file/d/${match[1]}/view` : url;
+  if (match && match[1]) {
+      return `https://drive.google.com/file/d/${match[1]}/view`;
+  }
+  return url;
 };
 
+// AI道場のグラフ用コンポーネント
 const DojoChart = ({ errors }: { errors: number[] }) => {
   if (!errors || errors.length === 0) return <div className="h-32 flex items-center justify-center text-gray-400">データがありません</div>;
   const max = Math.max(10, ...errors);
+  
   return (
     <div className="flex items-end h-32 gap-1 w-full mt-4 border-b border-l border-gray-300 pb-1 pl-1">
       {errors.map((err, i) => {
@@ -89,244 +112,12 @@ const DojoChart = ({ errors }: { errors: number[] }) => {
         return (
           <div key={i} className="flex-1 flex flex-col justify-end group relative">
             <div className={`w-full rounded-t-sm transition-all duration-500 ${color} hover:opacity-80`} style={{ height }}></div>
-            <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded pointer-events-none whitespace-nowrap z-10">誤差 {err}%</div>
+            <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded pointer-events-none whitespace-nowrap z-10">
+              誤差 {err}%
+            </div>
           </div>
         );
       })}
-    </div>
-  );
-};
-
-// ============================================================================
-// 📖 インライン・カタログブラウザ (超リッチ・ファクトベース版)
-// ============================================================================
-const InlineDatabaseSpecs = () => {
-  const [specs, setSpecs] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedMakers, setSelectedMakers] = useState<string[]>([]);
-  const [selectedCores, setSelectedCores] = useState<string[]>([]);
-  const [minRatio, setMinRatio] = useState<number>(0);
-  const [sizeCategory, setSizeCategory] = useState<string>('ALL');
-  
-  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'theoreticalRatio', direction: 'desc' });
-  const [isFilterOpen, setIsFilterOpen] = useState(true);
-
-  useEffect(() => {
-    setLoading(true);
-    fetch('/api/specs')
-      .then(res => res.json())
-      .then(d => {
-        if (d.success && d.data) {
-            const normalized = d.data.map((s: any) => {
-                let m = String(s.maker || '').trim();
-                if (/矢崎|YAZAKI/i.test(m)) m = '矢崎';
-                else if (/フジクラ|FUJIKURA/i.test(m)) m = 'フジクラ';
-                else if (/住電|住友|HST/i.test(m)) m = '住電HST';
-                else if (/昭和|SWCC/i.test(m)) m = 'SWCC(昭和)';
-                else if (/富士/i.test(m)) m = '富士電線';
-                else if (/カワイ/i.test(m)) m = 'カワイ電線';
-                else if (/菅波/i.test(m)) m = '菅波電線';
-                else if (/弥栄/i.test(m)) m = '弥栄電線';
-                else if (/オーナンバ/i.test(m)) m = 'オーナンバ';
-                else if (/KHD/i.test(m)) m = 'KHD';
-                else if (!m || m === '-') m = '不明';
-
-                let ratio = parseFloat(s.theoreticalRatio || s.ratio);
-
-                return {
-                    ...s,
-                    maker: m,
-                    name: s.name || '不明',
-                    size: String(s.size || s.sq || '-'),
-                    core: String(s.core || s.cores || s.coreCount || '-'),
-                    outerDiameter: s.outerDiameter || s.diameter || '-',
-                    weightPerKm: s.weightPerKm || '-',
-                    theoreticalRatio: !isNaN(ratio) ? ratio : null 
-                };
-            });
-            setSpecs(normalized);
-        }
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
-
-  const uniqueMakers = useMemo(() => Array.from(new Set(specs.map(s => s.maker).filter(m => m !== '不明' && m !== '-'))).sort(), [specs]);
-
-  const handleSort = (key: string) => {
-    let direction: 'asc' | 'desc' = 'asc';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') direction = 'desc';
-    setSortConfig({ key, direction });
-  };
-
-  const SortIcon = ({ columnKey }: { columnKey: string }) => {
-    if (sortConfig?.key !== columnKey) return <Icons.SortNone />;
-    return sortConfig.direction === 'asc' ? <Icons.SortAsc /> : <Icons.SortDesc />;
-  };
-
-  const toggleMaker = (maker: string) => setSelectedMakers(prev => prev.includes(maker) ? prev.filter(m => m !== maker) : [...prev, maker]);
-  const toggleCore = (core: string) => setSelectedCores(prev => prev.includes(core) ? prev.filter(c => c !== core) : [...prev, core]);
-
-  const filteredAndSorted = useMemo(() => {
-    let filtered = specs.filter(s => {
-      if (selectedMakers.length > 0 && !selectedMakers.includes(s.maker)) return false;
-      if (selectedCores.length > 0) {
-          const cNum = parseInt(s.core) || 1;
-          const cCat = cNum >= 5 ? '5C以上' : `${cNum}C`;
-          if (!selectedCores.includes(cCat)) return false;
-      }
-      if (sizeCategory !== 'ALL') {
-          const sq = parseFloat(s.size);
-          if (isNaN(sq)) return false; 
-          if (sizeCategory === 'SMALL' && sq > 5.5) return false;
-          if (sizeCategory === 'MEDIUM' && (sq < 8 || sq > 60)) return false;
-          if (sizeCategory === 'LARGE' && sq < 100) return false;
-      }
-      if (minRatio > 0) {
-          if (s.theoreticalRatio === null || s.theoreticalRatio < minRatio) return false;
-      }
-      if (searchTerm) {
-        const target = `${s.maker} ${s.name} ${s.size} ${s.core}`.toLowerCase();
-        const terms = searchTerm.toLowerCase().split(/[\s　]+/).filter(Boolean);
-        if (!terms.every(t => target.includes(t))) return false;
-      }
-      return true;
-    });
-
-    if (sortConfig) {
-      filtered.sort((a, b) => {
-        let aVal = a[sortConfig.key];
-        let bVal = b[sortConfig.key];
-        
-        if (aVal === null || aVal === '-') aVal = sortConfig.direction === 'asc' ? Infinity : -Infinity;
-        if (bVal === null || bVal === '-') bVal = sortConfig.direction === 'asc' ? Infinity : -Infinity;
-
-        if (sortConfig.key === 'theoreticalRatio' || sortConfig.key === 'weightPerKm' || sortConfig.key === 'outerDiameter' || sortConfig.key === 'size' || sortConfig.key === 'core') {
-            aVal = parseFloat(aVal) || 0;
-            bVal = parseFloat(bVal) || 0;
-        } else {
-            aVal = String(aVal || '').toLowerCase();
-            bVal = String(bVal || '').toLowerCase();
-        }
-
-        if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
-        if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
-        return 0;
-      });
-    }
-
-    return filtered;
-  }, [specs, searchTerm, selectedMakers, selectedCores, sizeCategory, minRatio, sortConfig]);
-
-  return (
-    <div className="flex flex-col h-full bg-gray-50">
-      <div className="p-3 md:p-4 border-b border-gray-200 bg-white z-20 shadow-sm relative">
-          <div className="flex justify-between items-center mb-3">
-              <h3 className="font-black text-gray-900 flex items-center gap-1.5"><Icons.Filter /> カタログ詳細検索</h3>
-              <button onClick={() => setIsFilterOpen(!isFilterOpen)} className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-200 hover:bg-blue-100 transition">
-                  {isFilterOpen ? 'フィルターを隠す ▲' : 'フィルターを開く ▼'}
-              </button>
-          </div>
-
-          {isFilterOpen && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in slide-in-from-top-2">
-                  <div className="bg-gray-50 p-3 rounded border border-gray-200 shadow-inner">
-                      <label className="block text-[10px] font-bold text-gray-500 uppercase mb-2">🏢 メーカー</label>
-                      <div className="flex flex-wrap gap-1.5">
-                          {uniqueMakers.slice(0, 8).map(m => (
-                              <button key={m} onClick={() => toggleMaker(m)} className={`text-[10px] font-bold px-2 py-1 rounded-sm border transition ${selectedMakers.includes(m) ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-200'}`}>
-                                  {m}
-                              </button>
-                          ))}
-                      </div>
-                  </div>
-                  <div className="bg-gray-50 p-3 rounded border border-gray-200 shadow-inner">
-                      <label className="block text-[10px] font-bold text-gray-500 uppercase mb-2">⚡ 芯数</label>
-                      <div className="flex flex-wrap gap-1.5">
-                          {['1C', '2C', '3C', '4C', '5C以上'].map(c => (
-                              <button key={c} onClick={() => toggleCore(c)} className={`text-[10px] font-bold px-2 py-1 rounded-sm border transition ${selectedCores.includes(c) ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-200'}`}>
-                                  {c}
-                              </button>
-                          ))}
-                      </div>
-                  </div>
-                  <div className="bg-gray-50 p-3 rounded border border-gray-200 shadow-inner">
-                      <label className="block text-[10px] font-bold text-gray-500 uppercase mb-2">📏 太さ目安</label>
-                      <select className="w-full bg-white border border-gray-300 p-1.5 rounded-sm text-xs font-bold text-gray-700 outline-none focus:border-gray-900" value={sizeCategory} onChange={e => setSizeCategory(e.target.value)}>
-                          <option value="ALL">指定なし (すべて)</option>
-                          <option value="SMALL">細線 (~5.5sq)</option>
-                          <option value="MEDIUM">中・太線 (8~60sq)</option>
-                          <option value="LARGE">激太線 (100sq~)</option>
-                      </select>
-                  </div>
-                  <div className="bg-gray-50 p-3 rounded border border-gray-200 shadow-inner">
-                      <label className="block text-[10px] font-bold text-[#D32F2F] uppercase mb-2">💰 銅分率 (歩留まり)</label>
-                      <select className="w-full bg-white border border-gray-300 p-1.5 rounded-sm text-xs font-black text-gray-900 outline-none focus:border-[#D32F2F]" value={minRatio} onChange={e => setMinRatio(Number(e.target.value))}>
-                          <option value={0}>指定なし</option>
-                          <option value={40}>40% 以上</option>
-                          <option value={50}>50% 以上</option>
-                          <option value={60}>60% 以上</option>
-                          <option value={70}>70% 以上</option>
-                          <option value={80}>80% 以上</option>
-                      </select>
-                  </div>
-                  <div className="lg:col-span-4 relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Icons.Search /></div>
-                      <input type="text" placeholder="フリーワード検索 (例: 矢崎 CV 14)..." className="w-full pl-9 pr-3 py-2.5 border-2 border-gray-300 rounded-sm text-sm font-bold focus:border-gray-900 outline-none shadow-sm transition" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-                  </div>
-                  <div className="lg:col-span-4 flex justify-between items-center mt-2">
-                      <button onClick={() => { setSelectedMakers([]); setSelectedCores([]); setSizeCategory('ALL'); setMinRatio(0); setSearchTerm(''); }} className="text-xs text-gray-500 font-bold hover:text-gray-900 underline">条件をリセット</button>
-                      <div className="bg-gray-900 text-white text-sm font-black px-4 py-2 rounded-sm shadow-md">該当 {filteredAndSorted.length} 件</div>
-                  </div>
-              </div>
-          )}
-          {!isFilterOpen && (
-              <div className="bg-gray-900 text-white text-xs font-black px-3 py-1.5 rounded-sm shadow-md inline-block">該当 {filteredAndSorted.length} 件</div>
-          )}
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-0 bg-white">
-        {loading ? (
-          <div className="flex flex-col justify-center items-center h-40 text-gray-500 font-bold gap-3">
-              <Icons.Refresh /> 
-              <span className="text-sm">カタログデータを読み込み・正規化中...</span>
-          </div>
-        ) : (
-          <table className="w-full text-left border-collapse text-sm min-w-[800px]">
-            <thead className="bg-gray-100 text-gray-600 uppercase tracking-wider text-xs sticky top-0 z-10 shadow-sm border-b-2 border-gray-300">
-              <tr>
-                <th className="p-3 font-bold border-r border-gray-200 cursor-pointer hover:bg-gray-200 select-none" onClick={() => handleSort('maker')}>メーカー <SortIcon columnKey="maker" /></th>
-                <th className="p-3 font-bold border-r border-gray-200 cursor-pointer hover:bg-gray-200 select-none" onClick={() => handleSort('name')}>品名 <SortIcon columnKey="name" /></th>
-                <th className="p-3 font-bold border-r border-gray-200 cursor-pointer hover:bg-gray-200 select-none" onClick={() => handleSort('size')}>サイズ/芯数 <SortIcon columnKey="size" /></th>
-                <th className="p-3 font-bold text-right border-r border-gray-200 cursor-pointer hover:bg-gray-200 select-none" onClick={() => handleSort('outerDiameter')}>仕上外径 (mm) <SortIcon columnKey="outerDiameter" /></th>
-                <th className="p-3 font-bold text-right border-r border-gray-200 cursor-pointer hover:bg-gray-200 select-none" onClick={() => handleSort('weightPerKm')}>質量 (kg/km) <SortIcon columnKey="weightPerKm" /></th>
-                <th className="p-3 font-bold text-right text-[#D32F2F] bg-red-50 border-b-2 border-red-200 cursor-pointer hover:bg-red-100 select-none" onClick={() => handleSort('theoreticalRatio')}>理論歩留まり <SortIcon columnKey="theoreticalRatio" /></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {filteredAndSorted.map((s, i) => (
-                <tr key={i} className="hover:bg-red-50/30 transition group">
-                  <td className="p-3 font-bold text-gray-700 border-r border-gray-100">{s.maker && s.maker !== '不明' ? `【${s.maker}】` : <span className="text-gray-400">不明</span>}</td>
-                  <td className="p-3 font-black text-gray-900 border-r border-gray-100">{s.name}</td>
-                  <td className="p-3 font-mono text-gray-600 border-r border-gray-100 font-bold">
-                      {s.size !== '-' ? `${s.size}sq` : '-'} {s.core !== '-' ? `/ ${s.core}C` : ''}
-                  </td>
-                  <td className="p-3 font-mono text-right border-r border-gray-100">{s.outerDiameter}</td>
-                  <td className="p-3 font-mono text-right border-r border-gray-100">{s.weightPerKm}</td>
-                  <td className="p-3 font-mono font-black text-right text-lg bg-red-50/10 text-[#D32F2F] group-hover:bg-red-50/50">
-                      {s.theoreticalRatio !== null ? `${s.theoreticalRatio.toFixed(1)}%` : <span className="text-xs text-gray-400 font-normal border border-gray-300 px-1.5 py-0.5 rounded bg-white">データなし</span>}
-                  </td>
-                </tr>
-              ))}
-              {filteredAndSorted.length === 0 && (
-                <tr><td colSpan={6} className="p-16 text-center text-gray-400 font-bold">該当するカタログデータがありません</td></tr>
-              )}
-            </tbody>
-          </table>
-        )}
-      </div>
     </div>
   );
 };
@@ -344,19 +135,25 @@ const getCategory = (name: string) => {
 };
 
 export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoiceOutputEnabled?: boolean }) => {
-  const [activeTab, setActiveTab] = useState<'WIRES' | 'SPECS' | 'UNKNOWN' | 'CASTINGS' | 'CLIENTS' | 'STAFF' | 'DOJO'>('WIRES');
+  // ★ タブに 'DOJO' を追加
+  const [activeTab, setActiveTab] = useState<'WIRES' | 'UNKNOWN' | 'CASTINGS' | 'CLIENTS' | 'STAFF' | 'DOJO'>('WIRES');
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('すべて');
   const [filterMaker, setFilterMaker] = useState('');
   const [filterType, setFilterType] = useState('');
   const [imageStatusFilter, setImageStatusFilter] = useState<'ALL' | 'COMPLETE' | 'PARTIAL' | 'NONE'>('ALL');
+
   const [isListening, setIsListening] = useState(false);
   const [voiceText, setVoiceText] = useState('');
   const recognitionRef = useRef<any>(null);
+
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'updatedAt', direction: 'desc' });
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [aiStatus, setAiStatus] = useState<'IDLE' | 'ANALYZING'>('IDLE');
   const [aiProgressStep, setAiProgressStep] = useState(0); 
@@ -367,16 +164,19 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const [aiHint, setAiHint] = useState<string>('');
   const [isListeningHint, setIsListeningHint] = useState(false);
   const hintRecognitionRef = useRef<any>(null);
+
   const [analyzingName, setAnalyzingName] = useState<string | null>(null);
   const [mergeProposal, setMergeProposal] = useState<any>(null);
   const [isMerging, setIsMerging] = useState(false);
-  const [cleansingState, setCleansingState] = useState<{ isRunning: boolean; current: number; total: number }>({ isRunning: false, current: 0, total: 0 });
-  const [dojoProgress, setDojoProgress] = useState({ isRunning: false, current: 0, total: 0 });
   
+  const [cleansingState, setCleansingState] = useState<{ isRunning: boolean; current: number; total: number }>({ isRunning: false, current: 0, total: 0 });
+  
+  // ★ AI道場用ステート
+  const [dojoProgress, setDojoProgress] = useState({ isRunning: false, current: 0, total: 0 });
   const aiTrainingHistory = data?.aiTraining || [];
   const recentErrors = aiTrainingHistory.slice(-30).map((t: any) => Number(t.errorMargin || 0));
   const avgError = recentErrors.length > 0 ? (recentErrors.reduce((a:number,b:number)=>a+b,0) / recentErrors.length).toFixed(2) : '0.00';
-  
+
   const [sampleTotal, setSampleTotal] = useState<number | ''>('');
   const [sampleCopper, setSampleCopper] = useState<number | ''>('');
   const [sampleCover, setSampleCover] = useState<number | ''>('');
@@ -407,6 +207,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       try {
         const pendingData = JSON.parse(pendingItemStr);
         localStorage.removeItem('factoryOS_pendingAIItem'); 
+
         setActiveTab('WIRES'); 
         setEditingItem({
             maker: '', name: pendingData.name || '', year: '', _sqValue: '', _sqUnit: 'sq', _coreValue: '',
@@ -426,7 +227,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
   const handleTabChange = (tab: any) => {
     setActiveTab(tab); setSearchTerm(''); setSelectedCategory('すべて'); setFilterMaker(''); setFilterType(''); 
-    setSortConfig({ key: 'updatedAt', direction: 'desc' });
+    setSortConfig({ key: 'updatedAt', direction: 'desc' }); // タブ切り替え時もデフォルトソートに
     setImageStatusFilter('ALL');
   };
 
@@ -535,6 +336,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const handleSave = async () => {
     let finalItem = { ...editingItem };
     
+    // ★ 改善：保存ボタンを押した瞬間に、全角数字を強制的に半角へ変換
     if (activeTab === 'WIRES') {
         finalItem.year = finalItem.year ? toHalfWidthNumber(finalItem.year).replace(/\./g, '') : '';
         finalItem._sqValue = finalItem._sqValue ? toHalfWidthNumber(finalItem._sqValue) : '';
@@ -617,8 +419,9 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     return {};
   };
 
+  // ★ フロントエンド主導のデータクレンジング
   const runDataCleansing = async () => {
-      const targets = wires.filter((w: any) => w.status !== 'archived' && (w.image1 || w.image3) && !(w.memo || '').includes('【AIチェック警告】'));
+      const targets = wires.filter(w => w.status !== 'archived' && (w.image1 || w.image3) && !(w.memo || '').includes('【AIチェック警告】'));
       if (targets.length === 0) return alert('クレンジングの対象となる未チェックデータがありません。');
       if (!confirm(`全 ${targets.length} 件のデータに対してAIクレンジングを実行します。\n（勝手に上書きはされず、差異があったデータにのみアラートが付きます）\n画面を閉じずにそのままお待ちください。`)) return;
 
@@ -636,7 +439,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
               const json = await res.json();
               if (json.status === 'success' && json.alerted) alertedCount++;
           } catch (e) { }
-          await new Promise(resolve => setTimeout(resolve, 3000)); 
+          await new Promise(resolve => setTimeout(resolve, 3000)); // API制限回避
       }
 
       alert(`クレンジングが完了しました！\n新たに ${alertedCount} 件のデータにアラートが設定されました。`);
@@ -644,8 +447,9 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       window.location.reload();
   };
 
+  // ★ AI道場（総当たり特訓）
   const runDojoAll = async () => {
-      const targets = wires.filter((w: any) => w.status !== 'archived' && (w.image1 || w.image3) && w.ratio);
+      const targets = wires.filter(w => w.status !== 'archived' && (w.image1 || w.image3) && w.ratio);
       if (targets.length === 0) return alert('テストできる画像・歩留まり付きのデータがありません。');
       if (!confirm(`全 ${targets.length} 件のデータで「AI総当たり特訓」を開始しますか？\n※完了まで数十分〜1時間程度かかる場合があります。\n※寝ている間など、PCと画面を開いたまま放置してください。`)) return;
 
@@ -665,7 +469,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
               if (json.success) successCount++;
           } catch (e) { console.error(`Dojo Error on ${target.id}`, e); }
           
-          await new Promise(resolve => setTimeout(resolve, 4000)); 
+          await new Promise(resolve => setTimeout(resolve, 4000)); // API制限回避のため4秒待機
       }
 
       alert(`全 ${targets.length} 件の特訓が完了しました！（成功: ${successCount}件）`);
@@ -673,8 +477,9 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       window.location.reload();
   };
 
+  // ★ AI道場（ランダム1件テスト）
   const runDojoRandom = async () => {
-      const targets = wires.filter((w: any) => w.status !== 'archived' && (w.image1 || w.image3) && w.ratio);
+      const targets = wires.filter(w => w.status !== 'archived' && (w.image1 || w.image3) && w.ratio);
       if (targets.length === 0) return alert('テストできる画像・歩留まり付きのデータがありません。');
       const target = targets[Math.floor(Math.random() * targets.length)];
       
@@ -694,6 +499,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       setDojoProgress({ isRunning: false, current: 0, total: 0 });
   };
 
+  // ★ 修正3：マージ時の統合「品名」がごちゃごちゃにならないようにする
   const handleAiMergeAnalyze = async (wireName: string, groupData: any) => {
     setAnalyzingName(wireName);
     const records = [groupData.captain, ...groupData.members];
@@ -704,6 +510,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       });
       const data = await res.json();
       if (data.success) {
+        // ★ ここで表示名（wireName）ではなく、captain（ベースデータ）の純粋な name をセットする
         const pureName = groupData.captain?.name || wireName;
         setMergeProposal({ name: pureName, records, allIds: groupData.allIds, ...data.result });
       } else {
@@ -737,7 +544,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         sheetName: 'Products_Wire',
         data: {
           ...baseItem,
-          name: mergeProposal.name,
+          name: mergeProposal.name, // ★ ここに上で取得した「純粋な品名」が入る
           ratio: mergeProposal.mergedYieldRate,
           memo: `【AI統合データ】\n${mergeProposal.mergedDescription}\n\n※過去${mergeProposal.records.length}件のデータを統合。`,
           status: 'active'
@@ -812,7 +619,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
   const toggleVoiceInput = () => {
       if (isListening) { if (recognitionRef.current) recognitionRef.current.stop(); return; }
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) return;
       const recognition = new SpeechRecognition();
       recognition.lang = 'ja-JP'; recognition.continuous = true; recognition.interimResults = true;
@@ -842,7 +649,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
           if (hintRecognitionRef.current) hintRecognitionRef.current.stop();
           return;
       }
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) return alert('非対応');
       const recognition = new SpeechRecognition();
       recognition.lang = 'ja-JP'; recognition.continuous = true; recognition.interimResults = true;
@@ -911,104 +718,112 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') direction = 'desc';
     setSortConfig({ key, direction });
   };
-  const SortIcon = ({ columnKey }: { columnKey: string }) => {
+
+  // ★ 修復：コンポーネント内定義のアンチパターンを排除し、純粋なレンダリング関数化
+  const renderSortIcon = (columnKey: string) => {
     if (sortConfig?.key !== columnKey) return <Icons.SortNone />;
     return sortConfig.direction === 'asc' ? <Icons.SortAsc /> : <Icons.SortDesc />;
   };
 
-  let filteredData = [];
-  
-  if (activeTab === 'WIRES') {
-      filteredData = wires.filter((w:any) => {
-          if (selectedCategory !== 'すべて' && getCategory(w.name) !== selectedCategory) return false;
-          if (filterMaker && w.maker !== filterMaker) return false;
+  // ★ 修復：再レンダリングの暴発を防ぐため、フィルタリングとソートを完全にメモ化
+  const sortedData = useMemo(() => {
+    let filteredData = [];
+    
+    if (activeTab === 'WIRES') {
+        filteredData = wires.filter((w:any) => {
+            if (selectedCategory !== 'すべて' && getCategory(w.name) !== selectedCategory) return false;
+            if (filterMaker && w.maker !== filterMaker) return false;
 
-          const has1 = !!w.image1; const has2 = !!w.image2; const has3 = !!w.image3;
-          if (imageStatusFilter === 'COMPLETE' && !(has1 && has2 && has3)) return false;
-          if (imageStatusFilter === 'NONE' && (has1 || has2 || has3)) return false;
-          if (imageStatusFilter === 'PARTIAL' && ((has1 && has2 && has3) || (!has1 && !has2 && !has3))) return false;
+            const has1 = !!w.image1; const has2 = !!w.image2; const has3 = !!w.image3;
+            if (imageStatusFilter === 'COMPLETE' && !(has1 && has2 && has3)) return false;
+            if (imageStatusFilter === 'NONE' && (has1 || has2 || has3)) return false;
+            if (imageStatusFilter === 'PARTIAL' && ((has1 && has2 && has3) || (!has1 && !has2 && !has3))) return false;
 
-          if (searchTerm) {
-              const coreStr = String(w.core || w.cores || w.coreCount || '');
-              const coreFormatted = coreStr && coreStr !== '-' ? `${coreStr}c ${coreStr}芯` : '';
-              const sqStr = String(w.size || w.sq || '');
-              const sqFormatted = sqStr && sqStr !== '-' ? `${sqStr}sq ${sqStr}スケ` : '';
-              
-              const searchTarget = `${w.name} ${w.maker} ${sqFormatted} ${sqStr} ${coreFormatted} ${coreStr} ${w.year}`.toLowerCase();
-              const terms = searchTerm.toLowerCase().replace(/　/g, ' ').split(' ').filter(Boolean);
-              return terms.every(term => searchTarget.includes(term));
-          }
-          return true;
-      });
-  }
-  if (activeTab === 'UNKNOWN') {
-      filteredData = unknownWires.filter((u:any) => {
-          if (searchTerm) {
-              const searchTarget = `${u.name} ${u.reason}`.toLowerCase();
-              const terms = searchTerm.toLowerCase().replace(/　/g, ' ').split(' ').filter(Boolean);
-              return terms.every(term => searchTarget.includes(term));
-          }
-          return true;
-      });
-  }
-  if (activeTab === 'CASTINGS') {
-      filteredData = castings.filter((c:any) => {
-          if (filterType && c.type !== filterType) return false;
-          if (searchTerm) {
-              const searchTarget = `${c.name} ${c.type}`.toLowerCase();
-              const terms = searchTerm.toLowerCase().replace(/　/g, ' ').split(' ').filter(Boolean);
-              return terms.every(term => searchTarget.includes(term));
-          }
-          return true;
-      });
-  }
-  if (activeTab === 'CLIENTS') {
-      filteredData = clients.filter((c:any) => {
-          if (searchTerm) {
-              const searchTarget = `${c.name} ${c.phone} ${c.rank} ${c.industry}`.toLowerCase();
-              const terms = searchTerm.toLowerCase().replace(/　/g, ' ').split(' ').filter(Boolean);
-              return terms.every(term => searchTarget.includes(term));
-          }
-          return true;
-      });
-  }
-  if (activeTab === 'STAFF') {
-      filteredData = staffs.filter((s:any) => {
-          if (searchTerm) {
-              const searchTarget = `${s.name} ${s.role}`.toLowerCase();
-              const terms = searchTerm.toLowerCase().replace(/　/g, ' ').split(' ').filter(Boolean);
-              return terms.every(term => searchTarget.includes(term));
-          }
-          return true;
-      });
-  }
+            if (searchTerm) {
+                const coreStr = String(w.core || w.cores || w.coreCount || '');
+                const coreFormatted = coreStr && coreStr !== '-' ? `${coreStr}c ${coreStr}芯` : '';
+                const sqStr = String(w.size || w.sq || '');
+                const sqFormatted = sqStr && sqStr !== '-' ? `${sqStr}sq ${sqStr}スケ` : '';
+                
+                const searchTarget = `${w.name} ${w.maker} ${sqFormatted} ${sqStr} ${coreFormatted} ${coreStr} ${w.year}`.toLowerCase();
+                const terms = searchTerm.toLowerCase().replace(/　/g, ' ').split(' ').filter(Boolean);
+                return terms.every(term => searchTarget.includes(term));
+            }
+            return true;
+        });
+    }
+    if (activeTab === 'UNKNOWN') {
+        filteredData = unknownWires.filter((u:any) => {
+            if (searchTerm) {
+                const searchTarget = `${u.name} ${u.reason}`.toLowerCase();
+                const terms = searchTerm.toLowerCase().replace(/　/g, ' ').split(' ').filter(Boolean);
+                return terms.every(term => searchTarget.includes(term));
+            }
+            return true;
+        });
+    }
+    if (activeTab === 'CASTINGS') {
+        filteredData = castings.filter((c:any) => {
+            if (filterType && c.type !== filterType) return false;
+            if (searchTerm) {
+                const searchTarget = `${c.name} ${c.type}`.toLowerCase();
+                const terms = searchTerm.toLowerCase().replace(/　/g, ' ').split(' ').filter(Boolean);
+                return terms.every(term => searchTarget.includes(term));
+            }
+            return true;
+        });
+    }
+    if (activeTab === 'CLIENTS') {
+        filteredData = clients.filter((c:any) => {
+            if (searchTerm) {
+                const searchTarget = `${c.name} ${c.phone} ${c.rank} ${c.industry}`.toLowerCase();
+                const terms = searchTerm.toLowerCase().replace(/　/g, ' ').split(' ').filter(Boolean);
+                return terms.every(term => searchTarget.includes(term));
+            }
+            return true;
+        });
+    }
+    if (activeTab === 'STAFF') {
+        filteredData = staffs.filter((s:any) => {
+            if (searchTerm) {
+                const searchTarget = `${s.name} ${s.role}`.toLowerCase();
+                const terms = searchTerm.toLowerCase().replace(/　/g, ' ').split(' ').filter(Boolean);
+                return terms.every(term => searchTarget.includes(term));
+            }
+            return true;
+        });
+    }
 
-  let sortedData = [...filteredData];
-  if (sortConfig !== null) {
-    sortedData.sort((a, b) => {
-      let aValue = a[sortConfig.key]; let bValue = b[sortConfig.key];
-      const isDate = (val: any) => typeof val === 'string' && val.match(/^\d{4}[-\/]\d{2}[-\/]\d{2}/);
-      if (isDate(aValue) || isDate(bValue)) {
-          const dateA = aValue ? new Date(aValue).getTime() : 0;
-          const dateB = bValue ? new Date(bValue).getTime() : 0;
-          if (dateA < dateB) return sortConfig.direction === 'asc' ? -1 : 1;
-          if (dateA > dateB) return sortConfig.direction === 'asc' ? 1 : -1;
-          return 0;
-      }
-      if (aValue !== '' && bValue !== '' && !isNaN(Number(aValue)) && !isNaN(Number(bValue))) { aValue = Number(aValue); bValue = Number(bValue); } 
-      else { aValue = String(aValue || '').toLowerCase(); bValue = String(bValue || '').toLowerCase(); }
-      if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-      if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
-      return 0;
-    });
-  } else {
-      sortedData.sort((a, b) => {
-          const dateA = a.updatedAt ? new Date(a.updatedAt).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
-          const dateB = b.updatedAt ? new Date(b.updatedAt).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
-          return dateB - dateA;
-      });
-  }
+    let sorted = [...filteredData];
+    if (sortConfig !== null) {
+        sorted.sort((a, b) => {
+            let aValue = a[sortConfig.key]; let bValue = b[sortConfig.key];
+            const isDate = (val: any) => typeof val === 'string' && val.match(/^\d{4}[-\/]\d{2}[-\/]\d{2}/);
+            if (isDate(aValue) || isDate(bValue)) {
+                const dateA = aValue ? new Date(aValue).getTime() : 0;
+                const dateB = bValue ? new Date(bValue).getTime() : 0;
+                if (dateA < dateB) return sortConfig.direction === 'asc' ? -1 : 1;
+                if (dateA > dateB) return sortConfig.direction === 'asc' ? 1 : -1;
+                return 0;
+            }
+            if (aValue !== '' && bValue !== '' && !isNaN(Number(aValue)) && !isNaN(Number(bValue))) { aValue = Number(aValue); bValue = Number(bValue); } 
+            else { aValue = String(aValue || '').toLowerCase(); bValue = String(bValue || '').toLowerCase(); }
+            if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+            if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+            return 0;
+        });
+    } else {
+        sorted.sort((a, b) => {
+            const dateA = a.updatedAt ? new Date(a.updatedAt).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
+            const dateB = b.updatedAt ? new Date(b.updatedAt).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
+            return dateB - dateA;
+        });
+    }
 
+    return sorted;
+  }, [activeTab, wires, unknownWires, castings, clients, staffs, selectedCategory, filterMaker, filterType, imageStatusFilter, searchTerm, sortConfig]);
+
+  // ★ 線種データをさらに厳密なキーでグループ化
   const groupedWires = useMemo(() => {
     if (activeTab !== 'WIRES') return [];
     const groups: { [key: string]: { captain: any, members: any[], allIds: string[] } } = {};
@@ -1024,6 +839,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       
       let groupKey = `${maker}${name}${voltage}${sq}${core}${year}${conductor}`.trim();
 
+      // 🚨 安全装置：スケア(sq)や芯数(core)が未登録のデータは、マージによる破壊を防ぐため完全に孤立させる
       if (!w.sq || w.sq === '-' || !w.core || w.core === '-') {
          groupKey = `${groupKey}_独自ID:${w.id}`;
       }
@@ -1053,9 +869,10 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     return Object.entries(groups).map(([name, data]) => ({ name, ...data }));
   }, [sortedData, activeTab]);
 
-  const ImageSlot = ({ title, imageKey, colIdx, pendingKey }: { title: string, imageKey: string, colIdx: number, pendingKey: string }) => {
-    const savedImage = editingItem[imageKey];
-    const pendingImage = editingItem[pendingKey];
+  // ★ 修復：コンポーネント内定義のアンチパターンを排除し、純粋なレンダリング関数化
+  const renderImageSlot = (title: string, imageKey: string, colIdx: number, pendingKey: string) => {
+    const savedImage = editingItem?.[imageKey];
+    const pendingImage = editingItem?.[pendingKey];
     const hasImage = !!savedImage || !!pendingImage;
 
     return (
@@ -1094,14 +911,15 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
           </div>
         </div>
         <div className="flex bg-gray-100 p-1 rounded-sm overflow-x-auto shadow-inner border border-gray-200">
-          {['WIRES', 'SPECS', 'UNKNOWN', 'CASTINGS', 'CLIENTS', 'STAFF', 'DOJO'].map(tab => (
+          {['WIRES', 'UNKNOWN', 'CASTINGS', 'CLIENTS', 'STAFF', 'DOJO'].map(tab => (
             <button key={tab} onClick={() => handleTabChange(tab as any)} className={`px-3 py-1.5 md:px-4 md:py-2 rounded-sm text-[10px] md:text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1 ${activeTab === tab ? 'bg-white text-gray-900 shadow-sm border border-gray-300' : 'text-gray-500 hover:text-gray-900'}`}>
-              {tab === 'WIRES' ? '電線' : tab === 'SPECS' ? '📖 カタログ' : tab === 'UNKNOWN' ? '💡 未知' : tab === 'CASTINGS' ? '非鉄' : tab === 'CLIENTS' ? '顧客' : tab === 'STAFF' ? 'スタッフ' : '🥋 AI道場'}
+              {tab === 'WIRES' ? '電線' : tab === 'UNKNOWN' ? '💡 未知' : tab === 'CASTINGS' ? '非鉄' : tab === 'CLIENTS' ? '顧客' : tab === 'STAFF' ? 'スタッフ' : '🥋 AI道場'}
             </button>
           ))}
         </div>
       </header>
 
+      {/* ★ AI一括パトロールボタン (WIRESタブのみ表示) */}
       {activeTab === 'WIRES' && (
           <div className="bg-gray-900 px-4 py-3 border-b border-gray-800 text-white flex flex-col md:flex-row justify-between items-start md:items-center text-xs shadow-inner gap-3">
              <div className="flex items-center gap-2">
@@ -1126,13 +944,93 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
           </div>
       )}
 
-      {activeTab === 'SPECS' && (
-        <div className="bg-white border border-gray-200 shadow-sm rounded-sm flex-1 flex flex-col overflow-hidden relative mt-2">
-          <InlineDatabaseSpecs />
-        </div>
+      {activeTab === 'DOJO' && (
+          <div className="p-4 md:p-6 bg-gray-100 flex-1 overflow-y-auto">
+              <div className="bg-gray-900 text-white p-6 md:p-8 rounded-sm shadow-xl relative overflow-hidden mb-6 border-b-4 border-[#D32F2F]">
+                  <div className="absolute top-0 right-0 p-8 opacity-10 transform scale-150 pointer-events-none"><Icons.Brain /></div>
+                  <h2 className="text-xl md:text-2xl font-black mb-3 flex items-center gap-2 relative z-10"><Icons.Brain /> AI道場 (Teacher-Student Training)</h2>
+                  <p className="text-xs md:text-sm text-gray-300 leading-relaxed max-w-3xl relative z-10 font-bold">
+                      マスターに蓄積された「正解データ（画像と実測歩留まり）」を使って、AIに歩留まり当てクイズをさせます。<br/>
+                      全件総当たりで特訓させることで、AIは独自の視覚的特徴（被覆の厚さや光沢など）と歩留まりの関係性を自己学習します。
+                  </p>
+                  
+                  <div className="mt-6 md:mt-8 flex flex-col sm:flex-row gap-3 relative z-10">
+                      <button onClick={runDojoRandom} disabled={dojoProgress.isRunning} className="bg-white text-gray-900 font-bold px-6 py-3.5 rounded-sm shadow-md hover:bg-gray-100 transition disabled:opacity-50 text-sm flex items-center justify-center gap-2">
+                          🎲 ランダム1件でテスト
+                      </button>
+                      <button onClick={runDojoAll} disabled={dojoProgress.isRunning} className="bg-[#D32F2F] text-white font-bold px-6 py-3.5 rounded-sm shadow-md hover:bg-red-800 transition flex items-center justify-center gap-2 disabled:opacity-50 text-sm">
+                          <Icons.Sparkles /> ⚔️ 全件総当たり特訓 (一晩コース)
+                      </button>
+                  </div>
+                  
+                  {dojoProgress.isRunning && (
+                      <div className="mt-6 relative z-10 bg-gray-800 p-4 rounded-sm border border-gray-700 shadow-inner">
+                          <div className="flex justify-between text-[10px] md:text-xs font-bold text-gray-300 mb-2">
+                              <span className="flex items-center gap-2"><span className="animate-spin"><Icons.Refresh /></span> AI特訓中... (PCと画面を開いたままお待ちください)</span>
+                              <span className="font-mono">{dojoProgress.current} / {dojoProgress.total} 件</span>
+                          </div>
+                          <div className="w-full bg-gray-900 rounded-full h-2.5 overflow-hidden shadow-inner">
+                              <div className="bg-green-500 h-full transition-all duration-500" style={{ width: `${(dojoProgress.current / dojoProgress.total) * 100}%` }}></div>
+                          </div>
+                      </div>
+                  )}
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-2 bg-white border border-gray-200 p-5 md:p-6 rounded-sm shadow-sm flex flex-col">
+                      <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 border-b border-gray-100 pb-2">AIの成長チャート (直近30回の推論誤差)</h3>
+                      <div className="flex items-end gap-3 mb-2">
+                          <div className="text-3xl md:text-4xl font-black text-gray-900 tracking-tighter tabular-nums">
+                              平均誤差: <span className={Number(avgError) > 3 ? 'text-[#D32F2F]' : 'text-green-600'}>±{avgError}%</span>
+                          </div>
+                          <div className="text-[10px] md:text-xs text-gray-500 font-bold mb-1 bg-gray-100 px-2 py-1 rounded-sm border border-gray-200">
+                              目標: ±2.0%以内
+                          </div>
+                      </div>
+                      <div className="flex-1 min-h-[150px] bg-gray-50 rounded-sm border border-gray-100 p-2">
+                          <DojoChart errors={recentErrors} />
+                      </div>
+                  </div>
+                  
+                  <div className="bg-white border border-gray-200 p-5 md:p-6 rounded-sm shadow-sm h-[500px] flex flex-col">
+                      <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 border-b border-gray-100 pb-2">最新の特訓ログ</h3>
+                      <div className="flex-1 overflow-y-auto space-y-3 pr-2 no-scrollbar">
+                          {aiTrainingHistory.slice().reverse().slice(0, 50).map((log: any, i: number) => (
+                              <div key={i} className="bg-gray-50 border border-gray-200 p-3 rounded-sm shadow-inner text-xs transition hover:border-gray-400 group">
+                                  <div className="flex justify-between items-start mb-2 border-b border-gray-200 pb-2">
+                                      <div className="font-bold text-gray-900 truncate pr-2 text-[11px]" title={log.wireName}>{log.wireName}</div>
+                                      <div className="font-mono text-[9px] text-gray-500 whitespace-nowrap bg-white px-1.5 py-0.5 rounded border border-gray-100">{formatTimeShort(log.date)}</div>
+                                  </div>
+                                  <div className="grid grid-cols-3 gap-2 mb-2 text-center">
+                                      <div className="bg-white p-1.5 rounded-sm border border-gray-200 shadow-sm">
+                                          <p className="text-[8px] text-gray-500 font-bold mb-0.5">正解</p>
+                                          <p className="font-black text-gray-900 font-mono text-[13px]">{log.actualRatio}%</p>
+                                      </div>
+                                      <div className="bg-white p-1.5 rounded-sm border border-gray-200 shadow-sm">
+                                          <p className="text-[8px] text-gray-500 font-bold mb-0.5">AI推測</p>
+                                          <p className="font-black text-gray-900 font-mono text-[13px]">{log.predictedRatio}%</p>
+                                      </div>
+                                      <div className={`p-1.5 rounded-sm border shadow-sm font-bold text-white flex flex-col justify-center ${Number(log.errorMargin) <= 2.0 ? 'bg-green-500 border-green-600' : Number(log.errorMargin) <= 5.0 ? 'bg-yellow-500 border-yellow-600' : 'bg-red-500 border-red-600'}`}>
+                                          <p className="text-[8px] text-white/80 mb-0.5">誤差</p>
+                                          <p className="font-black font-mono text-[13px]">{log.errorMargin}%</p>
+                                      </div>
+                                  </div>
+                                  <details className="mt-2">
+                                      <summary className="text-[9px] text-gray-500 font-bold cursor-pointer hover:text-gray-900 select-none flex items-center gap-1 opacity-60 group-hover:opacity-100 transition">
+                                          <Icons.Sparkles /> AIの推論理由
+                                      </summary>
+                                      <p className="mt-1.5 text-gray-700 leading-relaxed bg-white p-2 rounded-sm border border-gray-200 shadow-inner whitespace-pre-wrap text-[10px]">{log.reason}</p>
+                                  </details>
+                              </div>
+                          ))}
+                          {aiTrainingHistory.length === 0 && <p className="text-gray-400 text-center py-10 font-bold text-xs">まだ特訓履歴がありません</p>}
+                      </div>
+                  </div>
+              </div>
+          </div>
       )}
 
-      {activeTab !== 'DOJO' && activeTab !== 'SPECS' && (
+      {activeTab !== 'DOJO' && (
       <div className="bg-white border border-gray-200 shadow-sm rounded-sm flex-1 flex flex-col overflow-hidden relative mt-2">
         <div className="p-2 md:p-4 border-b border-gray-200 bg-gray-50 flex flex-col gap-2 z-30 relative">
           
@@ -1201,6 +1099,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
               {activeTab !== 'UNKNOWN' && (
                   <div className="flex gap-1.5 w-full md:w-auto shrink-0">
+                    {/* ★ 変更：AI登録ボタンを赤に変更してテキスト変更 */}
                     {activeTab === 'WIRES' && (
                         <button onClick={() => setIsAiModalOpen(true)} className="flex-1 md:flex-none bg-[#D32F2F] text-white px-3 py-1.5 md:px-4 md:py-2 rounded-sm text-xs md:text-sm font-bold hover:bg-red-800 transition flex items-center justify-center gap-1 md:gap-2 whitespace-nowrap shadow-sm">
                             <Icons.Plus /> AIアシスト登録
@@ -1237,49 +1136,51 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                     {activeTab === 'WIRES' && (
                         <>
                             <th className="p-3 w-10 text-center" title="Web(LP)の価格表に表示するかどうか"><Icons.Globe /></th>
-                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('maker')}>メーカー <SortIcon columnKey="maker" /></th>
-                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('name')}>品名 <SortIcon columnKey="name" /></th>
-                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('year')}>製造年 <SortIcon columnKey="year" /></th>
-                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('sq')}>SQ/芯数 <SortIcon columnKey="sq" /></th>
-                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('ratio')}>歩留まり <SortIcon columnKey="ratio" /></th>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('maker')}>メーカー {renderSortIcon('maker')}</th>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('name')}>品名 {renderSortIcon('name')}</th>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('year')}>製造年 {renderSortIcon('year')}</th>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('sq')}>SQ/芯数 {renderSortIcon('sq')}</th>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('ratio')}>歩留まり {renderSortIcon('ratio')}</th>
                             <th className="p-3 text-center font-bold"><Icons.Camera /> 画像データ</th>
                         </>
                     )}
                     {activeTab === 'UNKNOWN' && (
                         <>
-                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('createdAt')}>登録日時 <SortIcon columnKey="createdAt" /></th>
-                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('name')}>AI推定品名 <SortIcon columnKey="name" /></th>
-                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('ratio')}>歩留まり <SortIcon columnKey="ratio" /></th>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('createdAt')}>登録日時 {renderSortIcon('createdAt')}</th>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('name')}>AI推定品名 {renderSortIcon('name')}</th>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('ratio')}>歩留まり {renderSortIcon('ratio')}</th>
                             <th className="p-3 w-1/3 font-bold">推論の根拠</th>
                         </>
                     )}
                     {activeTab === 'CASTINGS' && (
                         <>
-                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('name')}>品目名 <SortIcon columnKey="name" /></th>
-                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('type')}>種別 <SortIcon columnKey="type" /></th>
-                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('ratio')}>歩留まり <SortIcon columnKey="ratio" /></th>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('name')}>品目名 {renderSortIcon('name')}</th>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('type')}>種別 {renderSortIcon('type')}</th>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('ratio')}>歩留まり {renderSortIcon('ratio')}</th>
                         </>
                     )}
                     {activeTab === 'CLIENTS' && (
                         <>
-                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('name')}>業者名 <SortIcon columnKey="name" /></th>
-                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('rank')}>ランク <SortIcon columnKey="rank" /></th>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('name')}>業者名 {renderSortIcon('name')}</th>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('rank')}>ランク {renderSortIcon('rank')}</th>
                             <th className="p-3 font-bold">電話番号</th>
-                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('points')}>ポイント <SortIcon columnKey="points" /></th>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('points')}>ポイント {renderSortIcon('points')}</th>
                         </>
                     )}
                     {activeTab === 'STAFF' && (
                         <>
-                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('name')}>スタッフ名 <SortIcon columnKey="name" /></th>
-                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('role')}>権限 <SortIcon columnKey="role" /></th>
-                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('status')}>ステータス <SortIcon columnKey="status" /></th>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('name')}>スタッフ名 {renderSortIcon('name')}</th>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('role')}>権限 {renderSortIcon('role')}</th>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('status')}>ステータス {renderSortIcon('status')}</th>
                         </>
                     )}
-                    <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('updatedAt')}>登録/更新 <SortIcon columnKey="updatedAt" /></th>
+                    {/* WIRES でも更新日を表示してソート可能にする */}
+                    <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('updatedAt')}>登録/更新 {renderSortIcon('updatedAt')}</th>
                     <th className="p-3 text-right font-bold">操作</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 bg-white">
+                  {/* ★ WIRES の場合はチーム型グループ展開で描画する */}
                   {activeTab === 'WIRES' ? (
                     groupedWires.map((group, idx) => {
                       const item = group.captain;
@@ -1315,805 +1216,4 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                                     {[11, 12, 13, 14, 15].map(colIdx => {
                                         const hasImage = !!item[`image${colIdx-10}`];
                                         return (
-                                            <div key={colIdx} className="flex flex-col gap-1 items-center w-10">
-                                                <div className={`relative w-full h-8 border ${hasImage ? 'border-gray-400' : 'border-gray-200 border-dashed'} rounded-sm overflow-hidden bg-gray-100 flex items-center justify-center group shadow-sm`}>
-                                                    {hasImage ? (
-                                                        <a href={getDriveViewUrl(item[`image${colIdx-10}`])} target="_blank" rel="noopener noreferrer" className="w-full h-full block">
-                                                            <img src={getDriveImageUrl(item[`image${colIdx-10}`])} referrerPolicy="no-referrer" className="w-full h-full object-cover group-hover:scale-110 transition-transform cursor-zoom-in" />
-                                                        </a>
-                                                    ) : ( <span className="text-[8px] text-gray-300 font-bold">空</span> )}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </td>
-                            
-                            <td className="p-3 text-[10px] text-gray-400 font-mono align-top">
-                                <div className="flex flex-col gap-1"><span title="登録日">➕ {formatTimeShort(item.createdAt)}</span><span title="更新日">🔄 {formatTimeShort(item.updatedAt)}</span></div>
-                            </td>
-
-                            <td className="p-3 text-right align-top">
-                              <div className="flex flex-col items-end gap-1.5">
-                                <div className="flex gap-2">
-                                  <button onClick={() => handleOpenModal(item)} className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-200 border border-transparent hover:border-gray-300 rounded-sm transition shadow-sm"><Icons.Edit /></button>
-                                  <button onClick={() => handleDelete(item.id)} className="p-1.5 text-gray-400 hover:text-[#D32F2F] hover:bg-red-50 border border-transparent hover:border-red-200 rounded-sm transition shadow-sm"><Icons.Trash /></button>
-                                </div>
-                                {needsMerge && (
-                                  <button onClick={() => handleAiMergeAnalyze(group.name, group)} className="text-[10px] bg-blue-700 hover:bg-blue-800 text-white px-2 py-1 rounded-sm shadow-sm flex items-center gap-1">
-                                    <Icons.Cpu /> AIマージ
-                                  </button>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                          {members.length > 0 && (
-                            <tr className="bg-gray-50/50">
-                              <td colSpan={9} className="p-0 border-b border-gray-200">
-                                <details className="group">
-                                  <summary className="text-[10px] text-gray-500 font-bold p-2 cursor-pointer hover:bg-gray-100 select-none flex items-center gap-2">
-                                     <span className="w-4 text-center">▼</span>
-                                     <Icons.Users /> <span>裏側のチームデータ（AI教師用画像） {members.length}件を表示</span>
-                                  </summary>
-                                  <div className="p-3 flex gap-3 overflow-x-auto bg-gray-100/50">
-                                     {members.map((m: any, i: number) => (
-                                       <div 
-                                         key={m.id || i} 
-                                         onClick={() => handleOpenModal(m)}
-                                         className="bg-white border border-gray-300 hover:border-blue-400 rounded-sm p-2 flex gap-3 w-64 shrink-0 relative shadow-sm cursor-pointer transition group"
-                                       >
-                                          {m.status === 'archived' && <span className="absolute top-0 right-0 bg-gray-200 text-gray-500 text-[8px] font-bold px-1.5 py-0.5 rounded-bl-sm z-10">Archived</span>}
-                                          {m.image1 ? (
-                                              <img src={getDriveImageUrl(m.image1)} className="w-14 h-14 object-cover border border-gray-200 rounded-sm shrink-0" />
-                                          ) : (
-                                              <div className="w-14 h-14 bg-gray-100 border border-gray-200 rounded-sm flex items-center justify-center text-[8px] text-gray-400 shrink-0">No Image</div>
-                                          )}
-                                          <div className="flex flex-col text-[10px] min-w-0 justify-center">
-                                             <span className="font-bold text-gray-900 truncate pr-8">{m.name}</span>
-                                             <div className="flex items-center gap-1 mt-0.5 text-[9px] text-gray-500 font-mono flex-wrap">
-                                                 <span className="font-black text-gray-800">歩留: {m.ratio ? `${m.ratio}%` : '未設定'}</span>
-                                                 <span>|</span>
-                                                 <span className="truncate">{m.maker && m.maker !== '-' ? `【${m.maker}】` : ''}{formatSqDisplay(m.sq)}/{formatCoreDisplay(m.core)}</span>
-                                                 {m.year && m.year !== '-' && <span>| {m.year}年</span>}
-                                                 {m.conductor && m.conductor !== '-' && <span>| {m.conductor}</span>}
-                                             </div>
-                                             <span className="truncate text-gray-500 text-[9px] mt-0.5 group-hover:text-blue-600">{m.memo || 'メモなし'}</span>
-                                          </div>
-                                       </div>
-                                     ))}
-                                  </div>
-                                </details>
-                              </td>
-                            </tr>
-                          )}
-                        </React.Fragment>
-                      );
-                    })
-                  ) : (
-                    sortedData.map((item: any, idx: number) => (
-                      <tr key={item.id || idx} className="hover:bg-gray-50 transition">
-                        {activeTab === 'UNKNOWN' && (
-                            <>
-                              <td className="p-3 text-xs text-gray-500 font-mono">{formatTimeShort(item.createdAt)}</td>
-                              <td className="p-3 font-bold text-gray-900 flex items-center gap-1"><Icons.Sparkles /> {item.name}</td>
-                              <td className="p-3 font-mono font-black text-gray-900 text-lg">{item.ratio}%</td>
-                              <td className="p-3 text-xs text-gray-700 leading-relaxed bg-gray-50 rounded-sm m-1 whitespace-normal border border-gray-200 shadow-inner">{item.reason}</td>
-                            </>
-                        )}
-                        {activeTab === 'CASTINGS' && (
-                            <>
-                              <td className="p-3 font-bold text-gray-900">{item.name}</td>
-                              <td className="p-3 text-gray-600">{item.type}</td>
-                              <td className="p-3 font-mono font-black text-gray-900 text-lg">{item.ratio}%</td>
-                            </>
-                        )}
-                        {activeTab === 'CLIENTS' && (
-                            <>
-                              <td className="p-3 font-bold text-gray-900">{item.name}</td>
-                              <td className="p-3"><span className="bg-gray-200 px-2 py-1 rounded-sm text-xs font-bold text-gray-800 border border-gray-300">{item.rank}</span></td>
-                              <td className="p-3 font-mono text-gray-600">{item.phone}</td>
-                              <td className="p-3 font-mono text-gray-900 font-bold">{item.points} pt</td>
-                            </>
-                        )}
-                        {activeTab === 'STAFF' && (
-                            <>
-                              <td className="p-3 font-bold text-gray-900">{item.name}</td>
-                              <td className="p-3 text-gray-600">{item.role}</td>
-                              <td className="p-3"><span className={`px-2 py-1 rounded-sm text-xs font-bold text-white shadow-sm ${item.status === 'ACTIVE' ? 'bg-gray-900' : 'bg-gray-400'}`}>{item.status}</span></td>
-                            </>
-                        )}
-                        {activeTab !== 'UNKNOWN' && activeTab !== 'WIRES' && (
-                            <td className="p-3 text-[10px] text-gray-400 font-mono align-top">
-                                <div className="flex flex-col gap-1"><span title="登録日">➕ {formatTimeShort(item.createdAt)}</span><span title="更新日">🔄 {formatTimeShort(item.updatedAt)}</span></div>
-                            </td>
-                        )}
-
-                        <td className="p-3 text-right align-top">
-                          <div className="flex justify-end gap-2">
-                            {activeTab === 'UNKNOWN' && (
-                                <button onClick={() => handlePromoteToWire(item)} className="px-3 py-1.5 text-white bg-gray-900 hover:bg-black rounded-sm flex items-center gap-1 text-xs font-bold transition shadow-sm"><Icons.ArrowUp /> マスターへ</button>
-                            )}
-                            {activeTab === 'CLIENTS' && (
-                                <button 
-                                    onClick={() => {
-                                        setEditingItem(item);
-                                        handleEnrichClient(item);
-                                    }} 
-                                    disabled={isSubmitting}
-                                    className="p-2 text-yellow-600 hover:text-yellow-800 hover:bg-yellow-50 border border-transparent hover:border-yellow-200 rounded-sm transition shadow-sm"
-                                    title="AIで企業情報を深掘り"
-                                >
-                                    <Icons.Sparkles />
-                                </button>
-                            )}
-                            <button onClick={() => handleOpenModal(item)} className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-200 border border-transparent hover:border-gray-300 rounded-sm transition shadow-sm"><Icons.Edit /></button>
-                            <button onClick={() => handleDelete(item.id)} className="p-2 text-gray-400 hover:text-[#D32F2F] hover:bg-red-50 border border-transparent hover:border-red-200 rounded-sm transition shadow-sm"><Icons.Trash /></button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-
-              <div className="md:hidden divide-y divide-gray-200 bg-white pb-20">
-                {activeTab === 'WIRES' ? (
-                  groupedWires.map((group, idx) => {
-                    const item = group.captain;
-                    if (!item) return null;
-                    const members = group.members;
-                    const needsMerge = members.filter(m => m.status !== 'archived').length > 0;
-                    const hasAiAlert = item.memo && item.memo.includes('【AIチェック警告】');
-
-                    return (
-                      <div key={item.id || idx} className={`flex flex-col border-b border-gray-200 transition-colors ${String(item.showOnWeb) === 'false' ? 'opacity-60 bg-gray-100' : ''} ${hasAiAlert ? 'bg-yellow-50/30' : ''}`}>
-                        <div className={`p-2.5 flex flex-col gap-1 ${needsMerge ? 'bg-blue-50/30' : ''}`}>
-                          <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-1.5 overflow-hidden">
-                              {String(item.showOnWeb) === 'false' ? <span className="text-gray-400 shrink-0"><Icons.EyeOff /></span> : <span className="text-gray-900 shrink-0"><Icons.Globe /></span>}
-                              {item.maker && item.maker !== '-' && <span className="text-[9px] bg-gray-100 border border-gray-200 px-1 rounded-sm text-gray-600 whitespace-nowrap shrink-0">{item.maker}</span>}
-                              <span className="text-[13px] font-black text-gray-900 truncate leading-tight">{item.name}</span>
-                              {item.material === '錫メッキ' && <span className="text-[8px] bg-[#D32F2F] text-white px-1 py-0.5 rounded-sm shrink-0">錫</span>}
-                            </div>
-                            <div className="flex items-baseline shrink-0 ml-2">
-                              <span className="text-base font-black text-gray-900 font-mono tracking-tighter">{item.ratio ? `${item.ratio}%` : '未設定'}</span>
-                            </div>
-                          </div>
-                          
-                          <div className="flex justify-between items-center mt-0.5">
-                            <div className="text-[10px] text-gray-500 flex flex-col gap-1">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="font-mono bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">{formatSqDisplay(item.sq)}/{formatCoreDisplay(item.core)}</span>
-                                {item.year && item.year !== '-' && <span className="bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">{item.year}年</span>}
-                                {item.conductor && item.conductor !== '-' && <span className="bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">{item.conductor}</span>}
-                                {needsMerge && <span className="bg-red-100 text-red-700 px-1.5 py-0.5 rounded text-[8px] font-bold">重複あり</span>}
-                              </div>
-                              {hasAiAlert && <span className="bg-yellow-100 text-yellow-800 border border-yellow-300 px-1.5 py-0.5 rounded-sm font-bold flex items-center gap-0.5 shadow-sm w-max animate-pulse"><Icons.AlertTriangle /> AI再確認要</span>}
-                              <div className="text-[9px] text-gray-400 font-mono mt-0.5">更新: {formatTimeShort(item.updatedAt || item.createdAt)}</div>
-                            </div>
-                            
-                            <div className="flex items-end gap-2 h-full">
-                              <div className="flex gap-1 border-r border-gray-200 pr-2">
-                                {needsMerge && (
-                                  <button onClick={() => handleAiMergeAnalyze(group.name, group)} className="p-1.5 text-blue-700 bg-blue-50 border border-blue-200 rounded-sm font-bold text-[9px] flex items-center gap-1"><Icons.Cpu /> マージ</button>
-                                )}
-                                <button onClick={() => handleOpenModal(item)} className="p-1.5 text-gray-600 bg-gray-50 border border-gray-200 rounded-sm"><Icons.Edit /></button>
-                                <button onClick={() => handleDelete(item.id)} className="p-1.5 text-[#D32F2F] bg-red-50 border border-red-100 rounded-sm"><Icons.Trash /></button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {members.length > 0 && (
-                          <details className="bg-gray-50 group border-t border-gray-100">
-                            <summary className="text-[9px] text-gray-500 font-bold p-2 cursor-pointer hover:bg-gray-100 select-none flex items-center gap-2">
-                              <span>▼ 過去の教師データ {members.length}件</span>
-                            </summary>
-                            <div className="p-2 grid grid-cols-1 gap-2 bg-gray-100/50">
-                               {members.map((m: any, i: number) => (
-                                 <div 
-                                   key={m.id || i} 
-                                   onClick={() => handleOpenModal(m)}
-                                   className="bg-white border border-gray-300 hover:border-blue-400 rounded-sm p-2 flex gap-3 w-64 shrink-0 relative shadow-sm cursor-pointer transition group"
-                                 >
-                                    {m.status === 'archived' && <span className="absolute top-0 right-0 bg-gray-200 text-gray-500 text-[8px] font-bold px-1.5 py-0.5 rounded-bl-sm z-10">Archived</span>}
-                                    {m.image1 ? (
-                                        <img src={getDriveImageUrl(m.image1)} className="w-14 h-14 object-cover border border-gray-200 rounded-sm shrink-0" />
-                                    ) : (
-                                        <div className="w-14 h-14 bg-gray-100 border border-gray-200 rounded-sm flex items-center justify-center text-[8px] text-gray-400 shrink-0">No Image</div>
-                                    )}
-                                    <div className="flex flex-col text-[10px] min-w-0 justify-center">
-                                       <span className="font-bold text-gray-900 truncate pr-8">{m.name}</span>
-                                       <div className="flex items-center gap-1 mt-0.5 text-[9px] text-gray-500 font-mono flex-wrap">
-                                           <span className="font-black text-gray-800">歩留: {m.ratio ? `${m.ratio}%` : '未設定'}</span>
-                                           <span>|</span>
-                                           <span className="truncate">{m.maker && m.maker !== '-' ? `【${m.maker}】` : ''}{formatSqDisplay(m.sq)}/{formatCoreDisplay(m.core)}</span>
-                                           {m.year && m.year !== '-' && <span>| {m.year}年</span>}
-                                           {m.conductor && m.conductor !== '-' && <span>| {m.conductor}</span>}
-                                       </div>
-                                       <span className="truncate text-gray-500 text-[9px] mt-0.5 group-hover:text-blue-600">{m.memo || 'メモなし'}</span>
-                                    </div>
-                                 </div>
-                               ))}
-                            </div>
-                          </details>
-                        )}
-                      </div>
-                    );
-                  })
-                ) : (
-                  sortedData.map((item: any, idx: number) => (
-                    <div key={item.id || idx} className={`p-2.5 flex flex-col gap-1 active:bg-gray-50 transition-colors`}>
-                      
-                      {activeTab === 'UNKNOWN' && (
-                        <>
-                          <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-1 font-bold text-gray-900 text-[13px] truncate"><span className="text-gray-900"><Icons.Sparkles /></span> {item.name}</div>
-                            <span className="text-base font-black text-gray-900 font-mono">{item.ratio}%</span>
-                          </div>
-                          <p className="text-[10px] text-gray-600 bg-gray-50 p-1.5 rounded border border-gray-100 line-clamp-2">{item.reason}</p>
-                          <div className="flex justify-between items-center mt-0.5">
-                            <span className="text-[9px] text-gray-400 font-mono">{formatTimeShort(item.createdAt)}</span>
-                            <div className="flex gap-1.5">
-                              <button onClick={() => handlePromoteToWire(item)} className="px-2 py-1 text-white bg-gray-900 rounded-sm text-[10px] font-bold"><Icons.ArrowUp /> マスターへ</button>
-                              <button onClick={() => handleDelete(item.id)} className="p-1.5 text-[#D32F2F] bg-red-50 rounded-sm border border-red-100"><Icons.Trash /></button>
-                            </div>
-                          </div>
-                        </>
-                      )}
-
-                      {activeTab === 'CASTINGS' && (
-                        <>
-                          <div className="flex justify-between items-center">
-                            <span className="font-bold text-[13px] text-gray-900 truncate">{item.name}</span>
-                            <span className="text-base font-black text-gray-900 font-mono">{item.ratio}%</span>
-                          </div>
-                          <div className="flex justify-between items-center mt-0.5">
-                            <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">{item.type}</span>
-                            <div className="flex gap-1.5">
-                              <button onClick={() => handleOpenModal(item)} className="p-1.5 text-gray-600 bg-gray-50 border border-gray-200 rounded-sm"><Icons.Edit /></button>
-                              <button onClick={() => handleDelete(item.id)} className="p-1.5 text-[#D32F2F] bg-red-50 border border-red-100 rounded-sm"><Icons.Trash /></button>
-                            </div>
-                          </div>
-                        </>
-                      )}
-
-                      {activeTab === 'CLIENTS' && (
-                        <>
-                          <div className="flex justify-between items-center">
-                            <span className="font-bold text-[13px] text-gray-900 truncate">{item.name}</span>
-                            <span className="text-[9px] font-bold bg-gray-100 border border-gray-200 text-gray-800 px-1.5 py-0.5 rounded-sm">{item.rank}</span>
-                          </div>
-                          <div className="flex justify-between items-center mt-0.5">
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] text-gray-500 font-mono">📞 {item.phone}</span>
-                              <span className="text-[10px] text-gray-900 font-bold">✨ {item.points} pt</span>
-                            </div>
-                            
-                            <div className="flex gap-1.5">
-                              <button 
-                                  onClick={() => {
-                                      setEditingItem(item);
-                                      handleEnrichClient(item);
-                                  }} 
-                                  disabled={isSubmitting}
-                                  className="p-1.5 text-yellow-600 bg-yellow-50 border border-yellow-200 rounded-sm hover:bg-yellow-100 transition"
-                                  title="AIで企業情報を深掘り"
-                              >
-                                  <Icons.Sparkles />
-                              </button>
-                              <button onClick={() => handleOpenModal(item)} className="p-1.5 text-gray-600 bg-gray-50 border border-gray-200 rounded-sm"><Icons.Edit /></button>
-                              <button onClick={() => handleDelete(item.id)} className="p-1.5 text-[#D32F2F] bg-red-50 border border-red-100 rounded-sm"><Icons.Trash /></button>
-                            </div>
-                          </div>
-                        </>
-                      )}
-
-                      {activeTab === 'STAFF' && (
-                        <>
-                          <div className="flex justify-between items-center">
-                            <span className="font-bold text-[13px] text-gray-900">{item.name}</span>
-                            <span className={`text-[9px] font-bold text-white px-1.5 py-0.5 rounded-sm ${item.status === 'ACTIVE' ? 'bg-gray-900' : 'bg-gray-400'}`}>{item.status}</span>
-                          </div>
-                          <div className="flex justify-between items-center mt-0.5">
-                            <div className="flex flex-col gap-1">
-                               <span className="text-[10px] text-gray-500 bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded w-max">{item.role}</span>
-                               <span className="text-[9px] text-gray-400 font-mono">更新: {formatTimeShort(item.updatedAt || item.createdAt)}</span>
-                            </div>
-                            <div className="flex gap-1.5 items-end">
-                              <button onClick={() => handleOpenModal(item)} className="p-1.5 text-gray-600 bg-gray-50 border border-gray-200 rounded-sm"><Icons.Edit /></button>
-                              <button onClick={() => handleDelete(item.id)} className="p-1.5 text-[#D32F2F] bg-red-50 border border-red-100 rounded-sm"><Icons.Trash /></button>
-                            </div>
-                          </div>
-                        </>
-                      )}
-
-                    </div>
-                  ))
-                )}
-                {sortedData.length === 0 && (
-                   <div className="p-10 text-center text-gray-400 font-bold text-xs">データがありません</div>
-                )}
-              </div>
-            </div>
-        </div>
-      </div>)}
-
-      {activeTab === 'DOJO' && (
-        <div className="bg-white border border-gray-200 shadow-sm rounded-sm flex-1 flex flex-col p-4 md:p-8 overflow-y-auto mt-2 animate-in fade-in">
-            <div className="max-w-4xl mx-auto w-full space-y-6">
-                <div className="text-center space-y-2">
-                    <h2 className="text-2xl md:text-3xl font-black text-gray-900 flex items-center justify-center gap-2">
-                      <Icons.Brain /> 神の目 AI道場
-                    </h2>
-                    <p className="text-gray-500 font-bold text-sm">マスターデータを使ってAIの推論精度をテスト・評価します</p>
-                </div>
-
-                <div className="bg-gray-50 border border-gray-200 p-6 rounded-sm shadow-inner flex flex-col md:flex-row gap-6 items-center">
-                    <div className="flex-1 text-center md:text-left">
-                        <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1">直近30回の平均誤差</p>
-                        <div className="text-4xl md:text-5xl font-black text-gray-900 font-mono tracking-tighter">
-                            {avgError}<span className="text-lg md:text-2xl text-gray-500">%</span>
-                        </div>
-                    </div>
-                    <div className="w-full md:w-2/3">
-                        <p className="text-[10px] text-gray-400 font-bold mb-2">直近の推論誤差推移 (低いほど優秀)</p>
-                        <DojoChart errors={recentErrors} />
-                    </div>
-                </div>
-
-                {dojoProgress.isRunning ? (
-                    <div className="bg-white border border-blue-200 p-6 rounded-sm shadow-md text-center space-y-4">
-                        <div className="flex justify-center mb-2">
-                            <div className="relative w-16 h-16">
-                                <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
-                                <div className="absolute inset-0 border-4 border-gray-900 rounded-full border-t-transparent animate-spin"></div>
-                                <div className="absolute inset-0 flex items-center justify-center text-gray-900"><Icons.Brain /></div>
-                            </div>
-                        </div>
-                        <h3 className="font-bold text-gray-900">AI猛特訓中... PCを閉じないでください</h3>
-                        <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
-                            <div className="bg-gray-900 h-full transition-all duration-300" style={{ width: `${(dojoProgress.current / dojoProgress.total) * 100}%` }}></div>
-                        </div>
-                        <p className="font-mono text-sm text-gray-500 font-bold">{dojoProgress.current} / {dojoProgress.total} 件 完了</p>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                        <button onClick={runDojoRandom} className="bg-white border border-gray-300 hover:border-gray-900 hover:shadow-md text-gray-900 p-6 rounded-sm transition flex flex-col items-center gap-3 group">
-                            <div className="bg-gray-100 p-3 rounded-full group-hover:bg-gray-900 group-hover:text-white transition"><Icons.Sparkles /></div>
-                            <div className="text-center">
-                                <h3 className="font-black text-lg">ランダム1本勝負</h3>
-                                <p className="text-xs text-gray-500 font-bold mt-1">ランダムな画像1枚でAIの推論力をテストします</p>
-                            </div>
-                        </button>
-                        <button onClick={runDojoAll} className="bg-gray-900 hover:bg-black text-white p-6 rounded-sm shadow-md transition flex flex-col items-center gap-3 group border-b-4 border-gray-700 active:border-b-0 active:translate-y-1">
-                            <div className="bg-gray-800 p-3 rounded-full text-white group-hover:animate-spin"><Icons.Refresh /></div>
-                            <div className="text-center">
-                                <h3 className="font-black text-lg">全件総当たり特訓</h3>
-                                <p className="text-xs text-gray-400 font-bold mt-1">登録済みの全画像を使って一斉テストを行います<br/>(※時間がかかります)</p>
-                            </div>
-                        </button>
-                    </div>
-                )}
-            </div>
-        </div>
-      )}
-
-      {mergeProposal && (
-        <div className="fixed inset-0 bg-black/60 z-[80] flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-sm shadow-2xl max-w-3xl w-full p-6 border-t-4 border-blue-700">
-            <h3 className="text-lg md:text-xl font-black mb-4 flex items-center gap-2 text-blue-900 border-b border-gray-100 pb-3">
-              <Icons.Cpu /> AI統合提案: {mergeProposal.name}
-            </h3>
-            
-            {mergeProposal.alert && (
-              <div className="mb-4 bg-red-50 border border-red-200 p-3 text-red-800 text-sm font-bold flex items-start gap-2 shadow-sm rounded-sm">
-                <Icons.AlertTriangle /> {mergeProposal.alert}
-              </div>
-            )}
-            
-            <div className="space-y-4 text-sm max-h-[60vh] overflow-y-auto">
-              <div className="bg-gray-50 p-4 rounded-sm border border-gray-200 shadow-inner">
-                <p className="text-[10px] text-gray-500 font-bold uppercase mb-2">AIの分析・評価</p>
-                <p className="font-bold text-gray-800 leading-relaxed">{mergeProposal.recommendation}</p>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-blue-50/50 p-4 border border-blue-200 rounded-sm">
-                  <p className="text-[10px] text-blue-600 font-bold uppercase mb-2">統合後の歩留まり（採用案）</p>
-                  <p className="font-black text-blue-900 text-2xl">{mergeProposal.mergedYieldRate}</p>
-                </div>
-                <div className="bg-blue-50/50 p-4 border border-blue-200 rounded-sm">
-                  <p className="text-[10px] text-blue-600 font-bold uppercase mb-2">統合後の詳細説明（ハイブリッド版）</p>
-                  <p className="font-bold text-gray-800 leading-relaxed">{mergeProposal.mergedDescription}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-gray-100">
-              <button onClick={() => setMergeProposal(null)} disabled={isMerging} className="px-4 py-2 text-gray-500 text-sm font-bold hover:bg-gray-100 rounded-sm disabled:opacity-50">キャンセル</button>
-              <button onClick={handleApplyMerge} disabled={isMerging} className="px-5 py-2 bg-blue-700 text-white text-sm font-bold rounded-sm shadow-md hover:bg-blue-800 disabled:opacity-50 flex items-center gap-2">
-                {isMerging ? <><Icons.Refresh /> マージ実行中...</> : '✨ 承認してゴールデンレコードを作成'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {analyzingName && !mergeProposal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[80] flex items-center justify-center p-4">
-          <div className="bg-white rounded-sm shadow-2xl p-8 flex flex-col items-center max-w-sm w-full animate-in zoom-in-95 border-t-4 border-blue-600">
-            <div className="relative w-16 h-16 mb-6">
-                <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
-                <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
-                <div className="absolute inset-0 flex items-center justify-center text-blue-600"><Icons.Cpu /></div>
-            </div>
-            <h3 className="text-lg font-black text-gray-900 mb-2 text-center">AIがデータを分析・統合中</h3>
-            <p className="text-xs text-gray-500 font-bold text-center leading-relaxed">
-              「{analyzingName}」の<br/>複数データを比較し、最適な<br/>ゴールデンレコードを生成しています...
-            </p>
-          </div>
-        </div>
-      )}
-
-      {isAiModalOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-4xl rounded-sm shadow-2xl animate-in zoom-in-95 border-t-4 border-[#D32F2F] overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-              <h3 className="font-black text-gray-900 flex items-center gap-2">
-                <Icons.Sparkles /> AI マスター登録アシスタント
-              </h3>
-              {aiStatus !== 'ANALYZING' && <button onClick={() => setIsAiModalOpen(false)} className="text-gray-400 hover:text-gray-900"><Icons.Close /></button>}
-            </div>
-            
-            <div className="p-6 overflow-y-auto">
-              {aiStatus === 'ANALYZING' ? (
-                <div className="py-8 flex flex-col items-center animate-in fade-in zoom-in duration-500">
-                    <div className="relative w-20 h-20 mb-8">
-                        <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
-                        <div className="absolute inset-0 border-4 border-gray-900 rounded-full border-t-transparent animate-spin"></div>
-                        <div className="absolute inset-0 flex items-center justify-center text-gray-900"><Icons.Sparkles /></div>
-                    </div>
-                    <div className="space-y-5 w-full max-w-xs font-bold text-sm">
-                        <div className={`flex items-center gap-4 transition-all duration-500 ${aiProgressStep >= 1 ? 'text-gray-900 translate-x-0 opacity-100' : 'text-gray-300 -translate-x-4 opacity-0'}`}>
-                            <span className="w-6 text-center text-xl">{aiProgressStep >= 2 ? '✅' : aiProgressStep === 1 ? '🔄' : '・'}</span>
-                            <span>画像をサーバーへ送信中...</span>
-                        </div>
-                        <div className={`flex items-center gap-4 transition-all duration-500 delay-300 ${aiProgressStep >= 2 ? 'text-gray-900 translate-x-0 opacity-100' : 'text-gray-300 -translate-x-4 opacity-0'}`}>
-                            <span className="w-6 text-center text-xl">{aiProgressStep >= 3 ? '✅' : aiProgressStep === 2 ? '🔄' : '・'}</span>
-                            <span>AIが画像を解析・特徴抽出中...</span>
-                        </div>
-                        <div className={`flex items-center gap-4 transition-all duration-500 delay-300 ${aiProgressStep >= 3 ? 'text-gray-900 translate-x-0 opacity-100' : 'text-gray-300 -translate-x-4 opacity-0'}`}>
-                            <span className="w-6 text-center text-xl">{aiProgressStep >= 4 ? '✅' : aiProgressStep === 3 ? '🔄' : '・'}</span>
-                            <span>マスターデータと照合・推論中...</span>
-                        </div>
-                        <div className={`flex items-center gap-4 transition-all duration-500 delay-300 ${aiProgressStep >= 4 ? 'text-green-600 scale-110 translate-x-0 opacity-100' : 'text-gray-300 -translate-x-4 opacity-0'}`}>
-                            <span className="w-6 text-center text-xl">{aiProgressStep >= 4 ? '✨' : '・'}</span>
-                            <span>解析完了！結果を出力します</span>
-                        </div>
-                    </div>
-                </div>
-              ) : (
-                <div className="animate-in fade-in">
-                    <p className="text-xs md:text-sm text-gray-600 mb-4 leading-relaxed font-bold bg-gray-50 p-3 rounded-sm border border-gray-200">
-                        未知の線種をマスターに登録します。<br/>
-                        最大4枚の画像をアップロードしてAIに解析させてください。<br/>
-                    </p>
-
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                        <div className="flex flex-col p-2 border-2 border-dashed border-gray-300 bg-gray-50 rounded-sm h-28">
-                            {imgData1 ? ( <div className="relative w-full h-full"><img src={`data:image/jpeg;base64,${imgData1}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData1('')} className="absolute top-1 right-1 bg-[#D32F2F] text-white p-1 rounded-sm shadow-md"><Icons.Trash/></button><span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">①断面</span></div> ) : ( <><p className="text-[10px] font-bold text-gray-900 mb-1.5 text-center">① 断面 (必須)</p><div className="flex gap-1.5 h-full"><label className="flex-1 bg-white border border-gray-300 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.Camera /><span className="text-[8px] mt-1 font-bold">カメラ</span><input type="file" onChange={e=>handleAiImageUpload(e,1)} className="hidden" accept="image/*" capture="environment"/></label><label className="flex-1 bg-white border border-gray-300 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.UploadCloud /><span className="text-[8px] mt-1 font-bold">フォルダ</span><input type="file" onChange={e=>handleAiImageUpload(e,1)} className="hidden" accept="image/*"/></label></div></> )}
-                        </div>
-                        <div className="flex flex-col p-2 border-2 border-dashed border-gray-300 bg-gray-50 rounded-sm h-28">
-                            {imgData2 ? ( <div className="relative w-full h-full"><img src={`data:image/jpeg;base64,${imgData2}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData2('')} className="absolute top-1 right-1 bg-[#D32F2F] text-white p-1 rounded-sm shadow-md"><Icons.Trash/></button><span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">②全体</span></div> ) : ( <><p className="text-[10px] font-bold text-gray-500 mb-1.5 text-center">② 全体・被覆</p><div className="flex gap-1.5 h-full"><label className="flex-1 bg-white border border-gray-300 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.Camera /><span className="text-[8px] mt-1 font-bold">カメラ</span><input type="file" onChange={e=>handleAiImageUpload(e,2)} className="hidden" accept="image/*" capture="environment"/></label><label className="flex-1 bg-white border border-gray-300 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.UploadCloud /><span className="text-[8px] mt-1 font-bold">フォルダ</span><input type="file" onChange={e=>handleAiImageUpload(e,2)} className="hidden" accept="image/*"/></label></div></> )}
-                        </div>
-                        <div className="flex flex-col p-2 border-2 border-dashed border-gray-300 bg-gray-50 rounded-sm h-28">
-                            {imgData3 ? ( <div className="relative w-full h-full"><img src={`data:image/jpeg;base64,${imgData3}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData3('')} className="absolute top-1 right-1 bg-[#D32F2F] text-white p-1 rounded-sm shadow-md"><Icons.Trash/></button><span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">③印字1</span></div> ) : ( <><p className="text-[10px] font-bold text-gray-500 mb-1.5 text-center">③ 印字アップ1</p><div className="flex gap-1.5 h-full"><label className="flex-1 bg-white border border-gray-300 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.Camera /><span className="text-[8px] mt-1 font-bold">カメラ</span><input type="file" onChange={e=>handleAiImageUpload(e,3)} className="hidden" accept="image/*" capture="environment"/></label><label className="flex-1 bg-white border border-gray-300 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.UploadCloud /><span className="text-[8px] mt-1 font-bold">フォルダ</span><input type="file" onChange={e=>handleAiImageUpload(e,3)} className="hidden" accept="image/*"/></label></div></> )}
-                        </div>
-                        <div className="flex flex-col p-2 border-2 border-dashed border-gray-300 bg-gray-50 rounded-sm h-28">
-                            {imgData4 ? ( <div className="relative w-full h-full"><img src={`data:image/jpeg;base64,${imgData4}`} className="w-full h-full object-cover rounded-sm" /><button onClick={()=>setImgData4('')} className="absolute top-1 right-1 bg-[#D32F2F] text-white p-1 rounded-sm shadow-md"><Icons.Trash/></button><span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">④印字2</span></div> ) : ( <><p className="text-[10px] font-bold text-gray-500 mb-1.5 text-center">④ 印字アップ2</p><div className="flex gap-1.5 h-full"><label className="flex-1 bg-white border border-gray-300 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.Camera /><span className="text-[8px] mt-1 font-bold">カメラ</span><input type="file" onChange={e=>handleAiImageUpload(e,4)} className="hidden" accept="image/*" capture="environment"/></label><label className="flex-1 bg-white border border-gray-300 hover:bg-gray-100 rounded-sm flex flex-col items-center justify-center cursor-pointer transition text-gray-500 hover:text-gray-900 shadow-sm"><Icons.UploadCloud /><span className="text-[8px] mt-1 font-bold">フォルダ</span><input type="file" onChange={e=>handleAiImageUpload(e,4)} className="hidden" accept="image/*"/></label></div></> )}
-                        </div>
-                    </div>
-
-                    <div className="mb-6 bg-gray-50 border border-gray-200 p-3 rounded-sm relative shadow-inner">
-                        <label className="block text-xs font-bold text-gray-700 mb-2 flex items-center justify-between">
-                            <span>🗣️ AIへのヒント・補足（任意）</span>
-                            <button onClick={toggleHintVoiceInput} className={`p-1.5 rounded-sm transition ${isListeningHint ? 'bg-[#D32F2F] text-white animate-pulse shadow-inner' : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}>
-                                <Icons.Mic />
-                            </button>
-                        </label>
-                        <textarea className="w-full bg-white border border-gray-300 rounded-sm text-sm text-gray-900 p-3 outline-none focus:border-gray-900 min-h-[60px] shadow-sm" placeholder="例: 中身は細線の束、かなり重い、雑線は入っていない等..." value={aiHint} onChange={e => setAiHint(e.target.value)} />
-                    </div>
-
-                    <button onClick={runAiExtraction} disabled={!imgData1 && !aiHint} className="w-full bg-gray-900 hover:bg-black text-white font-bold py-3 md:py-4 rounded-sm flex justify-center items-center gap-2 disabled:bg-gray-400 transition shadow-md text-base md:text-lg">
-                        <Icons.Sparkles />解析してデータを埋める
-                    </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] flex items-center justify-center p-2 md:p-0">
-          <div className="bg-white w-full max-w-4xl rounded-sm shadow-2xl animate-in zoom-in-95 duration-200 border-t-4 border-gray-900 overflow-hidden flex flex-col max-h-[95vh]">
-            <div className="p-3 md:p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50 shrink-0">
-              <h3 className="font-black text-gray-900 text-base md:text-lg flex items-center gap-2">
-                  {editingItem?.id ? <Icons.Edit /> : <Icons.Plus />}
-                  {editingItem?.id ? 'データ編集' : '新規マスター登録'}
-              </h3>
-              <div className="flex gap-2">
-                  {activeTab === 'CLIENTS' && editingItem?.name && (
-                      <button 
-                          onClick={() => handleEnrichClient()}
-                          disabled={isSubmitting}
-                          className="bg-yellow-50 text-yellow-800 border border-yellow-300 px-3 py-1.5 rounded-sm text-xs font-bold flex items-center gap-1 hover:bg-yellow-100 transition disabled:opacity-50"
-                      >
-                          <Icons.Sparkles /> AIディープリサーチで補完
-                      </button>
-                  )}
-                  <button onClick={handleCloseModal} className="text-gray-400 hover:text-gray-900 bg-white border border-gray-200 p-1.5 rounded-sm shadow-sm"><Icons.Close /></button>
-              </div>
-            </div>
-            
-            <div className="p-4 md:p-6 overflow-y-auto space-y-4 bg-white flex-1">
-                
-                {/* ★ 改善：AIクレンジングのアラート表示 */}
-                {editingItem?.memo?.includes('【AIチェック警告】') && (
-                   <div className="bg-yellow-50 border border-yellow-400 p-3 md:p-4 rounded-sm mb-4 shadow-sm relative overflow-hidden">
-                       <div className="absolute top-0 right-0 bg-yellow-400 text-yellow-900 text-[8px] md:text-[10px] font-bold px-2 py-0.5 rounded-bl-sm">AI検知</div>
-                       <h4 className="font-bold text-yellow-900 text-xs md:text-sm flex items-center gap-1.5 mb-2"><Icons.Sparkles /> 導体・材質の修正提案</h4>
-                       <p className="text-[10px] md:text-xs text-yellow-800 leading-relaxed font-bold whitespace-pre-wrap">{editingItem.memo.split('【AIチェック警告】')[1]}</p>
-                       <div className="mt-3 flex justify-end">
-                           <button onClick={() => {
-                               setEditingItem({...editingItem, memo: editingItem.memo.replace(/【AIチェック警告】[\s\S]*?(?=\n\n|$)/, '').trim()});
-                           }} className="text-[10px] font-bold bg-white border border-yellow-300 text-yellow-700 px-3 py-1.5 rounded hover:bg-yellow-100 shadow-sm transition">警告をクリアしてメモを綺麗にする</button>
-                       </div>
-                   </div>
-                )}
-
-              {/* ========================================================= */}
-              {/* 👑 真実のトライフォース（実測 vs AI vs カタログ）比較UI */}
-              {/* ========================================================= */}
-              {activeTab === 'WIRES' && editingItem && (
-                  <div className="mb-6 bg-gray-900 p-4 rounded-sm shadow-xl border-t-4 border-[#D32F2F] relative overflow-hidden">
-                      <div className="absolute top-0 right-0 opacity-5 transform scale-150 -translate-y-4"><Icons.Brain /></div>
-                      <h4 className="text-white font-bold text-sm mb-3 flex items-center gap-2 relative z-10">
-                          <Icons.Radar /> 総合歩留まり検証ダッシュボード
-                      </h4>
-                      <div className="grid grid-cols-3 gap-3 relative z-10">
-                          {/* 1. ボスの実測（絶対基準） */}
-                          <div className="bg-white p-3 rounded-sm border-2 border-[#D32F2F] flex flex-col justify-between shadow-md relative">
-                              <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-[#D32F2F] text-white text-[9px] font-bold px-2 py-0.5 rounded-sm tracking-widest whitespace-nowrap">👑 ボスの実測 (至高)</span>
-                              <p className="text-[10px] text-gray-500 font-bold text-center mt-2">現在の設定値</p>
-                              <p className="text-3xl font-black text-gray-900 font-mono text-center tracking-tighter my-1">
-                                  {editingItem.ratio || '---'}<span className="text-sm font-normal">%</span>
-                              </p>
-                              <p className="text-[9px] text-gray-400 text-center font-mono">
-                                  {editingItem.sampleTotal ? `${editingItem.sampleCopper}g / ${editingItem.sampleTotal}g` : '実測データなし'}
-                              </p>
-                          </div>
-
-                          {/* 2. AIの推論 */}
-                          <div className="bg-gray-800 p-3 rounded-sm border border-gray-700 flex flex-col justify-between">
-                              <p className="text-[10px] text-blue-400 font-bold text-center flex justify-center items-center gap-1"><Icons.Sparkles /> AI 推論</p>
-                              <p className="text-2xl font-black text-white font-mono text-center tracking-tighter my-1">
-                                  {editingItem.aiEstimatedRatio || '---'}<span className="text-sm font-normal text-gray-400">%</span>
-                              </p>
-                              <button 
-                                  onClick={() => {
-                                      if(!editingItem.aiEstimatedRatio) return;
-                                      if(confirm('ボスの至高データ（実測値）をAIの推論値で上書きしますか？\n（※上書きしても「サンプル実測g」は保持されます）')) {
-                                          setEditingItem({...editingItem, ratio: editingItem.aiEstimatedRatio});
-                                      }
-                                  }} 
-                                  disabled={!editingItem.aiEstimatedRatio}
-                                  className="mt-1 text-[9px] bg-blue-900/50 hover:bg-blue-800 text-blue-200 py-1 rounded-sm border border-blue-700 transition disabled:opacity-30"
-                              >
-                                  採用する
-                              </button>
-                          </div>
-
-                          {/* 3. カタログ公称値 (API呼び出し) */}
-                          <div className="bg-gray-800 p-3 rounded-sm border border-gray-700 flex flex-col justify-between relative group">
-                              <p className="text-[10px] text-yellow-500 font-bold text-center">📖 カタログ理論値</p>
-                              <div className="text-center my-1">
-                                  <button 
-                                      onClick={async (e) => {
-                                          const btn = e.currentTarget;
-                                          btn.innerHTML = '<span class="animate-spin inline-block">↻</span> 検索中...';
-                                          try {
-                                              const res = await fetch(`/api/specs?maker=${encodeURIComponent(editingItem.maker || '')}&name=${encodeURIComponent(editingItem.name || '')}&size=${encodeURIComponent(editingItem._sqValue || '')}&core=${encodeURIComponent(editingItem._coreValue || '')}`);
-                                              const d = await res.json();
-                                              if (d.success && d.data.length > 0) {
-                                                  const spec = d.data[0];
-                                                  btn.outerHTML = `<div class="flex flex-col"><span class="text-2xl font-black text-white font-mono tracking-tighter">${spec.theoreticalRatio}<span class="text-sm font-normal text-gray-400">%</span></span><span class="text-[9px] text-gray-400 truncate w-full block">${spec.weightPerKm}kg/km</span></div>`;
-                                              } else {
-                                                  btn.outerHTML = `<span class="text-xs text-gray-500 font-bold">データなし</span>`;
-                                              }
-                                          } catch(err) {
-                                              btn.innerHTML = '検索エラー';
-                                          }
-                                      }}
-                                      className="text-[10px] bg-gray-700 hover:bg-gray-600 text-gray-300 px-2 py-1.5 rounded-sm transition mt-1 w-full"
-                                  >
-                                      仕様書を検索
-                                  </button>
-                              </div>
-                          </div>
-                      </div>
-                  </div>
-              )}
-
-                {activeTab === 'WIRES' && (
-                    <div className="bg-gray-50 border border-gray-200 p-3 md:p-4 rounded-sm flex justify-between items-center shadow-inner mb-2">
-                        <div>
-                            <h4 className="font-bold text-gray-900 text-sm md:text-base flex items-center gap-2">
-                                <Icons.Globe /> LPの価格表に表示する
-                            </h4>
-                            <p className="text-[9px] md:text-[10px] text-gray-500 mt-1 font-bold">OFFにすると社内システム専用になります。</p>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" className="sr-only peer" checked={String(editingItem.showOnWeb) !== 'false'} onChange={(e) => setEditingItem({...editingItem, showOnWeb: e.target.checked})} />
-                            <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-900"></div>
-                        </label>
-                    </div>
-                )}
-
-                {activeTab === 'WIRES' && (
-                    <div className="bg-gray-50 p-3 md:p-4 border border-gray-200 rounded-sm">
-                        <label className="block text-[10px] md:text-xs font-bold text-gray-600 mb-2 uppercase tracking-widest">マスター画像 (全5枠)</label>
-                        <div className="grid grid-cols-3 md:grid-cols-5 gap-2 md:gap-3">
-                            <ImageSlot title="① 断面" imageKey="image1" colIdx={11} pendingKey="_pendingImageData1" />
-                            <ImageSlot title="② 全体" imageKey="image2" colIdx={12} pendingKey="_pendingImageData2" />
-                            <ImageSlot title="④ 剥線" imageKey="image3" colIdx={13} pendingKey="_pendingImageData3" />
-                            <ImageSlot title="③ 印字UP1" imageKey="image4" colIdx={14} pendingKey="_pendingImageData4" />
-                            <ImageSlot title="③ 印字UP2" imageKey="image5" colIdx={15} pendingKey="_pendingImageData5" />
-                        </div>
-                    </div>
-                )}
-
-                {activeTab === 'WIRES' && (editingItem._pendingImageData1 || editingItem._pendingImageData4) && (
-                    <div className="bg-blue-50 border border-blue-200 p-2 md:p-3 rounded-sm text-[10px] md:text-xs text-blue-800 font-bold flex flex-col gap-1 shadow-sm">
-                        <div className="flex items-center gap-2"><Icons.Sparkles /> 画像からAIが推論結果を自動入力しました。</div>
-                        <div className="text-gray-600 ml-6 font-normal">※ 下の「マスター登録」を押すと、アップロードした画像も同時に保存されます。</div>
-                    </div>
-                )}
-
-                {activeTab === 'WIRES' && (
-                    <>
-                        <div className="grid grid-cols-2 gap-3 md:gap-4 mt-4">
-                            <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">メーカー</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-bold shadow-sm text-sm" value={editingItem.maker || ''} onChange={e => setEditingItem({...editingItem, maker: e.target.value})} /></div>
-                            <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">品名</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-black text-base md:text-lg shadow-sm" value={editingItem.name || ''} onChange={e => setEditingItem({...editingItem, name: e.target.value})} /></div>
-                        </div>
-
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-                            <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">製造年</label><input type="text" placeholder="例: 2024" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 shadow-sm text-sm tabular-nums" value={editingItem.year || ''} onChange={e => setEditingItem({...editingItem, year: toHalfWidthNumber(e.target.value).replace(/\./g, '')})} /></div>
-                            <div>
-                                <label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 flex items-center justify-between uppercase tracking-widest"><span>サイズ</span><button onClick={handleCaliperInput} className="text-gray-700 hover:text-gray-900 flex items-center gap-0.5 bg-gray-100 px-1.5 py-0.5 rounded-sm border border-gray-300 transition shadow-sm"><Icons.Ruler /> <span className="text-[8px] md:text-[9px] font-bold">ノギス</span></button></label>
-                                <div className="flex rounded-sm shadow-sm relative"><input type="number" step="0.01" className="w-full bg-white border-y border-l border-gray-300 p-2.5 md:p-3 rounded-l-sm outline-none focus:border-gray-900 font-mono text-right font-bold text-sm" value={editingItem._sqValue || ''} onChange={e => setEditingItem({...editingItem, _sqValue: toHalfWidthNumber(e.target.value)})} placeholder="2.0" /><select className="border border-gray-300 bg-gray-100 px-1 md:px-2 rounded-r-sm text-[10px] md:text-xs font-bold text-gray-700 outline-none focus:border-gray-900" value={editingItem._sqUnit || 'sq'} onChange={e => setEditingItem({...editingItem, _sqUnit: e.target.value})}><option value="sq">sq</option><option value="mm">mm</option></select></div>
-                            </div>
-                            <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">芯数</label><div className="relative"><input type="number" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-mono pr-8 text-right font-bold shadow-sm text-sm" value={editingItem._coreValue || ''} onChange={e => setEditingItem({...editingItem, _coreValue: toHalfWidthNumber(e.target.value).replace(/\./g, '')})} placeholder="3" /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold pointer-events-none">C</span></div></div>
-                            <div>
-                                <label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">導体構成 (構造)</label><input type="text" placeholder="単線/7本より線等" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 shadow-sm text-xs md:text-sm font-bold" value={editingItem.conductor || ''} onChange={e => setEditingItem({...editingItem, conductor: e.target.value})} />
-                                <div className="flex flex-wrap gap-1 mt-1.5">
-                                    <button onClick={() => setEditingItem({...editingItem, conductor: '単線'})} className="bg-gray-100 hover:bg-gray-200 text-[9px] px-2 py-1.5 rounded-sm text-gray-600 font-bold border border-gray-200 transition">単線</button>
-                                    <button onClick={() => setEditingItem({...editingItem, conductor: 'より線'})} className="bg-gray-100 hover:bg-gray-200 text-[9px] px-2 py-1.5 rounded-sm text-gray-600 font-bold border border-gray-200 transition">より線</button>
-                                    <button onClick={() => setEditingItem({...editingItem, conductor: '7本より線'})} className="bg-gray-100 hover:bg-gray-200 text-[9px] px-2 py-1.5 rounded-sm text-gray-600 font-bold border border-gray-200 transition">7本</button>
-                                    <button onClick={() => setEditingItem({...editingItem, conductor: '19本より線'})} className="bg-gray-100 hover:bg-gray-200 text-[9px] px-2 py-1.5 rounded-sm text-gray-600 font-bold border border-gray-200 transition">19本</button>
-                                    <button onClick={() => setEditingItem({...editingItem, conductor: '細線'})} className="bg-gray-100 hover:bg-gray-200 text-[9px] px-2 py-1.5 rounded-sm text-gray-600 font-bold border border-gray-200 transition">細線</button>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div className="bg-gray-100 p-3 md:p-6 rounded-sm border border-gray-300 mt-4 md:mt-6 relative shadow-inner">
-                            <span className="absolute top-0 right-0 bg-gray-900 text-white text-[8px] md:text-[9px] font-bold tracking-widest px-2 py-1 rounded-bl-sm">HUMAN REQUIRED</span>
-                            <label className="block text-xs md:text-sm font-black text-gray-900 mb-3 border-b border-gray-300 pb-2">⚖️ サンプル実測 (人間による確定)</label>
-                            
-                            <div className="mb-4 bg-white p-3 md:p-4 rounded-sm border border-gray-200 shadow-sm">
-                                <label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-2 uppercase tracking-widest">成分要素 (材質)</label>
-                                <div className="grid grid-cols-3 gap-2">
-                                    <button onClick={() => setEditingItem({...editingItem, material: '純銅'})} className={`py-1.5 md:py-2 rounded-sm text-xs md:text-sm font-bold border transition ${editingItem.material === '純銅' ? 'bg-orange-50 border-orange-400 text-orange-800' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'}`}>純銅</button>
-                                    <button onClick={() => setEditingItem({...editingItem, material: '錫メッキ'})} className={`py-1.5 md:py-2 rounded-sm text-xs md:text-sm font-bold border transition ${editingItem.material === '錫メッキ' ? 'bg-red-50 border-[#D32F2F] text-[#D32F2F] animate-pulse' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'}`}>⚠️錫メッキ</button>
-                                    <button onClick={() => setEditingItem({...editingItem, material: 'アルミ'})} className={`py-1.5 md:py-2 rounded-sm text-xs md:text-sm font-bold border transition ${editingItem.material === 'アルミ' ? 'bg-blue-50 border-blue-400 text-blue-800' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'}`}>アルミ</button>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 items-end">
-                                <div className="w-full"><label className="block text-[9px] md:text-[10px] font-bold text-gray-600 mb-1 uppercase tracking-widest">全体重量(g)</label><input type="number" step="0.001" className="w-full border border-gray-300 shadow-sm p-2.5 md:p-3 rounded-sm font-mono text-base md:text-xl outline-none focus:border-gray-900 text-right bg-white font-bold tabular-nums" value={sampleTotal} onChange={e => handleSampleTotalChange(e.target.value)} placeholder="0.000" /></div>
-                                <div className="w-full"><label className="block text-[9px] md:text-[10px] font-bold text-[#D32F2F] mb-1 uppercase tracking-widest">純銅重量(g)</label><input type="number" step="0.001" className="w-full border border-gray-300 shadow-sm p-2.5 md:p-3 rounded-sm font-mono text-base md:text-xl outline-none focus:border-[#D32F2F] text-right bg-white font-bold tabular-nums" value={sampleCopper} onChange={e => handleSampleCopperChange(e.target.value)} placeholder="0.000" /></div>
-                                
-                                <div className="w-full">
-                                    <label className="block text-[9px] md:text-[10px] font-bold text-gray-600 mb-1 uppercase tracking-widest flex justify-between items-end">
-                                        <span>被覆重量(g)</span>
-                                        <span className="text-[8px] text-gray-400 font-normal normal-case">※省略時は自動算出</span>
-                                    </label>
-                                    <input 
-                                        type="number" step="0.001" 
-                                        className="w-full border border-gray-300 shadow-sm p-2.5 md:p-3 rounded-sm font-mono text-base md:text-xl outline-none focus:border-gray-900 text-right bg-white font-bold tabular-nums placeholder:text-gray-300 placeholder:text-xs" 
-                                        value={sampleCover} 
-                                        onChange={e => handleSampleCoverChange(e.target.value)} 
-                                        placeholder={sampleTotal && sampleCopper && !sampleCover ? `(自動) ${getAutoCoverWeight()}` : "0.000"} 
-                                    />
-                                </div>
-                                
-                                <div className="w-full flex flex-col gap-1.5 md:gap-2">
-                                    <div className="bg-white border border-gray-300 shadow-sm p-1.5 md:p-2 rounded-sm flex justify-between items-center"><span className="text-[9px] md:text-[10px] font-bold text-gray-500 uppercase tracking-widest">ダスト</span><span className="font-mono text-sm md:text-base font-bold text-gray-800 tabular-nums">{getJuteWeight()}g</span></div>
-                                    <div className="bg-gray-900 border border-black shadow-inner p-1.5 md:p-2 rounded-sm flex justify-between items-center relative"><span className="text-[9px] md:text-[10px] font-bold text-gray-300 uppercase tracking-widest">歩留まり</span>{editingItem.aiEstimatedRatio && !sampleTotal && <span className="absolute -top-2 -right-2 text-[8px] bg-gray-500 text-white px-1.5 py-0.5 rounded shadow animate-pulse">AI</span>}<span className="font-mono text-lg md:text-xl font-black text-white tabular-nums">
-                                        <input type="number" step="0.01" className="w-20 bg-transparent text-right outline-none" value={editingItem.ratio || ''} onChange={e => setEditingItem({...editingItem, ratio: toHalfWidthNumber(e.target.value)})} placeholder="---" />%
-                                    </span></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="mt-4"><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">メモ / 特記事項</label><textarea className="w-full bg-white border border-gray-300 p-3 rounded-sm h-24 text-xs md:text-sm outline-none focus:border-gray-900 leading-relaxed shadow-sm whitespace-pre-wrap" value={editingItem.memo || editingItem.reason || ''} onChange={e => setEditingItem({...editingItem, memo: e.target.value, reason: e.target.value})} /></div>
-                    </>
-                )}
-
-                {activeTab === 'CASTINGS' && (
-                  <>
-                    <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">品目名</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-bold shadow-sm" value={editingItem.name || ''} onChange={e => setEditingItem({...editingItem, name: e.target.value})} /></div>
-                    <div className="grid grid-cols-2 gap-3 md:gap-4 mt-4">
-                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">種別</label><select className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-bold shadow-sm text-sm" value={editingItem.type || 'BRASS'} onChange={e => setEditingItem({...editingItem, type: e.target.value})}><option value="BRASS">真鍮 (Brass)</option><option value="ZINC">亜鉛 (Zinc)</option><option value="LEAD">鉛 (Lead)</option></select></div>
-                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">歩留まり (%)</label><input type="number" step="0.1" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm font-black text-base md:text-lg text-gray-900 outline-none focus:border-gray-900 shadow-sm text-right tabular-nums" value={editingItem.ratio || ''} onChange={e => setEditingItem({...editingItem, ratio: toHalfWidthNumber(e.target.value)})} /></div>
-                    </div>
-                  </>
-                )}
-
-                {activeTab === 'CLIENTS' && (
-                  <div className="space-y-3 md:space-y-4">
-                    <div className="grid grid-cols-2 gap-3 md:gap-4">
-                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">業者名</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-bold shadow-sm text-sm" value={editingItem.name || ''} onChange={e => setEditingItem({...editingItem, name: e.target.value})} /></div>
-                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">ランク</label><select className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-bold shadow-sm text-sm" value={editingItem.rank || 'NORMAL'} onChange={e => setEditingItem({...editingItem, rank: e.target.value})}><option value="NORMAL">一般 (NORMAL)</option><option value="BRONZE">ブロンズ (BRONZE)</option><option value="SILVER">シルバー (SILVER)</option><option value="GOLD">ゴールド (GOLD)</option><option value="VIP">VIP</option></select></div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3 md:gap-4">
-                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">電話番号</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-mono shadow-sm text-sm" value={editingItem.phone || ''} onChange={e => setEditingItem({...editingItem, phone: toHalfWidthNumber(e.target.value)})} /></div>
-                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">保有ポイント</label><input type="number" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm font-black text-base md:text-lg text-gray-900 outline-none focus:border-gray-900 shadow-sm text-right tabular-nums" value={editingItem.points || 0} onChange={e => setEditingItem({...editingItem, points: toHalfWidthNumber(e.target.value)})} /></div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3 md:gap-4">
-                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">ログインID</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-mono shadow-sm text-sm" value={editingItem.loginId || ''} onChange={e => setEditingItem({...editingItem, loginId: e.target.value})} /></div>
-                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">パスワード</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-mono shadow-sm text-sm" value={editingItem.password || ''} onChange={e => setEditingItem({...editingItem, password: e.target.value})} /></div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3 md:gap-4">
-                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">業種</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 shadow-sm text-sm" value={editingItem.industry || ''} onChange={e => setEditingItem({...editingItem, industry: e.target.value})} /></div>
-                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">所在地</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 shadow-sm text-sm" value={editingItem.address || ''} onChange={e => setEditingItem({...editingItem, address: e.target.value})} /></div>
-                    </div>
-                    <div>
-                        <label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest flex justify-between items-center">
-                            <span>顧客メモ・AIプロファイル</span>
-                        </label>
-                        <textarea className="w-full bg-white border border-gray-300 p-3 rounded-sm min-h-[120px] text-xs md:text-sm outline-none focus:border-gray-900 leading-relaxed shadow-sm whitespace-pre-wrap" value={editingItem.memo || ''} onChange={e => setEditingItem({...editingItem, memo: e.target.value})} />
-                    </div>
-                  </div>
-                )}
-
-                {activeTab === 'STAFF' && (
-                  <div className="space-y-3 md:space-y-4">
-                    <div className="grid grid-cols-2 gap-3 md:gap-4">
-                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">スタッフ名</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-bold shadow-sm text-sm" value={editingItem.name || ''} onChange={e => setEditingItem({...editingItem, name: e.target.value})} /></div>
-                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">ステータス</label><select className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-bold shadow-sm text-sm" value={editingItem.status || 'ACTIVE'} onChange={e => setEditingItem({...editingItem, status: e.target.value})}><option value="ACTIVE">有効 (ACTIVE)</option><option value="INACTIVE">停止 (INACTIVE)</option></select></div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3 md:gap-4">
-                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">権限 (Role)</label><select className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-bold shadow-sm text-sm" value={editingItem.role || 'FRONT'} onChange={e => setEditingItem({...editingItem, role: e.target.value})}><option value="FRONT">受付 (FRONT)</option><option value="INSPECTION">検収 (INSPECTION)</option><option value="PLANT">工場 (PLANT)</option><option value="MANAGER">工場長 (MANAGER)</option><option value="ALL">管理者 (ALL)</option></select></div>
-                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">時給/単価</label><input type="number" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-mono shadow-sm text-right tabular-nums text-sm" value={editingItem.rate || 0} onChange={e => setEditingItem({...editingItem, rate: toHalfWidthNumber(e.target.value)})} /></div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3 md:gap-4">
-                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">ログインID</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-mono shadow-sm text-sm" value={editingItem.loginId || ''} onChange={e => setEditingItem({...editingItem, loginId: e.target.value})} /></div>
-                        <div><label className="block text-[9px] md:text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-widest">パスワード</label><input type="text" className="w-full bg-white border border-gray-300 p-2.5 md:p-3 rounded-sm outline-none focus:border-gray-900 font-mono shadow-sm text-sm" value={editingItem.password || ''} onChange={e => setEditingItem({...editingItem, password: e.target.value})} /></div>
-                    </div>
-                  </div>
-                )}
-            </div>
-            
-            <div className="p-3 md:p-4 border-t border-gray-200 flex justify-end gap-2 md:gap-3 bg-gray-50 shrink-0">
-              <button onClick={handleCloseModal} className="px-4 py-2 md:px-6 md:py-3 text-xs md:text-sm text-gray-600 font-bold hover:bg-gray-200 rounded-sm transition">キャンセル</button>
-              <button onClick={handleSave} disabled={isSubmitting} className="px-5 py-2 md:px-8 md:py-3 bg-[#D32F2F] text-white font-bold rounded-sm hover:bg-red-800 transition disabled:opacity-50 flex items-center gap-1 md:gap-2 shadow-md active:scale-95 text-sm md:text-lg">
-                {isSubmitting ? '保存中...' : 'マスター登録'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
+                                            <div key={col
