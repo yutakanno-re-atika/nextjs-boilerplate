@@ -11,7 +11,7 @@ const Icons = {
   Trash: () => <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
   Search: () => <svg className="w-4 h-4 md:w-5 md:h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
   Image: () => <svg className="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2-2v12a2 2 0 002 2z" /></svg>,
-  Sparkles: () => <svg className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 01-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 8.134a1 1 0 010 1.932l-3.354.933-1.179 4.456a1 1 0 01-1.934 0l-1.179-4.456-3.354-.933a1 1 0 010-1.932l3.354-.933 1.179-4.456A1 1 0 0112 2z" clipRule="evenodd" /></svg>,
+  Sparkles: () => <svg className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 110 2h1V3a1 1 0 110-2h1v-1a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 8.134a1 1 0 010 1.932l-3.354.933-1.179 4.456a1 1 0 01-1.934 0l-1.179-4.456-3.354-.933a1 1 0 010-1.932l3.354-.933 1.179-4.456A1 1 0 0112 2z" clipRule="evenodd" /></svg>,
   ArrowUp: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>,
   Close: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>,
   Refresh: () => <svg className="w-4 h-4 md:w-5 md:h-5 animate-spin inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
@@ -1424,8 +1424,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
               </div>
             </div>
         </div>
-      </div>
-      )}
+      </div>)}
 
       {activeTab === 'DOJO' && (
         <div className="bg-white border border-gray-200 shadow-sm rounded-sm flex-1 flex flex-col p-4 md:p-8 overflow-y-auto mt-2 animate-in fade-in">
@@ -1646,6 +1645,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
             
             <div className="p-4 md:p-6 overflow-y-auto space-y-4 bg-white flex-1">
                 
+                {/* ★ 改善：AIクレンジングのアラート表示 */}
                 {editingItem?.memo?.includes('【AIチェック警告】') && (
                    <div className="bg-yellow-50 border border-yellow-400 p-3 md:p-4 rounded-sm mb-4 shadow-sm relative overflow-hidden">
                        <div className="absolute top-0 right-0 bg-yellow-400 text-yellow-900 text-[8px] md:text-[10px] font-bold px-2 py-0.5 rounded-bl-sm">AI検知</div>
@@ -1658,6 +1658,79 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                        </div>
                    </div>
                 )}
+
+              {/* ========================================================= */}
+              {/* 👑 真実のトライフォース（実測 vs AI vs カタログ）比較UI */}
+              {/* ========================================================= */}
+              {activeTab === 'WIRES' && editingItem && (
+                  <div className="mb-6 bg-gray-900 p-4 rounded-sm shadow-xl border-t-4 border-[#D32F2F] relative overflow-hidden">
+                      <div className="absolute top-0 right-0 opacity-5 transform scale-150 -translate-y-4"><Icons.Brain /></div>
+                      <h4 className="text-white font-bold text-sm mb-3 flex items-center gap-2 relative z-10">
+                          <Icons.Radar /> 総合歩留まり検証ダッシュボード
+                      </h4>
+                      <div className="grid grid-cols-3 gap-3 relative z-10">
+                          {/* 1. ボスの実測（絶対基準） */}
+                          <div className="bg-white p-3 rounded-sm border-2 border-[#D32F2F] flex flex-col justify-between shadow-md relative">
+                              <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-[#D32F2F] text-white text-[9px] font-bold px-2 py-0.5 rounded-sm tracking-widest whitespace-nowrap">👑 ボスの実測 (至高)</span>
+                              <p className="text-[10px] text-gray-500 font-bold text-center mt-2">現在の設定値</p>
+                              <p className="text-3xl font-black text-gray-900 font-mono text-center tracking-tighter my-1">
+                                  {editingItem.ratio || '---'}<span className="text-sm font-normal">%</span>
+                              </p>
+                              <p className="text-[9px] text-gray-400 text-center font-mono">
+                                  {editingItem.sampleTotal ? `${editingItem.sampleCopper}g / ${editingItem.sampleTotal}g` : '実測データなし'}
+                              </p>
+                          </div>
+
+                          {/* 2. AIの推論 */}
+                          <div className="bg-gray-800 p-3 rounded-sm border border-gray-700 flex flex-col justify-between">
+                              <p className="text-[10px] text-blue-400 font-bold text-center flex justify-center items-center gap-1"><Icons.Sparkles /> AI 推論</p>
+                              <p className="text-2xl font-black text-white font-mono text-center tracking-tighter my-1">
+                                  {editingItem.aiEstimatedRatio || '---'}<span className="text-sm font-normal text-gray-400">%</span>
+                              </p>
+                              <button 
+                                  onClick={() => {
+                                      if(!editingItem.aiEstimatedRatio) return;
+                                      if(confirm('ボスの至高データ（実測値）をAIの推論値で上書きしますか？\n（※上書きしても「サンプル実測g」は保持されます）')) {
+                                          setEditingItem({...editingItem, ratio: editingItem.aiEstimatedRatio});
+                                      }
+                                  }} 
+                                  disabled={!editingItem.aiEstimatedRatio}
+                                  className="mt-1 text-[9px] bg-blue-900/50 hover:bg-blue-800 text-blue-200 py-1 rounded-sm border border-blue-700 transition disabled:opacity-30"
+                              >
+                                  採用する
+                              </button>
+                          </div>
+
+                          {/* 3. カタログ公称値 (API呼び出し) */}
+                          <div className="bg-gray-800 p-3 rounded-sm border border-gray-700 flex flex-col justify-between relative group">
+                              <p className="text-[10px] text-yellow-500 font-bold text-center">📖 カタログ理論値</p>
+                              <div className="text-center my-1">
+                                  <button 
+                                      onClick={async (e) => {
+                                          const btn = e.currentTarget;
+                                          btn.innerHTML = '<span class="animate-spin inline-block">↻</span> 検索中...';
+                                          try {
+                                              const res = await fetch(`/api/specs?maker=${editingItem.maker || ''}&name=${editingItem.name || ''}&size=${editingItem._sqValue || ''}&core=${editingItem._coreValue || ''}`);
+                                              const d = await res.json();
+                                              if (d.success && d.data.length > 0) {
+                                                  const spec = d.data[0];
+                                                  btn.outerHTML = `<div class="flex flex-col"><span class="text-2xl font-black text-white font-mono tracking-tighter">${spec.theoreticalRatio}<span class="text-sm font-normal text-gray-400">%</span></span><span class="text-[9px] text-gray-400 truncate w-full block">${spec.weightPerKm}kg/km</span></div>`;
+                                              } else {
+                                                  btn.outerHTML = `<span class="text-xs text-gray-500 font-bold">データなし</span>`;
+                                              }
+                                          } catch(err) {
+                                              btn.innerHTML = '検索エラー';
+                                          }
+                                      }}
+                                      className="text-[10px] bg-gray-700 hover:bg-gray-600 text-gray-300 px-2 py-1.5 rounded-sm transition mt-1 w-full"
+                                  >
+                                      仕様書を検索
+                                  </button>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              )}
 
                 {activeTab === 'WIRES' && (
                     <div className="bg-gray-50 border border-gray-200 p-3 md:p-4 rounded-sm flex justify-between items-center shadow-inner mb-2">
