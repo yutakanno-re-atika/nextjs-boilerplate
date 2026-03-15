@@ -1,5 +1,4 @@
 // app/components/admin/AdminDatabase.tsx
-// @ts-nocheck
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 
 const STATUS_COLUMN_INDEX = 21;
@@ -31,45 +30,33 @@ const Icons = {
 
 const toHalfWidthNumber = (str: any) => {
   if (str == null || str === '') return '';
-  return String(str)
-    .replace(/[０-９．]/g, (s) => {
-      if (s === '．') return '.';
-      return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
-    })
-    .replace(/[^0-9.]/g, ''); 
+  return String(str).replace(/[０-９．]/g, (s) => s === '．' ? '.' : String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/[^0-9.]/g, ''); 
 };
 
 const formatTimeShort = (timeStr: string) => {
   if (!timeStr) return '-';
   const str = String(timeStr);
   const match = str.match(/(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})[T\s](\d{1,2}):(\d{1,2})/);
-  if (match) {
-    const YY = match[1].substring(2); const MM = match[2].padStart(2, '0'); const DD = match[3].padStart(2, '0');
-    const HH = match[4].padStart(2, '0'); const mm = match[5].padStart(2, '0');
-    return `${YY}/${MM}/${DD} ${HH}:${mm}`;
-  }
+  if (match) return `${match[1].substring(2)}/${match[2].padStart(2, '0')}/${match[3].padStart(2, '0')} ${match[4].padStart(2, '0')}:${match[5].padStart(2, '0')}`;
   return str.substring(0, 16);
 };
 
 const formatSqDisplay = (sq: any) => {
   if (!sq || sq === '-') return '-';
   const s = String(sq).toLowerCase();
-  if (s.includes('sq') || s.includes('mm')) return sq;
-  return `${sq} sq`;
+  return s.includes('sq') || s.includes('mm') ? sq : `${sq} sq`;
 };
 const formatCoreDisplay = (core: any) => {
   if (!core || core === '-') return '-';
   const c = String(core).toUpperCase();
-  if (c.includes('C') || c.includes('芯')) return core;
-  return `${core}C`;
+  return c.includes('C') || c.includes('芯') ? core : `${core}C`;
 };
 
 const parseSqForInput = (sq: string) => {
   if (!sq || sq === '-') return { val: '', unit: 'sq' };
   const str = String(sq).toLowerCase();
   const match = str.match(/^([\d.]+)\s*(sq|mm)?$/);
-  if (match) return { val: match[1], unit: match[2] || 'sq' };
-  return { val: str, unit: 'sq' };
+  return match ? { val: match[1], unit: match[2] || 'sq' } : { val: str, unit: 'sq' };
 };
 const parseCoreForInput = (core: string) => {
   if (!core || core === '-') return '';
@@ -80,25 +67,18 @@ const parseCoreForInput = (core: string) => {
 const getDriveImageUrl = (url: string) => {
   if (!url) return '';
   const match = url.match(/id=([^&]+)/) || url.match(/file\/d\/([^\/]+)/);
-  if (match && match[1]) {
-      return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1000`;
-  }
-  return url;
+  return match && match[1] ? `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1000` : url;
 };
 
 const getDriveViewUrl = (url: string) => {
   if (!url) return '';
   const match = url.match(/id=([^&]+)/) || url.match(/file\/d\/([^\/]+)/);
-  if (match && match[1]) {
-      return `https://drive.google.com/file/d/${match[1]}/view`;
-  }
-  return url;
+  return match && match[1] ? `https://drive.google.com/file/d/${match[1]}/view` : url;
 };
 
 const DojoChart = ({ errors }: { errors: number[] }) => {
   if (!errors || errors.length === 0) return <div className="h-32 flex items-center justify-center text-gray-400">データがありません</div>;
   const max = Math.max(10, ...errors);
-  
   return (
     <div className="flex items-end h-32 gap-1 w-full mt-4 border-b border-l border-gray-300 pb-1 pl-1">
       {errors.map((err, i) => {
@@ -107,9 +87,7 @@ const DojoChart = ({ errors }: { errors: number[] }) => {
         return (
           <div key={i} className="flex-1 flex flex-col justify-end group relative">
             <div className={`w-full rounded-t-sm transition-all duration-500 ${color} hover:opacity-80`} style={{ height }}></div>
-            <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded pointer-events-none whitespace-nowrap z-10">
-              誤差 {err}%
-            </div>
+            <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded pointer-events-none whitespace-nowrap z-10">誤差 {err}%</div>
           </div>
         );
       })}
@@ -117,9 +95,6 @@ const DojoChart = ({ errors }: { errors: number[] }) => {
   );
 };
 
-// ============================================================================
-// 📖 インライン・カタログブラウザ
-// ============================================================================
 const InlineDatabaseSpecs = () => {
   const [specs, setSpecs] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -127,22 +102,16 @@ const InlineDatabaseSpecs = () => {
 
   useEffect(() => {
     setLoading(true);
-    fetch('/api/specs')
-      .then(res => res.json())
-      .then(d => {
+    fetch('/api/specs').then(res => res.json()).then(d => {
         if (d.success) setSpecs(d.data || []);
         setLoading(false);
-      })
-      .catch(() => setLoading(false));
+    }).catch(() => setLoading(false));
   }, []);
 
   const filtered = useMemo(() => {
     if (!searchTerm) return specs;
     const terms = searchTerm.toLowerCase().split(' ').filter(Boolean);
-    return specs.filter(s => {
-      const target = `${s.maker} ${s.name} ${s.size} ${s.core}`.toLowerCase();
-      return terms.every(t => target.includes(t));
-    });
+    return specs.filter(s => terms.every(t => `${s.maker} ${s.name} ${s.size} ${s.core}`.toLowerCase().includes(t)));
   }, [specs, searchTerm]);
 
   return (
@@ -152,9 +121,7 @@ const InlineDatabaseSpecs = () => {
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Icons.Search /></div>
           <input type="text" placeholder="カタログ検索 (例: 矢崎 CV 14)..." className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-sm text-sm focus:border-gray-900 outline-none shadow-inner" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
-        <div className="bg-gray-100 text-gray-500 text-xs font-bold px-4 py-2 border border-gray-300 rounded-sm flex items-center whitespace-nowrap">
-          総収録数: {specs.length}件
-        </div>
+        <div className="bg-gray-100 text-gray-500 text-xs font-bold px-4 py-2 border border-gray-300 rounded-sm flex items-center whitespace-nowrap">総収録数: {specs.length}件</div>
       </div>
       <div className="flex-1 overflow-y-auto p-0">
         {loading ? (
@@ -182,9 +149,7 @@ const InlineDatabaseSpecs = () => {
                   <td className="p-3 font-mono font-black text-yellow-600 text-right text-lg">{s.theoreticalRatio}%</td>
                 </tr>
               ))}
-              {filtered.length === 0 && (
-                <tr><td colSpan={6} className="p-10 text-center text-gray-400 font-bold">データがありません</td></tr>
-              )}
+              {filtered.length === 0 && <tr><td colSpan={6} className="p-10 text-center text-gray-400 font-bold">データがありません</td></tr>}
             </tbody>
           </table>
         )}
@@ -205,7 +170,7 @@ const getCategory = (name: string) => {
   return 'その他';
 };
 
-export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoiceOutputEnabled?: boolean }) => {
+export const AdminDatabase = ({ data }: { data: any }) => {
   const [activeTab, setActiveTab] = useState<'WIRES' | 'SPECS' | 'UNKNOWN' | 'CASTINGS' | 'CLIENTS' | 'STAFF' | 'DOJO'>('WIRES');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('すべて');
@@ -328,20 +293,17 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   };
 
   const handleSampleTotalChange = (val: string) => { 
-      const cleanVal = toHalfWidthNumber(val);
-      const num = cleanVal ? Number(cleanVal) : ''; 
+      const num = val ? Number(toHalfWidthNumber(val)) : ''; 
       setSampleTotal(num); 
       setEditingItem({...editingItem, sampleTotal: num, ratio: calculateRatio(num, sampleCopper)}); 
   };
   const handleSampleCopperChange = (val: string) => { 
-      const cleanVal = toHalfWidthNumber(val);
-      const num = cleanVal ? Number(cleanVal) : ''; 
+      const num = val ? Number(toHalfWidthNumber(val)) : ''; 
       setSampleCopper(num); 
       setEditingItem({...editingItem, sampleCopper: num, ratio: calculateRatio(sampleTotal, num)}); 
   };
   const handleSampleCoverChange = (val: string) => { 
-      const cleanVal = toHalfWidthNumber(val);
-      const num = cleanVal ? Number(cleanVal) : ''; 
+      const num = val ? Number(toHalfWidthNumber(val)) : ''; 
       setSampleCover(num); 
       setEditingItem({...editingItem, sampleCover: num}); 
   };
@@ -377,8 +339,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const handleCaliperInput = () => {
       const val = window.prompt("📐 ノギスで実測した「直径(mm)」を入力してください\n例: 2.0 または 3.5");
       if (!val) return;
-      const cleanVal = toHalfWidthNumber(val);
-      const d = parseFloat(cleanVal);
+      const d = parseFloat(toHalfWidthNumber(val));
       if (isNaN(d) || d <= 0) return alert("正しい数値を入力してください。");
 
       const isSolid = editingItem.conductor && (editingItem.conductor.includes('単線') || editingItem.conductor === 'Solid');
@@ -485,7 +446,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       if (!confirm(`全 ${targets.length} 件のデータに対してAIクレンジングを実行します。\n（勝手に上書きはされず、差異があったデータにのみアラートが付きます）\n画面を閉じずにそのままお待ちください。`)) return;
 
       setCleansingState({ isRunning: true, current: 0, total: targets.length });
-
       let alertedCount = 0;
       for (let i = 0; i < targets.length; i++) {
           setCleansingState({ isRunning: true, current: i + 1, total: targets.length });
@@ -500,7 +460,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
           } catch (e) { }
           await new Promise(resolve => setTimeout(resolve, 3000)); 
       }
-
       alert(`クレンジングが完了しました！\n新たに ${alertedCount} 件のデータにアラートが設定されました。`);
       setCleansingState({ isRunning: false, current: 0, total: 0 });
       window.location.reload();
@@ -512,7 +471,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       if (!confirm(`全 ${targets.length} 件のデータで「AI総当たり特訓」を開始しますか？\n※完了まで数十分〜1時間程度かかる場合があります。\n※寝ている間など、PCと画面を開いたまま放置してください。`)) return;
 
       setDojoProgress({ isRunning: true, current: 0, total: targets.length });
-
       let successCount = 0;
       for (let i = 0; i < targets.length; i++) {
           setDojoProgress({ isRunning: true, current: i + 1, total: targets.length });
@@ -526,10 +484,8 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
               const json = await res.json();
               if (json.success) successCount++;
           } catch (e) { console.error(`Dojo Error on ${target.id}`, e); }
-          
           await new Promise(resolve => setTimeout(resolve, 4000)); 
       }
-
       alert(`全 ${targets.length} 件の特訓が完了しました！（成功: ${successCount}件）`);
       setDojoProgress({ isRunning: false, current: 0, total: 0 });
       window.location.reload();
@@ -568,14 +524,9 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       if (data.success) {
         const pureName = groupData.captain?.name || wireName;
         setMergeProposal({ name: pureName, records, allIds: groupData.allIds, ...data.result });
-      } else {
-        alert("分析エラー: " + data.message);
-      }
-    } catch (e) {
-      alert("通信エラーが発生しました。");
-    } finally {
-      setAnalyzingName(null);
-    }
+      } else { alert("分析エラー: " + data.message); }
+    } catch (e) { alert("通信エラーが発生しました。"); } 
+    finally { setAnalyzingName(null); }
   };
 
   const handleApplyMerge = async () => {
@@ -586,8 +537,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     try {
       const updatePromises = mergeProposal.allIds.map((id: string) => {
         return fetch(gasUrl, { 
-          method: 'POST', 
-          headers: { 'Content-Type': 'application/json' }, 
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, 
           body: JSON.stringify({ action: 'UPDATE_DB_RECORD', sheetName: 'Products_Wire', recordId: id, updates: { [STATUS_COLUMN_INDEX]: 'archived' } }) 
         });
       });
@@ -595,12 +545,9 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
       const baseItem = mergeProposal.records[0];
       const payload = {
-        action: 'ADD_DB_RECORD',
-        sheetName: 'Products_Wire',
+        action: 'ADD_DB_RECORD', sheetName: 'Products_Wire',
         data: {
-          ...baseItem,
-          name: mergeProposal.name,
-          ratio: mergeProposal.mergedYieldRate,
+          ...baseItem, name: mergeProposal.name, ratio: mergeProposal.mergedYieldRate,
           memo: `【AI統合データ】\n${mergeProposal.mergedDescription}\n\n※過去${mergeProposal.records.length}件のデータを統合。`,
           status: 'active'
         }
@@ -608,13 +555,9 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       delete payload.data.id; delete payload.data.createdAt; delete payload.data.updatedAt;
 
       await fetch(gasUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      
       alert("✨ マージ完了！統合データを作成し、過去のデータは教師データとして保持しました。");
       window.location.reload();
-    } catch (e) {
-      alert("マージ処理中にエラーが発生しました。");
-      setIsMerging(false);
-    }
+    } catch (e) { alert("マージ処理中にエラーが発生しました。"); setIsMerging(false); }
   };
 
   const compressImage = (file: File, isDetailMode: boolean = true): Promise<string> => {
@@ -626,9 +569,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
               img.onload = () => {
                   try {
                       const canvas = document.createElement('canvas');
-                      const MAX = isDetailMode ? 1600 : 1024; 
-                      const quality = isDetailMode ? 0.85 : 0.7;
-                      
+                      const MAX = isDetailMode ? 1600 : 1024; const quality = isDetailMode ? 0.85 : 0.7;
                       let w = img.width; let h = img.height;
                       if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } } else { if (h > MAX) { w *= MAX / h; h = MAX; } }
                       canvas.width = w; canvas.height = h;
@@ -636,9 +577,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                       if (!ctx) throw new Error("Canvas context error");
                       ctx.drawImage(img, 0, 0, w, h);
                       resolve(canvas.toDataURL('image/jpeg', quality).split(',')[1]); 
-                  } catch (e) {
-                      reject(new Error("画像の圧縮に失敗しました。"));
-                  }
+                  } catch (e) { reject(new Error("画像の圧縮に失敗しました。")); }
               };
               img.onerror = () => reject(new Error('画像の読み込みに失敗しました'));
               img.src = event.target?.result as string;
@@ -663,11 +602,8 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     try { 
         const isDetail = num !== 2;
         const compressed = await compressImage(file, isDetail); 
-        
-        if (num === 1) setImgData1(compressed); 
-        else if (num === 2) setImgData2(compressed); 
-        else if (num === 3) setImgData3(compressed); 
-        else if (num === 4) setImgData4(compressed); 
+        if (num === 1) setImgData1(compressed); else if (num === 2) setImgData2(compressed); 
+        else if (num === 3) setImgData3(compressed); else if (num === 4) setImgData4(compressed); 
     } catch (err: any) { alert(err.message); } 
     finally { e.target.value = ''; }
   };
@@ -678,9 +614,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       if (!SpeechRecognition) return;
       const recognition = new SpeechRecognition();
       recognition.lang = 'ja-JP'; recognition.continuous = true; recognition.interimResults = true;
-
       recognition.onstart = () => { setIsListening(true); setVoiceText('🎤 認識中... (もう一度押すと終了)'); };
-      
       let finalTranscript = '';
       recognition.onresult = (event: any) => {
           let interimTranscript = '';
@@ -700,10 +634,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   };
 
   const toggleHintVoiceInput = () => {
-      if (isListeningHint) {
-          if (hintRecognitionRef.current) hintRecognitionRef.current.stop();
-          return;
-      }
+      if (isListeningHint) { if (hintRecognitionRef.current) hintRecognitionRef.current.stop(); return; }
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) return alert('非対応');
       const recognition = new SpeechRecognition();
@@ -720,29 +651,23 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
           setAiHint(currentHint + (currentHint ? ' ' : '') + finalStr + interim);
       };
       recognition.onend = () => { setIsListeningHint(false); setAiHint(currentHint + (currentHint ? ' ' : '') + finalStr); };
-      hintRecognitionRef.current = recognition;
-      recognition.start();
+      hintRecognitionRef.current = recognition; recognition.start();
   };
 
   const runAiExtraction = async () => {
     if (!imgData1) return alert('最低1枚の画像（断面など）をアップロードしてください');
-    
     const totalSize = (imgData1.length + imgData2.length + imgData3.length + imgData4.length) * 0.75;
-    if (totalSize > 4 * 1024 * 1024) {
-        return alert('⚠️ 画像サイズの合計が大きすぎます（通信エラーになります）。\n不要な画像を削除するか、もう少し離れて撮影してください。');
-    }
+    if (totalSize > 4 * 1024 * 1024) return alert('⚠️ 画像サイズの合計が大きすぎます。\n不要な画像を削除するか、もう少し離れて撮影してください。');
 
     setAiStatus('ANALYZING'); setAiProgressStep(1); 
     const progressInterval = setInterval(() => { setAiProgressStep(prev => { if (prev === 1) return 2; if (prev === 2) return 3; return 3; }); }, 2000);
     
     try {
       const res = await fetch('/api/gas', { 
-          method: 'POST', 
-          headers: { 'Content-Type': 'application/json' }, 
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, 
           body: JSON.stringify({ action: 'VISION_AI_REGISTER', imageData: imgData1, imageData2: imgData2, imageData3: imgData3, imageData4: imgData4, hint: aiHint }) 
       });
       const result = await res.json();
-      
       clearInterval(progressInterval); setAiProgressStep(4);
 
       setTimeout(() => {
@@ -764,7 +689,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
           } else { alert('AI抽出エラー: ' + result.message); }
           setAiStatus('IDLE'); setAiProgressStep(0);
       }, 800);
-
     } catch(err) { clearInterval(progressInterval); alert('通信エラーが発生しました。'); setAiStatus('IDLE'); setAiProgressStep(0); }
   };
 
@@ -779,23 +703,19 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   };
 
   let filteredData = [];
-  
   if (activeTab === 'WIRES') {
       filteredData = wires.filter((w:any) => {
           if (selectedCategory !== 'すべて' && getCategory(w.name) !== selectedCategory) return false;
           if (filterMaker && w.maker !== filterMaker) return false;
-
           const has1 = !!w.image1; const has2 = !!w.image2; const has3 = !!w.image3;
           if (imageStatusFilter === 'COMPLETE' && !(has1 && has2 && has3)) return false;
           if (imageStatusFilter === 'NONE' && (has1 || has2 || has3)) return false;
           if (imageStatusFilter === 'PARTIAL' && ((has1 && has2 && has3) || (!has1 && !has2 && !has3))) return false;
-
           if (searchTerm) {
               const coreStr = String(w.core || w.cores || w.coreCount || '');
               const coreFormatted = coreStr && coreStr !== '-' ? `${coreStr}c ${coreStr}芯` : '';
               const sqStr = String(w.size || w.sq || '');
               const sqFormatted = sqStr && sqStr !== '-' ? `${sqStr}sq ${sqStr}スケ` : '';
-              
               const searchTarget = `${w.name} ${w.maker} ${sqFormatted} ${sqStr} ${coreFormatted} ${coreStr} ${w.year}`.toLowerCase();
               const terms = searchTerm.toLowerCase().replace(/　/g, ' ').split(' ').filter(Boolean);
               return terms.every(term => searchTarget.includes(term));
@@ -885,21 +805,14 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       const conductor = w.conductor && w.conductor !== '-' ? ` [${w.conductor}]` : '';
       
       let groupKey = `${maker}${name}${voltage}${sq}${core}${year}${conductor}`.trim();
-
-      if (!w.sq || w.sq === '-' || !w.core || w.core === '-') {
-         groupKey = `${groupKey}_独自ID:${w.id}`;
-      }
+      if (!w.sq || w.sq === '-' || !w.core || w.core === '-') groupKey = `${groupKey}_独自ID:${w.id}`;
 
       if (!groups[groupKey]) groups[groupKey] = { captain: null, members: [], allIds: [] };
-      
       groups[groupKey].allIds.push(w.id);
 
       if (w.status !== 'archived') {
-        if (!groups[groupKey].captain) {
-          groups[groupKey].captain = w;
-        } else {
-          groups[groupKey].members.push(w);
-        }
+        if (!groups[groupKey].captain) groups[groupKey].captain = w;
+        else groups[groupKey].members.push(w);
       } else {
         groups[groupKey].members.push(w);
       }
@@ -930,11 +843,9 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                     <button onClick={() => setEditingItem({...editingItem, [pendingKey]: null})} className="absolute top-1 right-1 bg-[#D32F2F] text-white p-1 rounded-sm shadow-md z-20 hover:bg-red-800"><Icons.Trash /></button>
                 </>
             ) : savedImage ? (
-                <>
-                    <a href={getDriveViewUrl(savedImage)} target="_blank" rel="noopener noreferrer" className="absolute inset-0 w-full h-full block">
-                        <img src={getDriveImageUrl(savedImage)} referrerPolicy="no-referrer" className="w-full h-full object-cover group-hover:scale-110 transition-transform cursor-zoom-in" />
-                    </a>
-                </>
+                <a href={getDriveViewUrl(savedImage)} target="_blank" rel="noopener noreferrer" className="absolute inset-0 w-full h-full block">
+                    <img src={getDriveImageUrl(savedImage)} referrerPolicy="no-referrer" className="w-full h-full object-cover group-hover:scale-110 transition-transform cursor-zoom-in" />
+                </a>
             ) : ( 
                 <div className="flex gap-1 w-full h-full mt-3 md:mt-4">
                     <label className="flex-1 cursor-pointer flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-200 text-gray-500 hover:text-gray-900 transition border border-gray-300 rounded-sm" title="カメラ"><Icons.Camera /><input type="file" onChange={(e) => handleImageUploadLocal(e, pendingKey)} className="hidden" accept="image/*" capture="environment" /></label>
@@ -978,10 +889,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                      <span className="font-mono text-[10px] text-gray-400">{cleansingState.current} / {cleansingState.total} 件</span>
                  </div>
              ) : (
-                 <button 
-                     onClick={runDataCleansing}
-                     className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-sm font-bold flex items-center gap-1 transition border border-gray-600 shadow-sm"
-                 >
+                 <button onClick={runDataCleansing} className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-sm font-bold flex items-center gap-1 transition border border-gray-600 shadow-sm">
                     <Icons.Brain /> 断面・剥線画像から導体構成を再判定する
                  </button>
              )}
@@ -1019,18 +927,10 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                       </div>
                   </div>
                   <div className="flex gap-1.5 overflow-x-auto w-full lg:w-auto pb-1 [&::-webkit-scrollbar]:hidden">
-                      <button onClick={() => setImageStatusFilter('ALL')} className={`px-2 py-1 md:px-3 md:py-1.5 rounded-sm text-[9px] md:text-[10px] font-bold transition whitespace-nowrap border ${imageStatusFilter === 'ALL' ? 'bg-gray-900 text-white border-gray-900 shadow-inner' : 'bg-white text-gray-600 hover:bg-gray-100 border-gray-300'}`}>
-                          全 {wireStats.total}件
-                      </button>
-                      <button onClick={() => setImageStatusFilter('COMPLETE')} className={`px-2 py-1 md:px-3 md:py-1.5 rounded-sm text-[9px] md:text-[10px] font-bold transition flex items-center gap-1 whitespace-nowrap border ${imageStatusFilter === 'COMPLETE' ? 'bg-green-700 text-white border-green-800 shadow-inner' : 'bg-white text-green-700 border-green-300 hover:bg-green-50'}`}>
-                          ✨ 完備 ({wireStats.complete})
-                      </button>
-                      <button onClick={() => setImageStatusFilter('PARTIAL')} className={`px-2 py-1 md:px-3 md:py-1.5 rounded-sm text-[9px] md:text-[10px] font-bold transition flex items-center gap-1 whitespace-nowrap border ${imageStatusFilter === 'PARTIAL' ? 'bg-yellow-600 text-white border-yellow-700 shadow-inner' : 'bg-white text-yellow-700 border-yellow-300 hover:bg-yellow-50'}`}>
-                          🔄 不足 ({wireStats.partial})
-                      </button>
-                      <button onClick={() => setImageStatusFilter('NONE')} className={`px-2 py-1 md:px-3 md:py-1.5 rounded-sm text-[9px] md:text-[10px] font-bold transition flex items-center gap-1 whitespace-nowrap border ${imageStatusFilter === 'NONE' ? 'bg-[#D32F2F] text-white border-red-800 shadow-inner' : 'bg-white text-[#D32F2F] border-red-300 hover:bg-red-50'}`}>
-                          ❌ 未登録 ({wireStats.none})
-                      </button>
+                      <button onClick={() => setImageStatusFilter('ALL')} className={`px-2 py-1 md:px-3 md:py-1.5 rounded-sm text-[9px] md:text-[10px] font-bold transition whitespace-nowrap border ${imageStatusFilter === 'ALL' ? 'bg-gray-900 text-white border-gray-900 shadow-inner' : 'bg-white text-gray-600 hover:bg-gray-100 border-gray-300'}`}>全 {wireStats.total}件</button>
+                      <button onClick={() => setImageStatusFilter('COMPLETE')} className={`px-2 py-1 md:px-3 md:py-1.5 rounded-sm text-[9px] md:text-[10px] font-bold transition flex items-center gap-1 whitespace-nowrap border ${imageStatusFilter === 'COMPLETE' ? 'bg-green-700 text-white border-green-800 shadow-inner' : 'bg-white text-green-700 border-green-300 hover:bg-green-50'}`}>✨ 完備 ({wireStats.complete})</button>
+                      <button onClick={() => setImageStatusFilter('PARTIAL')} className={`px-2 py-1 md:px-3 md:py-1.5 rounded-sm text-[9px] md:text-[10px] font-bold transition flex items-center gap-1 whitespace-nowrap border ${imageStatusFilter === 'PARTIAL' ? 'bg-yellow-600 text-white border-yellow-700 shadow-inner' : 'bg-white text-yellow-700 border-yellow-300 hover:bg-yellow-50'}`}>🔄 不足 ({wireStats.partial})</button>
+                      <button onClick={() => setImageStatusFilter('NONE')} className={`px-2 py-1 md:px-3 md:py-1.5 rounded-sm text-[9px] md:text-[10px] font-bold transition flex items-center gap-1 whitespace-nowrap border ${imageStatusFilter === 'NONE' ? 'bg-[#D32F2F] text-white border-red-800 shadow-inner' : 'bg-white text-[#D32F2F] border-red-300 hover:bg-red-50'}`}>❌ 未登録 ({wireStats.none})</button>
                   </div>
               </div>
           )}
@@ -1720,7 +1620,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
             
             <div className="p-4 md:p-6 overflow-y-auto space-y-4 bg-white flex-1">
                 
-                {/* ★ 改善：AIクレンジングのアラート表示 */}
                 {editingItem?.memo?.includes('【AIチェック警告】') && (
                    <div className="bg-yellow-50 border border-yellow-400 p-3 md:p-4 rounded-sm mb-4 shadow-sm relative overflow-hidden">
                        <div className="absolute top-0 right-0 bg-yellow-400 text-yellow-900 text-[8px] md:text-[10px] font-bold px-2 py-0.5 rounded-bl-sm">AI検知</div>
@@ -1734,9 +1633,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                    </div>
                 )}
 
-              {/* ========================================================= */}
-              {/* 👑 真実のトライフォース（実測 vs AI vs カタログ）比較UI */}
-              {/* ========================================================= */}
               {activeTab === 'WIRES' && editingItem && (
                   <div className="mb-6 bg-gray-900 p-4 rounded-sm shadow-xl border-t-4 border-[#D32F2F] relative overflow-hidden">
                       <div className="absolute top-0 right-0 opacity-5 transform scale-150 -translate-y-4"><Icons.Brain /></div>
@@ -1744,7 +1640,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                           <Icons.Radar /> 総合歩留まり検証ダッシュボード
                       </h4>
                       <div className="grid grid-cols-3 gap-3 relative z-10">
-                          {/* 1. ボスの実測（絶対基準） */}
                           <div className="bg-white p-3 rounded-sm border-2 border-[#D32F2F] flex flex-col justify-between shadow-md relative">
                               <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-[#D32F2F] text-white text-[9px] font-bold px-2 py-0.5 rounded-sm tracking-widest whitespace-nowrap">👑 ボスの実測 (至高)</span>
                               <p className="text-[10px] text-gray-500 font-bold text-center mt-2">現在の設定値</p>
@@ -1756,7 +1651,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                               </p>
                           </div>
 
-                          {/* 2. AIの推論 */}
                           <div className="bg-gray-800 p-3 rounded-sm border border-gray-700 flex flex-col justify-between">
                               <p className="text-[10px] text-blue-400 font-bold text-center flex justify-center items-center gap-1"><Icons.Sparkles /> AI 推論</p>
                               <p className="text-2xl font-black text-white font-mono text-center tracking-tighter my-1">
@@ -1776,7 +1670,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                               </button>
                           </div>
 
-                          {/* 3. カタログ公称値 (API呼び出し) */}
                           <div className="bg-gray-800 p-3 rounded-sm border border-gray-700 flex flex-col justify-between relative group">
                               <p className="text-[10px] text-yellow-500 font-bold text-center">📖 カタログ理論値</p>
                               <div className="text-center my-1">
