@@ -1,5 +1,4 @@
 // app/components/admin/AdminDatabase.tsx
-// @ts-nocheck
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 
 const STATUS_COLUMN_INDEX = 21;
@@ -26,50 +25,40 @@ const Icons = {
   AlertTriangle: () => <svg className="w-3 h-3 md:w-4 md:h-4 inline-block text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
   Cpu: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" /></svg>,
   Users: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
-  Brain: () => <svg className="w-4 h-4 md:w-5 md:h-5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+  Brain: () => <svg className="w-4 h-4 md:w-5 md:h-5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>,
+  Radar: () => <svg className="w-4 h-4 md:w-5 md:h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>,
+  Filter: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
 };
 
 const toHalfWidthNumber = (str: any) => {
   if (str == null || str === '') return '';
-  return String(str)
-    .replace(/[０-９．]/g, (s) => {
-      if (s === '．') return '.';
-      return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
-    })
-    .replace(/[^0-9.]/g, ''); 
+  return String(str).replace(/[０-９．]/g, (s) => s === '．' ? '.' : String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/[^0-9.]/g, ''); 
 };
 
 const formatTimeShort = (timeStr: string) => {
   if (!timeStr) return '-';
   const str = String(timeStr);
   const match = str.match(/(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})[T\s](\d{1,2}):(\d{1,2})/);
-  if (match) {
-    const YY = match[1].substring(2); const MM = match[2].padStart(2, '0'); const DD = match[3].padStart(2, '0');
-    const HH = match[4].padStart(2, '0'); const mm = match[5].padStart(2, '0');
-    return `${YY}/${MM}/${DD} ${HH}:${mm}`;
-  }
+  if (match) return `${match[1].substring(2)}/${match[2].padStart(2, '0')}/${match[3].padStart(2, '0')} ${match[4].padStart(2, '0')}:${match[5].padStart(2, '0')}`;
   return str.substring(0, 16);
 };
 
 const formatSqDisplay = (sq: any) => {
   if (!sq || sq === '-') return '-';
   const s = String(sq).toLowerCase();
-  if (s.includes('sq') || s.includes('mm')) return sq;
-  return `${sq} sq`;
+  return s.includes('sq') || s.includes('mm') ? sq : `${sq} sq`;
 };
 const formatCoreDisplay = (core: any) => {
   if (!core || core === '-') return '-';
   const c = String(core).toUpperCase();
-  if (c.includes('C') || c.includes('芯')) return core;
-  return `${core}C`;
+  return c.includes('C') || c.includes('芯') ? core : `${core}C`;
 };
 
 const parseSqForInput = (sq: string) => {
   if (!sq || sq === '-') return { val: '', unit: 'sq' };
   const str = String(sq).toLowerCase();
   const match = str.match(/^([\d.]+)\s*(sq|mm)?$/);
-  if (match) return { val: match[1], unit: match[2] || 'sq' };
-  return { val: str, unit: 'sq' };
+  return match ? { val: match[1], unit: match[2] || 'sq' } : { val: str, unit: 'sq' };
 };
 const parseCoreForInput = (core: string) => {
   if (!core || core === '-') return '';
@@ -80,25 +69,18 @@ const parseCoreForInput = (core: string) => {
 const getDriveImageUrl = (url: string) => {
   if (!url) return '';
   const match = url.match(/id=([^&]+)/) || url.match(/file\/d\/([^\/]+)/);
-  if (match && match[1]) {
-      return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1000`;
-  }
-  return url;
+  return match && match[1] ? `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1000` : url;
 };
 
 const getDriveViewUrl = (url: string) => {
   if (!url) return '';
   const match = url.match(/id=([^&]+)/) || url.match(/file\/d\/([^\/]+)/);
-  if (match && match[1]) {
-      return `https://drive.google.com/file/d/${match[1]}/view`;
-  }
-  return url;
+  return match && match[1] ? `https://drive.google.com/file/d/${match[1]}/view` : url;
 };
 
 const DojoChart = ({ errors }: { errors: number[] }) => {
   if (!errors || errors.length === 0) return <div className="h-32 flex items-center justify-center text-gray-400">データがありません</div>;
   const max = Math.max(10, ...errors);
-  
   return (
     <div className="flex items-end h-32 gap-1 w-full mt-4 border-b border-l border-gray-300 pb-1 pl-1">
       {errors.map((err, i) => {
@@ -107,9 +89,7 @@ const DojoChart = ({ errors }: { errors: number[] }) => {
         return (
           <div key={i} className="flex-1 flex flex-col justify-end group relative">
             <div className={`w-full rounded-t-sm transition-all duration-500 ${color} hover:opacity-80`} style={{ height }}></div>
-            <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded pointer-events-none whitespace-nowrap z-10">
-              誤差 {err}%
-            </div>
+            <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded pointer-events-none whitespace-nowrap z-10">誤差 {err}%</div>
           </div>
         );
       })}
@@ -117,28 +97,21 @@ const DojoChart = ({ errors }: { errors: number[] }) => {
   );
 };
 
-const CATEGORIES = ['すべて', 'IV線', 'CV・電力線', 'VVF / VV (ネズミ線)', '制御・通信線', 'キャブタイヤ・雑線', 'その他'];
-const getCategory = (name: string) => {
-  if (!name) return 'その他';
-  const n = name.toUpperCase();
-  if (n.includes('VVF') || n.includes('VA') || n.includes('EEF/F') || (n.includes('VV') && !n.includes('CVV'))) return 'VVF / VV (ネズミ線)';
-  if (n.includes('IV') || n.includes('IE/F')) return 'IV線';
-  if (n.includes('CVT') || (n.includes('CV') && !n.includes('CVV')) || n.includes('CE/F') || n.includes('EM')) return 'CV・電力線';
-  if (n.includes('CVV') || n.includes('AE') || n.includes('通信') || n.includes('LAN') || n.includes('弱電') || n.includes('光')) return '制御・通信線';
-  if (n.includes('VCT') || n.includes('雑線') || n.includes('家電') || n.includes('ハーネス')) return 'キャブタイヤ・雑線';
-  return 'その他';
-};
-
 // ============================================================================
-// 📖 インライン・カタログブラウザ (UI/正規化 強化版)
+// 📖 インライン・カタログブラウザ (超リッチ・ファクトベース版)
 // ============================================================================
 const InlineDatabaseSpecs = () => {
   const [specs, setSpecs] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('すべて');
-  const [filterMaker, setFilterMaker] = useState('');
-  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
+  const [selectedMakers, setSelectedMakers] = useState<string[]>([]);
+  const [selectedCores, setSelectedCores] = useState<string[]>([]);
+  const [minRatio, setMinRatio] = useState<number>(0);
+  const [sizeCategory, setSizeCategory] = useState<string>('ALL');
+  
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'theoreticalRatio', direction: 'desc' });
+  const [isFilterOpen, setIsFilterOpen] = useState(true);
 
   useEffect(() => {
     setLoading(true);
@@ -146,45 +119,32 @@ const InlineDatabaseSpecs = () => {
       .then(res => res.json())
       .then(d => {
         if (d.success && d.data) {
-            // データの正規化と名寄せ
+            // ★ Data Cleansing: 表記ゆれの名寄せのみ行う（数値の偽装はしない）
             const normalized = d.data.map((s: any) => {
                 let m = String(s.maker || '').trim();
                 if (/矢崎|YAZAKI/i.test(m)) m = '矢崎';
                 else if (/フジクラ|FUJIKURA/i.test(m)) m = 'フジクラ';
                 else if (/住電|住友|HST/i.test(m)) m = '住電HST';
                 else if (/昭和|SWCC/i.test(m)) m = 'SWCC(昭和)';
-                else if (/古河/i.test(m)) m = '古河電工';
+                else if (/富士/i.test(m)) m = '富士電線';
                 else if (/カワイ/i.test(m)) m = 'カワイ電線';
                 else if (/菅波/i.test(m)) m = '菅波電線';
                 else if (/弥栄/i.test(m)) m = '弥栄電線';
                 else if (/オーナンバ/i.test(m)) m = 'オーナンバ';
                 else if (/KHD/i.test(m)) m = 'KHD';
-                else if (!m) m = '不明';
+                else if (!m || m === '-') m = '不明';
 
                 let ratio = parseFloat(s.theoreticalRatio || s.ratio);
-                let size = String(s.size || s.sq || '');
-                let core = String(s.core || s.cores || s.coreCount || '');
-                let weight = String(s.weightPerKm || s.weight || '');
-
-                // 理論歩留まりが欠損している場合は比重計算でフォールバック
-                if (isNaN(ratio) && size && core && weight) {
-                    const sqNum = parseFloat(size);
-                    const coreNum = parseFloat(core);
-                    const wNum = parseFloat(weight);
-                    if (!isNaN(sqNum) && !isNaN(coreNum) && !isNaN(wNum) && wNum > 0) {
-                        ratio = (sqNum * coreNum * 8.89) / wNum * 100;
-                    }
-                }
 
                 return {
                     ...s,
                     maker: m,
                     name: s.name || '不明',
-                    size: size,
-                    core: core,
+                    size: String(s.size || s.sq || '-'),
+                    core: String(s.core || s.cores || s.coreCount || '-'),
                     outerDiameter: s.outerDiameter || s.diameter || '-',
-                    weightPerKm: weight || '-',
-                    theoreticalRatio: !isNaN(ratio) ? ratio : null
+                    weightPerKm: s.weightPerKm || '-',
+                    theoreticalRatio: !isNaN(ratio) ? ratio : null // 無いものは null にする
                 };
             });
             setSpecs(normalized);
@@ -194,7 +154,7 @@ const InlineDatabaseSpecs = () => {
       .catch(() => setLoading(false));
   }, []);
 
-  const uniqueMakers = useMemo(() => Array.from(new Set(specs.map(s => s.maker).filter(m => m !== '不明'))).sort(), [specs]);
+  const uniqueMakers = useMemo(() => Array.from(new Set(specs.map(s => s.maker).filter(m => m !== '不明' && m !== '-'))).sort(), [specs]);
 
   const handleSort = (key: string) => {
     let direction: 'asc' | 'desc' = 'asc';
@@ -207,16 +167,46 @@ const InlineDatabaseSpecs = () => {
     return sortConfig.direction === 'asc' ? <Icons.SortAsc /> : <Icons.SortDesc />;
   };
 
+  const toggleMaker = (maker: string) => {
+      setSelectedMakers(prev => prev.includes(maker) ? prev.filter(m => m !== maker) : [...prev, maker]);
+  };
+  const toggleCore = (core: string) => {
+      setSelectedCores(prev => prev.includes(core) ? prev.filter(c => c !== core) : [...prev, core]);
+  };
+
   const filteredAndSorted = useMemo(() => {
     let filtered = specs.filter(s => {
-      if (selectedCategory !== 'すべて' && getCategory(s.name) !== selectedCategory) return false;
-      if (filterMaker && s.maker !== filterMaker) return false;
+      // 1. メーカー
+      if (selectedMakers.length > 0 && !selectedMakers.includes(s.maker)) return false;
+      
+      // 2. 芯数
+      if (selectedCores.length > 0) {
+          const cNum = parseInt(s.core) || 1;
+          const cCat = cNum >= 5 ? '5C以上' : `${cNum}C`;
+          if (!selectedCores.includes(cCat)) return false;
+      }
 
+      // 3. 太さ目安
+      if (sizeCategory !== 'ALL') {
+          const sq = parseFloat(s.size);
+          if (isNaN(sq)) return false; // サイズ不明は除外
+          if (sizeCategory === 'SMALL' && sq > 5.5) return false;
+          if (sizeCategory === 'MEDIUM' && (sq < 8 || sq > 60)) return false;
+          if (sizeCategory === 'LARGE' && sq < 100) return false;
+      }
+
+      // 4. 歩留まり下限 (★ データなしは容赦なく除外する)
+      if (minRatio > 0) {
+          if (s.theoreticalRatio === null || s.theoreticalRatio < minRatio) return false;
+      }
+
+      // 5. フリーワード検索
       if (searchTerm) {
         const target = `${s.maker} ${s.name} ${s.size} ${s.core}`.toLowerCase();
         const terms = searchTerm.toLowerCase().split(/[\s　]+/).filter(Boolean);
-        return terms.every(t => target.includes(t));
+        if (!terms.every(t => target.includes(t))) return false;
       }
+
       return true;
     });
 
@@ -225,6 +215,10 @@ const InlineDatabaseSpecs = () => {
         let aVal = a[sortConfig.key];
         let bVal = b[sortConfig.key];
         
+        // Null（データなし）は常に一番下にする
+        if (aVal === null || aVal === '-') aVal = sortConfig.direction === 'asc' ? Infinity : -Infinity;
+        if (bVal === null || bVal === '-') bVal = sortConfig.direction === 'asc' ? Infinity : -Infinity;
+
         if (sortConfig.key === 'theoreticalRatio' || sortConfig.key === 'weightPerKm' || sortConfig.key === 'outerDiameter' || sortConfig.key === 'size' || sortConfig.key === 'core') {
             aVal = parseFloat(aVal) || 0;
             bVal = parseFloat(bVal) || 0;
@@ -240,42 +234,92 @@ const InlineDatabaseSpecs = () => {
     }
 
     return filtered;
-  }, [specs, searchTerm, selectedCategory, filterMaker, sortConfig]);
+  }, [specs, searchTerm, selectedMakers, selectedCores, sizeCategory, minRatio, sortConfig]);
 
   return (
-    <div className="flex flex-col h-full bg-white">
-      {/* ツールバー (マスターDBと同じデザイン) */}
-      <div className="p-2 md:p-4 border-b border-gray-200 bg-gray-50 flex flex-col gap-2 z-30">
-          <div className="flex flex-col md:flex-row gap-2 justify-between items-start md:items-center">
-              <div className="flex flex-1 gap-1.5 w-full flex-wrap">
-                  <div className="relative flex-1 min-w-[150px]">
-                    <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none"><Icons.Search /></div>
-                    <input type="text" placeholder="カタログ検索 (例: CV 14 3C)..." className="w-full pl-7 pr-2 py-1.5 md:py-2 border border-gray-300 rounded-sm text-xs md:text-sm focus:border-gray-900 outline-none shadow-inner" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+    <div className="flex flex-col h-full bg-gray-50">
+      {/* 🚀 賃貸サイト風 詳細フィルターパネル */}
+      <div className="p-3 md:p-4 border-b border-gray-200 bg-white z-20 shadow-sm relative">
+          <div className="flex justify-between items-center mb-3">
+              <h3 className="font-black text-gray-900 flex items-center gap-1.5"><Icons.Filter /> カタログ詳細検索</h3>
+              <button onClick={() => setIsFilterOpen(!isFilterOpen)} className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-200 hover:bg-blue-100 transition">
+                  {isFilterOpen ? 'フィルターを隠す ▲' : 'フィルターを開く ▼'}
+              </button>
+          </div>
+
+          {isFilterOpen && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in slide-in-from-top-2">
+                  
+                  {/* メーカー */}
+                  <div className="bg-gray-50 p-3 rounded border border-gray-200 shadow-inner">
+                      <label className="block text-[10px] font-bold text-gray-500 uppercase mb-2">🏢 メーカー</label>
+                      <div className="flex flex-wrap gap-1.5">
+                          {uniqueMakers.slice(0, 8).map(m => (
+                              <button key={m} onClick={() => toggleMaker(m)} className={`text-[10px] font-bold px-2 py-1 rounded-sm border transition ${selectedMakers.includes(m) ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-200'}`}>
+                                  {m}
+                              </button>
+                          ))}
+                      </div>
                   </div>
 
-                  {uniqueMakers.length > 0 && (
-                      <select className="border border-gray-300 rounded-sm px-1 py-1.5 md:py-2 text-xs md:text-sm outline-none focus:border-gray-900 bg-white cursor-pointer font-bold text-gray-700 shadow-sm max-w-[100px] md:max-w-[140px]" value={filterMaker} onChange={e => setFilterMaker(e.target.value)}>
-                          <option value="">全メーカー</option>
-                          {uniqueMakers.map((m: any) => <option key={m} value={m}>{m}</option>)}
-                      </select>
-                  )}
-              </div>
-          </div>
+                  {/* 芯数 */}
+                  <div className="bg-gray-50 p-3 rounded border border-gray-200 shadow-inner">
+                      <label className="block text-[10px] font-bold text-gray-500 uppercase mb-2">⚡ 芯数</label>
+                      <div className="flex flex-wrap gap-1.5">
+                          {['1C', '2C', '3C', '4C', '5C以上'].map(c => (
+                              <button key={c} onClick={() => toggleCore(c)} className={`text-[10px] font-bold px-2 py-1 rounded-sm border transition ${selectedCores.includes(c) ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-200'}`}>
+                                  {c}
+                              </button>
+                          ))}
+                      </div>
+                  </div>
 
-          <div className="flex gap-1.5 overflow-x-auto pb-1 mt-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-              {CATEGORIES.map(cat => (
-                  <button 
-                      key={cat} 
-                      onClick={() => setSelectedCategory(cat)} 
-                      className={`px-3 py-1 md:px-4 md:py-1.5 rounded-full text-[9px] md:text-[10px] font-bold whitespace-nowrap transition-colors border shadow-sm ${selectedCategory === cat ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-500 border-gray-300 hover:bg-gray-100 hover:text-gray-900'}`}
-                  >
-                      {cat}
-                  </button>
-              ))}
-          </div>
+                  {/* 太さ */}
+                  <div className="bg-gray-50 p-3 rounded border border-gray-200 shadow-inner">
+                      <label className="block text-[10px] font-bold text-gray-500 uppercase mb-2">📏 太さ目安</label>
+                      <select className="w-full bg-white border border-gray-300 p-1.5 rounded-sm text-xs font-bold text-gray-700 outline-none focus:border-gray-900" value={sizeCategory} onChange={e => setSizeCategory(e.target.value)}>
+                          <option value="ALL">指定なし (すべて)</option>
+                          <option value="SMALL">細線 (~5.5sq)</option>
+                          <option value="MEDIUM">中・太線 (8~60sq)</option>
+                          <option value="LARGE">激太線 (100sq~)</option>
+                      </select>
+                  </div>
+
+                  {/* 歩留まり */}
+                  <div className="bg-gray-50 p-3 rounded border border-gray-200 shadow-inner">
+                      <label className="block text-[10px] font-bold text-[#D32F2F] uppercase mb-2">💰 銅分率 (歩留まり)</label>
+                      <select className="w-full bg-white border border-gray-300 p-1.5 rounded-sm text-xs font-black text-gray-900 outline-none focus:border-[#D32F2F]" value={minRatio} onChange={e => setMinRatio(Number(e.target.value))}>
+                          <option value={0}>指定なし</option>
+                          <option value={40}>40% 以上</option>
+                          <option value={50}>50% 以上</option>
+                          <option value={60}>60% 以上</option>
+                          <option value={70}>70% 以上</option>
+                          <option value={80}>80% 以上</option>
+                      </select>
+                  </div>
+
+                  {/* フリーワード */}
+                  <div className="lg:col-span-4 relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Icons.Search /></div>
+                      <input type="text" placeholder="フリーワード検索 (例: 矢崎 CV 14)..." className="w-full pl-9 pr-3 py-2.5 border-2 border-gray-300 rounded-sm text-sm font-bold focus:border-gray-900 outline-none shadow-sm transition" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                  </div>
+
+                  <div className="lg:col-span-4 flex justify-between items-center mt-2">
+                      <button onClick={() => { setSelectedMakers([]); setSelectedCores([]); setSizeCategory('ALL'); setMinRatio(0); setSearchTerm(''); }} className="text-xs text-gray-500 font-bold hover:text-gray-900 underline">条件をリセット</button>
+                      <div className="bg-gray-900 text-white text-sm font-black px-4 py-2 rounded-sm shadow-md">
+                          該当 {filteredAndSorted.length} 件
+                      </div>
+                  </div>
+              </div>
+          )}
+          {!isFilterOpen && (
+              <div className="bg-gray-900 text-white text-xs font-black px-3 py-1.5 rounded-sm shadow-md inline-block">
+                  該当 {filteredAndSorted.length} 件
+              </div>
+          )}
       </div>
 
-      <div className="flex-1 overflow-y-auto p-0 relative">
+      <div className="flex-1 overflow-y-auto p-0 bg-white">
         {loading ? (
           <div className="flex flex-col justify-center items-center h-40 text-gray-500 font-bold gap-3">
               <Icons.Refresh /> 
@@ -283,28 +327,28 @@ const InlineDatabaseSpecs = () => {
           </div>
         ) : (
           <table className="w-full text-left border-collapse text-sm min-w-[800px]">
-            <thead className="bg-gray-100 text-gray-600 uppercase tracking-wider text-xs sticky top-0 z-10 shadow-sm border-b border-gray-300">
+            <thead className="bg-gray-100 text-gray-600 uppercase tracking-wider text-xs sticky top-0 z-10 shadow-sm border-b-2 border-gray-300">
               <tr>
                 <th className="p-3 font-bold border-r border-gray-200 cursor-pointer hover:bg-gray-200 select-none" onClick={() => handleSort('maker')}>メーカー <SortIcon columnKey="maker" /></th>
                 <th className="p-3 font-bold border-r border-gray-200 cursor-pointer hover:bg-gray-200 select-none" onClick={() => handleSort('name')}>品名 <SortIcon columnKey="name" /></th>
                 <th className="p-3 font-bold border-r border-gray-200 cursor-pointer hover:bg-gray-200 select-none" onClick={() => handleSort('size')}>サイズ/芯数 <SortIcon columnKey="size" /></th>
                 <th className="p-3 font-bold text-right border-r border-gray-200 cursor-pointer hover:bg-gray-200 select-none" onClick={() => handleSort('outerDiameter')}>仕上外径 (mm) <SortIcon columnKey="outerDiameter" /></th>
                 <th className="p-3 font-bold text-right border-r border-gray-200 cursor-pointer hover:bg-gray-200 select-none" onClick={() => handleSort('weightPerKm')}>質量 (kg/km) <SortIcon columnKey="weightPerKm" /></th>
-                <th className="p-3 font-bold text-right text-yellow-700 bg-yellow-50 border-b border-yellow-200 cursor-pointer hover:bg-yellow-100 select-none" onClick={() => handleSort('theoreticalRatio')}>理論歩留まり <SortIcon columnKey="theoreticalRatio" /></th>
+                <th className="p-3 font-bold text-right text-[#D32F2F] bg-red-50 border-b-2 border-red-200 cursor-pointer hover:bg-red-100 select-none" onClick={() => handleSort('theoreticalRatio')}>理論歩留まり <SortIcon columnKey="theoreticalRatio" /></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredAndSorted.map((s, i) => (
-                <tr key={i} className="hover:bg-yellow-50/30 transition">
+                <tr key={i} className="hover:bg-red-50/30 transition group">
                   <td className="p-3 font-bold text-gray-700 border-r border-gray-100">{s.maker !== '不明' ? `【${s.maker}】` : <span className="text-gray-400">不明</span>}</td>
                   <td className="p-3 font-black text-gray-900 border-r border-gray-100">{s.name}</td>
                   <td className="p-3 font-mono text-gray-600 border-r border-gray-100 font-bold">
-                      {s.size ? `${s.size}sq` : '-'} {s.core ? `/ ${s.core}C` : ''}
+                      {s.size !== '-' ? `${s.size}sq` : '-'} {s.core !== '-' ? `/ ${s.core}C` : ''}
                   </td>
                   <td className="p-3 font-mono text-right border-r border-gray-100">{s.outerDiameter}</td>
                   <td className="p-3 font-mono text-right border-r border-gray-100">{s.weightPerKm}</td>
-                  <td className="p-3 font-mono font-black text-right text-lg bg-yellow-50/10 text-yellow-600">
-                      {s.theoreticalRatio ? `${s.theoreticalRatio.toFixed(1)}%` : <span className="text-xs text-gray-400 font-normal">計算不可</span>}
+                  <td className="p-3 font-mono font-black text-right text-lg bg-red-50/10 text-[#D32F2F] group-hover:bg-red-50/50">
+                      {s.theoreticalRatio !== null ? `${s.theoreticalRatio.toFixed(1)}%` : <span className="text-xs text-gray-400 font-normal border border-gray-300 px-1.5 py-0.5 rounded bg-white">データなし</span>}
                   </td>
                 </tr>
               ))}
@@ -318,7 +362,6 @@ const InlineDatabaseSpecs = () => {
     </div>
   );
 };
-
 
 export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoiceOutputEnabled?: boolean }) => {
   const [activeTab, setActiveTab] = useState<'WIRES' | 'SPECS' | 'UNKNOWN' | 'CASTINGS' | 'CLIENTS' | 'STAFF' | 'DOJO'>('WIRES');
