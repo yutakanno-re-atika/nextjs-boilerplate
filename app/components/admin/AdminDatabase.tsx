@@ -227,15 +227,35 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     }
   }, []);
 
-  // ★ カタログデータのフェッチ
+// ★ カタログデータのフェッチ (複数ファイル並列読み込み対応版)
   useEffect(() => {
       if (activeTab === 'CATALOGS' && catalogsData.length === 0) {
-          fetch('/wire_specs.json')
-              .then(res => res.ok ? res.json() : [])
-              .then(data => setCatalogsData(data))
-              .catch(e => console.error(e));
+          const fetchAllCatalogs = async () => {
+              // 💡 読み込みたいメーカーのJSONファイルをここに列挙します。
+              // ボスの環境に合わせてファイル名（例: fujikura.json 等）を適宜増減してください。
+              const CATALOG_FILES = [
+                  '/specs/yazaki.json',
+                  '/specs/fujikura.json',
+                  '/specs/sumitomo.json',
+                  '/specs/hst.json',
+                  '/specs/swcc.json',
+                  '/specs/fuji.json'
+              ];
+              
+              try {
+                  // 全ファイルを並列で一気に取得（爆速）
+                  const responses = await Promise.all(
+                      CATALOG_FILES.map(file => fetch(file).then(res => res.ok ? res.json() : []))
+                  );
+                  // 取得した複数メーカーの配列を1つの巨大なリストに結合（フラット化）
+                  setCatalogsData(responses.flat());
+              } catch(e) {
+                  console.error("カタログデータの読み込みに失敗しました", e);
+              }
+          };
+          fetchAllCatalogs();
       }
-  }, [activeTab]);
+  }, [activeTab, catalogsData.length]);
 
   const handleTabChange = (tab: any) => {
     setActiveTab(tab); setSearchTerm(''); setSelectedCategory('すべて'); setFilterMaker(''); setFilterType(''); 
