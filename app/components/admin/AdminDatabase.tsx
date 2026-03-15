@@ -26,9 +26,7 @@ const Icons = {
   AlertTriangle: () => <svg className="w-3 h-3 md:w-4 md:h-4 inline-block text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
   Cpu: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" /></svg>,
   Users: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
-  Brain: () => <svg className="w-4 h-4 md:w-5 md:h-5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>,
-  // ★ ここが抜けていた致命的バグの修正箇所だ！
-  Radar: () => <svg className="w-4 h-4 md:w-5 md:h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>
+  Brain: () => <svg className="w-4 h-4 md:w-5 md:h-5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
 };
 
 const toHalfWidthNumber = (str: any) => {
@@ -119,79 +117,6 @@ const DojoChart = ({ errors }: { errors: number[] }) => {
   );
 };
 
-const InlineDatabaseSpecs = () => {
-  const [specs, setSpecs] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-
-  useEffect(() => {
-    setLoading(true);
-    fetch('/api/specs')
-      .then(res => res.json())
-      .then(d => {
-        if (d.success) setSpecs(d.data || []);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
-
-  const filtered = useMemo(() => {
-    if (!searchTerm) return specs;
-    const terms = searchTerm.toLowerCase().split(' ').filter(Boolean);
-    return specs.filter(s => {
-      const target = `${s.maker} ${s.name} ${s.size} ${s.core}`.toLowerCase();
-      return terms.every(t => target.includes(t));
-    });
-  }, [specs, searchTerm]);
-
-  return (
-    <div className="flex flex-col h-full bg-white">
-      <div className="p-3 md:p-4 border-b border-gray-200 bg-gray-50 flex gap-2">
-        <div className="relative flex-1">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Icons.Search /></div>
-          <input type="text" placeholder="カタログ検索 (例: 矢崎 CV 14)..." className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-sm text-sm focus:border-gray-900 outline-none shadow-inner" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-        </div>
-        <div className="bg-gray-100 text-gray-500 text-xs font-bold px-4 py-2 border border-gray-300 rounded-sm flex items-center whitespace-nowrap">
-          総収録数: {specs.length}件
-        </div>
-      </div>
-      <div className="flex-1 overflow-y-auto p-0">
-        {loading ? (
-          <div className="flex justify-center items-center h-40 text-gray-500 font-bold"><Icons.Refresh /> カタログデータを読み込み中...</div>
-        ) : (
-          <table className="w-full text-left border-collapse text-sm min-w-[800px]">
-            <thead className="bg-gray-100 text-gray-600 uppercase tracking-wider text-xs sticky top-0 z-10 shadow-sm border-b border-gray-300">
-              <tr>
-                <th className="p-3 font-bold border-r border-gray-200">メーカー</th>
-                <th className="p-3 font-bold border-r border-gray-200">品名</th>
-                <th className="p-3 font-bold border-r border-gray-200">サイズ / 芯数</th>
-                <th className="p-3 font-bold text-right border-r border-gray-200">仕上外径 (mm)</th>
-                <th className="p-3 font-bold text-right border-r border-gray-200">質量 (kg/km)</th>
-                <th className="p-3 font-bold text-right text-yellow-600">理論歩留まり (%)</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {filtered.map((s, i) => (
-                <tr key={i} className="hover:bg-yellow-50/30 transition">
-                  <td className="p-3 font-bold text-gray-700 border-r border-gray-100">{s.maker}</td>
-                  <td className="p-3 font-black text-gray-900 border-r border-gray-100">{s.name}</td>
-                  <td className="p-3 font-mono text-gray-600 border-r border-gray-100">{s.size}sq / {s.core}C</td>
-                  <td className="p-3 font-mono text-right border-r border-gray-100">{s.outerDiameter}</td>
-                  <td className="p-3 font-mono text-right border-r border-gray-100">{s.weightPerKm}</td>
-                  <td className="p-3 font-mono font-black text-yellow-600 text-right text-lg">{s.theoreticalRatio}%</td>
-                </tr>
-              ))}
-              {filtered.length === 0 && (
-                <tr><td colSpan={6} className="p-10 text-center text-gray-400 font-bold">データがありません</td></tr>
-              )}
-            </tbody>
-          </table>
-        )}
-      </div>
-    </div>
-  );
-};
-
 const CATEGORIES = ['すべて', 'IV線', 'CV・電力線', 'VVF / VV (ネズミ線)', '制御・通信線', 'キャブタイヤ・雑線', 'その他'];
 const getCategory = (name: string) => {
   if (!name) return 'その他';
@@ -203,6 +128,197 @@ const getCategory = (name: string) => {
   if (n.includes('VCT') || n.includes('雑線') || n.includes('家電') || n.includes('ハーネス')) return 'キャブタイヤ・雑線';
   return 'その他';
 };
+
+// ============================================================================
+// 📖 インライン・カタログブラウザ (UI/正規化 強化版)
+// ============================================================================
+const InlineDatabaseSpecs = () => {
+  const [specs, setSpecs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('すべて');
+  const [filterMaker, setFilterMaker] = useState('');
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch('/api/specs')
+      .then(res => res.json())
+      .then(d => {
+        if (d.success && d.data) {
+            // データの正規化と名寄せ
+            const normalized = d.data.map((s: any) => {
+                let m = String(s.maker || '').trim();
+                if (/矢崎|YAZAKI/i.test(m)) m = '矢崎';
+                else if (/フジクラ|FUJIKURA/i.test(m)) m = 'フジクラ';
+                else if (/住電|住友|HST/i.test(m)) m = '住電HST';
+                else if (/昭和|SWCC/i.test(m)) m = 'SWCC(昭和)';
+                else if (/古河/i.test(m)) m = '古河電工';
+                else if (/カワイ/i.test(m)) m = 'カワイ電線';
+                else if (/菅波/i.test(m)) m = '菅波電線';
+                else if (/弥栄/i.test(m)) m = '弥栄電線';
+                else if (/オーナンバ/i.test(m)) m = 'オーナンバ';
+                else if (/KHD/i.test(m)) m = 'KHD';
+                else if (!m) m = '不明';
+
+                let ratio = parseFloat(s.theoreticalRatio || s.ratio);
+                let size = String(s.size || s.sq || '');
+                let core = String(s.core || s.cores || s.coreCount || '');
+                let weight = String(s.weightPerKm || s.weight || '');
+
+                // 理論歩留まりが欠損している場合は比重計算でフォールバック
+                if (isNaN(ratio) && size && core && weight) {
+                    const sqNum = parseFloat(size);
+                    const coreNum = parseFloat(core);
+                    const wNum = parseFloat(weight);
+                    if (!isNaN(sqNum) && !isNaN(coreNum) && !isNaN(wNum) && wNum > 0) {
+                        ratio = (sqNum * coreNum * 8.89) / wNum * 100;
+                    }
+                }
+
+                return {
+                    ...s,
+                    maker: m,
+                    name: s.name || '不明',
+                    size: size,
+                    core: core,
+                    outerDiameter: s.outerDiameter || s.diameter || '-',
+                    weightPerKm: weight || '-',
+                    theoreticalRatio: !isNaN(ratio) ? ratio : null
+                };
+            });
+            setSpecs(normalized);
+        }
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const uniqueMakers = useMemo(() => Array.from(new Set(specs.map(s => s.maker).filter(m => m !== '不明'))).sort(), [specs]);
+
+  const handleSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') direction = 'desc';
+    setSortConfig({ key, direction });
+  };
+
+  const SortIcon = ({ columnKey }: { columnKey: string }) => {
+    if (sortConfig?.key !== columnKey) return <Icons.SortNone />;
+    return sortConfig.direction === 'asc' ? <Icons.SortAsc /> : <Icons.SortDesc />;
+  };
+
+  const filteredAndSorted = useMemo(() => {
+    let filtered = specs.filter(s => {
+      if (selectedCategory !== 'すべて' && getCategory(s.name) !== selectedCategory) return false;
+      if (filterMaker && s.maker !== filterMaker) return false;
+
+      if (searchTerm) {
+        const target = `${s.maker} ${s.name} ${s.size} ${s.core}`.toLowerCase();
+        const terms = searchTerm.toLowerCase().split(/[\s　]+/).filter(Boolean);
+        return terms.every(t => target.includes(t));
+      }
+      return true;
+    });
+
+    if (sortConfig) {
+      filtered.sort((a, b) => {
+        let aVal = a[sortConfig.key];
+        let bVal = b[sortConfig.key];
+        
+        if (sortConfig.key === 'theoreticalRatio' || sortConfig.key === 'weightPerKm' || sortConfig.key === 'outerDiameter' || sortConfig.key === 'size' || sortConfig.key === 'core') {
+            aVal = parseFloat(aVal) || 0;
+            bVal = parseFloat(bVal) || 0;
+        } else {
+            aVal = String(aVal || '').toLowerCase();
+            bVal = String(bVal || '').toLowerCase();
+        }
+
+        if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
+    return filtered;
+  }, [specs, searchTerm, selectedCategory, filterMaker, sortConfig]);
+
+  return (
+    <div className="flex flex-col h-full bg-white">
+      {/* ツールバー (マスターDBと同じデザイン) */}
+      <div className="p-2 md:p-4 border-b border-gray-200 bg-gray-50 flex flex-col gap-2 z-30">
+          <div className="flex flex-col md:flex-row gap-2 justify-between items-start md:items-center">
+              <div className="flex flex-1 gap-1.5 w-full flex-wrap">
+                  <div className="relative flex-1 min-w-[150px]">
+                    <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none"><Icons.Search /></div>
+                    <input type="text" placeholder="カタログ検索 (例: CV 14 3C)..." className="w-full pl-7 pr-2 py-1.5 md:py-2 border border-gray-300 rounded-sm text-xs md:text-sm focus:border-gray-900 outline-none shadow-inner" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                  </div>
+
+                  {uniqueMakers.length > 0 && (
+                      <select className="border border-gray-300 rounded-sm px-1 py-1.5 md:py-2 text-xs md:text-sm outline-none focus:border-gray-900 bg-white cursor-pointer font-bold text-gray-700 shadow-sm max-w-[100px] md:max-w-[140px]" value={filterMaker} onChange={e => setFilterMaker(e.target.value)}>
+                          <option value="">全メーカー</option>
+                          {uniqueMakers.map((m: any) => <option key={m} value={m}>{m}</option>)}
+                      </select>
+                  )}
+              </div>
+          </div>
+
+          <div className="flex gap-1.5 overflow-x-auto pb-1 mt-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              {CATEGORIES.map(cat => (
+                  <button 
+                      key={cat} 
+                      onClick={() => setSelectedCategory(cat)} 
+                      className={`px-3 py-1 md:px-4 md:py-1.5 rounded-full text-[9px] md:text-[10px] font-bold whitespace-nowrap transition-colors border shadow-sm ${selectedCategory === cat ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-500 border-gray-300 hover:bg-gray-100 hover:text-gray-900'}`}
+                  >
+                      {cat}
+                  </button>
+              ))}
+          </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-0 relative">
+        {loading ? (
+          <div className="flex flex-col justify-center items-center h-40 text-gray-500 font-bold gap-3">
+              <Icons.Refresh /> 
+              <span className="text-sm">カタログデータを読み込み・正規化中...</span>
+          </div>
+        ) : (
+          <table className="w-full text-left border-collapse text-sm min-w-[800px]">
+            <thead className="bg-gray-100 text-gray-600 uppercase tracking-wider text-xs sticky top-0 z-10 shadow-sm border-b border-gray-300">
+              <tr>
+                <th className="p-3 font-bold border-r border-gray-200 cursor-pointer hover:bg-gray-200 select-none" onClick={() => handleSort('maker')}>メーカー <SortIcon columnKey="maker" /></th>
+                <th className="p-3 font-bold border-r border-gray-200 cursor-pointer hover:bg-gray-200 select-none" onClick={() => handleSort('name')}>品名 <SortIcon columnKey="name" /></th>
+                <th className="p-3 font-bold border-r border-gray-200 cursor-pointer hover:bg-gray-200 select-none" onClick={() => handleSort('size')}>サイズ/芯数 <SortIcon columnKey="size" /></th>
+                <th className="p-3 font-bold text-right border-r border-gray-200 cursor-pointer hover:bg-gray-200 select-none" onClick={() => handleSort('outerDiameter')}>仕上外径 (mm) <SortIcon columnKey="outerDiameter" /></th>
+                <th className="p-3 font-bold text-right border-r border-gray-200 cursor-pointer hover:bg-gray-200 select-none" onClick={() => handleSort('weightPerKm')}>質量 (kg/km) <SortIcon columnKey="weightPerKm" /></th>
+                <th className="p-3 font-bold text-right text-yellow-700 bg-yellow-50 border-b border-yellow-200 cursor-pointer hover:bg-yellow-100 select-none" onClick={() => handleSort('theoreticalRatio')}>理論歩留まり <SortIcon columnKey="theoreticalRatio" /></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {filteredAndSorted.map((s, i) => (
+                <tr key={i} className="hover:bg-yellow-50/30 transition">
+                  <td className="p-3 font-bold text-gray-700 border-r border-gray-100">{s.maker !== '不明' ? `【${s.maker}】` : <span className="text-gray-400">不明</span>}</td>
+                  <td className="p-3 font-black text-gray-900 border-r border-gray-100">{s.name}</td>
+                  <td className="p-3 font-mono text-gray-600 border-r border-gray-100 font-bold">
+                      {s.size ? `${s.size}sq` : '-'} {s.core ? `/ ${s.core}C` : ''}
+                  </td>
+                  <td className="p-3 font-mono text-right border-r border-gray-100">{s.outerDiameter}</td>
+                  <td className="p-3 font-mono text-right border-r border-gray-100">{s.weightPerKm}</td>
+                  <td className="p-3 font-mono font-black text-right text-lg bg-yellow-50/10 text-yellow-600">
+                      {s.theoreticalRatio ? `${s.theoreticalRatio.toFixed(1)}%` : <span className="text-xs text-gray-400 font-normal">計算不可</span>}
+                  </td>
+                </tr>
+              ))}
+              {filteredAndSorted.length === 0 && (
+                <tr><td colSpan={6} className="p-16 text-center text-gray-400 font-bold">該当するカタログデータがありません</td></tr>
+              )}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+};
+
 
 export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoiceOutputEnabled?: boolean }) => {
   const [activeTab, setActiveTab] = useState<'WIRES' | 'SPECS' | 'UNKNOWN' | 'CASTINGS' | 'CLIENTS' | 'STAFF' | 'DOJO'>('WIRES');
@@ -1784,7 +1900,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                                           const btn = e.currentTarget;
                                           btn.innerHTML = '<span class="animate-spin inline-block">↻</span> 検索中...';
                                           try {
-                                              const res = await fetch(`/api/specs?maker=${editingItem.maker || ''}&name=${editingItem.name || ''}&size=${editingItem._sqValue || ''}&core=${editingItem._coreValue || ''}`);
+                                              const res = await fetch(`/api/specs?maker=${encodeURIComponent(editingItem.maker || '')}&name=${encodeURIComponent(editingItem.name || '')}&size=${encodeURIComponent(editingItem._sqValue || '')}&core=${encodeURIComponent(editingItem._coreValue || '')}`);
                                               const d = await res.json();
                                               if (d.success && d.data.length > 0) {
                                                   const spec = d.data[0];
