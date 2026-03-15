@@ -29,7 +29,8 @@ const Icons = {
   AlertTriangle: () => <svg className="w-3 h-3 md:w-4 md:h-4 inline-block text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
   Cpu: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" /></svg>,
   Users: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
-  Brain: () => <svg className="w-4 h-4 md:w-5 md:h-5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+  Brain: () => <svg className="w-4 h-4 md:w-5 md:h-5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>,
+  Book: () => <svg className="w-4 h-4 md:w-5 md:h-5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
 };
 
 // ★全角数字・ピリオドを半角に自動変換（サニタイズ）する関数
@@ -135,9 +136,10 @@ const getCategory = (name: string) => {
 };
 
 export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoiceOutputEnabled?: boolean }) => {
-  // ★ タブに 'DOJO' を追加
-  const [activeTab, setActiveTab] = useState<'WIRES' | 'UNKNOWN' | 'CASTINGS' | 'CLIENTS' | 'STAFF' | 'DOJO'>('WIRES');
-  
+  // ★ タブに 'DOJO' と 'CATALOGS' を追加
+  const [activeTab, setActiveTab] = useState<'WIRES' | 'UNKNOWN' | 'CASTINGS' | 'CLIENTS' | 'STAFF' | 'DOJO' | 'CATALOGS'>('WIRES');
+  const [catalogsData, setCatalogsData] = useState<any[]>([]);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('すべて');
   const [filterMaker, setFilterMaker] = useState('');
@@ -225,6 +227,16 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     }
   }, []);
 
+  // ★ カタログデータのフェッチ
+  useEffect(() => {
+      if (activeTab === 'CATALOGS' && catalogsData.length === 0) {
+          fetch('/wire_specs.json')
+              .then(res => res.ok ? res.json() : [])
+              .then(data => setCatalogsData(data))
+              .catch(e => console.error(e));
+      }
+  }, [activeTab]);
+
   const handleTabChange = (tab: any) => {
     setActiveTab(tab); setSearchTerm(''); setSelectedCategory('すべて'); setFilterMaker(''); setFilterType(''); 
     setSortConfig({ key: 'updatedAt', direction: 'desc' }); // タブ切り替え時もデフォルトソートに
@@ -232,9 +244,28 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   };
 
   const handleOpenModal = (item: any = null) => {
-    const sqData = parseSqForInput(item?.sq); const coreData = parseCoreForInput(item?.core);
-    setEditingItem({ ...item, _sqValue: sqData.val, _sqUnit: sqData.unit, _coreValue: coreData, material: item?.material || '純銅', showOnWeb: item ? String(item.showOnWeb) !== 'false' : true });
-    setSampleTotal(item?.sampleTotal || ''); setSampleCopper(item?.sampleCopper || ''); setSampleCover(item?.sampleCover === 0 ? '' : (item?.sampleCover || '')); 
+    let initialItem = { ...item };
+    
+    // ★ カタログからの取り込み対応
+    if (activeTab === 'CATALOGS' && item) {
+      initialItem = {
+        maker: item.maker || '',
+        name: item.name || '',
+        sq: item.size || '',
+        core: item.core || '',
+        ratio: item.theoreticalRatio || '',
+        material: '純銅',
+        conductor: item.conductor || '',
+        showOnWeb: true,
+        memo: `【カタログデータより取り込み】\n外径: ${item.outerDiameter}mm / 質量: ${item.weightPerKm}kg/km\n備考: ${item.notes || ''}`
+      };
+      setActiveTab('WIRES'); // WIRESタブに切り替えて登録画面を開く
+    }
+
+    const sqData = parseSqForInput(initialItem?.sq); 
+    const coreData = parseCoreForInput(initialItem?.core);
+    setEditingItem({ ...initialItem, _sqValue: sqData.val, _sqUnit: sqData.unit, _coreValue: coreData, material: initialItem?.material || '純銅', showOnWeb: initialItem ? String(initialItem.showOnWeb) !== 'false' : true });
+    setSampleTotal(initialItem?.sampleTotal || ''); setSampleCopper(initialItem?.sampleCopper || ''); setSampleCover(initialItem?.sampleCover === 0 ? '' : (initialItem?.sampleCover || '')); 
     setIsModalOpen(true);
   };
 
@@ -729,6 +760,16 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   const sortedData = useMemo(() => {
     let filteredData = [];
     
+    if (activeTab === 'CATALOGS') {
+        filteredData = catalogsData.filter((c:any) => {
+            if (searchTerm) {
+                const searchTarget = `${c.name} ${c.maker} ${c.size} ${c.core}`.toLowerCase();
+                const terms = searchTerm.toLowerCase().replace(/　/g, ' ').split(' ').filter(Boolean);
+                return terms.every(term => searchTarget.includes(term));
+            }
+            return true;
+        });
+    }
     if (activeTab === 'WIRES') {
         filteredData = wires.filter((w:any) => {
             if (selectedCategory !== 'すべて' && getCategory(w.name) !== selectedCategory) return false;
@@ -820,7 +861,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
         });
     }
     return sorted;
-  }, [activeTab, wires, unknownWires, castings, clients, staffs, selectedCategory, filterMaker, filterType, imageStatusFilter, searchTerm, sortConfig]);
+  }, [activeTab, catalogsData, wires, unknownWires, castings, clients, staffs, selectedCategory, filterMaker, filterType, imageStatusFilter, searchTerm, sortConfig]);
 
   // ★ 線種データをさらに厳密なキーでグループ化
   const groupedWires = useMemo(() => {
@@ -910,9 +951,9 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
           </div>
         </div>
         <div className="flex bg-gray-100 p-1 rounded-sm overflow-x-auto shadow-inner border border-gray-200">
-          {['WIRES', 'UNKNOWN', 'CASTINGS', 'CLIENTS', 'STAFF', 'DOJO'].map(tab => (
+          {['WIRES', 'UNKNOWN', 'CASTINGS', 'CLIENTS', 'STAFF', 'DOJO', 'CATALOGS'].map(tab => (
             <button key={tab} onClick={() => handleTabChange(tab as any)} className={`px-3 py-1.5 md:px-4 md:py-2 rounded-sm text-[10px] md:text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1 ${activeTab === tab ? 'bg-white text-gray-900 shadow-sm border border-gray-300' : 'text-gray-500 hover:text-gray-900'}`}>
-              {tab === 'WIRES' ? '電線' : tab === 'UNKNOWN' ? '💡 未知' : tab === 'CASTINGS' ? '非鉄' : tab === 'CLIENTS' ? '顧客' : tab === 'STAFF' ? 'スタッフ' : '🥋 AI道場'}
+              {tab === 'WIRES' ? '電線' : tab === 'UNKNOWN' ? '💡 未知' : tab === 'CASTINGS' ? '非鉄' : tab === 'CLIENTS' ? '顧客' : tab === 'STAFF' ? 'スタッフ' : tab === 'DOJO' ? '🥋 AI道場' : '📚 カタログ'}
             </button>
           ))}
         </div>
@@ -1070,6 +1111,25 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
               </div>
           )}
           
+          {activeTab === 'CATALOGS' && (
+              <div className="bg-gray-900 text-white border border-gray-800 rounded-sm shadow-sm flex flex-col lg:flex-row items-start lg:items-center justify-between p-2 md:p-3 gap-2 md:gap-4 hidden md:flex">
+                  <div className="flex items-center gap-3 w-full lg:w-1/2">
+                      <div className="bg-gray-800 text-gray-300 border border-gray-700 p-2 rounded-full hidden sm:block"><Icons.Book /></div>
+                      <div className="flex-1">
+                          <h4 className="text-xs font-bold tracking-widest flex justify-between">
+                              <span>📚 電線メーカー カタログ仕様データ</span>
+                          </h4>
+                          <p className="text-[10px] text-gray-400 mt-1">PDFからAIが自動抽出した理論歩留まりのデータベースです。</p>
+                      </div>
+                  </div>
+                  <div className="flex gap-1.5 overflow-x-auto w-full lg:w-auto pb-1 [&::-webkit-scrollbar]:hidden">
+                     <span className="text-[10px] font-bold bg-gray-800 px-3 py-1.5 rounded-sm border border-gray-700 text-gray-300">
+                         収録件数: {catalogsData.length} 件
+                     </span>
+                  </div>
+              </div>
+          )}
+          
           <div className="flex flex-col md:flex-row gap-2 justify-between items-start md:items-center">
               <div className="flex flex-1 gap-1.5 w-full flex-wrap">
                   <div className="relative flex-1 min-w-[150px]">
@@ -1096,7 +1156,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                   </button>
               </div>
 
-              {activeTab !== 'UNKNOWN' && (
+              {activeTab !== 'UNKNOWN' && activeTab !== 'CATALOGS' && (
                   <div className="flex gap-1.5 w-full md:w-auto shrink-0">
                     {/* ★ 変更：AI登録ボタンを赤に変更してテキスト変更 */}
                     {activeTab === 'WIRES' && (
@@ -1132,6 +1192,16 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
               <table className="hidden md:table w-full text-left border-collapse text-sm">
                 <thead className="bg-gray-100 text-gray-600 uppercase tracking-wider text-xs sticky top-0 z-20 shadow-sm border-b border-gray-300">
                   <tr>
+                    {activeTab === 'CATALOGS' && (
+                        <>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('maker')}>メーカー {renderSortIcon('maker')}</th>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('name')}>品名 {renderSortIcon('name')}</th>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('size')}>サイズ/芯数 {renderSortIcon('size')}</th>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('outerDiameter')}>仕上外径 {renderSortIcon('outerDiameter')}</th>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('weightPerKm')}>質量(kg/km) {renderSortIcon('weightPerKm')}</th>
+                            <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold text-[#D32F2F]" onClick={() => handleSort('theoreticalRatio')}>理論歩留 {renderSortIcon('theoreticalRatio')}</th>
+                        </>
+                    )}
                     {activeTab === 'WIRES' && (
                         <>
                             <th className="p-3 w-10 text-center" title="Web(LP)の価格表に表示するかどうか"><Icons.Globe /></th>
@@ -1174,7 +1244,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                         </>
                     )}
                     {/* WIRES でも更新日を表示してソート可能にする */}
-                    <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('updatedAt')}>登録/更新 {renderSortIcon('updatedAt')}</th>
+                    {activeTab !== 'CATALOGS' && <th className="p-3 cursor-pointer hover:bg-gray-200 transition select-none font-bold" onClick={() => handleSort('updatedAt')}>登録/更新 {renderSortIcon('updatedAt')}</th>}
                     <th className="p-3 text-right font-bold">操作</th>
                   </tr>
                 </thead>
@@ -1293,6 +1363,17 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                   ) : (
                     sortedData.map((item: any, idx: number) => (
                       <tr key={item.id || idx} className="hover:bg-gray-50 transition">
+                        
+                        {activeTab === 'CATALOGS' && (
+                            <>
+                              <td className="p-3 font-bold text-gray-700">{item.maker}</td>
+                              <td className="p-3 font-bold text-gray-900">{item.name}</td>
+                              <td className="p-3 font-mono text-gray-600">{item.size} / {item.core}</td>
+                              <td className="p-3 font-mono text-gray-600">{item.outerDiameter} mm</td>
+                              <td className="p-3 font-mono text-gray-600">{item.weightPerKm} kg/km</td>
+                              <td className="p-3 font-mono font-black text-[#D32F2F] text-lg">{item.theoreticalRatio}%</td>
+                            </>
+                        )}
                         {activeTab === 'UNKNOWN' && (
                             <>
                               <td className="p-3 text-xs text-gray-500 font-mono">{formatTimeShort(item.createdAt)}</td>
@@ -1323,7 +1404,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                               <td className="p-3"><span className={`px-2 py-1 rounded-sm text-xs font-bold text-white shadow-sm ${item.status === 'ACTIVE' ? 'bg-gray-900' : 'bg-gray-400'}`}>{item.status}</span></td>
                             </>
                         )}
-                        {activeTab !== 'UNKNOWN' && activeTab !== 'WIRES' && (
+                        {activeTab !== 'UNKNOWN' && activeTab !== 'WIRES' && activeTab !== 'CATALOGS' && (
                             <td className="p-3 text-[10px] text-gray-400 font-mono align-top">
                                 <div className="flex flex-col gap-1"><span title="登録日">➕ {formatTimeShort(item.createdAt)}</span><span title="更新日">🔄 {formatTimeShort(item.updatedAt)}</span></div>
                             </td>
@@ -1331,6 +1412,9 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
                         <td className="p-3 text-right align-top">
                           <div className="flex justify-end gap-2">
+                            {activeTab === 'CATALOGS' && (
+                                <button onClick={() => handleOpenModal(item)} className="px-3 py-1.5 text-white bg-[#D32F2F] hover:bg-red-800 rounded-sm flex items-center gap-1 text-xs font-bold transition shadow-sm"><Icons.Plus /> マスターへ追加</button>
+                            )}
                             {activeTab === 'UNKNOWN' && (
                                 <button onClick={() => handlePromoteToWire(item)} className="px-3 py-1.5 text-white bg-gray-900 hover:bg-black rounded-sm flex items-center gap-1 text-xs font-bold transition shadow-sm"><Icons.ArrowUp /> マスターへ</button>
                             )}
@@ -1347,8 +1431,12 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                                     <Icons.Sparkles />
                                 </button>
                             )}
-                            <button onClick={() => handleOpenModal(item)} className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-200 border border-transparent hover:border-gray-300 rounded-sm transition shadow-sm"><Icons.Edit /></button>
-                            <button onClick={() => handleDelete(item.id)} className="p-2 text-gray-400 hover:text-[#D32F2F] hover:bg-red-50 border border-transparent hover:border-red-200 rounded-sm transition shadow-sm"><Icons.Trash /></button>
+                            {activeTab !== 'CATALOGS' && (
+                                <>
+                                  <button onClick={() => handleOpenModal(item)} className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-200 border border-transparent hover:border-gray-300 rounded-sm transition shadow-sm"><Icons.Edit /></button>
+                                  <button onClick={() => handleDelete(item.id)} className="p-2 text-gray-400 hover:text-[#D32F2F] hover:bg-red-50 border border-transparent hover:border-red-200 rounded-sm transition shadow-sm"><Icons.Trash /></button>
+                                </>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -1448,6 +1536,19 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                   sortedData.map((item: any, idx: number) => (
                     <div key={item.id || idx} className={`p-2.5 flex flex-col gap-1 active:bg-gray-50 transition-colors`}>
                       
+                      {activeTab === 'CATALOGS' && (
+                        <>
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-1 font-bold text-gray-900 text-[13px] truncate"><span className="text-gray-500 text-[9px] bg-gray-100 px-1 rounded-sm border">{item.maker}</span> {item.name}</div>
+                            <span className="text-base font-black text-[#D32F2F] font-mono">{item.theoreticalRatio}%</span>
+                          </div>
+                          <div className="flex justify-between items-center mt-0.5">
+                            <span className="text-[10px] text-gray-600 font-mono">{item.size} / {item.core}</span>
+                            <button onClick={() => handleOpenModal(item)} className="px-2 py-1 text-white bg-[#D32F2F] rounded-sm text-[10px] font-bold shadow-sm"><Icons.Plus /> 追加</button>
+                          </div>
+                        </>
+                      )}
+
                       {activeTab === 'UNKNOWN' && (
                         <>
                           <div className="flex justify-between items-center">
