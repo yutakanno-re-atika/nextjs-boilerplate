@@ -97,9 +97,6 @@ const DojoChart = ({ errors }: { errors: number[] }) => {
   );
 };
 
-// ============================================================================
-// 📖 インライン・カタログブラウザ (超リッチ・ファクトベース版)
-// ============================================================================
 const InlineDatabaseSpecs = () => {
   const [specs, setSpecs] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -119,7 +116,6 @@ const InlineDatabaseSpecs = () => {
       .then(res => res.json())
       .then(d => {
         if (d.success && d.data) {
-            // ★ Data Cleansing: 表記ゆれの名寄せのみ行う（数値の偽装はしない）
             const normalized = d.data.map((s: any) => {
                 let m = String(s.maker || '').trim();
                 if (/矢崎|YAZAKI/i.test(m)) m = '矢崎';
@@ -144,7 +140,7 @@ const InlineDatabaseSpecs = () => {
                     core: String(s.core || s.cores || s.coreCount || '-'),
                     outerDiameter: s.outerDiameter || s.diameter || '-',
                     weightPerKm: s.weightPerKm || '-',
-                    theoreticalRatio: !isNaN(ratio) ? ratio : null // 無いものは null にする
+                    theoreticalRatio: !isNaN(ratio) ? ratio : null 
                 };
             });
             setSpecs(normalized);
@@ -167,46 +163,32 @@ const InlineDatabaseSpecs = () => {
     return sortConfig.direction === 'asc' ? <Icons.SortAsc /> : <Icons.SortDesc />;
   };
 
-  const toggleMaker = (maker: string) => {
-      setSelectedMakers(prev => prev.includes(maker) ? prev.filter(m => m !== maker) : [...prev, maker]);
-  };
-  const toggleCore = (core: string) => {
-      setSelectedCores(prev => prev.includes(core) ? prev.filter(c => c !== core) : [...prev, core]);
-  };
+  const toggleMaker = (maker: string) => setSelectedMakers(prev => prev.includes(maker) ? prev.filter(m => m !== maker) : [...prev, maker]);
+  const toggleCore = (core: string) => setSelectedCores(prev => prev.includes(core) ? prev.filter(c => c !== core) : [...prev, core]);
 
   const filteredAndSorted = useMemo(() => {
     let filtered = specs.filter(s => {
-      // 1. メーカー
       if (selectedMakers.length > 0 && !selectedMakers.includes(s.maker)) return false;
-      
-      // 2. 芯数
       if (selectedCores.length > 0) {
           const cNum = parseInt(s.core) || 1;
           const cCat = cNum >= 5 ? '5C以上' : `${cNum}C`;
           if (!selectedCores.includes(cCat)) return false;
       }
-
-      // 3. 太さ目安
       if (sizeCategory !== 'ALL') {
           const sq = parseFloat(s.size);
-          if (isNaN(sq)) return false; // サイズ不明は除外
+          if (isNaN(sq)) return false; 
           if (sizeCategory === 'SMALL' && sq > 5.5) return false;
           if (sizeCategory === 'MEDIUM' && (sq < 8 || sq > 60)) return false;
           if (sizeCategory === 'LARGE' && sq < 100) return false;
       }
-
-      // 4. 歩留まり下限 (★ データなしは容赦なく除外する)
       if (minRatio > 0) {
           if (s.theoreticalRatio === null || s.theoreticalRatio < minRatio) return false;
       }
-
-      // 5. フリーワード検索
       if (searchTerm) {
         const target = `${s.maker} ${s.name} ${s.size} ${s.core}`.toLowerCase();
         const terms = searchTerm.toLowerCase().split(/[\s　]+/).filter(Boolean);
         if (!terms.every(t => target.includes(t))) return false;
       }
-
       return true;
     });
 
@@ -215,7 +197,6 @@ const InlineDatabaseSpecs = () => {
         let aVal = a[sortConfig.key];
         let bVal = b[sortConfig.key];
         
-        // Null（データなし）は常に一番下にする
         if (aVal === null || aVal === '-') aVal = sortConfig.direction === 'asc' ? Infinity : -Infinity;
         if (bVal === null || bVal === '-') bVal = sortConfig.direction === 'asc' ? Infinity : -Infinity;
 
@@ -238,7 +219,6 @@ const InlineDatabaseSpecs = () => {
 
   return (
     <div className="flex flex-col h-full bg-gray-50">
-      {/* 🚀 賃貸サイト風 詳細フィルターパネル */}
       <div className="p-3 md:p-4 border-b border-gray-200 bg-white z-20 shadow-sm relative">
           <div className="flex justify-between items-center mb-3">
               <h3 className="font-black text-gray-900 flex items-center gap-1.5"><Icons.Filter /> カタログ詳細検索</h3>
@@ -249,8 +229,6 @@ const InlineDatabaseSpecs = () => {
 
           {isFilterOpen && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in slide-in-from-top-2">
-                  
-                  {/* メーカー */}
                   <div className="bg-gray-50 p-3 rounded border border-gray-200 shadow-inner">
                       <label className="block text-[10px] font-bold text-gray-500 uppercase mb-2">🏢 メーカー</label>
                       <div className="flex flex-wrap gap-1.5">
@@ -261,8 +239,6 @@ const InlineDatabaseSpecs = () => {
                           ))}
                       </div>
                   </div>
-
-                  {/* 芯数 */}
                   <div className="bg-gray-50 p-3 rounded border border-gray-200 shadow-inner">
                       <label className="block text-[10px] font-bold text-gray-500 uppercase mb-2">⚡ 芯数</label>
                       <div className="flex flex-wrap gap-1.5">
@@ -273,8 +249,6 @@ const InlineDatabaseSpecs = () => {
                           ))}
                       </div>
                   </div>
-
-                  {/* 太さ */}
                   <div className="bg-gray-50 p-3 rounded border border-gray-200 shadow-inner">
                       <label className="block text-[10px] font-bold text-gray-500 uppercase mb-2">📏 太さ目安</label>
                       <select className="w-full bg-white border border-gray-300 p-1.5 rounded-sm text-xs font-bold text-gray-700 outline-none focus:border-gray-900" value={sizeCategory} onChange={e => setSizeCategory(e.target.value)}>
@@ -284,8 +258,6 @@ const InlineDatabaseSpecs = () => {
                           <option value="LARGE">激太線 (100sq~)</option>
                       </select>
                   </div>
-
-                  {/* 歩留まり */}
                   <div className="bg-gray-50 p-3 rounded border border-gray-200 shadow-inner">
                       <label className="block text-[10px] font-bold text-[#D32F2F] uppercase mb-2">💰 銅分率 (歩留まり)</label>
                       <select className="w-full bg-white border border-gray-300 p-1.5 rounded-sm text-xs font-black text-gray-900 outline-none focus:border-[#D32F2F]" value={minRatio} onChange={e => setMinRatio(Number(e.target.value))}>
@@ -297,25 +269,18 @@ const InlineDatabaseSpecs = () => {
                           <option value={80}>80% 以上</option>
                       </select>
                   </div>
-
-                  {/* フリーワード */}
                   <div className="lg:col-span-4 relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Icons.Search /></div>
                       <input type="text" placeholder="フリーワード検索 (例: 矢崎 CV 14)..." className="w-full pl-9 pr-3 py-2.5 border-2 border-gray-300 rounded-sm text-sm font-bold focus:border-gray-900 outline-none shadow-sm transition" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
                   </div>
-
                   <div className="lg:col-span-4 flex justify-between items-center mt-2">
                       <button onClick={() => { setSelectedMakers([]); setSelectedCores([]); setSizeCategory('ALL'); setMinRatio(0); setSearchTerm(''); }} className="text-xs text-gray-500 font-bold hover:text-gray-900 underline">条件をリセット</button>
-                      <div className="bg-gray-900 text-white text-sm font-black px-4 py-2 rounded-sm shadow-md">
-                          該当 {filteredAndSorted.length} 件
-                      </div>
+                      <div className="bg-gray-900 text-white text-sm font-black px-4 py-2 rounded-sm shadow-md">該当 {filteredAndSorted.length} 件</div>
                   </div>
               </div>
           )}
           {!isFilterOpen && (
-              <div className="bg-gray-900 text-white text-xs font-black px-3 py-1.5 rounded-sm shadow-md inline-block">
-                  該当 {filteredAndSorted.length} 件
-              </div>
+              <div className="bg-gray-900 text-white text-xs font-black px-3 py-1.5 rounded-sm shadow-md inline-block">該当 {filteredAndSorted.length} 件</div>
           )}
       </div>
 
@@ -340,7 +305,7 @@ const InlineDatabaseSpecs = () => {
             <tbody className="divide-y divide-gray-200">
               {filteredAndSorted.map((s, i) => (
                 <tr key={i} className="hover:bg-red-50/30 transition group">
-                  <td className="p-3 font-bold text-gray-700 border-r border-gray-100">{s.maker !== '不明' ? `【${s.maker}】` : <span className="text-gray-400">不明</span>}</td>
+                  <td className="p-3 font-bold text-gray-700 border-r border-gray-100">{s.maker && s.maker !== '不明' ? `【${s.maker}】` : <span className="text-gray-400">不明</span>}</td>
                   <td className="p-3 font-black text-gray-900 border-r border-gray-100">{s.name}</td>
                   <td className="p-3 font-mono text-gray-600 border-r border-gray-100 font-bold">
                       {s.size !== '-' ? `${s.size}sq` : '-'} {s.core !== '-' ? `/ ${s.core}C` : ''}
@@ -363,7 +328,19 @@ const InlineDatabaseSpecs = () => {
   );
 };
 
-export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoiceOutputEnabled?: boolean }) => {
+const CATEGORIES = ['すべて', 'IV線', 'CV・電力線', 'VVF / VV (ネズミ線)', '制御・通信線', 'キャブタイヤ・雑線', 'その他'];
+const getCategory = (name: string) => {
+  if (!name) return 'その他';
+  const n = name.toUpperCase();
+  if (n.includes('VVF') || n.includes('VA') || n.includes('EEF/F') || (n.includes('VV') && !n.includes('CVV'))) return 'VVF / VV (ネズミ線)';
+  if (n.includes('IV') || n.includes('IE/F')) return 'IV線';
+  if (n.includes('CVT') || (n.includes('CV') && !n.includes('CVV')) || n.includes('CE/F') || n.includes('EM')) return 'CV・電力線';
+  if (n.includes('CVV') || n.includes('AE') || n.includes('通信') || n.includes('LAN') || n.includes('弱電') || n.includes('光')) return '制御・通信線';
+  if (n.includes('VCT') || n.includes('雑線') || n.includes('家電') || n.includes('ハーネス')) return 'キャブタイヤ・雑線';
+  return 'その他';
+};
+
+export const AdminDatabase = ({ data }: { data: any }) => {
   const [activeTab, setActiveTab] = useState<'WIRES' | 'SPECS' | 'UNKNOWN' | 'CASTINGS' | 'CLIENTS' | 'STAFF' | 'DOJO'>('WIRES');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('すべて');
@@ -486,20 +463,17 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   };
 
   const handleSampleTotalChange = (val: string) => { 
-      const cleanVal = toHalfWidthNumber(val);
-      const num = cleanVal ? Number(cleanVal) : ''; 
+      const num = val ? Number(toHalfWidthNumber(val)) : ''; 
       setSampleTotal(num); 
       setEditingItem({...editingItem, sampleTotal: num, ratio: calculateRatio(num, sampleCopper)}); 
   };
   const handleSampleCopperChange = (val: string) => { 
-      const cleanVal = toHalfWidthNumber(val);
-      const num = cleanVal ? Number(cleanVal) : ''; 
+      const num = val ? Number(toHalfWidthNumber(val)) : ''; 
       setSampleCopper(num); 
       setEditingItem({...editingItem, sampleCopper: num, ratio: calculateRatio(sampleTotal, num)}); 
   };
   const handleSampleCoverChange = (val: string) => { 
-      const cleanVal = toHalfWidthNumber(val);
-      const num = cleanVal ? Number(cleanVal) : ''; 
+      const num = val ? Number(toHalfWidthNumber(val)) : ''; 
       setSampleCover(num); 
       setEditingItem({...editingItem, sampleCover: num}); 
   };
@@ -643,7 +617,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       if (!confirm(`全 ${targets.length} 件のデータに対してAIクレンジングを実行します。\n（勝手に上書きはされず、差異があったデータにのみアラートが付きます）\n画面を閉じずにそのままお待ちください。`)) return;
 
       setCleansingState({ isRunning: true, current: 0, total: targets.length });
-
       let alertedCount = 0;
       for (let i = 0; i < targets.length; i++) {
           setCleansingState({ isRunning: true, current: i + 1, total: targets.length });
@@ -658,7 +631,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
           } catch (e) { }
           await new Promise(resolve => setTimeout(resolve, 3000)); 
       }
-
       alert(`クレンジングが完了しました！\n新たに ${alertedCount} 件のデータにアラートが設定されました。`);
       setCleansingState({ isRunning: false, current: 0, total: 0 });
       window.location.reload();
@@ -670,7 +642,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       if (!confirm(`全 ${targets.length} 件のデータで「AI総当たり特訓」を開始しますか？\n※完了まで数十分〜1時間程度かかる場合があります。\n※寝ている間など、PCと画面を開いたまま放置してください。`)) return;
 
       setDojoProgress({ isRunning: true, current: 0, total: targets.length });
-
       let successCount = 0;
       for (let i = 0; i < targets.length; i++) {
           setDojoProgress({ isRunning: true, current: i + 1, total: targets.length });
@@ -684,10 +655,8 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
               const json = await res.json();
               if (json.success) successCount++;
           } catch (e) { console.error(`Dojo Error on ${target.id}`, e); }
-          
           await new Promise(resolve => setTimeout(resolve, 4000)); 
       }
-
       alert(`全 ${targets.length} 件の特訓が完了しました！（成功: ${successCount}件）`);
       setDojoProgress({ isRunning: false, current: 0, total: 0 });
       window.location.reload();
@@ -726,14 +695,9 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       if (data.success) {
         const pureName = groupData.captain?.name || wireName;
         setMergeProposal({ name: pureName, records, allIds: groupData.allIds, ...data.result });
-      } else {
-        alert("分析エラー: " + data.message);
-      }
-    } catch (e) {
-      alert("通信エラーが発生しました。");
-    } finally {
-      setAnalyzingName(null);
-    }
+      } else { alert("分析エラー: " + data.message); }
+    } catch (e) { alert("通信エラーが発生しました。"); } 
+    finally { setAnalyzingName(null); }
   };
 
   const handleApplyMerge = async () => {
@@ -744,8 +708,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     try {
       const updatePromises = mergeProposal.allIds.map((id: string) => {
         return fetch(gasUrl, { 
-          method: 'POST', 
-          headers: { 'Content-Type': 'application/json' }, 
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, 
           body: JSON.stringify({ action: 'UPDATE_DB_RECORD', sheetName: 'Products_Wire', recordId: id, updates: { [STATUS_COLUMN_INDEX]: 'archived' } }) 
         });
       });
@@ -753,12 +716,9 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
       const baseItem = mergeProposal.records[0];
       const payload = {
-        action: 'ADD_DB_RECORD',
-        sheetName: 'Products_Wire',
+        action: 'ADD_DB_RECORD', sheetName: 'Products_Wire',
         data: {
-          ...baseItem,
-          name: mergeProposal.name,
-          ratio: mergeProposal.mergedYieldRate,
+          ...baseItem, name: mergeProposal.name, ratio: mergeProposal.mergedYieldRate,
           memo: `【AI統合データ】\n${mergeProposal.mergedDescription}\n\n※過去${mergeProposal.records.length}件のデータを統合。`,
           status: 'active'
         }
@@ -766,13 +726,9 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       delete payload.data.id; delete payload.data.createdAt; delete payload.data.updatedAt;
 
       await fetch(gasUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      
       alert("✨ マージ完了！統合データを作成し、過去のデータは教師データとして保持しました。");
       window.location.reload();
-    } catch (e) {
-      alert("マージ処理中にエラーが発生しました。");
-      setIsMerging(false);
-    }
+    } catch (e) { alert("マージ処理中にエラーが発生しました。"); setIsMerging(false); }
   };
 
   const compressImage = (file: File, isDetailMode: boolean = true): Promise<string> => {
@@ -784,9 +740,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
               img.onload = () => {
                   try {
                       const canvas = document.createElement('canvas');
-                      const MAX = isDetailMode ? 1600 : 1024; 
-                      const quality = isDetailMode ? 0.85 : 0.7;
-                      
+                      const MAX = isDetailMode ? 1600 : 1024; const quality = isDetailMode ? 0.85 : 0.7;
                       let w = img.width; let h = img.height;
                       if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } } else { if (h > MAX) { w *= MAX / h; h = MAX; } }
                       canvas.width = w; canvas.height = h;
@@ -794,9 +748,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                       if (!ctx) throw new Error("Canvas context error");
                       ctx.drawImage(img, 0, 0, w, h);
                       resolve(canvas.toDataURL('image/jpeg', quality).split(',')[1]); 
-                  } catch (e) {
-                      reject(new Error("画像の圧縮に失敗しました。"));
-                  }
+                  } catch (e) { reject(new Error("画像の圧縮に失敗しました。")); }
               };
               img.onerror = () => reject(new Error('画像の読み込みに失敗しました'));
               img.src = event.target?.result as string;
@@ -821,24 +773,19 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     try { 
         const isDetail = num !== 2;
         const compressed = await compressImage(file, isDetail); 
-        
-        if (num === 1) setImgData1(compressed); 
-        else if (num === 2) setImgData2(compressed); 
-        else if (num === 3) setImgData3(compressed); 
-        else if (num === 4) setImgData4(compressed); 
+        if (num === 1) setImgData1(compressed); else if (num === 2) setImgData2(compressed); 
+        else if (num === 3) setImgData3(compressed); else if (num === 4) setImgData4(compressed); 
     } catch (err: any) { alert(err.message); } 
     finally { e.target.value = ''; }
   };
 
   const toggleVoiceInput = () => {
       if (isListening) { if (recognitionRef.current) recognitionRef.current.stop(); return; }
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       if (!SpeechRecognition) return;
       const recognition = new SpeechRecognition();
       recognition.lang = 'ja-JP'; recognition.continuous = true; recognition.interimResults = true;
-
       recognition.onstart = () => { setIsListening(true); setVoiceText('🎤 認識中... (もう一度押すと終了)'); };
-      
       let finalTranscript = '';
       recognition.onresult = (event: any) => {
           let interimTranscript = '';
@@ -858,11 +805,8 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   };
 
   const toggleHintVoiceInput = () => {
-      if (isListeningHint) {
-          if (hintRecognitionRef.current) hintRecognitionRef.current.stop();
-          return;
-      }
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (isListeningHint) { if (hintRecognitionRef.current) hintRecognitionRef.current.stop(); return; }
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       if (!SpeechRecognition) return alert('非対応');
       const recognition = new SpeechRecognition();
       recognition.lang = 'ja-JP'; recognition.continuous = true; recognition.interimResults = true;
@@ -878,29 +822,23 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
           setAiHint(currentHint + (currentHint ? ' ' : '') + finalStr + interim);
       };
       recognition.onend = () => { setIsListeningHint(false); setAiHint(currentHint + (currentHint ? ' ' : '') + finalStr); };
-      hintRecognitionRef.current = recognition;
-      recognition.start();
+      hintRecognitionRef.current = recognition; recognition.start();
   };
 
   const runAiExtraction = async () => {
     if (!imgData1) return alert('最低1枚の画像（断面など）をアップロードしてください');
-    
     const totalSize = (imgData1.length + imgData2.length + imgData3.length + imgData4.length) * 0.75;
-    if (totalSize > 4 * 1024 * 1024) {
-        return alert('⚠️ 画像サイズの合計が大きすぎます（通信エラーになります）。\n不要な画像を削除するか、もう少し離れて撮影してください。');
-    }
+    if (totalSize > 4 * 1024 * 1024) return alert('⚠️ 画像サイズの合計が大きすぎます。\n不要な画像を削除するか、もう少し離れて撮影してください。');
 
     setAiStatus('ANALYZING'); setAiProgressStep(1); 
     const progressInterval = setInterval(() => { setAiProgressStep(prev => { if (prev === 1) return 2; if (prev === 2) return 3; return 3; }); }, 2000);
     
     try {
       const res = await fetch('/api/gas', { 
-          method: 'POST', 
-          headers: { 'Content-Type': 'application/json' }, 
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, 
           body: JSON.stringify({ action: 'VISION_AI_REGISTER', imageData: imgData1, imageData2: imgData2, imageData3: imgData3, imageData4: imgData4, hint: aiHint }) 
       });
       const result = await res.json();
-      
       clearInterval(progressInterval); setAiProgressStep(4);
 
       setTimeout(() => {
@@ -922,7 +860,6 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
           } else { alert('AI抽出エラー: ' + result.message); }
           setAiStatus('IDLE'); setAiProgressStep(0);
       }, 800);
-
     } catch(err) { clearInterval(progressInterval); alert('通信エラーが発生しました。'); setAiStatus('IDLE'); setAiProgressStep(0); }
   };
 
@@ -937,23 +874,19 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
   };
 
   let filteredData = [];
-  
   if (activeTab === 'WIRES') {
       filteredData = wires.filter((w:any) => {
           if (selectedCategory !== 'すべて' && getCategory(w.name) !== selectedCategory) return false;
           if (filterMaker && w.maker !== filterMaker) return false;
-
           const has1 = !!w.image1; const has2 = !!w.image2; const has3 = !!w.image3;
           if (imageStatusFilter === 'COMPLETE' && !(has1 && has2 && has3)) return false;
           if (imageStatusFilter === 'NONE' && (has1 || has2 || has3)) return false;
           if (imageStatusFilter === 'PARTIAL' && ((has1 && has2 && has3) || (!has1 && !has2 && !has3))) return false;
-
           if (searchTerm) {
               const coreStr = String(w.core || w.cores || w.coreCount || '');
               const coreFormatted = coreStr && coreStr !== '-' ? `${coreStr}c ${coreStr}芯` : '';
               const sqStr = String(w.size || w.sq || '');
               const sqFormatted = sqStr && sqStr !== '-' ? `${sqStr}sq ${sqStr}スケ` : '';
-              
               const searchTarget = `${w.name} ${w.maker} ${sqFormatted} ${sqStr} ${coreFormatted} ${coreStr} ${w.year}`.toLowerCase();
               const terms = searchTerm.toLowerCase().replace(/　/g, ' ').split(' ').filter(Boolean);
               return terms.every(term => searchTarget.includes(term));
@@ -1043,21 +976,14 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       const conductor = w.conductor && w.conductor !== '-' ? ` [${w.conductor}]` : '';
       
       let groupKey = `${maker}${name}${voltage}${sq}${core}${year}${conductor}`.trim();
-
-      if (!w.sq || w.sq === '-' || !w.core || w.core === '-') {
-         groupKey = `${groupKey}_独自ID:${w.id}`;
-      }
+      if (!w.sq || w.sq === '-' || !w.core || w.core === '-') groupKey = `${groupKey}_独自ID:${w.id}`;
 
       if (!groups[groupKey]) groups[groupKey] = { captain: null, members: [], allIds: [] };
-      
       groups[groupKey].allIds.push(w.id);
 
       if (w.status !== 'archived') {
-        if (!groups[groupKey].captain) {
-          groups[groupKey].captain = w;
-        } else {
-          groups[groupKey].members.push(w);
-        }
+        if (!groups[groupKey].captain) groups[groupKey].captain = w;
+        else groups[groupKey].members.push(w);
       } else {
         groups[groupKey].members.push(w);
       }
@@ -1088,11 +1014,9 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                     <button onClick={() => setEditingItem({...editingItem, [pendingKey]: null})} className="absolute top-1 right-1 bg-[#D32F2F] text-white p-1 rounded-sm shadow-md z-20 hover:bg-red-800"><Icons.Trash /></button>
                 </>
             ) : savedImage ? (
-                <>
-                    <a href={getDriveViewUrl(savedImage)} target="_blank" rel="noopener noreferrer" className="absolute inset-0 w-full h-full block">
-                        <img src={getDriveImageUrl(savedImage)} referrerPolicy="no-referrer" className="w-full h-full object-cover group-hover:scale-110 transition-transform cursor-zoom-in" />
-                    </a>
-                </>
+                <a href={getDriveViewUrl(savedImage)} target="_blank" rel="noopener noreferrer" className="absolute inset-0 w-full h-full block">
+                    <img src={getDriveImageUrl(savedImage)} referrerPolicy="no-referrer" className="w-full h-full object-cover group-hover:scale-110 transition-transform cursor-zoom-in" />
+                </a>
             ) : ( 
                 <div className="flex gap-1 w-full h-full mt-3 md:mt-4">
                     <label className="flex-1 cursor-pointer flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-200 text-gray-500 hover:text-gray-900 transition border border-gray-300 rounded-sm" title="カメラ"><Icons.Camera /><input type="file" onChange={(e) => handleImageUploadLocal(e, pendingKey)} className="hidden" accept="image/*" capture="environment" /></label>
@@ -1534,7 +1458,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                                  <div 
                                    key={m.id || i} 
                                    onClick={() => handleOpenModal(m)}
-                                   className="bg-white border border-gray-300 hover:border-blue-400 rounded-sm p-2 flex gap-3 relative shadow-sm cursor-pointer transition group"
+                                   className="bg-white border border-gray-300 hover:border-blue-400 rounded-sm p-2 flex gap-3 w-64 shrink-0 relative shadow-sm cursor-pointer transition group"
                                  >
                                     {m.status === 'archived' && <span className="absolute top-0 right-0 bg-gray-200 text-gray-500 text-[8px] font-bold px-1.5 py-0.5 rounded-bl-sm z-10">Archived</span>}
                                     {m.image1 ? (
