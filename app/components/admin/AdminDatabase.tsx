@@ -720,7 +720,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       recognition.start();
   };
 
-  const runAiExtraction = async () => {
+const runAiExtraction = async () => {
     if (!imgData1) return alert('最低1枚の画像（断面など）をアップロードしてください');
     
     const totalSize = (imgData1.length + imgData2.length + imgData3.length + imgData4.length) * 0.75;
@@ -732,10 +732,11 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
     const progressInterval = setInterval(() => { setAiProgressStep(prev => { if (prev === 1) return 2; if (prev === 2) return 3; return 3; }); }, 2000);
     
     try {
+      const catalogContext = catalogsData.map(c => `- ${c.maker} ${c.name} ${c.size} ${c.core} (外径:${c.outerDiameter}mm, 理論歩留:${c.theoreticalRatio}%)`).join('\n');
       const res = await fetch('/api/gas', { 
           method: 'POST', 
           headers: { 'Content-Type': 'application/json' }, 
-          body: JSON.stringify({ action: 'VISION_AI_REGISTER', imageData: imgData1, imageData2: imgData2, imageData3: imgData3, imageData4: imgData4, hint: aiHint }) 
+          body: JSON.stringify({ action: 'VISION_AI_REGISTER', imageData: imgData1, imageData2: imgData2, imageData3: imgData3, imageData4: imgData4, hint: aiHint, catalogData: catalogContext }) 
       });
       const result = await res.json();
       
