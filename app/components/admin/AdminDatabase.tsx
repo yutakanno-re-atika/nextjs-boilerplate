@@ -97,6 +97,9 @@ const DojoChart = ({ errors }: { errors: number[] }) => {
   );
 };
 
+// ============================================================================
+// 📖 インライン・カタログブラウザ (超リッチ・ファクトベース版)
+// ============================================================================
 const InlineDatabaseSpecs = () => {
   const [specs, setSpecs] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -340,7 +343,7 @@ const getCategory = (name: string) => {
   return 'その他';
 };
 
-export const AdminDatabase = ({ data }: { data: any }) => {
+export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoiceOutputEnabled?: boolean }) => {
   const [activeTab, setActiveTab] = useState<'WIRES' | 'SPECS' | 'UNKNOWN' | 'CASTINGS' | 'CLIENTS' | 'STAFF' | 'DOJO'>('WIRES');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('すべて');
@@ -463,17 +466,20 @@ export const AdminDatabase = ({ data }: { data: any }) => {
   };
 
   const handleSampleTotalChange = (val: string) => { 
-      const num = val ? Number(toHalfWidthNumber(val)) : ''; 
+      const cleanVal = toHalfWidthNumber(val);
+      const num = cleanVal ? Number(cleanVal) : ''; 
       setSampleTotal(num); 
       setEditingItem({...editingItem, sampleTotal: num, ratio: calculateRatio(num, sampleCopper)}); 
   };
   const handleSampleCopperChange = (val: string) => { 
-      const num = val ? Number(toHalfWidthNumber(val)) : ''; 
+      const cleanVal = toHalfWidthNumber(val);
+      const num = cleanVal ? Number(cleanVal) : ''; 
       setSampleCopper(num); 
       setEditingItem({...editingItem, sampleCopper: num, ratio: calculateRatio(sampleTotal, num)}); 
   };
   const handleSampleCoverChange = (val: string) => { 
-      const num = val ? Number(toHalfWidthNumber(val)) : ''; 
+      const cleanVal = toHalfWidthNumber(val);
+      const num = cleanVal ? Number(cleanVal) : ''; 
       setSampleCover(num); 
       setEditingItem({...editingItem, sampleCover: num}); 
   };
@@ -617,6 +623,7 @@ export const AdminDatabase = ({ data }: { data: any }) => {
       if (!confirm(`全 ${targets.length} 件のデータに対してAIクレンジングを実行します。\n（勝手に上書きはされず、差異があったデータにのみアラートが付きます）\n画面を閉じずにそのままお待ちください。`)) return;
 
       setCleansingState({ isRunning: true, current: 0, total: targets.length });
+
       let alertedCount = 0;
       for (let i = 0; i < targets.length; i++) {
           setCleansingState({ isRunning: true, current: i + 1, total: targets.length });
@@ -631,6 +638,7 @@ export const AdminDatabase = ({ data }: { data: any }) => {
           } catch (e) { }
           await new Promise(resolve => setTimeout(resolve, 3000)); 
       }
+
       alert(`クレンジングが完了しました！\n新たに ${alertedCount} 件のデータにアラートが設定されました。`);
       setCleansingState({ isRunning: false, current: 0, total: 0 });
       window.location.reload();
@@ -642,6 +650,7 @@ export const AdminDatabase = ({ data }: { data: any }) => {
       if (!confirm(`全 ${targets.length} 件のデータで「AI総当たり特訓」を開始しますか？\n※完了まで数十分〜1時間程度かかる場合があります。\n※寝ている間など、PCと画面を開いたまま放置してください。`)) return;
 
       setDojoProgress({ isRunning: true, current: 0, total: targets.length });
+
       let successCount = 0;
       for (let i = 0; i < targets.length; i++) {
           setDojoProgress({ isRunning: true, current: i + 1, total: targets.length });
@@ -655,8 +664,10 @@ export const AdminDatabase = ({ data }: { data: any }) => {
               const json = await res.json();
               if (json.success) successCount++;
           } catch (e) { console.error(`Dojo Error on ${target.id}`, e); }
+          
           await new Promise(resolve => setTimeout(resolve, 4000)); 
       }
+
       alert(`全 ${targets.length} 件の特訓が完了しました！（成功: ${successCount}件）`);
       setDojoProgress({ isRunning: false, current: 0, total: 0 });
       window.location.reload();
@@ -695,9 +706,14 @@ export const AdminDatabase = ({ data }: { data: any }) => {
       if (data.success) {
         const pureName = groupData.captain?.name || wireName;
         setMergeProposal({ name: pureName, records, allIds: groupData.allIds, ...data.result });
-      } else { alert("分析エラー: " + data.message); }
-    } catch (e) { alert("通信エラーが発生しました。"); } 
-    finally { setAnalyzingName(null); }
+      } else {
+        alert("分析エラー: " + data.message);
+      }
+    } catch (e) {
+      alert("通信エラーが発生しました。");
+    } finally {
+      setAnalyzingName(null);
+    }
   };
 
   const handleApplyMerge = async () => {
@@ -708,7 +724,8 @@ export const AdminDatabase = ({ data }: { data: any }) => {
     try {
       const updatePromises = mergeProposal.allIds.map((id: string) => {
         return fetch(gasUrl, { 
-          method: 'POST', headers: { 'Content-Type': 'application/json' }, 
+          method: 'POST', 
+          headers: { 'Content-Type': 'application/json' }, 
           body: JSON.stringify({ action: 'UPDATE_DB_RECORD', sheetName: 'Products_Wire', recordId: id, updates: { [STATUS_COLUMN_INDEX]: 'archived' } }) 
         });
       });
@@ -716,9 +733,12 @@ export const AdminDatabase = ({ data }: { data: any }) => {
 
       const baseItem = mergeProposal.records[0];
       const payload = {
-        action: 'ADD_DB_RECORD', sheetName: 'Products_Wire',
+        action: 'ADD_DB_RECORD',
+        sheetName: 'Products_Wire',
         data: {
-          ...baseItem, name: mergeProposal.name, ratio: mergeProposal.mergedYieldRate,
+          ...baseItem,
+          name: mergeProposal.name,
+          ratio: mergeProposal.mergedYieldRate,
           memo: `【AI統合データ】\n${mergeProposal.mergedDescription}\n\n※過去${mergeProposal.records.length}件のデータを統合。`,
           status: 'active'
         }
@@ -726,9 +746,13 @@ export const AdminDatabase = ({ data }: { data: any }) => {
       delete payload.data.id; delete payload.data.createdAt; delete payload.data.updatedAt;
 
       await fetch(gasUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      
       alert("✨ マージ完了！統合データを作成し、過去のデータは教師データとして保持しました。");
       window.location.reload();
-    } catch (e) { alert("マージ処理中にエラーが発生しました。"); setIsMerging(false); }
+    } catch (e) {
+      alert("マージ処理中にエラーが発生しました。");
+      setIsMerging(false);
+    }
   };
 
   const compressImage = (file: File, isDetailMode: boolean = true): Promise<string> => {
@@ -740,7 +764,9 @@ export const AdminDatabase = ({ data }: { data: any }) => {
               img.onload = () => {
                   try {
                       const canvas = document.createElement('canvas');
-                      const MAX = isDetailMode ? 1600 : 1024; const quality = isDetailMode ? 0.85 : 0.7;
+                      const MAX = isDetailMode ? 1600 : 1024; 
+                      const quality = isDetailMode ? 0.85 : 0.7;
+                      
                       let w = img.width; let h = img.height;
                       if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } } else { if (h > MAX) { w *= MAX / h; h = MAX; } }
                       canvas.width = w; canvas.height = h;
@@ -748,7 +774,9 @@ export const AdminDatabase = ({ data }: { data: any }) => {
                       if (!ctx) throw new Error("Canvas context error");
                       ctx.drawImage(img, 0, 0, w, h);
                       resolve(canvas.toDataURL('image/jpeg', quality).split(',')[1]); 
-                  } catch (e) { reject(new Error("画像の圧縮に失敗しました。")); }
+                  } catch (e) {
+                      reject(new Error("画像の圧縮に失敗しました。"));
+                  }
               };
               img.onerror = () => reject(new Error('画像の読み込みに失敗しました'));
               img.src = event.target?.result as string;
@@ -773,8 +801,11 @@ export const AdminDatabase = ({ data }: { data: any }) => {
     try { 
         const isDetail = num !== 2;
         const compressed = await compressImage(file, isDetail); 
-        if (num === 1) setImgData1(compressed); else if (num === 2) setImgData2(compressed); 
-        else if (num === 3) setImgData3(compressed); else if (num === 4) setImgData4(compressed); 
+        
+        if (num === 1) setImgData1(compressed); 
+        else if (num === 2) setImgData2(compressed); 
+        else if (num === 3) setImgData3(compressed); 
+        else if (num === 4) setImgData4(compressed); 
     } catch (err: any) { alert(err.message); } 
     finally { e.target.value = ''; }
   };
@@ -785,7 +816,9 @@ export const AdminDatabase = ({ data }: { data: any }) => {
       if (!SpeechRecognition) return;
       const recognition = new SpeechRecognition();
       recognition.lang = 'ja-JP'; recognition.continuous = true; recognition.interimResults = true;
+
       recognition.onstart = () => { setIsListening(true); setVoiceText('🎤 認識中... (もう一度押すと終了)'); };
+      
       let finalTranscript = '';
       recognition.onresult = (event: any) => {
           let interimTranscript = '';
@@ -805,7 +838,10 @@ export const AdminDatabase = ({ data }: { data: any }) => {
   };
 
   const toggleHintVoiceInput = () => {
-      if (isListeningHint) { if (hintRecognitionRef.current) hintRecognitionRef.current.stop(); return; }
+      if (isListeningHint) {
+          if (hintRecognitionRef.current) hintRecognitionRef.current.stop();
+          return;
+      }
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       if (!SpeechRecognition) return alert('非対応');
       const recognition = new SpeechRecognition();
@@ -822,23 +858,29 @@ export const AdminDatabase = ({ data }: { data: any }) => {
           setAiHint(currentHint + (currentHint ? ' ' : '') + finalStr + interim);
       };
       recognition.onend = () => { setIsListeningHint(false); setAiHint(currentHint + (currentHint ? ' ' : '') + finalStr); };
-      hintRecognitionRef.current = recognition; recognition.start();
+      hintRecognitionRef.current = recognition;
+      recognition.start();
   };
 
   const runAiExtraction = async () => {
     if (!imgData1) return alert('最低1枚の画像（断面など）をアップロードしてください');
+    
     const totalSize = (imgData1.length + imgData2.length + imgData3.length + imgData4.length) * 0.75;
-    if (totalSize > 4 * 1024 * 1024) return alert('⚠️ 画像サイズの合計が大きすぎます。\n不要な画像を削除するか、もう少し離れて撮影してください。');
+    if (totalSize > 4 * 1024 * 1024) {
+        return alert('⚠️ 画像サイズの合計が大きすぎます（通信エラーになります）。\n不要な画像を削除するか、もう少し離れて撮影してください。');
+    }
 
     setAiStatus('ANALYZING'); setAiProgressStep(1); 
     const progressInterval = setInterval(() => { setAiProgressStep(prev => { if (prev === 1) return 2; if (prev === 2) return 3; return 3; }); }, 2000);
     
     try {
       const res = await fetch('/api/gas', { 
-          method: 'POST', headers: { 'Content-Type': 'application/json' }, 
+          method: 'POST', 
+          headers: { 'Content-Type': 'application/json' }, 
           body: JSON.stringify({ action: 'VISION_AI_REGISTER', imageData: imgData1, imageData2: imgData2, imageData3: imgData3, imageData4: imgData4, hint: aiHint }) 
       });
       const result = await res.json();
+      
       clearInterval(progressInterval); setAiProgressStep(4);
 
       setTimeout(() => {
@@ -860,6 +902,7 @@ export const AdminDatabase = ({ data }: { data: any }) => {
           } else { alert('AI抽出エラー: ' + result.message); }
           setAiStatus('IDLE'); setAiProgressStep(0);
       }, 800);
+
     } catch(err) { clearInterval(progressInterval); alert('通信エラーが発生しました。'); setAiStatus('IDLE'); setAiProgressStep(0); }
   };
 
@@ -874,19 +917,23 @@ export const AdminDatabase = ({ data }: { data: any }) => {
   };
 
   let filteredData = [];
+  
   if (activeTab === 'WIRES') {
       filteredData = wires.filter((w:any) => {
           if (selectedCategory !== 'すべて' && getCategory(w.name) !== selectedCategory) return false;
           if (filterMaker && w.maker !== filterMaker) return false;
+
           const has1 = !!w.image1; const has2 = !!w.image2; const has3 = !!w.image3;
           if (imageStatusFilter === 'COMPLETE' && !(has1 && has2 && has3)) return false;
           if (imageStatusFilter === 'NONE' && (has1 || has2 || has3)) return false;
           if (imageStatusFilter === 'PARTIAL' && ((has1 && has2 && has3) || (!has1 && !has2 && !has3))) return false;
+
           if (searchTerm) {
               const coreStr = String(w.core || w.cores || w.coreCount || '');
               const coreFormatted = coreStr && coreStr !== '-' ? `${coreStr}c ${coreStr}芯` : '';
               const sqStr = String(w.size || w.sq || '');
               const sqFormatted = sqStr && sqStr !== '-' ? `${sqStr}sq ${sqStr}スケ` : '';
+              
               const searchTarget = `${w.name} ${w.maker} ${sqFormatted} ${sqStr} ${coreFormatted} ${coreStr} ${w.year}`.toLowerCase();
               const terms = searchTerm.toLowerCase().replace(/　/g, ' ').split(' ').filter(Boolean);
               return terms.every(term => searchTarget.includes(term));
@@ -976,14 +1023,21 @@ export const AdminDatabase = ({ data }: { data: any }) => {
       const conductor = w.conductor && w.conductor !== '-' ? ` [${w.conductor}]` : '';
       
       let groupKey = `${maker}${name}${voltage}${sq}${core}${year}${conductor}`.trim();
-      if (!w.sq || w.sq === '-' || !w.core || w.core === '-') groupKey = `${groupKey}_独自ID:${w.id}`;
+
+      if (!w.sq || w.sq === '-' || !w.core || w.core === '-') {
+         groupKey = `${groupKey}_独自ID:${w.id}`;
+      }
 
       if (!groups[groupKey]) groups[groupKey] = { captain: null, members: [], allIds: [] };
+      
       groups[groupKey].allIds.push(w.id);
 
       if (w.status !== 'archived') {
-        if (!groups[groupKey].captain) groups[groupKey].captain = w;
-        else groups[groupKey].members.push(w);
+        if (!groups[groupKey].captain) {
+          groups[groupKey].captain = w;
+        } else {
+          groups[groupKey].members.push(w);
+        }
       } else {
         groups[groupKey].members.push(w);
       }
@@ -1014,9 +1068,11 @@ export const AdminDatabase = ({ data }: { data: any }) => {
                     <button onClick={() => setEditingItem({...editingItem, [pendingKey]: null})} className="absolute top-1 right-1 bg-[#D32F2F] text-white p-1 rounded-sm shadow-md z-20 hover:bg-red-800"><Icons.Trash /></button>
                 </>
             ) : savedImage ? (
-                <a href={getDriveViewUrl(savedImage)} target="_blank" rel="noopener noreferrer" className="absolute inset-0 w-full h-full block">
-                    <img src={getDriveImageUrl(savedImage)} referrerPolicy="no-referrer" className="w-full h-full object-cover group-hover:scale-110 transition-transform cursor-zoom-in" />
-                </a>
+                <>
+                    <a href={getDriveViewUrl(savedImage)} target="_blank" rel="noopener noreferrer" className="absolute inset-0 w-full h-full block">
+                        <img src={getDriveImageUrl(savedImage)} referrerPolicy="no-referrer" className="w-full h-full object-cover group-hover:scale-110 transition-transform cursor-zoom-in" />
+                    </a>
+                </>
             ) : ( 
                 <div className="flex gap-1 w-full h-full mt-3 md:mt-4">
                     <label className="flex-1 cursor-pointer flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-200 text-gray-500 hover:text-gray-900 transition border border-gray-300 rounded-sm" title="カメラ"><Icons.Camera /><input type="file" onChange={(e) => handleImageUploadLocal(e, pendingKey)} className="hidden" accept="image/*" capture="environment" /></label>
