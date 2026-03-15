@@ -36,9 +36,9 @@ export async function POST(req: Request) {
 
     // ★ RAGコンテキスト生成
     const catalogs = loadCatalogData();
-    const validCatalogs = catalogs.filter(c => c.theoreticalRatio && c.theoreticalRatio !== '-');
-    const keywords = wireName.split(/[\s　]+/);
-    let filteredCatalogs = validCatalogs.filter(c => keywords.some(k => (c.name + c.maker).includes(k)));
+const validCatalogs = catalogs.filter((c: any) => c.theoreticalRatio && c.theoreticalRatio !== '-');
+      const keywords = wireName.split(/[\s　]+/);
+      let filteredCatalogs = validCatalogs.filter((c: any) => keywords.some((k: string) => (String(c.name || '') + String(c.maker || '')).includes(k)));
     if (filteredCatalogs.length === 0) filteredCatalogs = validCatalogs.slice(0, 100);
 
     const catalogContext = filteredCatalogs.slice(0, 50).map(c => 
