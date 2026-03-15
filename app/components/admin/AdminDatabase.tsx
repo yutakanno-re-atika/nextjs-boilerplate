@@ -1376,7 +1376,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
                                  <div 
                                    key={m.id || i} 
                                    onClick={() => handleOpenModal(m)}
-                                   className="bg-white border border-gray-300 hover:border-blue-400 rounded-sm p-2 flex gap-3 w-64 shrink-0 relative shadow-sm cursor-pointer transition group"
+                                   className="bg-white border border-gray-300 hover:border-blue-400 rounded-sm p-2 flex gap-3 relative shadow-sm cursor-pointer transition group"
                                  >
                                     {m.status === 'archived' && <span className="absolute top-0 right-0 bg-gray-200 text-gray-500 text-[8px] font-bold px-1.5 py-0.5 rounded-bl-sm z-10">Archived</span>}
                                     {m.image1 ? (
