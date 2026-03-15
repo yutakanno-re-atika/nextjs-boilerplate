@@ -26,7 +26,9 @@ const Icons = {
   AlertTriangle: () => <svg className="w-3 h-3 md:w-4 md:h-4 inline-block text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
   Cpu: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" /></svg>,
   Users: () => <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
-  Brain: () => <svg className="w-4 h-4 md:w-5 md:h-5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+  Brain: () => <svg className="w-4 h-4 md:w-5 md:h-5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>,
+  // ★ ここが抜けていた致命的バグの修正箇所だ！
+  Radar: () => <svg className="w-4 h-4 md:w-5 md:h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>
 };
 
 const toHalfWidthNumber = (str: any) => {
@@ -117,9 +119,6 @@ const DojoChart = ({ errors }: { errors: number[] }) => {
   );
 };
 
-// ============================================================================
-// 📖 インライン・カタログブラウザ
-// ============================================================================
 const InlineDatabaseSpecs = () => {
   const [specs, setSpecs] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -139,9 +138,9 @@ const InlineDatabaseSpecs = () => {
   const filtered = useMemo(() => {
     if (!searchTerm) return specs;
     const terms = searchTerm.toLowerCase().split(' ').filter(Boolean);
-    return specs.filter((s: any) => {
+    return specs.filter(s => {
       const target = `${s.maker} ${s.name} ${s.size} ${s.core}`.toLowerCase();
-      return terms.every((t: string) => target.includes(t));
+      return terms.every(t => target.includes(t));
     });
   }, [specs, searchTerm]);
 
@@ -172,7 +171,7 @@ const InlineDatabaseSpecs = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {filtered.map((s: any, i: number) => (
+              {filtered.map((s, i) => (
                 <tr key={i} className="hover:bg-yellow-50/30 transition">
                   <td className="p-3 font-bold text-gray-700 border-r border-gray-100">{s.maker}</td>
                   <td className="p-3 font-black text-gray-900 border-r border-gray-100">{s.name}</td>
