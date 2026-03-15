@@ -1,7 +1,6 @@
 // app/components/admin/AdminDatabase.tsx
 // @ts-nocheck
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { AdminDatabaseSpecs } from './AdminDatabaseSpecs';
 
 const STATUS_COLUMN_INDEX = 21;
 
@@ -114,6 +113,82 @@ const DojoChart = ({ errors }: { errors: number[] }) => {
           </div>
         );
       })}
+    </div>
+  );
+};
+
+// ============================================================================
+// 📖 インライン・カタログブラウザ (AdminDatabaseSpecs の代わり)
+// ============================================================================
+const InlineDatabaseSpecs = () => {
+  const [specs, setSpecs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    setLoading(true);
+    fetch('/api/specs')
+      .then(res => res.json())
+      .then(d => {
+        if (d.success) setSpecs(d.data || []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const filtered = useMemo(() => {
+    if (!searchTerm) return specs;
+    const terms = searchTerm.toLowerCase().split(' ').filter(Boolean);
+    return specs.filter(s => {
+      const target = `${s.maker} ${s.name} ${s.size} ${s.core}`.toLowerCase();
+      return terms.every(t => target.includes(t));
+    });
+  }, [specs, searchTerm]);
+
+  return (
+    <div className="flex flex-col h-full bg-white">
+      <div className="p-3 md:p-4 border-b border-gray-200 bg-gray-50 flex gap-2">
+        <div className="relative flex-1">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Icons.Search /></div>
+          <input type="text" placeholder="カタログ検索 (例: 矢崎 CV 14)..." className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-sm text-sm focus:border-gray-900 outline-none shadow-inner" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+        </div>
+        <div className="bg-gray-100 text-gray-500 text-xs font-bold px-4 py-2 border border-gray-300 rounded-sm flex items-center whitespace-nowrap">
+          総収録数: {specs.length}件
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto p-0">
+        {loading ? (
+          <div className="flex justify-center items-center h-40 text-gray-500 font-bold"><Icons.Refresh /> カタログデータを読み込み中...</div>
+        ) : (
+          <table className="w-full text-left border-collapse text-sm min-w-[800px]">
+            <thead className="bg-gray-100 text-gray-600 uppercase tracking-wider text-xs sticky top-0 z-10 shadow-sm border-b border-gray-300">
+              <tr>
+                <th className="p-3 font-bold border-r border-gray-200">メーカー</th>
+                <th className="p-3 font-bold border-r border-gray-200">品名</th>
+                <th className="p-3 font-bold border-r border-gray-200">サイズ / 芯数</th>
+                <th className="p-3 font-bold text-right border-r border-gray-200">仕上外径 (mm)</th>
+                <th className="p-3 font-bold text-right border-r border-gray-200">質量 (kg/km)</th>
+                <th className="p-3 font-bold text-right text-yellow-600">理論歩留まり (%)</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {filtered.map((s, i) => (
+                <tr key={i} className="hover:bg-yellow-50/30 transition">
+                  <td className="p-3 font-bold text-gray-700 border-r border-gray-100">{s.maker}</td>
+                  <td className="p-3 font-black text-gray-900 border-r border-gray-100">{s.name}</td>
+                  <td className="p-3 font-mono text-gray-600 border-r border-gray-100">{s.size}sq / {s.core}C</td>
+                  <td className="p-3 font-mono text-right border-r border-gray-100">{s.outerDiameter}</td>
+                  <td className="p-3 font-mono text-right border-r border-gray-100">{s.weightPerKm}</td>
+                  <td className="p-3 font-mono font-black text-yellow-600 text-right text-lg">{s.theoreticalRatio}%</td>
+                </tr>
+              ))}
+              {filtered.length === 0 && (
+                <tr><td colSpan={6} className="p-10 text-center text-gray-400 font-bold">データがありません</td></tr>
+              )}
+            </tbody>
+          </table>
+        )}
+      </div>
     </div>
   );
 };
@@ -915,7 +990,7 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
       {activeTab === 'SPECS' && (
         <div className="bg-white border border-gray-200 shadow-sm rounded-sm flex-1 flex flex-col overflow-hidden relative mt-2">
-          <AdminDatabaseSpecs data={data} />
+          <InlineDatabaseSpecs />
         </div>
       )}
 
