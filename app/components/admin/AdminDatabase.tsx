@@ -498,9 +498,9 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
       window.location.reload();
   };
 
-  // ★ AI道場（総当たり特訓）
+// ★ AI道場（総当たり特訓）
   const runDojoAll = async () => {
-      const targets = wires.filter(w => w.status !== 'archived' && (w.image1 || w.image3) && w.ratio);
+      const targets = wires.filter((w: any) => w.status !== 'archived' && (w.image1 || w.image3) && w.ratio);
       if (targets.length === 0) return alert('テストできる画像・歩留まり付きのデータがありません。');
       if (!confirm(`全 ${targets.length} 件のデータで「AI総当たり特訓」を開始しますか？\n※完了まで数十分〜1時間程度かかる場合があります。\n※寝ている間など、PCと画面を開いたまま放置してください。`)) return;
 
@@ -512,9 +512,12 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
           const target = targets[i];
           try {
               const imageUrl = target.image1 || target.image3; 
+              // ★ カタログデータから理論値を逆引き
+              const theoreticalRatio = catalogsData.find((c:any) => target.name.toLowerCase().includes(c.name.toLowerCase()) || c.name.toLowerCase().includes(target.name.toLowerCase()))?.theoreticalRatio || null;
+              
               const res = await fetch('/api/ai-training', {
                   method: 'POST', headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ wireId: target.id, wireName: target.name, imageUrl: imageUrl, actualRatio: Number(target.ratio) })
+                  body: JSON.stringify({ wireId: target.id, wireName: target.name, imageUrl: imageUrl, actualRatio: Number(target.ratio), theoreticalRatio })
               });
               const json = await res.json();
               if (json.success) successCount++;
@@ -530,16 +533,19 @@ export const AdminDatabase = ({ data, isVoiceOutputEnabled }: { data: any, isVoi
 
   // ★ AI道場（ランダム1件テスト）
   const runDojoRandom = async () => {
-      const targets = wires.filter(w => w.status !== 'archived' && (w.image1 || w.image3) && w.ratio);
+      const targets = wires.filter((w: any) => w.status !== 'archived' && (w.image1 || w.image3) && w.ratio);
       if (targets.length === 0) return alert('テストできる画像・歩留まり付きのデータがありません。');
       const target = targets[Math.floor(Math.random() * targets.length)];
       
       setDojoProgress({ isRunning: true, current: 1, total: 1 });
       try {
           const imageUrl = target.image1 || target.image3; 
+          // ★ カタログデータから理論値を逆引き
+          const theoreticalRatio = catalogsData.find((c:any) => target.name.toLowerCase().includes(c.name.toLowerCase()) || c.name.toLowerCase().includes(target.name.toLowerCase()))?.theoreticalRatio || null;
+
           const res = await fetch('/api/ai-training', {
               method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ wireId: target.id, wireName: target.name, imageUrl: imageUrl, actualRatio: Number(target.ratio) })
+              body: JSON.stringify({ wireId: target.id, wireName: target.name, imageUrl: imageUrl, actualRatio: Number(target.ratio), theoreticalRatio })
           });
           const json = await res.json();
           if (json.success) {
